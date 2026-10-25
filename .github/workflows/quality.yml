@@ -57,13 +57,13 @@ jobs:
       - name: Actual protected-base source guard
         run: sh .github/scripts/verify-docs-gate.sh --f1-scope-only
       - name: Pure offline F1 metadata controls
-        run: python3 tests/validation/frontend_evolution/test_fe09_t3s3_f1_rss_qualification.py
+        run: python3 -I tests/validation/frontend_evolution/test_fe09_t3s3_f1_rss_qualification.py
       - name: Record source-only bootstrap and reject any execution obligation
         id: f1_source
         env:
           F1_REQUIRED: ${{ inputs.run_f1 }}
         run: |
-          python3 tests/validation/frontend_evolution/fe09_t3s3_f1_rss_qualification.py \
+          python3 -I tests/validation/frontend_evolution/fe09_t3s3_f1_rss_qualification.py \
             bootstrap-receipt --root "$GITHUB_WORKSPACE" --f1-required "$F1_REQUIRED" \
             --output /tmp/frontend-rss-f1/receipt.json --github-output "$GITHUB_OUTPUT"
       - name: Preserve explicit F1 source-only receipt

@@ -658,6 +658,8 @@ class APIBudgetLedger:
         self.retained_bytes = 0
         self.worker_keys = {}
         self.failed = False
+        self.phase_records = []
+        self.phase_open = False
 
     def next_request(self, phase: str, name: str, start_ns: int,
                      stage_deadline_ns: int | None = None,
@@ -749,6 +751,106 @@ class APIBudgetLedger:
                 'category_counts': dict(self.category_counts), 'category_bytes': dict(self.category_bytes),
                 'retained_category_bytes': self.retained_bytes, 'HTTP_helper_starts': 2,
                 'both_helpers_reaped': True}
+
+
+class APIPhaseMeter:
+    """Charge the whole contiguous provider phase, excluding no validation.
+
+    Request owners already charge their measured intervals. Each checkpoint
+    adds only the remaining wall interval, so parsing, local graph reads,
+    stability checks and failure cleanup are charged exactly once. Build and
+    scientific work occur between closed PRE and POST phases.
+    """
+
+    def __init__(self, ledger: APIBudgetLedger, phase: str, *, started_ns: int,
+                 stage_deadline_ns: int, job_deadline_ns: int) -> None:
+        require(phase in ('PRE', 'POST', 'FINALIZE') and not ledger.phase_open,
+                'F1R1_CONTROL_PLANE_PHASE_ORDER')
+        require(all(integer(value) for value in
+                    (started_ns, stage_deadline_ns, job_deadline_ns, ledger.active_acquisition_ns)),
+                'F1R1_CONTROL_PLANE_TIME_BUDGET')
+        remaining = 60_000_000_000 - ledger.active_acquisition_ns
+        require(remaining > 0 and started_ns < min(stage_deadline_ns, job_deadline_ns),
+                'F1R1_CONTROL_PLANE_TIME_BUDGET')
+        self.ledger, self.phase = ledger, phase
+        self.started_ns = self.cursor_ns = started_ns
+        self.initial_charge_ns = self.accounted_ns = ledger.active_acquisition_ns
+        self.deadline_ns = min(started_ns + remaining, stage_deadline_ns, job_deadline_ns)
+        self.stage_deadline_ns, self.job_deadline_ns = stage_deadline_ns, job_deadline_ns
+        self.overhead_ns = 0
+        self.checkpoint_count = 0
+        self.closed = False
+        ledger.phase_open = True
+
+    def checkpoint(self, now_ns: int | None = None) -> None:
+        now_ns = time.monotonic_ns() if now_ns is None else now_ns
+        require(not self.closed and integer(now_ns) and now_ns >= self.cursor_ns,
+                'F1R1_CONTROL_PLANE_PHASE_ORDER')
+        wall = now_ns - self.cursor_ns
+        charged = self.ledger.active_acquisition_ns - self.accounted_ns
+        require(0 <= charged <= wall, 'F1R1_CONTROL_PLANE_DOUBLE_CHARGE')
+        overhead = wall - charged
+        self.ledger.active_acquisition_ns += overhead
+        self.overhead_ns += overhead
+        self.cursor_ns, self.accounted_ns = now_ns, self.ledger.active_acquisition_ns
+        self.checkpoint_count += 1
+        require(self.ledger.active_acquisition_ns <= 60_000_000_000 and now_ns <= self.deadline_ns,
+                'F1R1_CONTROL_PLANE_TIME_BUDGET')
+
+    def close(self, *, failure: str | None = None, now_ns: int | None = None) -> dict:
+        require(not self.closed, 'F1R1_CONTROL_PLANE_PHASE_ORDER')
+        failure_to_raise = None
+        try:
+            self.checkpoint(now_ns)
+        except Rejected as exc:
+            failure = failure or exc.reason
+            failure_to_raise = exc
+        row = {'phase': self.phase, 'started_monotonic_ns': self.started_ns,
+               'original_deadline_monotonic_ns': self.deadline_ns,
+               'original_stage_deadline_monotonic_ns': self.stage_deadline_ns,
+               'original_job_deadline_monotonic_ns': self.job_deadline_ns,
+               'active_before_ns': self.initial_charge_ns, 'failure': failure,
+               'measurement_cut': 'AFTER_PHASE_BOOKKEEPING_BEFORE_RETURN'}
+        # Encode the bounded bookkeeping before the final measured cut. This
+        # does not purport to measure the later global artifact sealing step.
+        compact_json(row)
+        self.ledger.phase_records.append(row)
+        if now_ns is None:
+            try:
+                self.checkpoint()
+            except Rejected as exc:
+                failure_to_raise = failure_to_raise or exc
+                row['failure'] = row['failure'] or exc.reason
+        row.update(measurement_cut_monotonic_ns=self.cursor_ns,
+                   elapsed_ns=self.cursor_ns - self.started_ns,
+                   non_request_work_ns=self.overhead_ns,
+                   active_after_ns=self.ledger.active_acquisition_ns,
+                   checkpoint_count=self.checkpoint_count)
+        self.closed = True
+        self.ledger.phase_open = False
+        if row['failure'] is not None:
+            self.ledger.failed = True
+        if failure_to_raise is not None:
+            raise failure_to_raise
+        return dict(row)
+
+
+def original_job_conservative_charge(record: dict) -> int:
+    """A final self-describing file cannot measure its own final write.
+
+    Its explicit pre-encoding cut is retained, and the entire original
+    admitted request allowance is charged. A later reader never substitutes
+    that earlier cut for a measured whole first-operation completion.
+    """
+    duration = record.get('admitted_duration_ns')
+    cut = record.get('first_operation_measurement_cut_monotonic_ns')
+    require(integer(duration, 1, 5_000_000_000) and integer(cut) and
+            record.get('first_operation_measurement_cut') == 'BEFORE_FINAL_ENVELOPE_ENCODING_AND_WRITE' and
+            record.get('first_operation_charged_duration_ns') == duration and
+            record['started_monotonic_ns'] <= record['finished_monotonic_ns'] <= cut <= record['deadline_monotonic_ns'] and
+            record['deadline_monotonic_ns'] == record['started_monotonic_ns'] + duration,
+            'F1R1_CONTROL_PLANE_MEASUREMENT_CUT')
+    return duration
 
 
 def provider_timestamp_ns(value: object) -> int:
@@ -966,6 +1068,7 @@ class HTTPMetadataWorker:
     def __init__(self, token: str, ledger: APIBudgetLedger, output: Path) -> None:
         require(PROVIDER_EXECUTION_ENABLED and SCIENCE_EXECUTION_ENABLED,
                 'F1R1_EXECUTION_DISABLED_AT_BOOTSTRAP')
+        require(sys.flags.isolated == 1, 'F1R1_ISOLATED_PYTHON_REQUIRED')
         require(sys.platform == 'linux' and type(token) is str and 0 < len(token) <= 8192 and
                 not any(char in token for char in '\r\n\x00'), 'F1R1_READ_TOKEN_REQUIRED')
         self._token = token
@@ -975,6 +1078,8 @@ class HTTPMetadataWorker:
         self.start_ticks = None
         self.command_fd = None
         self.response_fd = None
+        self.extra_fds = []
+        self.fd_cleanup_errors = []
         self.closed = False
         self.failed = False
         self.reap_record = None
@@ -1015,11 +1120,13 @@ class HTTPMetadataWorker:
             except BaseException:
                 pass
             os._exit(2)
-        os.close(read_command)
-        os.close(write_response)
-        self.pid = pid
-        self.command_fd = write_command
-        self.response_fd = read_response
+        # The first parent action records *every* owned resource. A close,
+        # nonblocking setup or /proc parse failure below cannot orphan a PID
+        # or leave the failure handler unaware of a pipe end.
+        self.pid, self.command_fd, self.response_fd, self.extra_fds = (
+            pid, write_command, read_response, [read_command, write_response])
+        self._close_extra_fds()
+        require(not self.fd_cleanup_errors, 'F1R1_CONTROL_PLANE_LIFECYCLE')
         for fd in (write_command, read_response):
             os.set_blocking(fd, False)
         stat = bounded_file(Path('/proc') / str(pid) / 'stat', 1536)
@@ -1080,12 +1187,24 @@ class HTTPMetadataWorker:
             require(remaining > 0, 'F1R1_CONTROL_PLANE_LIFECYCLE')
             time.sleep(min(0.001, remaining / 1_000_000_000))
 
+    def _close_extra_fds(self) -> None:
+        while self.extra_fds:
+            fd = self.extra_fds.pop()
+            try:
+                os.close(fd)
+            except OSError as exc:
+                self.fd_cleanup_errors.append(type(exc).__name__)
+
     def _close_fds(self) -> None:
+        self._close_extra_fds()
         for name in ('command_fd', 'response_fd'):
             fd = getattr(self, name)
             if fd is not None:
-                os.close(fd)
                 setattr(self, name, None)
+                try:
+                    os.close(fd)
+                except OSError as exc:
+                    self.fd_cleanup_errors.append(type(exc).__name__)
 
     def abort_between_requests(self, *, stage_deadline_ns: int, job_deadline_ns: int) -> dict:
         """No new GET, worker, or reset; use only the still-existing budgets."""
@@ -1119,20 +1238,32 @@ class HTTPMetadataWorker:
         return dict(self.terminal_cleanup)
 
     def get(self, phase: str, name: str, path: str, *, stage_deadline_ns: int | None,
-            job_deadline_ns: int | None, close_after_request: bool = False) -> object:
+            job_deadline_ns: int | None, close_after_request: bool = False,
+            first_operation_origin: tuple[int, int] | None = None) -> object:
         require(PROVIDER_EXECUTION_ENABLED and SCIENCE_EXECUTION_ENABLED,
                 'F1R1_EXECUTION_DISABLED_AT_BOOTSTRAP')
         require(not self.failed and not self.closed and not self.ledger.failed,
                 'F1R1_CONTROL_PLANE_WORKER_LIMIT')
+        if first_operation_origin is None:
+            started, started_epoch = time.monotonic_ns(), time.time_ns()
+        else:
+            require(phase == 'FIRST_JOB' and name == 'jobs' and
+                    type(first_operation_origin) is tuple and len(first_operation_origin) == 2 and
+                    all(integer(value, 1) for value in first_operation_origin),
+                    'F1R1_CONTROL_PLANE_MEASUREMENT_CUT')
+            started, started_epoch = first_operation_origin
+            require(started <= time.monotonic_ns() and started_epoch <= time.time_ns(),
+                    'F1R1_CONTROL_PLANE_MEASUREMENT_CUT')
         validate_api_path(path)
-        started_epoch = time.time_ns()
-        admission = self.ledger.next_request(phase, name, time.monotonic_ns(), stage_deadline_ns, job_deadline_ns)
+        admission = self.ledger.next_request(phase, name, started, stage_deadline_ns, job_deadline_ns)
         cap = API_CATEGORY_RULES[API_ROUTE_CATEGORIES[name]][1]
         raw, record = b'', {}
         framing_complete = False
         command_sent = False
         self._partial_body = bytearray()
         try:
+            require(time.monotonic_ns() < admission['work_deadline_monotonic_ns'],
+                    'F1R1_CONTROL_PLANE_TIME_BUDGET')
             if self.pid is None:
                 self._start()
             command = compact_json({'path': path, 'cap': cap, 'close_after_request': close_after_request}) + b'\n'
@@ -1154,6 +1285,7 @@ class HTTPMetadataWorker:
             if close_after_request:
                 record['worker_exit_or_final_reap'] = self._reap(admission['work_deadline_monotonic_ns'], terminate=False)
                 self._close_fds()
+                require(not self.fd_cleanup_errors, 'F1R1_CONTROL_PLANE_LIFECYCLE')
             else:
                 record['worker_exit_or_final_reap'] = {'state': 'REUSED_PENDING_FINAL_REAP'}
             # Include strict parsing, complete framing, and exact final reap in
@@ -1193,6 +1325,7 @@ class HTTPMetadataWorker:
                        'finished_epoch_ns': time.time_ns(), 'finished_monotonic_ns': time.monotonic_ns(),
                        'worker_pid': self.pid, 'worker_start_ticks': self.start_ticks,
                        'worker_exit_or_final_reap': self.reap_record,
+                       'owned_FD_cleanup_errors': list(self.fd_cleanup_errors),
                        'worker_declared_body_bytes': record.get('body_bytes'),
                        'worker_declared_body_sha256': record.get('body_sha256'),
                        'body_bytes': len(raw), 'body_sha256': sha(raw),
@@ -1264,12 +1397,27 @@ class ImmutableGitObjects:
         self.root = root
         self.commits = {}
         self.trees = {}
+        self.read_deadline_ns = None
+
+    def _read(self, *args: str, cap: int = METADATA_BYTES) -> bytes:
+        if self.read_deadline_ns is None:
+            return git(self.root, *args, cap=cap)
+        duration = min(5_000_000_000, self.read_deadline_ns - time.monotonic_ns())
+        try:
+            raw, unused_stderr, observation = bounded_local_command(
+                local_git_argv(self.root, args), env=local_metadata_environment(),
+                stdout_cap=cap, duration_ns=duration)
+        except LocalMetadataReadError as exc:
+            raise Rejected(exc.reason) from exc
+        require(observation['returncode'] == 0, 'F1R1_SOURCE_GIT_READ_FAILED')
+        require(time.monotonic_ns() <= self.read_deadline_ns, 'F1R1_CONTROL_PLANE_TIME_BUDGET')
+        return raw
 
     def commit(self, revision: str) -> dict:
         require(oid(revision), 'F1R1_SOURCE_OID_REQUIRED')
         if revision not in self.commits:
             require(len(self.commits) < 256, 'F1R1_SOURCE_METADATA_BYTES_LIMIT')
-            self.commits[revision] = parse_commit_object(git(self.root, 'cat-file', 'commit', revision, cap=65536), revision)
+            self.commits[revision] = parse_commit_object(self._read('cat-file', 'commit', revision, cap=65536), revision)
         return dict(self.commits[revision])
 
     def member(self, revision: str, path: str) -> dict | None:
@@ -1280,7 +1428,7 @@ class ImmutableGitObjects:
         for index, part in enumerate(parts):
             if tree not in self.trees:
                 require(len(self.trees) < 512, 'F1R1_SOURCE_METADATA_BYTES_LIMIT')
-                self.trees[tree] = parse_tree_object(git(self.root, 'cat-file', 'tree', tree), tree)
+                self.trees[tree] = parse_tree_object(self._read('cat-file', 'tree', tree), tree)
             entry = self.trees[tree].get(part)
             if entry is None:
                 return None
@@ -1293,7 +1441,7 @@ class ImmutableGitObjects:
     def blob(self, revision: str, path: str) -> tuple[bytes, dict]:
         entry = self.member(revision, path)
         require(entry is not None and entry['mode'] == '100644', 'F1R1_SOURCE_FILE_MODE')
-        raw = git(self.root, 'cat-file', 'blob', entry['oid'])
+        raw = self._read('cat-file', 'blob', entry['oid'])
         require(git_object_digest('blob', raw) == entry['oid'], 'F1R1_IMMUTABLE_GIT_OBJECT')
         return raw, entry
 
@@ -1354,11 +1502,13 @@ def hosted_provider_context(environment: dict, event_record: dict) -> dict:
 def capture_original_job(context: dict, *, token: str, output: Path) -> dict:
     require(PROVIDER_EXECUTION_ENABLED and SCIENCE_EXECUTION_ENABLED,
             'F1R1_EXECUTION_DISABLED_AT_BOOTSTRAP')
+    origin = (time.monotonic_ns(), time.time_ns())
     ledger = APIBudgetLedger(context['event'])
     path = api_route('jobs', run_id=context['run_id'], attempt=context['run_attempt'])
     worker = HTTPMetadataWorker(token, ledger, output)
     body = worker.get('FIRST_JOB', 'jobs', path, stage_deadline_ns=None,
-                      job_deadline_ns=None, close_after_request=True)
+                      job_deadline_ns=None, close_after_request=True,
+                      first_operation_origin=origin)
     record = ledger.requests[0]
     deadline = validate_original_jobs(body, headers=record['headers_without_credentials'],
                                       run_id=context['run_id'], attempt=context['run_attempt'],
@@ -1371,8 +1521,13 @@ def capture_original_job(context: dict, *, token: str, output: Path) -> dict:
     # The one original request envelope also carries its derived deadline;
     # there is no second uncounted raw Jobs metadata file or self-authored clock.
     compact_json(record)
-    record['owner_returned_monotonic_ns'] = time.monotonic_ns()
-    record['owner_post_response_elapsed_ns'] = record['owner_returned_monotonic_ns'] - record['finished_monotonic_ns']
+    record['first_operation_measurement_cut'] = 'BEFORE_FINAL_ENVELOPE_ENCODING_AND_WRITE'
+    record['first_operation_measurement_cut_monotonic_ns'] = time.monotonic_ns()
+    record['first_operation_charged_duration_ns'] = record['admitted_duration_ns']
+    charge = original_job_conservative_charge(record)
+    # The full original allowance covers validation plus the following final
+    # encoding/write. It is conservative accounting, not a measured endpoint.
+    ledger.active_acquisition_ns = charge
     encoded = compact_json(record) + b'\n'
     require(len(encoded) <= 65536 and time.monotonic_ns() <= record['deadline_monotonic_ns'],
             'F1R1_CONTROL_PLANE_TIME_BUDGET')
@@ -1381,7 +1536,8 @@ def capture_original_job(context: dict, *, token: str, output: Path) -> dict:
     require(time.monotonic_ns() <= record['deadline_monotonic_ns'], 'F1R1_CONTROL_PLANE_TIME_BUDGET')
     return {'deadline_file': str(request_file), 'API_observation_directory': str(output),
             'selected_original_job': deadline, 'HTTP_requests': 1, 'HTTP_helper_starts': 1,
-            'HTTP_helper_reaped': True, 'F1_launcher_processes': 0, 'DSP_targets': 0}
+            'HTTP_helper_reaped': True, 'F1_launcher_processes': 0, 'DSP_targets': 0,
+            'first_operation_charged_duration_ns': charge}
 
 
 def replay_original_job(directory: Path, context: dict, ledger: APIBudgetLedger) -> dict:
@@ -1395,11 +1551,10 @@ def replay_original_job(directory: Path, context: dict, ledger: APIBudgetLedger)
     require(record.get('actual_context') == context and record.get('original_job_deadline') == deadline and
             record.get('selected_job_id') == deadline['job_id'] and
             deadline['started_epoch_ns'] <= record['started_epoch_ns'], 'F1R1_ORIGINAL_JOB_BINDING')
-    # Owner persistence time is charged separately from response/worker time.
-    extra = record.get('owner_post_response_elapsed_ns', 0)
-    require(integer(extra) and record['finished_monotonic_ns'] + extra <= record['deadline_monotonic_ns'],
-            'F1R1_CONTROL_PLANE_TIME_BUDGET')
-    ledger.active_acquisition_ns += extra
+    # Charge the complete original allowance, including final envelope write;
+    # the explicit earlier measurement cut is never treated as a completion.
+    duration = original_job_conservative_charge(record)
+    ledger.active_acquisition_ns += duration - (record['finished_monotonic_ns'] - record['started_monotonic_ns'])
     return deadline
 
 
@@ -1462,23 +1617,48 @@ def provider_sweep_readback(context: dict, event_record: dict, read, graph,
 def acquire_provider_sweep(worker: HTTPMetadataWorker, phase: str, context: dict,
                             event_record: dict, objects: ImmutableGitObjects, *, schema: dict,
                             expected_digests: dict, stage_deadline_ns: int,
-                            job_deadline_ns: int) -> dict:
+                            job_deadline_ns: int, pre: dict | None = None) -> dict:
     require(PROVIDER_EXECUTION_ENABLED and SCIENCE_EXECUTION_ENABLED,
             'F1R1_EXECUTION_DISABLED_AT_BOOTSTRAP')
     require(phase in ('PRE', 'POST'), 'F1R1_CONTROL_PLANE_REQUEST_ORDER')
+    require((phase == 'PRE' and pre is None) or (phase == 'POST' and type(pre) is dict),
+            'F1R1_CONTROL_PLANE_PHASE_ORDER')
+    meter = APIPhaseMeter(worker.ledger, phase, started_ns=time.monotonic_ns(),
+                          stage_deadline_ns=stage_deadline_ns, job_deadline_ns=job_deadline_ns)
     def read(name, path):
+        meter.checkpoint()
         parsed = worker.get(phase, name, path, stage_deadline_ns=stage_deadline_ns,
                             job_deadline_ns=job_deadline_ns,
                             close_after_request=phase == 'POST' and name == 'issue_after')
+        meter.checkpoint()
         return parsed, worker.ledger.requests[-1]['headers_without_credentials']
+    def graph(detail):
+        meter.checkpoint()
+        previous = objects.read_deadline_ns
+        objects.read_deadline_ns = meter.deadline_ns
+        try:
+            return derive_provider_git_roles(objects, context['event'], context['checkout'], detail, event_record)
+        finally:
+            objects.read_deadline_ns = previous
+            meter.checkpoint()
+    failure = None
     try:
-        return provider_sweep_readback(context, event_record, read,
-                                      lambda detail: derive_provider_git_roles(objects, context['event'],
-                                                                               context['checkout'], detail, event_record),
-                                      schema=schema, expected_digests=expected_digests)
-    except BaseException:
-        worker.abort_between_requests(stage_deadline_ns=stage_deadline_ns, job_deadline_ns=job_deadline_ns)
+        result = provider_sweep_readback(context, event_record, read, graph,
+                                        schema=schema, expected_digests=expected_digests)
+        if phase == 'POST':
+            validate_provider_sweep_pair(pre, result)
+            worker.ledger.complete()
+        compact_json(result)
+        return result
+    except BaseException as exc:
+        failure = exc.reason if isinstance(exc, Rejected) else 'F1R1_CONTROL_PLANE_READBACK_FAILED'
+        try:
+            meter.checkpoint()
+        finally:
+            worker.abort_between_requests(stage_deadline_ns=stage_deadline_ns, job_deadline_ns=job_deadline_ns)
         raise
+    finally:
+        meter.close(failure=failure)
 
 
 def validate_provider_sweep_pair(pre: dict, post: dict) -> None:
@@ -1840,10 +2020,10 @@ F1_SUMMARY = """          # F1_R1_SUMMARY_BEGIN
 # This is one explicitly registered neighbouring loader, not an arbitrary
 # marker-delimited shell exemption. Its complete bytes accompany the shared
 # integration candidate for independent review; unknown versions fail closed.
-A3_COMPAT_SHELL_SHA256 = "9ecd52affdb6e315c3f1f731c691dc5e20ec838411d7de792a9ca944eb68625d"
+A3_COMPAT_SHELL_SHA256 = "f8c4c4a14d5a05ef4f2632e89c901709dfd1fe814cbb7fee2ae7b64eb275edc1"
 COMPAT_METADATA_LINES = frozenset((
-    'python3 tests/validation/frontend_evolution/fe09_a3_f0_source_admission.py --self-test',
-    'python3 tests/validation/frontend_evolution/fe09_a3_f0_live_roll_qualification.py --self-test',
+    'python3 -I tests/validation/frontend_evolution/fe09_a3_f0_source_admission.py --self-test',
+    'python3 -I tests/validation/frontend_evolution/fe09_a3_f0_live_roll_qualification.py --self-test',
     'python3 tests/validation/frontend_evolution/fe09_b3_f0_qualification.py --self-test',
 ))
 
@@ -2189,6 +2369,7 @@ def main() -> int:
     parser.add_argument("--f1-required", choices=("true", "false"), default="false")
     args = parser.parse_args()
     try:
+        require(sys.flags.isolated == 1, 'F1R1_ISOLATED_PYTHON_REQUIRED')
         if args.command == "collect":
             raise Rejected("F1R1_EXECUTION_DISABLED_AT_BOOTSTRAP")
         if args.command == "source-guard":

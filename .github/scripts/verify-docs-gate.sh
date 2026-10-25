@@ -8,7 +8,7 @@ set -eu
 if [ "${1:-}" != --a3-scope-only ]; then
 # This entry decides routing only and never acquires provider execution authority.
 if [ -n "${GITHUB_EVENT_NAME:-}" ]; then
-  python3 - <<'PY'
+  python3 -I - <<'PY'
 import json, os, pathlib, subprocess, sys, tempfile, time
 entry_started_monotonic_ns = time.monotonic_ns()
 # F1_R1_LOCAL_GIT_READER_BEGIN
@@ -211,7 +211,7 @@ with tempfile.TemporaryDirectory(prefix='f1-protected-guard-', dir=os.environ.ge
         # emit zero-process SOURCE_METADATA_ONLY; independent root review owns it.
         guard = root / source
         origin = []
-    argv = [sys.executable, str(guard), 'source-guard', '--root', str(root),
+    argv = [sys.executable, '-I', str(guard), 'source-guard', '--root', str(root),
             '--event', event_path, '--event-name', kind, '--output', str(output)] + origin
     if os.environ.get('GITHUB_OUTPUT'):
         argv += ['--github-output', os.environ['GITHUB_OUTPUT']]
@@ -232,7 +232,7 @@ fi
 if [ "${1:-}" = --f1-scope-only ]; then
   exit 0
 fi
-python3 tests/validation/frontend_evolution/test_fe09_t3s3_f1_rss_qualification.py
+python3 -I tests/validation/frontend_evolution/test_fe09_t3s3_f1_rss_qualification.py
 fi
 # F1_R1_SOURCE_SCOPE_GUARD_END
 

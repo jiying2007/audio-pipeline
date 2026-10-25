@@ -9,6 +9,7 @@ Neither the old source nor its preflight is presented as current execution.
 from __future__ import annotations
 
 import argparse
+import base64
 import contextlib
 import hashlib
 import io
@@ -39,7 +40,7 @@ FORWARD_MAINTENANCE = {
             "src/platform/linux/ap_runtime.c": "519cf2732289af74c0285d3bbff4cae556bc7d07",
             "docs/API_CONTRACT.md": "821c07424e420cecc0bf64e67f237c7a9a131502",
         },
-        "patch": "fe09_maintenance_forward_2_3_57.patch",
+        "patch": "fe09_maintenance_forward_2_3_57.patch.b64",
         "patch_blob": "7e5fe35b78ff44950c0941c8bec34f71ce5b1e15",
     },
     "2.3.58": {
@@ -48,7 +49,7 @@ FORWARD_MAINTENANCE = {
             "src/platform/linux/ap_runtime.c": "519cf2732289af74c0285d3bbff4cae556bc7d07",
             "docs/API_CONTRACT.md": "821c07424e420cecc0bf64e67f237c7a9a131502",
         },
-        "patch": "fe09_maintenance_forward_2_3_58.patch",
+        "patch": "fe09_maintenance_forward_2_3_58.patch.b64",
         "patch_blob": "dade779a6293c7c9bd72e48611710abe3d2d8f0c",
     },
 }
@@ -89,7 +90,13 @@ def read_sources(root: Path, item: dict) -> dict[str, str]:
 
 def registered_forward_patch(version: str) -> bytes:
     registration = FORWARD_MAINTENANCE[version]
-    patch = raw_file(HERE / registration["patch"])
+    encoded = raw_file(HERE / registration["patch"])
+    need(encoded.endswith(b"\n") and b"\n" not in encoded[:-1],
+         "REGISTERED_FORWARD_ENCODING_INVALID_" + version)
+    try:
+        patch = base64.b64decode(encoded[:-1], validate=True)
+    except (ValueError, base64.binascii.Error) as exc:
+        raise RebindError("REGISTERED_FORWARD_ENCODING_INVALID_" + version) from exc
     need(major.git_blob(patch) == registration["patch_blob"],
          "REGISTERED_FORWARD_PATCH_DRIFT_" + version)
     return patch

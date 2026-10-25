@@ -486,14 +486,53 @@ if(AP_BUILD_FUZZ)
     if(NOT AP_BUILD_PIPELINE OR NOT CMAKE_C_COMPILER_ID MATCHES "Clang")
         message(FATAL_ERROR "AP_BUILD_FUZZ requires pipeline + Clang/libFuzzer")
     endif()
+
+    # Keep normal SDK consumers uninstrumented. Build dedicated fuzz copies
+    # of the *actual* implementation so coverage, ASan and UBSan are present
+    # in the core and runtime, not only in the LLVMFuzzerTestOneInput drivers.
+    add_library(audio_pipeline_fuzz STATIC ${AP_SOURCES})
+    if(AP_BUILD_PIPELINE)
+        set_target_properties(audio_pipeline_fuzz PROPERTIES
+            UNITY_BUILD ON UNITY_BUILD_BATCH_SIZE 32)
+    endif()
+    target_include_directories(audio_pipeline_fuzz
+        PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/generated
+               ${CMAKE_CURRENT_SOURCE_DIR}/include
+        PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
+    target_compile_definitions(audio_pipeline_fuzz PRIVATE
+        ${AP_STAGE_DEFINES} ${AP_AEC_DEFINE} ${AP_NS_DEFINE} ${AP_RESAMPLER_DEFINE})
+    target_link_libraries(audio_pipeline_fuzz PUBLIC m)
+    target_compile_options(audio_pipeline_fuzz PRIVATE
+        -Wall -Wextra -Wpedantic -fsanitize=fuzzer-no-link,address,undefined
+        -fno-omit-frame-pointer)
+    if(AP_STRICT_WARNINGS)
+        target_compile_options(audio_pipeline_fuzz PRIVATE -Werror)
+    endif()
+    if(AP_ENABLE_FAST_MATH)
+        target_compile_options(audio_pipeline_fuzz PRIVATE -ffast-math -fno-math-errno)
+    endif()
+
     set(_AP_FUZZ_TARGETS ap_fuzz)
     add_executable(ap_fuzz fuzz/fuzz_pipeline.c)
-    target_link_libraries(ap_fuzz PRIVATE audio_pipeline)
+    target_link_libraries(ap_fuzz PRIVATE audio_pipeline_fuzz)
     if(AP_ENABLE_LINUX_RUNTIME)
+        add_library(audio_pipeline_runtime_fuzz STATIC src/platform/linux/ap_runtime.c)
+        target_include_directories(audio_pipeline_runtime_fuzz
+            PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/generated
+                   ${CMAKE_CURRENT_SOURCE_DIR}/include
+            PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
+        target_link_libraries(audio_pipeline_runtime_fuzz PUBLIC
+            audio_pipeline_fuzz Threads::Threads)
+        target_compile_options(audio_pipeline_runtime_fuzz PRIVATE
+            -Wall -Wextra -Wpedantic -fsanitize=fuzzer-no-link,address,undefined
+            -fno-omit-frame-pointer)
+        if(AP_STRICT_WARNINGS)
+            target_compile_options(audio_pipeline_runtime_fuzz PRIVATE -Werror)
+        endif()
         add_executable(ap_fuzz_runtime_commands fuzz/fuzz_runtime_commands.c)
-        target_link_libraries(ap_fuzz_runtime_commands PRIVATE audio_pipeline_runtime)
+        target_link_libraries(ap_fuzz_runtime_commands PRIVATE audio_pipeline_runtime_fuzz)
         add_executable(ap_fuzz_flight_recorder fuzz/fuzz_flight_recorder.c)
-        target_link_libraries(ap_fuzz_flight_recorder PRIVATE audio_pipeline_runtime)
+        target_link_libraries(ap_fuzz_flight_recorder PRIVATE audio_pipeline_runtime_fuzz)
         list(APPEND _AP_FUZZ_TARGETS ap_fuzz_runtime_commands ap_fuzz_flight_recorder)
     endif()
     foreach(_f IN LISTS _AP_FUZZ_TARGETS)
@@ -541,6 +580,14 @@ install(FILES
     ${CMAKE_CURRENT_BINARY_DIR}/AudioPipelineConfig.cmake
     ${CMAKE_CURRENT_BINARY_DIR}/AudioPipelineConfigVersion.cmake
     DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/AudioPipeline)
+# GNUInstallDirs may select a multiarch lib/<triplet>/pkgconfig directory.
+# Derive the relocatable .pc prefix from its actual depth at configure time.
+if(IS_ABSOLUTE "${CMAKE_INSTALL_LIBDIR}")
+    set(_AP_PC_DIRECTORY "${CMAKE_INSTALL_LIBDIR}/pkgconfig")
+else()
+    set(_AP_PC_DIRECTORY "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/pkgconfig")
+endif()
+file(RELATIVE_PATH AP_PC_PREFIX_REL "${_AP_PC_DIRECTORY}" "${CMAKE_INSTALL_PREFIX}")
 configure_file(cmake/audio-pipeline.pc.in
                ${CMAKE_CURRENT_BINARY_DIR}/audio-pipeline.pc @ONLY)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/audio-pipeline.pc

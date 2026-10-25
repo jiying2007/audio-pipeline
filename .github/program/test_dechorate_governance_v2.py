@@ -203,11 +203,17 @@ class Protocol(unittest.TestCase):
         git(cls.area, "config", "user.name", "Offline Protocol Fixture")
         git(cls.area, "checkout", "--quiet", "--detach", "5187c5e59526d4047b3965b44c770ab21edbde9f")
         model = imported(ROOT / REL, "v2_source_for_fixture")
-        for name in model.CLOSURE:
+        # The protected M2 prerequisite now uses a different, separately
+        # registered 2026-10-24 source closure. Materialize BOTH complete
+        # closures in this disposable real-Git fixture; a missing file is
+        # rejected by the production validator, not supplied by a fake.
+        frozen_sources = tuple(dict.fromkeys(
+            (*model.CLOSURE, *model.source.M2_SOURCE_FILES)))
+        for name in frozen_sources:
             target = cls.area / name
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_bytes((ROOT / name).read_bytes())
-        git(cls.area, "add", *model.CLOSURE)
+        git(cls.area, "add", *frozen_sources)
         git(cls.area, "commit", "--quiet", "-m", "offline protocol source fixture; not protected main")
         cls.base = git(cls.area, "rev-parse", "HEAD")
         cls.M = imported(cls.area / REL, "v2_offline_actual_source")

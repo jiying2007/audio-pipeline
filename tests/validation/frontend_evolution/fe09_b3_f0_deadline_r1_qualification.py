@@ -38,9 +38,11 @@ import time
 ROOT = Path(__file__).resolve().parents[3]
 HERE = Path(__file__).resolve().parent
 DOCS = ROOT / "docs/research/frontend-evolution-v1/FE09_B3_F0_PREREGISTRATION_20261024"
-IDENTITY = "FE09-B3-F0-C4-16K-RENDER-PAP-DEADLINE-R1"
+IDENTITY = "FE09-B3-F0-C4-16K-RENDER-PAP-V1"
+COLLECTOR_IDENTITY = "FE09-B3-F0-C4-16K-RENDER-PAP-DEADLINE-R1"
 REPAIR_DOCS = ROOT / "docs/research/frontend-evolution-v1/FE09_B3_F0_DEADLINE_ACCOUNTING_R1_20261025"
-REPAIR_CONTRACT_SHA = "9a4f3193a2275199e40850a47325d94d96b0dc4570cae79590c8a5ef0d3d654a"
+REPAIR_CONTRACT_SHA = "fc06a4da0db4cf5f79a90cfdb0da67c42f8b7c7eccb9dffc6b5e78cb92b44038"
+IDENTITY_CONTROL_SHA = "3a9c6dd787111c82efb4157da77694047e50a05e89c7cb65dd045579d2173c38"
 ORIGINAL_COLLECTOR_SHA = "f782660590731e73f43c2fab638e84d277c11d36119560dfb8878b28e2456f6c"
 CONTRACT_SHA = "74e7294b1433207d222f9732326b68b33303c1ef63c8b6001283963419117284"
 LOCK_SHA = "32bd625ee640bf60310bcdc9980a5f8a41711300aee66f029fbf65c98a9bb49d"
@@ -65,7 +67,8 @@ OWN_FILES = [HERE / n for n in (
     "fe09_b3_f0_qualification.py", "fe09_b3_f0_build/CMakeLists.txt",
     "fe09_b3_f0_deadline_r1_qualification.py",
     "test_fe09_b3_f0_deadline_r1.py")] + [
-        REPAIR_DOCS / "PREREGISTRATION.json", REPAIR_DOCS / "README.md"]
+        REPAIR_DOCS / "PREREGISTRATION.json", REPAIR_DOCS / "README.md",
+        REPAIR_DOCS / "IDENTITY_CONTROL.json"]
 HEX64 = re.compile(r"[0-9a-f]{64}\Z")
 HEX16 = re.compile(r"[0-9a-f]{16}\Z")
 ACTIVE_BUDGET = None
@@ -184,6 +187,8 @@ def source_preflight(execution_source: str, require_committed: bool = True) -> d
          ORIGINAL_COLLECTOR_SHA, "ORIGINAL_COLLECTOR_CHANGED")
     need(digest((REPAIR_DOCS / "PREREGISTRATION.json").read_bytes()) ==
          REPAIR_CONTRACT_SHA, "REPAIR_PREREGISTRATION_CHANGED")
+    need(digest((REPAIR_DOCS / "IDENTITY_CONTROL.json").read_bytes()) ==
+         IDENTITY_CONTROL_SHA, "REPAIR_IDENTITY_CONTROL_CHANGED")
     lock_data = (DOCS / "source-lock.json").read_bytes()
     need(digest(lock_data) == LOCK_SHA, "FROZEN_77_MEMBER_LOCK_CHANGED")
     need(digest((DOCS / "test-contract.json").read_bytes()) == CONTRACT_SHA,
@@ -529,11 +534,23 @@ def validate_observer(o: dict, m: dict, present: bool, notify: bool,
          m["delay_jumps"] - previous_jumps == o["route_jump"], "PUBLIC_RESET_LEDGER")
 
 
+def validate_case_identity(r: dict) -> None:
+    # The frozen C executable keeps the original scientific experiment ID.
+    need(r["schema_version"] == 1 and r["id"] == IDENTITY and r["source_role"] == ROLE,
+         "CASE_IDENTITY_OR_SOURCE_ROLE")
+
+
+def validate_collector_identity(r: dict, execution_source: str) -> None:
+    # The derived collector has a separate receipt namespace, not a new C ID.
+    need(r["id"] == COLLECTOR_IDENTITY and r["execution_source"] == execution_source and
+         r["source_role"] == ROLE and r["promotion"] == PROMOTIONS,
+         "RETAINED_SOURCE_OR_AUTHORITY")
+
+
 def validate_case(case: dict, spec: dict, inputs: dict | None) -> bool:
     check_budget()
     r, frames, streams = case["result"], case["frames"], case["streams"]
-    need(r["schema_version"] == 1 and r["id"] == IDENTITY and r["source_role"] == ROLE,
-         "CASE_IDENTITY_OR_SOURCE_ROLE")
+    validate_case_identity(r)
     need(r["case"] == spec["case"] and r["mode"] == spec["mode"] and
          r["observed"] is spec["observed"] and r["future"] is spec["future"] and
          r["negatives_requested"] is spec["negatives"], "UNREGISTERED_CASE")
@@ -929,7 +946,7 @@ def collect(args: argparse.Namespace) -> int:
     output = args.output.resolve()
     need(not output.exists(), "OUTPUT_EXISTS_NO_OVERWRITE_OR_AUTOMATIC_RETRY")
     output.mkdir(parents=True)
-    receipt = {"schema_version": 1, "id": IDENTITY, "execution_source": args.execution_source,
+    receipt = {"schema_version": 1, "id": COLLECTOR_IDENTITY, "execution_source": args.execution_source,
                "source_role": ROLE, "decision": BLOCKED, "qualification": False,
                "requested_targets": args.targets, "target_order": [], "targets": {},
                "accepted_frames": 0, "setup_source_publications": 0,
@@ -1118,8 +1135,7 @@ def verify(output: Path, execution_source: str, require_full: bool = True,
         manifest[name] = sha
     need(manifest == expected, "RETAINED_MEMBER_SET_OR_BYTES")
     r = read_json(output / "receipt.json")
-    need(r["id"] == IDENTITY and r["execution_source"] == execution_source and
-         r["source_role"] == ROLE and r["promotion"] == PROMOTIONS, "RETAINED_SOURCE_OR_AUTHORITY")
+    validate_collector_identity(r, execution_source)
     source = source_preflight(execution_source)
     need(r["source"] == source and r["qualified_predecessor"] == baseline_preflight(execution_source),
          "RETAINED_ACTUAL_SOURCE_BINDING")

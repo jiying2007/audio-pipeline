@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Sixteen preregistered synthetic metadata controls; no build, target or DSP."""
+"""Nineteen registered metadata controls; no build, target or DSP execution."""
 from __future__ import annotations
 
 import copy
@@ -59,6 +59,10 @@ class DurationControls(unittest.TestCase):
         actual = hashlib.sha256((HERE / "fe09_b3_f0_qualification.py").read_bytes()).hexdigest()
         if actual != "f782660590731e73f43c2fab638e84d277c11d36119560dfb8878b28e2456f6c":
             raise AssertionError("frozen original collector changed")
+        identity_bytes = (repaired.REPAIR_DOCS / "IDENTITY_CONTROL.json").read_bytes()
+        if hashlib.sha256(identity_bytes).hexdigest() != repaired.IDENTITY_CONTROL_SHA:
+            raise AssertionError("actual failed-run identity projections changed")
+        cls.identity_control = json.loads(identity_bytes)
 
     def test_C01_original_counterexample_and_new_scalar(self):
         origin = 212.2
@@ -153,6 +157,29 @@ class DurationControls(unittest.TestCase):
         with self.assertRaisesRegex(repaired.Rejected, "RETAINED_CHILD_DEADLINE"):
             repaired.validate_retained_budget(r)
 
+    def test_C17_actual_case_and_collector_namespace_projections(self):
+        f = self.identity_control
+        self.assertFalse(f["source"]["original_qualification"])
+        self.assertEqual(f["source"]["complete_admitted_cohorts"], 0)
+        self.assertEqual(repaired.IDENTITY, original.IDENTITY)
+        self.assertNotEqual(repaired.IDENTITY, repaired.COLLECTOR_IDENTITY)
+        repaired.validate_case_identity(f["case_identity_projection"])
+        repaired.validate_collector_identity(f["collector_identity_projection"],
+                                            f["source"]["execution_source"])
+
+    def test_C18_collector_ID_in_actual_case_projection_rejected(self):
+        r = copy.deepcopy(self.identity_control["case_identity_projection"])
+        r["id"] = repaired.COLLECTOR_IDENTITY
+        with self.assertRaisesRegex(repaired.Rejected, "CASE_IDENTITY_OR_SOURCE_ROLE"):
+            repaired.validate_case_identity(r)
+
+    def test_C19_scientific_ID_in_actual_receipt_projection_rejected(self):
+        r = copy.deepcopy(self.identity_control["collector_identity_projection"])
+        r["id"] = original.IDENTITY
+        with self.assertRaisesRegex(repaired.Rejected, "RETAINED_SOURCE_OR_AUTHORITY"):
+            repaired.validate_collector_identity(
+                r, self.identity_control["source"]["execution_source"])
+
 
 def main() -> int:
     started = time.monotonic()
@@ -161,10 +188,10 @@ def main() -> int:
     result = unittest.TextTestRunner(verbosity=2).run(suite)
     elapsed = time.monotonic() - started
     signal.alarm(0)
-    passed = result.wasSuccessful() and result.testsRun == 16 and elapsed <= 10
+    passed = result.wasSuccessful() and result.testsRun == 19 and elapsed <= 10
     print(json.dumps({"id": "FE09-B3-F0-DEADLINE-ACCOUNTING-R1-METADATA",
-                      "role": "EXPLICIT_SYNTHETIC_METADATA_ONLY",
-                      "controls": result.testsRun, "expected_controls": 16,
+                      "role": "SYNTHETIC_BUDGET_AND_ACTUAL_IDENTITY_PROJECTIONS_ONLY",
+                      "controls": result.testsRun, "expected_controls": 19,
                       "failures": len(result.failures), "errors": len(result.errors),
                       "elapsed_seconds": elapsed, "budget_seconds": 10,
                       "DSP_frames": 0, "engineering_target_processes": 0,

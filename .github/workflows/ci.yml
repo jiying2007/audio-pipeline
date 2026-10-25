@@ -305,7 +305,7 @@ jobs:
           from pathlib import Path
           import re
           log = Path('/tmp/ap-fuzz-core.log').read_text()
-          counters = re.findall(r'Loaded \\d+ modules \\(\\d+\\) inline 8-bit counters', log)
+          counters = re.findall(r'Loaded \d+ modules \((\d+) inline 8-bit counters\)', log)
           assert counters and int(counters[-1]) > 72, f'Fuzz core instrumentation missing: {counters}'
           print(f'fuzz-core-counters={counters[-1]}')
           PY

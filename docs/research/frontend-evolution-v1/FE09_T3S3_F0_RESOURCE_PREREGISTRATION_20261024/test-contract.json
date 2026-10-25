@@ -1,0 +1,92 @@
+{
+  "all_frames_retained": true,
+  "budgets": {
+    "archive_reserve_seconds": 60,
+    "artifact_bytes": 33554432,
+    "command_seconds": 60,
+    "existing_job_seconds": 900,
+    "process_log_bytes": 1048576,
+    "stage_seconds": 180,
+    "target_process_seconds": 30,
+    "temporary_case_bytes": 8388608,
+    "timing_file_bytes": 1048576
+  },
+  "cases": [
+    "ALL_P",
+    "PAP"
+  ],
+  "clock_cpu": "CLOCK_THREAD_CPUTIME_ID",
+  "clock_overhead": "four clock_gettime reads per wrapped call: wall-start, CPU-start, CPU-end, wall-end; no subtraction; clock-helper conversion and call-return costs inside each interval included; sample storage after final reads outside",
+  "clock_wall": "CLOCK_MONOTONIC",
+  "data_role": "D0_FIRST_PARTY_DISCLOSED_SYNTHETIC_ENGINEERING",
+  "decision": "FE09_T3S3_F0_ACTUAL_CALL_RESOURCE_CHARACTERIZATION_NO_DEVICE_PROMOTION",
+  "equivalence": "same-target repeated reference/measured raw output.s16le and beam.f32le plus every canonical frame/public metric exactly equal; input source hashes and full original B3 validation retained",
+  "frame_combined_cost": "sum of disjoint producer-capture, producer-render, worker intervals; excludes fixture copies, post-clock sample storage, frame validation and output I/O",
+  "frame_samples": 160,
+  "frames_per_process": 600,
+  "id": "FE09-T3S3-F0-ACTUAL-CALL-RESOURCE-V1",
+  "maximum_processes": 36,
+  "negatives": [
+    "missing-frame",
+    "duplicate-frame",
+    "negative-duration",
+    "bool-duration",
+    "missing-call",
+    "wrong-render-event",
+    "missing-repeat",
+    "pcm-hash-mismatch",
+    "public-metric-mismatch",
+    "rss-missing",
+    "toolchain-drift",
+    "source-drift",
+    "promotion"
+  ],
+  "processes_per_target": 12,
+  "profile": "B3_F0_C4_ULA105_16KHZ_FULL_CALL",
+  "promotion": {
+    "acoustic_superiority": false,
+    "full_device_budget": false,
+    "physical_clock": false,
+    "public_sdk": false,
+    "shipping": false,
+    "ssc305": false
+  },
+  "quantile": "nearest rank ceil(p*N), all 600 frames per process",
+  "repeat_order": "target,case,repeat,reference-then-measured",
+  "repeats": 3,
+  "repeats_summary": "retain all three separate runs, no fastest-run selection or averaging percentiles",
+  "rss_scope": "Linux parent wait4 ru_maxrss for the exact target PID through exit, KiB*1024; includes harness/libc/loader; QEMU includes emulator host process",
+  "sample_rate_hz": 16000,
+  "schema_version": 1,
+  "source_baseline": "5187c5e59526d4047b3965b44c770ab21edbde9f",
+  "source_lock_sha256": "16cd84381647bef1015fc8ef338bb9b10dd09ce4669248355ac4f48745d8a4ff",
+  "source_policy": "original B3 and DSP untouched; source equality checked before compile and readonly verification; execution input identity captured separately",
+  "status": "FROZEN_BEFORE_FIRST_RESOURCE_EXECUTION",
+  "targets": [
+    "native",
+    "sanitized",
+    "arm"
+  ],
+  "timed_bind": "fe_b3_f0_bind only; not complete construction or process cold start",
+  "timed_calls": [
+    "fe_b1s0_capture_submit",
+    "fe_b1s0_render_present_or_absent",
+    "fe_b3_f0_process_one"
+  ],
+  "timing_acceptance": "descriptive, no hosted or QEMU numerical speed gate",
+  "toolchain_image": "ghcr.io/jiying2007/audio-pipeline-ci@sha256:69d38c66e09885b78eb3abba3f8b7dcc92363b71430dc39fc7f74978ffae2e57",
+  "unmeasured": [
+    "whole_thread_stack_high_water",
+    "cumulative_stack_bound",
+    "heap_allocation_high_water",
+    "cold_system_boot",
+    "physical_clock",
+    "ssc305_cpu_rss_stack_thermal_power",
+    "rolling_recorder"
+  ],
+  "variants": [
+    "reference",
+    "measured"
+  ],
+  "warmup_frames_excluded": 0
+}

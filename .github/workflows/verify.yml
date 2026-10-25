@@ -360,11 +360,18 @@ jobs:
           EXPECT_CODEQL: ${{ needs.impact.outputs.run_codeql }}
         run: |
           set -euo pipefail
+          # F1_R1_SUMMARY_BEGIN
           case "$F1_REQUIRED" in true|false) ;; *) echo 'F1R1_GUARD_OUTPUT_REQUIRED' >&2; exit 1 ;; esac
           if [ "$F1_REQUIRED" = true ]; then
             test "$QUALITY_RESULT" = success
             test "$F1_DISPOSITION" = FE09_T3S3_F1_R1_COMPLETE_RSS_OBSERVATION_NO_DEVICE_PROMOTION
+          else
+            case "$F1_DISPOSITION" in
+              ''|SOURCE_METADATA_ONLY|F1_SOURCE_METADATA_ONLY_OUT_OF_SCOPE) ;;
+              *) echo 'F1R1_UNEXPECTED_SOURCE_DISPOSITION' >&2; exit 1 ;;
+            esac
           fi
+          # F1_R1_SUMMARY_END
           python3 scripts/ci_failure.py --output /tmp/verification-summary.json aggregate --enforce \
             --impact "$IMPACT_RESULT" --docs-only "$DOCS_ONLY" \
             --fast "$FAST_RESULT" --hosted-real "$HOSTED_REAL_RESULT" \

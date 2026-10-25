@@ -48,7 +48,6 @@ OUT_OF_SCOPE = "F1_SOURCE_METADATA_ONLY_OUT_OF_SCOPE"
 COMPLETE = "FE09_T3S3_F1_R1_COMPLETE_RSS_OBSERVATION_NO_DEVICE_PROMOTION"
 SCIENCE_EXECUTION_ENABLED = False
 METADATA_BYTES = 2 * 1024 * 1024
-GIT_SECONDS = 5
 
 
 class Rejected(ValueError):
@@ -442,21 +441,199 @@ def bounded_file(path: Path, cap: int = METADATA_BYTES) -> bytes:
     return raw
 
 
-def git(root: Path, *args: str, cap: int = METADATA_BYTES, allow_missing: bool = False) -> bytes | None:
-    # Only bounded local object/diff reads are used, never fetch or network.
+# F1_R1_LOCAL_GIT_READER_BEGIN
+import selectors
+import signal
+
+LOCAL_METADATA_DEADLINE_NS = None
+
+
+class LocalMetadataReadError(RuntimeError):
+    def __init__(self, reason, observation=None):
+        self.reason = reason
+        self.observation = observation or {}
+        super().__init__(reason)
+
+
+def local_metadata_environment(source=None):
+    """No inherited Git overrides, credentials, protocol or demand fetching."""
+    source = os.environ if source is None else source
+    env = {key: value for key, value in source.items()
+           if not key.startswith('GIT_') and key not in ('GH_TOKEN', 'GITHUB_TOKEN')}
+    env.update(GIT_ALLOW_PROTOCOL='', GIT_NO_LAZY_FETCH='1',
+               GIT_NO_REPLACE_OBJECTS='1', GIT_OPTIONAL_LOCKS='0',
+               GIT_TERMINAL_PROMPT='0', GIT_CONFIG_NOSYSTEM='1',
+               GIT_CONFIG_SYSTEM='/dev/null', GIT_CONFIG_GLOBAL='/dev/null',
+               GIT_LITERAL_PATHSPECS='1')
+    return env
+
+
+def local_git_argv(root, args):
+    if not args or args[0] not in ('show', 'rev-parse', 'cat-file', 'ls-tree', 'diff'):
+        raise LocalMetadataReadError('F1R1_SOURCE_GIT_COMMAND_NOT_READ_ONLY')
+    if args[0] == 'diff' and not all(flag in args for flag in
+                                  ('--no-renames', '--no-ext-diff', '--no-textconv')):
+        raise LocalMetadataReadError('F1R1_COMPLETE_LOCAL_DIFF_REQUIRED')
+    return ['git', '--no-pager', '--no-lazy-fetch', '--no-replace-objects',
+            '-c', 'safe.directory=' + str(root), '-c', 'protocol.allow=never',
+            '-c', 'core.fsmonitor=false', '-C', str(root), *args]
+
+
+def local_metadata_deadlines(start_ns, duration_ns=5_000_000_000):
+    # Save the admitted integer duration. Never reconstruct it by subtracting
+    # large floating point timestamps. Cleanup is inside the same total limit.
+    if type(start_ns) is not int or type(duration_ns) is not int or duration_ns < 500_000_001:
+        raise LocalMetadataReadError('F1R1_SOURCE_METADATA_DEADLINE')
+    return {'started_monotonic_ns': start_ns, 'admitted_duration_ns': duration_ns,
+            'work_deadline_monotonic_ns': start_ns + duration_ns - 500_000_000,
+            'final_deadline_monotonic_ns': start_ns + duration_ns}
+
+
+def bounded_metadata_append(buffer, chunk, cap):
+    # The sentinel byte is observed but is never retained in the bounded buffer.
+    if len(buffer) + len(chunk) > cap:
+        raise LocalMetadataReadError('F1R1_SOURCE_METADATA_BYTES_LIMIT')
+    buffer.extend(chunk)
+
+
+def bounded_local_command(argv, *, env, stdout_cap, stderr_cap=65536,
+                          duration_ns=5_000_000_000):
+    """Drain before cap, then kill/reap within one original monotonic deadline.
+
+    A new session is owned by this call. The leader is not polled/reaped before
+    an exceptional group kill, so its PID cannot be recycled before that kill.
+    Late or unreaped cleanup is rejection, never a successful bounded read.
+    """
+    if any(type(cap) is not int or cap < 0 for cap in (stdout_cap, stderr_cap)):
+        raise LocalMetadataReadError('F1R1_SOURCE_METADATA_BYTES_LIMIT')
+    clock = local_metadata_deadlines(time.monotonic_ns(), duration_ns)
+    buffers = {'stdout': bytearray(), 'stderr': bytearray()}
+    selector = selectors.DefaultSelector()
+    process = None
+    failure = None
+    reaped = False
+    returncode = None
     try:
-        p = subprocess.run(["git", "-c", f"safe.directory={root}", "-C", str(root), *args],
-                           stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                           timeout=GIT_SECONDS, check=False,
-                           env={k: v for k, v in os.environ.items() if k not in ("GH_TOKEN", "GITHUB_TOKEN")})
-    except subprocess.TimeoutExpired as exc:
-        raise Rejected("F1R1_SOURCE_METADATA_DEADLINE") from exc
-    require(len(p.stdout) <= cap and len(p.stderr) <= 65536, "F1R1_SOURCE_METADATA_BYTES_LIMIT")
-    if p.returncode != 0:
-        if allow_missing and p.returncode == 128:
+        process = subprocess.Popen(argv, stdin=subprocess.DEVNULL,
+                                   stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                   env=env, close_fds=True, start_new_session=True)
+        for stream, name, cap in ((process.stdout, 'stdout', stdout_cap),
+                                  (process.stderr, 'stderr', stderr_cap)):
+            os.set_blocking(stream.fileno(), False)
+            selector.register(stream, selectors.EVENT_READ, (name, cap))
+        while selector.get_map():
+            remaining = clock['work_deadline_monotonic_ns'] - time.monotonic_ns()
+            if remaining <= 0:
+                raise LocalMetadataReadError('F1R1_SOURCE_METADATA_DEADLINE')
+            for key, unused_mask in selector.select(remaining / 1_000_000_000):
+                name, cap = key.data
+                try:
+                    chunk = os.read(key.fileobj.fileno(), min(65536, cap - len(buffers[name]) + 1))
+                except BlockingIOError:
+                    continue
+                if not chunk:
+                    selector.unregister(key.fileobj)
+                    continue
+                bounded_metadata_append(buffers[name], chunk, cap)
+        remaining = clock['work_deadline_monotonic_ns'] - time.monotonic_ns()
+        if remaining <= 0:
+            raise LocalMetadataReadError('F1R1_SOURCE_METADATA_DEADLINE')
+        returncode = process.wait(timeout=remaining / 1_000_000_000)
+        reaped = True
+    except LocalMetadataReadError as exc:
+        failure = exc.reason
+    except subprocess.TimeoutExpired:
+        failure = 'F1R1_SOURCE_METADATA_DEADLINE'
+    except (OSError, ValueError):
+        failure = 'F1R1_SOURCE_GIT_READ_FAILED'
+    finally:
+        # No communicate(), unbounded read(), implicit context-manager wait(),
+        # retry, or new cleanup deadline is allowed here.
+        if process is not None and not reaped:
+            try:
+                os.killpg(process.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+            except OSError:
+                failure = failure or 'F1R1_SOURCE_METADATA_REAP_FAILED'
+            remaining = clock['final_deadline_monotonic_ns'] - time.monotonic_ns()
+            if remaining > 0:
+                try:
+                    returncode = process.wait(timeout=remaining / 1_000_000_000)
+                    reaped = True
+                except subprocess.TimeoutExpired:
+                    failure = failure or 'F1R1_SOURCE_METADATA_REAP_FAILED'
+            else:
+                failure = failure or 'F1R1_SOURCE_METADATA_DEADLINE'
+        selector.close()
+        if process is not None:
+            for stream in (process.stdout, process.stderr):
+                if stream is not None:
+                    stream.close()
+    stdout, stderr = bytes(buffers['stdout']), bytes(buffers['stderr'])
+    finished = time.monotonic_ns()
+    observation = {**clock, 'finished_monotonic_ns': finished,
+                   'elapsed_ns': finished - clock['started_monotonic_ns'],
+                   'owned_process_reaped': reaped, 'returncode': returncode,
+                   'stdout_bytes_retained': len(buffers['stdout']),
+                   'stderr_bytes_retained': len(buffers['stderr'])}
+    if finished > clock['final_deadline_monotonic_ns'] or not reaped:
+        failure = failure or 'F1R1_SOURCE_METADATA_DEADLINE'
+    if failure:
+        raise LocalMetadataReadError(failure, observation)
+    return stdout, stderr, observation
+
+
+def local_git_read(root, args, *, cap=2097152):
+    duration = 5_000_000_000
+    if LOCAL_METADATA_DEADLINE_NS is not None:
+        duration = min(duration, LOCAL_METADATA_DEADLINE_NS - time.monotonic_ns())
+    return bounded_local_command(local_git_argv(root, args),
+                                 env=local_metadata_environment(), stdout_cap=cap,
+                                 duration_ns=duration)
+# F1_R1_LOCAL_GIT_READER_END
+
+
+def git(root: Path, *args: str, cap: int = METADATA_BYTES, allow_missing: bool = False) -> bytes | None:
+    try:
+        stdout, unused_stderr, observation = local_git_read(root, args, cap=cap)
+    except LocalMetadataReadError as exc:
+        raise Rejected(exc.reason) from exc
+    if observation['returncode'] != 0:
+        if allow_missing and observation['returncode'] == 128:
             return None
         raise Rejected("F1R1_SOURCE_GIT_READ_FAILED", " ".join(args[:2]))
-    return p.stdout
+    return stdout
+
+
+def parse_raw_diff(raw: bytes) -> list[dict]:
+    """A complete no-renames tree diff keeps deletion paths and mode changes."""
+    reason = "F1R1_COMPLETE_LOCAL_DIFF_REQUIRED"
+    require(type(raw) is bytes and len(raw) <= METADATA_BYTES, reason)
+    if not raw:
+        return []
+    fields = raw.split(b'\0')
+    require(fields[-1] == b'' and len(fields) % 2 == 1, reason)
+    modes = {'000000', '100644', '100755', '120000', '160000'}
+    rows, paths = [], set()
+    for index in range(0, len(fields) - 1, 2):
+        match = re.fullmatch(rb':([0-7]{6}) ([0-7]{6}) ([0-9a-f]{40}) ([0-9a-f]{40}) ([ADMT])', fields[index])
+        require(match is not None, reason)
+        old_mode, new_mode, old_oid, new_oid, status = (part.decode('ascii') for part in match.groups())
+        try:
+            path = fields[index + 1].decode('utf-8')
+        except UnicodeDecodeError as exc:
+            raise Rejected(reason) from exc
+        require(path and not path.startswith('/') and '..' not in Path(path).parts and path not in paths, reason)
+        require(old_mode in modes and new_mode in modes, reason)
+        require((status == 'A') == (old_mode == '000000') == (old_oid == '0' * 40) and
+                (status == 'D') == (new_mode == '000000') == (new_oid == '0' * 40), reason)
+        if status in ('M', 'T'):
+            require((status == 'T') == (old_mode[:3] != new_mode[:3]), reason)
+        paths.add(path)
+        rows.append({'path': path, 'status': status, 'old_mode': old_mode,
+                     'new_mode': new_mode, 'old_oid': old_oid, 'new_oid': new_oid})
+    return rows
 
 
 def object_bytes(root: Path, revision: str, path: str, *, missing: bool = False) -> bytes | None:
@@ -524,18 +701,16 @@ def evaluate_scope(*, event: dict, changed: set[str], protected: set[str],
         return {"disposition": SOURCE_ONLY, "f1_required": False,
                 "bootstrap": True, "protected_changes": touches}
     require(guard_origin == event["B"], "F1R1_ACTUAL_PROTECTED_B_GUARD_REQUIRED")
+    # The one bootstrap exception ends when B contains its protected guard.
+    # PR and its future main event must both reject unready protected changes.
+    require(not touches or execution_ready, "F1_OUT_OF_SCOPE_PROTECTED_CHANGE")
     if event["event"] == "pull_request":
         require(not touches or event["registered_candidate"],
                 "F1_OUT_OF_SCOPE_PROTECTED_CHANGE")
         required = event["registered_candidate"] and execution_ready
-        if touches and event["registered_candidate"] and not execution_ready:
-            # Source preparation remains explicit, never a completed science run.
-            return {"disposition": SOURCE_ONLY, "f1_required": False,
-                    "bootstrap": False, "protected_changes": touches}
     elif event["event"] == "push":
         # Local guard cannot invent the PR association; force the real job when
         # execution-ready protected inputs change. That job must derive S->PR.
-        require(not touches or execution_ready, "F1_OUT_OF_SCOPE_PROTECTED_CHANGE")
         required = bool(touches) and execution_ready
     else:
         require(not touches, "F1_OUT_OF_SCOPE_PROTECTED_CHANGE")
@@ -567,15 +742,155 @@ def validate_routing(view: dict) -> None:
                 "F1R1_DOCS_ACTIVATION_MUST_SCHEDULE_F1")
 
 
-def workflow_projection(raw: bytes, workflow: str) -> bytes:
-    """Conservative exact projection: an unrecognised structure fails closed.
+A3_IMPACT_STEP = """      - name: Classify A3 source scope from protected base
+        id: a3_scope
+        shell: bash
+        run: sh .github/scripts/verify-docs-gate.sh --a3-scope-only
+"""
+A3_INPUT = """      run_a3:
+        type: boolean
+        required: false
+        default: false
+"""
+A3_OUTPUT = """      a3_disposition:
+        description: A3 source-only disposition or completely qualified finite experiment
+        value: ${{ jobs.frontend-s3-t3s2b1ba3.outputs.disposition }}
+"""
+A3_SUMMARY = """          # A3_R1_SUMMARY_BEGIN
+          case "$A3_REQUIRED" in
+            true)
+              test "$QUALITY_RESULT" = success
+              test "$A3_DISPOSITION" = QUALIFIED_FINITE_A3_LIVE_ROLL_COMPLETE
+              ;;
+            false)
+              case "$A3_DISPOSITION" in
+                ''|SOURCE_METADATA_ONLY_UNRELATED|SOURCE_METADATA_ONLY_BOOTSTRAP_NO_A3_EXECUTION) ;;
+                *) echo 'A3_UNEXPECTED_SOURCE_DISPOSITION' >&2; exit 1 ;;
+              esac
+              ;;
+            *) echo 'A3_GUARD_OUTPUT_REQUIRED' >&2; exit 1 ;;
+          esac
+          # A3_R1_SUMMARY_END
+"""
+F1_SUMMARY = """          # F1_R1_SUMMARY_BEGIN
+          case "$F1_REQUIRED" in true|false) ;; *) echo 'F1R1_GUARD_OUTPUT_REQUIRED' >&2; exit 1 ;; esac
+          if [ "$F1_REQUIRED" = true ]; then
+            test "$QUALITY_RESULT" = success
+            test "$F1_DISPOSITION" = FE09_T3S3_F1_R1_COMPLETE_RSS_OBSERVATION_NO_DEVICE_PROMOTION
+          else
+            case "$F1_DISPOSITION" in
+              ''|SOURCE_METADATA_ONLY|F1_SOURCE_METADATA_ONLY_OUT_OF_SCOPE) ;;
+              *) echo 'F1R1_UNEXPECTED_SOURCE_DISPOSITION' >&2; exit 1 ;;
+            esac
+          fi
+          # F1_R1_SUMMARY_END
+"""
+# This is one explicitly registered neighbouring loader, not an arbitrary
+# marker-delimited shell exemption. Its complete bytes accompany the shared
+# integration candidate for independent review; unknown versions fail closed.
+A3_COMPAT_SHELL_SHA256 = "0101cc251ef972bdefbe988fdde2b0c52fcc46a33413598f6e145ff790e3d522"
+COMPAT_METADATA_LINES = frozenset((
+    'python3 tests/validation/frontend_evolution/fe09_a3_f0_source_admission.py --self-test',
+    'python3 tests/validation/frontend_evolution/fe09_a3_f0_live_roll_qualification.py --self-test',
+    'python3 tests/validation/frontend_evolution/fe09_b3_f0_qualification.py --self-test',
+))
 
-    Existing unrelated job bodies may change. Shared header/impact/fast paths,
-    quality caller, summary and F1 child stay byte-exact for unrelated changes.
+
+def remove_optional_exact(text: str, key_pattern: str, expected: str) -> str:
+    matches = list(re.finditer(key_pattern, text, re.M))
+    if not matches:
+        return text
+    require(len(matches) == 1 and text.count(expected) == 1,
+            "F1R1_HOOK_NONINTERFERENCE_PROOF_REQUIRED")
+    return text.replace(expected, '', 1)
+
+
+def quality_or_expression(value: str, *, caller: bool, reason: str) -> str:
+    prefix = "always() && needs.fast-gate.result == 'success' && (" if caller else '${{ '
+    suffix = ')' if caller else ' }}'
+    require(value.startswith(prefix) and value.endswith(suffix), reason)
+    terms = value[len(prefix):-len(suffix)].split(' || ')
+    required = ("needs.impact.outputs.run_quality == 'true'",
+                "needs.impact.outputs.f1_required == 'true'")
+    allowed = {*required, "needs.impact.outputs.a3_required == 'true'"}
+    require(len(terms) == len(set(terms)) and set(required) <= set(terms) <= allowed, reason)
+    return prefix + ' || '.join(required) + suffix
+
+
+def normalize_shared_job(name: str, block: str) -> str:
+    """Only the registered A3 additions may disappear from F1's projection."""
+    if name == 'impact':
+        block = remove_optional_exact(block, r'^      a3_required:',
+                                      '      a3_required: ${{ steps.a3_scope.outputs.a3_required }}\n')
+        block = remove_optional_exact(block, r'^        id: a3_scope$', A3_IMPACT_STEP)
+    elif name == 'quality':
+        expression = yaml_scalar(block, 'if', 4)
+        normalized = quality_or_expression(expression, caller=True,
+                                            reason='F1R1_DOCS_ACTIVATION_MUST_SCHEDULE_F1')
+        block = block.replace('    if: ' + expression + '\n', '    if: ' + normalized + '\n', 1)
+        block = remove_optional_exact(block, r'^      run_a3:',
+                                      "      run_a3: ${{ needs.impact.outputs.a3_required == 'true' }}\n")
+    elif name == 'summary':
+        expression = yaml_scalar(block, 'EXPECT_QUALITY', 10)
+        normalized = quality_or_expression(expression, caller=False,
+                                            reason='F1R1_REQUIRED_QUALITY_RESULT_PROPAGATION')
+        block = block.replace('          EXPECT_QUALITY: ' + expression + '\n',
+                              '          EXPECT_QUALITY: ' + normalized + '\n', 1)
+        for key, expected in (
+            ('A3_REQUIRED', '          A3_REQUIRED: ${{ needs.impact.outputs.a3_required }}\n'),
+            ('A3_DISPOSITION', '          A3_DISPOSITION: ${{ needs.quality.outputs.a3_disposition }}\n')):
+            block = remove_optional_exact(block, r'^          ' + key + ':', expected)
+        if '# A3_R1_SUMMARY_BEGIN' in block:
+            require(block.count(F1_SUMMARY) == 1 and block.count(A3_SUMMARY) == 1 and
+                    block.index(A3_SUMMARY) > block.index(F1_SUMMARY) + len(F1_SUMMARY) - 1,
+                    'F1R1_HOOK_NONINTERFERENCE_PROOF_REQUIRED')
+        block = remove_optional_exact(block, r'^          # A3_R1_SUMMARY_BEGIN$', A3_SUMMARY)
+    return block
+
+
+def marked_block(text: str, name: str) -> tuple[str, str, str]:
+    begin, end = '# ' + name + '_BEGIN\n', '# ' + name + '_END\n'
+    require(text.count(begin) == 1 and text.count(end) == 1,
+            'F1R1_HOOK_NONINTERFERENCE_PROOF_REQUIRED', name)
+    start, stop = text.index(begin), text.index(end) + len(end)
+    require(stop > start, 'F1R1_HOOK_NONINTERFERENCE_PROOF_REQUIRED', name)
+    return text[:start], text[start:stop], text[stop:]
+
+
+def shell_projection(raw: bytes) -> bytes:
+    text = raw.decode('utf-8')
+    before, owned, tail = marked_block(text, 'F1_R1_SOURCE_SCOPE_GUARD')
+    require(owned.count('if [ "${1:-}" = --f1-scope-only ]; then\n  exit 0\nfi\n') == 1,
+            'F1R1_HOOK_NONINTERFERENCE_PROOF_REQUIRED')
+    require('A3_R1_SOURCE_SCOPE_GUARD' not in before + owned,
+            'F1R1_HOOK_NONINTERFERENCE_PROOF_REQUIRED')
+    if 'A3_R1_SOURCE_SCOPE_GUARD' in tail:
+        prefix, a3, suffix = marked_block(tail, 'A3_R1_SOURCE_SCOPE_GUARD')
+        require(not prefix.strip() and sha(a3.encode()) == A3_COMPAT_SHELL_SHA256,
+                'F1R1_HOOK_NONINTERFERENCE_PROOF_REQUIRED', 'unreviewed A3 shell loader')
+        tail = prefix + suffix
+    counts = {line: tail.splitlines().count(line) for line in COMPAT_METADATA_LINES}
+    require(all(count <= 1 for count in counts.values()), 'F1R1_HOOK_NONINTERFERENCE_PROOF_REQUIRED')
+    # Every remaining executable byte is retained, including the historical
+    # gate. This does not accept arbitrary commands, env, traps or here-docs.
+    normalized_tail = '\n'.join(line for line in tail.splitlines()
+                                if line.strip() and line not in COMPAT_METADATA_LINES)
+    return json.dumps({'prelude': before, 'f1_owned': owned, 'remaining_gate': normalized_tail},
+                      sort_keys=True, separators=(',', ':')).encode()
+
+
+def workflow_projection(raw: bytes, workflow: str) -> bytes:
+    """Preserve shared globals and F1 routing; normalize exact A3 additions.
+
+    Unrelated job bodies may change. Unknown shared keys, aliases, permissions,
+    dispatch conditions or shell operations never gain an implicit exemption.
     """
     text = raw.decode("utf-8")
     require(text.count("\njobs:\n") == 1, "F1R1_HOOK_NONINTERFERENCE_PROOF_REQUIRED")
     header, jobs = text.split("\njobs:\n", 1)
+    if workflow == 'quality':
+        header = remove_optional_exact(header, r'^      run_a3:', A3_INPUT)
+        header = remove_optional_exact(header, r'^      a3_disposition:', A3_OUTPUT)
     matches = list(re.finditer(r"^  ([A-Za-z0-9_-]+):\s*$", jobs, re.M))
     require(matches and matches[0].start() == 0, "F1R1_HOOK_NONINTERFERENCE_PROOF_REQUIRED")
     names = [m.group(1) for m in matches]
@@ -586,7 +901,8 @@ def workflow_projection(raw: bytes, workflow: str) -> bytes:
     for index, match in enumerate(matches):
         if match.group(1) in selected:
             end = matches[index + 1].start() if index + 1 < len(matches) else len(jobs)
-            blocks.append(jobs[match.start():end])
+            block = jobs[match.start():end]
+            blocks.append(normalize_shared_job(match.group(1), block) if workflow == 'verify' else block)
     return (header + "\njobs:\n" + "".join(blocks)).encode()
 
 
@@ -636,9 +952,10 @@ def validate_actual_routes(root: Path) -> dict:
             "F1R1_PERMISSION_CHANGE_SCOPE")
     require(permission_block(caller, 4) == FIVE_READ, "F1R1_FIVE_READ_CALLER_PERMISSIONS")
     require(permission_block(child, 4) == FIVE_READ, "F1R1_FIVE_READ_CHILD_PERMISSIONS")
-    require(yaml_scalar(caller, "needs", 4) == "[impact, fast-gate]" and
-            yaml_scalar(caller, "if", 4) == "always() && needs.fast-gate.result == 'success' && (needs.impact.outputs.run_quality == 'true' || needs.impact.outputs.f1_required == 'true')",
+    require(yaml_scalar(caller, "needs", 4) == "[impact, fast-gate]",
             "F1R1_DOCS_ACTIVATION_MUST_SCHEDULE_F1")
+    quality_or_expression(yaml_scalar(caller, "if", 4), caller=True,
+                          reason="F1R1_DOCS_ACTIVATION_MUST_SCHEDULE_F1")
     calls = yaml_block(caller, "with", 4)
     require(yaml_scalar(calls, "run_f1", 6) == "${{ needs.impact.outputs.f1_required == 'true' }}" and
             yaml_scalar(calls, "run_extended", 6) == "${{ needs.impact.outputs.run_extended == 'true' }}",
@@ -657,11 +974,13 @@ def validate_actual_routes(root: Path) -> dict:
     require("--guard-origin" in entry and "base + ':' + source" in entry and
             "F1_R1_SOURCE_SCOPE_GUARD" in entry and "'source-guard'" in entry,
             "F1R1_ACTUAL_PROTECTED_B_GUARD_REQUIRED")
+    shell_projection(entry.encode())
     summary = yaml_block(verify, "summary", 2)
-    require(yaml_scalar(summary, "EXPECT_QUALITY", 10) == "${{ needs.impact.outputs.run_quality == 'true' || needs.impact.outputs.f1_required == 'true' }}" and
-            yaml_scalar(summary, "F1_REQUIRED", 10) == "${{ needs.impact.outputs.f1_required }}" and
+    quality_or_expression(yaml_scalar(summary, "EXPECT_QUALITY", 10), caller=False,
+                          reason="F1R1_REQUIRED_QUALITY_RESULT_PROPAGATION")
+    require(yaml_scalar(summary, "F1_REQUIRED", 10) == "${{ needs.impact.outputs.f1_required }}" and
             yaml_scalar(summary, "F1_DISPOSITION", 10) == "${{ needs.quality.outputs.f1_disposition }}" and
-            'test "$F1_DISPOSITION" = ' + COMPLETE in summary,
+            summary.count(F1_SUMMARY) == 1,
             "F1R1_REQUIRED_QUALITY_RESULT_PROPAGATION")
     call = yaml_block(quality, "workflow_call", 2)
     input_rule = yaml_block(yaml_block(call, "inputs", 4), "run_f1", 6)
@@ -679,20 +998,27 @@ def validate_actual_routes(root: Path) -> dict:
 def effective_protected_diff(root: Path, base: str, head: str, changed: set[str],
                              protected: set[str]) -> set[str]:
     result = set(changed)
-    for name, kind in ((HOOKS[0], "verify"), (HOOKS[1], "quality")):
+    for name, kind in ((HOOKS[0], "verify"), (HOOKS[1], "quality"), (HOOKS[2], "entry")):
         if name in changed:
             before = object_bytes(root, base, name)
             after = object_bytes(root, head, name)
-            if workflow_projection(before, kind) == workflow_projection(after, kind):
+            projection = shell_projection if kind == 'entry' else lambda raw: workflow_projection(raw, kind)
+            if projection(before) == projection(after):
                 result.remove(name)
-    # The shared shell entry has executable top-level effects; no permissive
-    # line-filter is a proof of its noninterference.
     return result & protected
 
 
 def source_guard(root: Path, event_name: str, event: dict,
                  guard_origin: str | None) -> dict:
+    global LOCAL_METADATA_DEADLINE_NS
     started = time.monotonic_ns()
+    # Leave one second for the bounded receipt and the outer guard's cleanup.
+    # Each Git PID must finish/reap before the outer 60-second owner can end.
+    inherited = os.environ.get('FE_F1_SOURCE_METADATA_DEADLINE_NS')
+    require(inherited is None or re.fullmatch(r'[0-9]{1,20}', inherited) is not None,
+            'F1R1_SOURCE_METADATA_DEADLINE')
+    LOCAL_METADATA_DEADLINE_NS = min(started + 59_000_000_000,
+                                    int(inherited) if inherited is not None else started + 59_000_000_000)
     checkout = git(root, "rev-parse", "HEAD").decode().strip()
     parents = git(root, "show", "-s", "--format=%P", checkout).decode().split()
     roles = parse_event(event_name, event, checkout, parents)
@@ -730,8 +1056,10 @@ def source_guard(root: Path, event_name: str, event: dict,
             require(sha(bounded_file(root / REG / filename)) == expected,
                     "F1R1_BOOTSTRAP_DESIGN_IDENTITY", filename)
     require(contract.get("id") == EXPERIMENT, "F1R1_EXPERIMENT_IDENTITY")
-    changed_raw = git(root, "diff", "--name-only", "-z", base, head, "--")
-    changed = {p.decode("utf-8") for p in changed_raw.split(b"\0") if p}
+    changed_raw = git(root, "diff", "--raw", "-z", "--no-abbrev", "--no-renames",
+                      "--no-ext-diff", "--no-textconv", base, head, "--")
+    diff_rows = parse_raw_diff(changed_raw)
+    changed = {row['path'] for row in diff_rows}
     protected = {r["path"] for r in policy["files"]} | {REG + "/" + n for n in DOC_DIGESTS} | set(IMPLEMENTATION) | set(HOOKS)
     if present and not roles["registered_candidate"]:
         touched = effective_protected_diff(root, base, head, changed, protected)
@@ -746,6 +1074,8 @@ def source_guard(root: Path, event_name: str, event: dict,
             "guard_source_commit": guard_origin,
             "guard_sha256": sha(actual_base_guard) if present else None,
             "policy_sha256": sha(policy_raw), "immutable_originals_checked": 96,
+            "complete_no_renames_diff_sha256": sha(changed_raw),
+            "complete_no_renames_diff_records": len(diff_rows),
             "routing": routes,
             "execution_authorized": False, "provider_authority_acquired": False,
             "HTTP_requests": 0, "F1_launcher_processes": 0,

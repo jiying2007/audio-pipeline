@@ -185,6 +185,217 @@ class MetadataTests(unittest.TestCase):
         raw = b'jobs:\n  frontend-rss-f1:\n    run: x\n  frontend-rss-f1:\n    run: y\n'
         self.reject("F1R1_HOOK_NONINTERFERENCE_PROOF_REQUIRED", F1.workflow_projection, raw, "quality")
 
+    # F1-G01..G15 were fixed in the review-check plan before implementation.
+    # These are pure source/metadata controls, not the registered 178 execution
+    # negatives and not real timeout, HTTP, launcher or engineering fixtures.
+    def test_f1_g01_inherited_git_environment_cannot_enable_transport(self):
+        source = {'PATH': '/usr/bin', 'GITHUB_EVENT_PATH': '/event.json',
+                  'GITHUB_TOKEN': 'synthetic-only', 'GH_TOKEN': 'synthetic-only',
+                  'GIT_CONFIG_PARAMETERS': "'protocol.allow=always'",
+                  'GIT_ALLOW_PROTOCOL': 'https:file:ssh', 'GIT_NO_LAZY_FETCH': '0',
+                  'GIT_OBJECT_DIRECTORY': '/candidate', 'GIT_TRACE': '/candidate'}
+        env = F1.local_metadata_environment(source)
+        self.assertEqual(env['GIT_ALLOW_PROTOCOL'], '')
+        self.assertEqual(env['GIT_NO_LAZY_FETCH'], '1')
+        self.assertEqual(env['GIT_NO_REPLACE_OBJECTS'], '1')
+        self.assertEqual(env['GIT_CONFIG_GLOBAL'], '/dev/null')
+        self.assertEqual(env['GIT_CONFIG_SYSTEM'], '/dev/null')
+        for key in ('GH_TOKEN', 'GITHUB_TOKEN', 'GIT_CONFIG_PARAMETERS', 'GIT_OBJECT_DIRECTORY', 'GIT_TRACE'):
+            self.assertNotIn(key, env)
+        self.assertEqual(env['GITHUB_EVENT_PATH'], '/event.json')
+
+    def test_f1_g02_only_complete_local_readonly_diff_argv(self):
+        argv = F1.local_git_argv('/source', ('diff', '--raw', '-z', '--no-abbrev',
+                                           '--no-renames', '--no-ext-diff', '--no-textconv', B, C, '--'))
+        for token in ('--no-pager', '--no-lazy-fetch', '--no-replace-objects', 'protocol.allow=never'):
+            self.assertIn(token, argv)
+        for args in (('fetch',), ('diff', '--name-only', B, C),
+                     ('diff', '--no-renames', '--no-ext-diff', B, C)):
+            with self.subTest(args=args), self.assertRaises(F1.LocalMetadataReadError):
+                F1.local_git_argv('/source', args)
+
+    def test_f1_g03_both_streams_reject_before_buffer_overflow(self):
+        for cap in (4, 65536):
+            with self.subTest(cap=cap):
+                retained = bytearray(b'x' * cap)
+                with self.assertRaises(F1.LocalMetadataReadError) as error:
+                    F1.bounded_metadata_append(retained, b'y', cap)
+                self.assertEqual(error.exception.reason, 'F1R1_SOURCE_METADATA_BYTES_LIMIT')
+                self.assertEqual(retained, b'x' * cap)
+                F1.bounded_metadata_append(retained, b'', cap)
+
+    def test_f1_g04_integer_five_seconds_includes_reserved_cleanup(self):
+        start = 9_876_543_210_123_456
+        row = F1.local_metadata_deadlines(start)
+        self.assertEqual(row['admitted_duration_ns'], 5_000_000_000)
+        self.assertEqual(row['work_deadline_monotonic_ns'], start + 4_500_000_000)
+        self.assertEqual(row['final_deadline_monotonic_ns'], start + 5_000_000_000)
+        # The entry's original deadline can shorten a later Git read, never
+        # create a fresh five-second window beyond the owner lifetime.
+        with patch.object(F1, 'LOCAL_METADATA_DEADLINE_NS', start + 3_000_000_000), \
+             patch.object(F1.time, 'monotonic_ns', return_value=start), \
+             patch.object(F1, 'bounded_local_command', return_value=(b'', b'', {})) as command:
+            F1.local_git_read('/source', ('cat-file', '-e', B))
+            self.assertEqual(command.call_args.kwargs['duration_ns'], 3_000_000_000)
+        for duration in (True, 0, 500_000_000, 5.0):
+            with self.subTest(duration=duration), self.assertRaises(F1.LocalMetadataReadError):
+                F1.local_metadata_deadlines(start, duration)
+
+    def test_f1_g05_missing_object_never_becomes_a_fetch_or_approval(self):
+        observation = {'returncode': 128}
+        with patch.object(F1, 'local_git_read', return_value=(b'', b'missing', observation)) as reader:
+            self.reject('F1R1_SOURCE_GIT_READ_FAILED', F1.git, Path('/source'), 'show', B + ':missing')
+            reader.assert_called_once()
+        # A missing blob beneath an existing tree entry is not bootstrap absence.
+        with patch.object(F1, 'git', side_effect=[None, b'', b'100644 blob ' + C.encode() + b'\tmissing\n']):
+            self.reject('F1R1_SOURCE_GIT_READ_FAILED', F1.object_bytes,
+                        Path('/source'), B, 'missing', missing=True)
+
+    def test_f1_g06_no_renames_keeps_both_old_and_new_paths(self):
+        raw = (f':100644 000000 {B} {"0" * 40} D\0protected/old.c\0'
+               f':000000 100644 {"0" * 40} {B} A\0elsewhere/new.c\0').encode()
+        rows = F1.parse_raw_diff(raw)
+        self.assertEqual([(row['path'], row['status']) for row in rows],
+                         [('protected/old.c', 'D'), ('elsewhere/new.c', 'A')])
+        self.assertIn('protected/old.c', {row['path'] for row in rows})
+
+    def test_f1_g07_raw_diff_preserves_and_validates_mode_type(self):
+        raw = f':100644 120000 {B} {C} T\0guard.py\0'.encode()
+        self.assertEqual(F1.parse_raw_diff(raw)[0]['new_mode'], '120000')
+        executable = f':100644 100755 {B} {C} M\0guard.py\0'.encode()
+        self.assertEqual(F1.parse_raw_diff(executable)[0]['old_mode'], '100644')
+        for bad in (raw.replace(b' T\0', b' M\0'), raw.replace(b' T\0', b' R100\0'),
+                    raw.replace(b'120000', b'999999'), raw[:-1], raw + raw):
+            with self.subTest(raw=bad[:40]):
+                self.reject('F1R1_COMPLETE_LOCAL_DIFF_REQUIRED', F1.parse_raw_diff, bad)
+
+    def test_f1_g08_existing_B_guard_rejects_unready_PR_and_main(self):
+        roles = [F1.parse_event('pull_request', pr_event(), M, [B, C]),
+                 F1.parse_event('push', {'repository': pr_event()['repository'],
+                                        'ref': 'refs/heads/main', 'before': B, 'after': M}, M, [B])]
+        for event in roles:
+            with self.subTest(event=event['event']):
+                kwargs = dict(event=event, changed={F1.SOURCE}, protected={F1.SOURCE}, execution_ready=False)
+                self.reject('F1_OUT_OF_SCOPE_PROTECTED_CHANGE', F1.evaluate_scope,
+                            **kwargs, base_guard_present=True, guard_origin=B)
+                bootstrap = F1.evaluate_scope(**kwargs, base_guard_present=False, guard_origin=None)
+                self.assertEqual(bootstrap['disposition'], F1.SOURCE_ONLY)
+                self.assertFalse(bootstrap['f1_required'])
+
+    def test_f1_g09_ready_docs_PR_and_main_both_force_provider_job(self):
+        path = F1.REG + '/EXECUTION_BASELINE.json'
+        for kind, registered in (('pull_request', True), ('push', False)):
+            row = F1.evaluate_scope(event={'event': kind, 'B': B, 'registered_candidate': registered},
+                                    changed={path}, protected={path}, base_guard_present=True,
+                                    guard_origin=B, execution_ready=True)
+            self.assertTrue(row['f1_required'])
+            self.assertEqual(row['disposition'], 'F1_PROVIDER_ADMISSION_REQUIRED')
+
+    def compatible_a3_workflows(self):
+        root = MODULE.resolve().parents[3]
+        verify = (root / F1.HOOKS[0]).read_text()
+        quality = (root / F1.HOOKS[1]).read_text()
+        # These exact adjacent interfaces were agreed with the A3 owner.
+        if '        id: a3_scope\n' not in verify:
+            verify = verify.replace('      f1_required: ${{ steps.f1_scope.outputs.f1_required }}\n',
+                                    '      f1_required: ${{ steps.f1_scope.outputs.f1_required }}\n'
+                                    '      a3_required: ${{ steps.a3_scope.outputs.a3_required }}\n')
+            verify = verify.replace('      - name: F1 protected-base source scope and mandatory routing\n',
+                                    F1.A3_IMPACT_STEP + '      - name: F1 protected-base source scope and mandatory routing\n')
+            verify = verify.replace("needs.impact.outputs.f1_required == 'true')", "needs.impact.outputs.f1_required == 'true' || needs.impact.outputs.a3_required == 'true')")
+            verify = verify.replace("needs.impact.outputs.f1_required == 'true' }}\n          F1_REQUIRED:",
+                                    "needs.impact.outputs.f1_required == 'true' || needs.impact.outputs.a3_required == 'true' }}\n          F1_REQUIRED:")
+            verify = verify.replace("      run_f1: ${{ needs.impact.outputs.f1_required == 'true' }}\n",
+                                    "      run_f1: ${{ needs.impact.outputs.f1_required == 'true' }}\n"
+                                    "      run_a3: ${{ needs.impact.outputs.a3_required == 'true' }}\n")
+            verify = verify.replace('          F1_DISPOSITION: ${{ needs.quality.outputs.f1_disposition }}\n',
+                                    '          F1_DISPOSITION: ${{ needs.quality.outputs.f1_disposition }}\n'
+                                    '          A3_REQUIRED: ${{ needs.impact.outputs.a3_required }}\n'
+                                    '          A3_DISPOSITION: ${{ needs.quality.outputs.a3_disposition }}\n')
+            verify = verify.replace(F1.F1_SUMMARY, F1.F1_SUMMARY + F1.A3_SUMMARY)
+        if '      run_a3:\n' not in quality:
+            quality = quality.replace('      run_f1:\n', F1.A3_INPUT + '      run_f1:\n')
+            quality = quality.replace('      f1_disposition:\n', F1.A3_OUTPUT + '      f1_disposition:\n')
+        return verify.encode(), quality.encode()
+
+    def test_f1_g10_exact_A3_dispatch_additions_preserve_F1_projection(self):
+        root = MODULE.resolve().parents[3]
+        verify, quality = self.compatible_a3_workflows()
+        for name, raw, kind in ((F1.HOOKS[0], verify, 'verify'), (F1.HOOKS[1], quality, 'quality')):
+            self.assertEqual(F1.workflow_projection((root / name).read_bytes(), kind),
+                             F1.workflow_projection(raw, kind))
+        originals = {str(root / name): (root / name).read_bytes() for name in F1.HOOKS}
+        originals.update({str(root / F1.HOOKS[0]): verify, str(root / F1.HOOKS[1]): quality})
+        with patch.object(F1, 'bounded_file', side_effect=lambda p: originals[str(p)]):
+            F1.validate_actual_routes(root)
+
+    def test_f1_g11_unknown_shared_mutations_get_no_projection_exemption(self):
+        verify, quality = self.compatible_a3_workflows()
+        for bad in (verify.replace(b'      run_f1: ${{ needs.impact.outputs.f1_required == \'true\' }}', b'      run_f1: false'),
+                    verify.replace(b'  actions: read\n', b'  actions: write\n', 1)):
+            self.assertNotEqual(F1.workflow_projection(verify, 'verify'), F1.workflow_projection(bad, 'verify'))
+        for bad in (quality.replace(F1.A3_INPUT.encode(), F1.A3_INPUT.replace('default: false', 'default: true').encode()),
+                    verify.replace(F1.A3_IMPACT_STEP.encode(), F1.A3_IMPACT_STEP.replace('--a3-scope-only', '--f1-scope-only').encode()),
+                    verify.replace(F1.A3_SUMMARY.encode(), F1.A3_SUMMARY.replace('test "$QUALITY_RESULT" = success', 'true').encode())):
+            kind = 'quality' if bad.startswith(b'name: Quality') else 'verify'
+            self.reject('F1R1_HOOK_NONINTERFERENCE_PROOF_REQUIRED', F1.workflow_projection, bad, kind)
+        value = "always() && needs.fast-gate.result == 'success' && (needs.impact.outputs.run_quality == 'true' || needs.impact.outputs.f1_required == 'true' || true)"
+        self.reject('bad-or', lambda: F1.quality_or_expression(value, caller=True, reason='bad-or'))
+
+    def test_f1_g12_shell_only_explicit_metadata_lines_are_exempt(self):
+        root = MODULE.resolve().parents[3]
+        raw = (root / F1.HOOKS[2]).read_bytes()
+        before = F1.shell_projection(raw)
+        for line in F1.COMPAT_METADATA_LINES:
+            if line.encode() + b'\n' not in raw:
+                self.assertEqual(before, F1.shell_projection(raw + line.encode() + b'\n'))
+        # A synthetic digest policy tests identity matching only. It does not
+        # qualify or substitute for the independently reviewed actual A3 block.
+        fixture = '# A3_R1_SOURCE_SCOPE_GUARD_BEGIN\n# in-memory identity fixture\n# A3_R1_SOURCE_SCOPE_GUARD_END\n'
+        if b'# A3_R1_SOURCE_SCOPE_GUARD_BEGIN\n' not in raw:
+            marker = b'# F1_R1_SOURCE_SCOPE_GUARD_END\n'
+            with patch.object(F1, 'A3_COMPAT_SHELL_SHA256', F1.sha(fixture.encode())):
+                combined = raw.replace(marker, marker + fixture.encode())
+                self.assertEqual(before, F1.shell_projection(combined))
+                self.reject('F1R1_HOOK_NONINTERFERENCE_PROOF_REQUIRED', F1.shell_projection,
+                            combined.replace(b'# in-memory identity fixture', b'exec true'))
+
+    def test_f1_g13_arbitrary_shell_cannot_disappear_from_projection(self):
+        root = MODULE.resolve().parents[3]
+        raw = (root / F1.HOOKS[2]).read_bytes()
+        before = F1.shell_projection(raw)
+        for text in ('exit 0', 'trap true EXIT', '. /tmp/unknown',
+                     'export GIT_ALLOW_PROTOCOL=https', 'python3 /tmp/unknown.py',
+                     'python3 tests/validation/frontend_evolution/fe09_a3_f0_source_admission.py --self-test; true',
+                     'python3 "$(unknown)"', 'exec true'):
+            with self.subTest(text=text):
+                self.assertNotEqual(before, F1.shell_projection(raw + text.encode() + b'\n'))
+
+    def test_f1_g14_extractor_has_identical_bounded_git_reader(self):
+        root = MODULE.resolve().parents[3]
+        source = MODULE.read_text()
+        shell = (root / F1.HOOKS[2]).read_text()
+        unused_before, reader, unused_after = F1.marked_block(source, 'F1_R1_LOCAL_GIT_READER')
+        unused_before, copied, unused_after = F1.marked_block(shell, 'F1_R1_LOCAL_GIT_READER')
+        self.assertEqual(reader, copied)
+        unused_before, owned, unused_after = F1.marked_block(shell, 'F1_R1_SOURCE_SCOPE_GUARD')
+        self.assertIn('raw = event_stream.read(2097153)', owned)
+        self.assertNotIn('subprocess.check_output(', owned)
+        self.assertNotIn('.communicate(', reader)
+        self.assertIn('stdout, unused_stderr, observation = local_git_read(root, args)', owned)
+
+    def test_f1_g15_frozen_five_docs_and_96_originals_remain_exact(self):
+        root = MODULE.resolve().parents[3]
+        for name, digest in F1.DOC_DIGESTS.items():
+            self.assertEqual(F1.sha(F1.bounded_file(root / F1.REG / name)), digest)
+        lock = F1.strict_json(F1.bounded_file(root / F1.REG / 'source-lock.json'))
+        rows = [row for row in lock['files'] if row['role'].startswith('IMMUTABLE_ORIGINAL')]
+        self.assertEqual(len(rows), 96)
+        self.assertEqual(len({row['path'] for row in rows}), 96)
+        for row in rows:
+            raw = F1.bounded_file(root / row['path'])
+            self.assertEqual((len(raw), F1.sha(raw)), (row['bytes'], row['sha256']), row['path'])
+
     def test_actual_YAML_route_positive_and_single_mutations(self):
         root = MODULE.resolve().parents[3]
         originals = {str(root / name): (root / name).read_bytes() for name in F1.HOOKS}

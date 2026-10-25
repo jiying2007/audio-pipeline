@@ -210,7 +210,7 @@ def evidence_negatives(source: Path) -> None:
                 label = root / 'cases' / str(case['seed']) / case['case_id'] / 'vad.labels'
                 rows = label.read_text().splitlines()
                 rows[0] = '0' if rows[0] == '1' else '1'
-                label.write_text('\\n'.join(rows) + '\\n')
+                label.write_text('\n'.join(rows) + '\n')
             else:
                 (root / 'nested').mkdir(); (root / 'nested/manifest.json').write_text('must not be hidden')
                 try:

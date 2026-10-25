@@ -284,7 +284,8 @@ def validate_schema(value: object, schema: dict) -> None:
 
 
 def actual_provider_C(event: str, run: dict, association: list[dict] | None,
-                      detail: dict, git_role: dict) -> dict:
+                      detail: dict, git_role: dict, *,
+                      association_has_next_page: bool | None = None) -> dict:
     """Pure provider/Git binding, always before inspecting an approval body.
 
     Acquisition is deliberately absent from bootstrap. These arguments are only
@@ -296,6 +297,7 @@ def actual_provider_C(event: str, run: dict, association: list[dict] | None,
         source = run["head_sha"]
         require(type(association) is list and len(association) <= 100,
                 "F1R1_MAIN_PROVIDER_ASSOCIATION_REQUIRED")
+        require(association_has_next_page is False, "F1R1_COMPLETE_MAIN_PR_ASSOCIATION")
         require(all(integer(p.get("id"), 1) and integer(p.get("number"), 1) for p in association) and
                 len({p["id"] for p in association}) == len(association) and
                 len({p["number"] for p in association}) == len(association),
@@ -367,7 +369,7 @@ def validate_freeze_sweep(sweep: dict, *, schema: dict, source: dict,
     require(type(comments) is list and len(comments) <= 100 and
             integer(sweep["issue_before"].get("comments")) and
             sweep["issue_before"]["comments"] == len(comments) == sweep["issue_after"].get("comments") and
-            type(sweep["issue_after"].get("comments")) is int and not sweep.get("comments_has_next_page", False),
+            type(sweep["issue_after"].get("comments")) is int and sweep.get("comments_has_next_page") is False,
             "F1R1_COMPLETE_COMMENT_LIST")
     require(all(integer(c.get("id"), 1) for c in comments) and len({c["id"] for c in comments}) == len(comments),
             "F1R1_COMPLETE_COMMENT_LIST")

@@ -403,14 +403,18 @@ class MetadataTests(unittest.TestCase):
                       merged=True, merged_at="2026-10-24T18:00:00Z", merge_commit_sha=S)
         run = dict(event="push", head_sha=S)
         graph = dict(S=S, S_parents=[B], S_tree="5" * 40, C_tree="5" * 40, B_tree="4" * 40)
-        actual = F1.actual_provider_C("push", run, [detail], detail, graph)
+        actual = F1.actual_provider_C("push", run, [detail], detail, graph, association_has_next_page=False)
         self.assertEqual((actual["C"], actual["B"]), (C, B))
         self.assertNotEqual(actual["B"], detail["base"]["sha"])
         self.reject("F1R1_MAIN_PROVIDER_ASSOCIATION_REQUIRED", F1.actual_provider_C,
                     "push", run, None, detail, graph)
+        self.reject("F1R1_COMPLETE_MAIN_PR_ASSOCIATION", F1.actual_provider_C,
+                    "push", run, [detail], detail, graph)
+        self.reject("F1R1_COMPLETE_MAIN_PR_ASSOCIATION", F1.actual_provider_C,
+                    "push", run, [detail], detail, graph, association_has_next_page=True)
         second = dict(detail, id=9002, number=9002)
         self.reject("F1R1_UNIQUE_MAIN_PR_ASSOCIATION", F1.actual_provider_C,
-                    "push", run, [detail, second], detail, graph)
+                    "push", run, [detail, second], detail, graph, association_has_next_page=False)
 
 
 if __name__ == "__main__":

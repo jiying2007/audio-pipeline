@@ -1127,8 +1127,20 @@ static void wait_runtime_event_kind(ap_runtime_t *runtime, ap_event_kind_t expec
 static unsigned drain_aec_reset_events(ap_runtime_t *runtime) {
     ap_event_t event;
     unsigned resets = 0u;
+    unsigned seen = 0u;
+    uint32_t kinds[AP_RUNTIME_EVENT_QUEUE_DEPTH] = {0u};
     while (ap_runtime_receive_event(runtime, &event) == AP_OK) {
+        if (seen < AP_RUNTIME_EVENT_QUEUE_DEPTH) kinds[seen++] = event.kind;
         if (event.kind == AP_EVENT_AEC_RESET) resets++;
+    }
+    if (resets != 1u) {
+        const ap_runtime_metrics_t snapshot = metrics(runtime);
+        unsigned i;
+        fprintf(stderr, "RESET_EPOCH_NEGATIVE observed=%u kinds=", resets);
+        for (i = 0u; i < seen; ++i)
+            fprintf(stderr, "%s%u", i ? "," : "", kinds[i]);
+        fprintf(stderr, " dropped=%" PRIu64 " processed=%" PRIu64 "\n",
+                snapshot.event_drop_events, snapshot.processed_frames);
     }
     return resets;
 }

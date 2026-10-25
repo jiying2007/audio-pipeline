@@ -47,6 +47,30 @@ EXISTING = (LEGACY, LEGACY_PLAN, GOVERNANCE,
 CLOSURE = (SELF, PLAN, PRODUCER, *EXISTING)
 
 
+# Two independently identified source closures: previous M2 is historical only.
+# New V2 base must match *all* current protected-main-derived bytes; no subset
+# may self-authorize a new source. Updating these requires a reviewed code delta.
+FROZEN_PREVIOUS_DEPENDENCIES = {
+    ".github/program/dechorate_event_source_t1m3.json": "d01181f971569a60579067b4c8a3ce428525570e6e451368bd08708eac43f928",
+    ".github/program/dechorate_event_source_t1m3.py": "8002174cd3a5418fffb400da811dc35d684ee7a2293e2f8c25422838cd64cff3",
+    ".github/program/workflow_pin_only_actual_tree_t1m1.py": "6d080c55e0334b96279f826e1615802cf1a8b58d57c1d9c8900900560d25ffd7",
+    ".github/program/workflow_pin_only_bot714_20261020.json": "47ac0756f4989f619403f3689ce3fc305ec82469730da908559937ef03f86abb",
+    ".github/program/workflow_pin_only_scope.py": "fcce117736d32a2cafd3c95fc93a27f906f40b64f632116cd90e8ba1759d68cb",
+    ".github/program/workflow_pin_pr_consumer.py": "be63c093dac9125ac7c2603b69ea1c8211705eea1a8d143b110a3f0c01d5dab7",
+    "scripts/github_governance.py": "c292105f27126e643f8984bd0ecb52faf7beac83ddeffff9413b97a68893c4fa"
+}
+CURRENT_REVIEWED_DEPENDENCIES = {
+    ".github/program/dechorate_event_source_t1m3.py": "dfa8fe7730590a8cd8ce97392e7fd072763fec59b3bae53581cfed93f34c7300",
+    ".github/program/dechorate_event_source_t1m3.json": "687f506a0c742aa600596a77781adffcc083524549cc04dee9808e6eb7bd165e",
+    "scripts/github_governance.py": "c292105f27126e643f8984bd0ecb52faf7beac83ddeffff9413b97a68893c4fa",
+    ".github/program/workflow_pin_pr_consumer.py": "be63c093dac9125ac7c2603b69ea1c8211705eea1a8d143b110a3f0c01d5dab7",
+    ".github/program/workflow_pin_only_actual_tree_t1m1.py": "156c2f14f02c12fe11de83d52f4c3e54a84e2ebbb558b5dd387a023d547299dc",
+    ".github/program/workflow_pin_only_scope.py": "257eaca86109021ea33e2dc3191fcc9326cbee361c22c9b0c6e88862f7f8f1db",
+    ".github/program/workflow_pin_only_bot714_20261020.json": "47ac0756f4989f619403f3689ce3fc305ec82469730da908559937ef03f86abb"
+}
+
+
+
 class Denied(ValueError):
     pass
 
@@ -154,7 +178,12 @@ def plan() -> dict:
          value.get("consumer_attempts") == {"pull_request": [1, 2], "push": [1, 2]} and
          value.get("producer_attempts") == [1] and
          value.get("execution_closure") == list(CLOSURE) and
-         set(value.get("existing_dependencies", {})) == set(EXISTING), "FROZEN_PLAN_DRIFT")
+         set(value.get("existing_dependencies", {})) == set(EXISTING) and
+         set(value.get("historical_existing_dependencies", {})) == set(EXISTING) and
+         value["historical_existing_dependencies"] == FROZEN_PREVIOUS_DEPENDENCIES and
+         value["existing_dependencies"] == CURRENT_REVIEWED_DEPENDENCIES and
+         value.get("scientific_experiment_executed") is False and
+         value.get("forward_review_scope", "").startswith("source-only:"), "FROZEN_PLAN_DRIFT")
     return value
 
 

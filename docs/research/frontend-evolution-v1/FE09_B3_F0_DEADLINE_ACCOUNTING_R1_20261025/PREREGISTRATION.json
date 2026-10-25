@@ -22,7 +22,7 @@
     "preserve_original_failure_and_artifact": true
   },
   "hypothesis": "Computing the retained duration as (monotonic_origin + 300.0) - monotonic_origin can round to nextafter(300.0,+infinity). The unchanged strict retained limit <=300 correctly rejects that record even when actual elapsed work is below300. Keep an explicit duration scalar from admission rather than reconstructing it through absolute-deadline addition and subtraction.",
-  "one_causal_change": "Duration representation and its evidence readback only. No scientific source, input, scheduling, coverage, result selection, target/child/job/artifact cap or acceptance tolerance changes.",
+  "one_causal_change": "The original repair changes duration representation and evidence readback only. Revision3 also corrects the derived implementation namespace regression observed in its first PR CI: frozen scientific C result identity remains V1; only the new collector receipt uses DEADLINE-R1. No scientific source, input, schedule, coverage, tolerance or resource cap changes.",
   "new_collector": "tests/validation/frontend_evolution/fe09_b3_f0_deadline_r1_qualification.py",
   "new_collector_identity": "FE09-B3-F0-C4-16K-RENDER-PAP-DEADLINE-R1",
   "derivation": {
@@ -41,7 +41,9 @@
       "Budget.remaining computes min(child_cap,effective_limit_seconds-(now_monotonic-started_monotonic)); no reconstructed absolute deadline",
       "Budget.record retains saved effective_limit_seconds directly",
       "extract original retained-budget predicates into a pure helper without loosening them; additionally require saved effective limit to equal its original job-derived expression",
-      "metadata self-test label and repair identity checks"
+      "metadata self-test label and repair identity checks",
+      "Separate the unchanged scientific case identity from the new collector receipt identity; extract their exact existing identity/source-role/authority predicates into pure helpers used by the actual case and retained-receipt paths.",
+      "Bind the literal actual failed-run identity projection fixture by hash in this registration and include its actual bytes in execution source identity."
     ],
     "unchanged": [
       "all build, DSP, input, frame, stream, equality, coverage and semantic checks",
@@ -72,14 +74,15 @@
       "tests/validation/frontend_evolution/fe09_b3_f0_deadline_r1_qualification.py",
       "tests/validation/frontend_evolution/test_fe09_b3_f0_deadline_r1.py",
       ".github/workflows/quality.yml",
-      ".github/scripts/verify-docs-gate.sh"
+      ".github/scripts/verify-docs-gate.sh",
+      "docs/research/frontend-evolution-v1/FE09_B3_F0_DEADLINE_ACCOUNTING_R1_20261025/IDENTITY_CONTROL.json"
     ],
     "quality_hook": "Only existing B3 self-test/collect entry paths and explicit display label/artifact name change to new identity. Existing job, image, original deadline, dependencies, permissions, upload cap and downstream F0 entry remain.",
     "docs_hook": "Add one pure metadata regression invocation; preserve all prior checks."
   },
   "metadata_controls": {
-    "count": 16,
-    "role": "EXPLICIT_SYNTHETIC_METADATA_ONLY_NOT_RUNNER_OR_DSP_EVIDENCE",
+    "count": 19,
+    "role": "16 EXPLICIT_SYNTHETIC_METADATA_CONTROLS plus3 ACTUAL_FAILED_RUN_IDENTITY_PROJECTION_CONTROLS; no new DSP or runner qualification",
     "per_batch_seconds": 10,
     "additional_DSP_frames": 0,
     "engineering_target_processes": 0,
@@ -99,7 +102,10 @@
       "C13 mismatched original run identity rejects",
       "C14 missing original CI deadline file rejects",
       "C15 retained command timeout still rejects",
-      "C16 retained command elapsed above original registered bound still rejects"
+      "C16 retained command elapsed above original registered bound still rejects",
+      "C17 actual failed-run case identity projection (V1) and collector identity projection (DEADLINE-R1) are accepted by their respective exact predicates, without treating the failed receipt as qualified.",
+      "C18 changing only the actual case projection ID to DEADLINE-R1 rejects CASE_IDENTITY_OR_SOURCE_ROLE.",
+      "C19 changing only the actual collector projection ID to V1 rejects RETAINED_SOURCE_OR_AUTHORITY."
     ],
     "execution_rule": "Run the registered metadata batch after source creation and independent review. Preserve first result; a concrete implementation defect may justify a separately recorded correction and repeated batch, never an automatic retry. No local DSP or process-fixture execution."
   },
@@ -110,7 +116,7 @@
     "sdk_version_or_shipping_change": false,
     "hardware_or_acoustic_promotion": false
   },
-  "preregistration_revision": 2,
+  "preregistration_revision": 3,
   "preexecution_static_correction": {
     "previous_revision_archive": "262eb95226a60391232782725ff1139f4595eb14",
     "previous_revision_sha256": "8e4f73e2726a4d30b64c48050cdffcc3ac9475d35ea3563bf888d3543091fc0e",
@@ -121,5 +127,63 @@
     "replacement_example_result": 300.00000000000006,
     "registered_control_batches_run_before_correction": 0,
     "DSP_frames_before_correction": 0
+  },
+  "scientific_case_identity": "FE09-B3-F0-C4-16K-RENDER-PAP-V1",
+  "identity_regression_correction": {
+    "state": "FROZEN_BEFORE_CORRECTED_IMPLEMENTATION_OR_19_CONTROL_BATCH",
+    "previous_head": "5d2ac9641bde7109e9073ee11b9a07b7d5e80cb8",
+    "previous_tree": "e8a3055e7681a066e6c262cf73c1204b9f0d83ae",
+    "previous_registration_sha256": "9a4f3193a2275199e40850a47325d94d96b0dc4570cae79590c8a5ef0d3d654a",
+    "first_failed_execution": {
+      "repository": "jiying2007/audio-pipeline",
+      "pr": 849,
+      "head": "5d2ac9641bde7109e9073ee11b9a07b7d5e80cb8",
+      "execution_source": "cd4194d6cfd846d7c67757a55d7a87d230a79c24",
+      "run_id": 40144562601,
+      "run_attempt": 1,
+      "job_id": 121023359735,
+      "artifact_id": 12581115058,
+      "zip_bytes": 586262,
+      "zip_sha256": "0a873297efaa2cf07e7d6e34cbd6074e85116befc7fc8609c43a30a52f4da790",
+      "case_member": "native/plain-ALL_P-0/result.json",
+      "case_bytes": 2051,
+      "case_sha256": "ed0038943d85434b7b0b0ff8a38cef7900cebdef2dd8331fe3775209c027bc43",
+      "receipt_member": "receipt.json",
+      "receipt_bytes": 59705,
+      "receipt_sha256": "b2ca04c503eb792efaca83eaef370385274d01d8709f9f37df0c6543eddeaa3e",
+      "original_failure": {
+        "reason": "CASE_IDENTITY_OR_SOURCE_ROLE",
+        "type": "Rejected"
+      },
+      "original_qualification": false,
+      "complete_admitted_cohorts": 0
+    },
+    "reason": "A shared IDENTITY constant was changed for the receipt namespace but was also consumed by validate_case. The frozen C executable correctly continued emitting its original V1 identity. The first new Native ALL_P case retained600 frames and was rejected at the first identity predicate.",
+    "first_failed_run_preserved": true,
+    "previous_16_control_PASS_and_review_preserved_with_incomplete_coverage": true,
+    "new_collector_identity_is_not_a_qualification_claim": true,
+    "fixture": {
+      "path": "docs/research/frontend-evolution-v1/FE09_B3_F0_DEADLINE_ACCOUNTING_R1_20261025/IDENTITY_CONTROL.json",
+      "bytes": 1644,
+      "sha256": "3a9c6dd787111c82efb4157da77694047e50a05e89c7cb65dd045579d2173c38"
+    },
+    "additional_identity_controls": 3,
+    "corrected_metadata_batches_before_registration": 0,
+    "corrected_DSP_frames_before_registration": 0,
+    "old_run_reruns": 0,
+    "new_head_execution_rule": "One new independently reviewed exact-head PR Verify attempt after the19 metadata controls pass; the original failed PR run is not rerun, relabeled or stitched."
+  },
+  "offline_retained_case_readback": {
+    "role": "READ_ONLY_RECOMPUTATION_OF_RETAINED_METADATA_NOT_NEW_EXECUTION_OR_PROMOTION",
+    "batch_seconds": 60,
+    "batches": 1,
+    "cases": 34,
+    "scope": "Use the corrected scientific validators on all33 original e3 retained cases (three11-case suites plus unchanged eight semantic controls), and the one600-frame first #849 failed-run Native plain-ALL_P-0 retained case. Recompute original witnesses and case identities; keep both whole invocations rejected and qualification=false.",
+    "inputs": "Existing literal frozen synthetic fixture input bytes only; no executable or fixture generator is launched.",
+    "additional_DSP_frames": 0,
+    "engineering_target_processes": 0,
+    "new_source_compilation": false,
+    "network_calls": 0,
+    "failure_policy": "Preserve the first readback result. Only a separately recorded concrete defect permits another round; no automatic retry."
   }
 }

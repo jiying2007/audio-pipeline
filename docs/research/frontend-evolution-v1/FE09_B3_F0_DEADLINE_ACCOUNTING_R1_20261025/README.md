@@ -27,3 +27,13 @@
 源码独立审查和元数据控制通过后，新的 exact-head PR 与 protected squash 后的 main 分别执行完整既有 gates。e3 已被本缺陷阻断，因此仅此阻断修复作为已登记的顺序例外推进；其他合并必须继续等待修复后 main 自身 Verify、required summary 和 matching Release/convergence 完成。新源码、PR 检查或原 19,800 帧均不能提前证明该闭环完成。
 
 本修复不发布新 SDK、不修改 E001，不产生声学、硬件、SSC305 或产品资格 promotion。
+
+## 首次修复运行暴露的身份回归及 revision3
+
+首个 PR head `5d2ac9641bde7109e9073ee11b9a07b7d5e80cb8` 在 [Verify 40144562601/a1](https://github.com/jiying2007/audio-pipeline/actions/runs/40144562601/attempts/1) 的原始 job `121023359735` 中失败。实际执行合并提交为 `cd4194d6cfd846d7c67757a55d7a87d230a79c24`。原始 artifact `12581115058` 为 586,262 B，SHA256 `0a873297efaa2cf07e7d6e34cbd6074e85116befc7fc8609c43a30a52f4da790`；23 个 ZIP 成员、22 个 manifest 成员的原字节全部核验。首个 Native ALL_P case 已处理并保留 600 帧，但 collector 在 `CASE_IDENTITY_OR_SOURCE_ROLE` 拒绝；完整准入 cohort 仍为 0，后续 F0 未执行。
+
+原因是派生入口把共享 `IDENTITY` 设为新回执 ID，导致同一个常量还用于验证仍正确输出旧 V1 ID 的冻结 C 程序。此前 16 个时间元数据控制确实通过，但没有覆盖两个 ID 的边界；此前审查也未发现此遗漏。这些原始 PASS、失败、审查和源码继续保留，均不改判。
+
+revision3 在纠正源码、19 控制批次和新 head 执行之前固定：科学 case ID 保留 `FE09-B3-F0-C4-16K-RENDER-PAP-V1`；collector receipt ID 独立使用 `FE09-B3-F0-C4-16K-RENDER-PAP-DEADLINE-R1`。原身份、source role、execution source、promotion 的判定逐项保留，仅提取两个纯 helper 以便对真实失败元数据投影做正负控制。[IDENTITY_CONTROL.json](IDENTITY_CONTROL.json) 逐字保存实际字段，并记录原 ZIP、成员和 SHA；它只验证字段边界，不证明失败 receipt 合格。增加 C17–C19 后单批预算仍为 10 秒。revision3 SHA256 `fc06a4da0db4cf5f79a90cfdb0da67c42f8b7c7eccb9dffc6b5e78cb92b44038`。
+
+另登记一次 60 秒纯只读重算：用纠正后的科学 validator 检查 e3 原 33 个 case 和首次修复失败的 1 个 case，共 34 个保留 case，并比较原 suite witness。它不启动编译、fixture 或 DSP，不重跑旧 workflow，也不将两个失败 invocation 提升为资格。源码独立复核和这些控制通过后，新的 head 执行自己的一次完整 PR CI；原失败继续单独保留。

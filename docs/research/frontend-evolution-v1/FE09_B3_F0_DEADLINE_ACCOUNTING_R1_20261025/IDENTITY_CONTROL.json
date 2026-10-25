@@ -1,0 +1,46 @@
+{
+  "case_identity_projection": {
+    "id": "FE09-B3-F0-C4-16K-RENDER-PAP-V1",
+    "schema_version": 1,
+    "source_role": "D0_FIRST_PARTY_DISCLOSED_SYNTHETIC_ENGINEERING"
+  },
+  "collector_identity_projection": {
+    "execution_source": "cd4194d6cfd846d7c67757a55d7a87d230a79c24",
+    "id": "FE09-B3-F0-C4-16K-RENDER-PAP-DEADLINE-R1",
+    "promotion": {
+      "acoustic_superiority": false,
+      "full_resource_budget": false,
+      "physical_clock": false,
+      "public_sdk": false,
+      "shipping": false,
+      "ssc305": false
+    },
+    "source_role": "D0_FIRST_PARTY_DISCLOSED_SYNTHETIC_ENGINEERING"
+  },
+  "role": "ACTUAL_FAILED_RUN_IDENTITY_FIELD_PROJECTIONS_ONLY_NOT_QUALIFICATION",
+  "schema_version": 1,
+  "source": {
+    "artifact_id": 12581115058,
+    "case_bytes": 2051,
+    "case_member": "native/plain-ALL_P-0/result.json",
+    "case_sha256": "ed0038943d85434b7b0b0ff8a38cef7900cebdef2dd8331fe3775209c027bc43",
+    "complete_admitted_cohorts": 0,
+    "execution_source": "cd4194d6cfd846d7c67757a55d7a87d230a79c24",
+    "head": "5d2ac9641bde7109e9073ee11b9a07b7d5e80cb8",
+    "job_id": 121023359735,
+    "original_failure": {
+      "reason": "CASE_IDENTITY_OR_SOURCE_ROLE",
+      "type": "Rejected"
+    },
+    "original_qualification": false,
+    "pr": 849,
+    "receipt_bytes": 59705,
+    "receipt_member": "receipt.json",
+    "receipt_sha256": "b2ca04c503eb792efaca83eaef370385274d01d8709f9f37df0c6543eddeaa3e",
+    "repository": "jiying2007/audio-pipeline",
+    "run_attempt": 1,
+    "run_id": 40144562601,
+    "zip_bytes": 586262,
+    "zip_sha256": "0a873297efaa2cf07e7d6e34cbd6074e85116befc7fc8609c43a30a52f4da790"
+  }
+}

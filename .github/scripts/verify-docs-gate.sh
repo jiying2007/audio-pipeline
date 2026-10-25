@@ -127,6 +127,7 @@ def read_regular(path: Path, cap: int) -> bytes:
             part = os.read(fd, min(65536, cap + 1 - len(chunks)))
             if not part:
                 break
+            require(len(chunks) + len(part) <= cap, "SOURCE_FILE_BOUND_EXCEEDED", str(path))
             chunks.extend(part)
         last = os.fstat(fd)
         require(len(chunks) <= cap, "SOURCE_FILE_BOUND_EXCEEDED", str(path))
@@ -221,7 +222,10 @@ def bounded_git(root: Path, args: tuple[str, ...], cap: int) -> bytes:
             require(left > CLEANUP_RESERVE_NS, "GIT_COMMAND_WHOLE_OPERATION_TIMEOUT")
             for key, _ in selector.select(min(0.05, (left - CLEANUP_RESERVE_NS) / 1e9)):
                 output, limit = streams[key.fd]
-                part = os.read(key.fd, min(65536, limit + 1 - len(output)))
+                try:
+                    part = os.read(key.fd, min(65536, limit + 1 - len(output)))
+                except BlockingIOError:
+                    continue
                 if not part:
                     selector.unregister(key.fd)
                     continue
@@ -264,6 +268,8 @@ class GitObjects:
 
     def commit(self, commit: str) -> tuple[str, tuple[str, ...]]:
         raw = self.run("cat-file", "commit", oid(commit), cap=65536)
+        actual = hashlib.sha1(b"commit " + str(len(raw)).encode() + b"\0" + raw).hexdigest()
+        require(actual == commit, "GIT_COMMIT_IDENTITY_MISMATCH")
         header = raw.split(b"\n\n", 1)[0]
         trees = [line[5:].decode("ascii") for line in header.splitlines() if line.startswith(b"tree ")]
         parents = tuple(oid(line[7:].decode("ascii")) for line in header.splitlines() if line.startswith(b"parent "))

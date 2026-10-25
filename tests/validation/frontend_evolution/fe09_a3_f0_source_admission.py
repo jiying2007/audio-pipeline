@@ -117,6 +117,7 @@ def read_regular(path: Path, cap: int) -> bytes:
             part = os.read(fd, min(65536, cap + 1 - len(chunks)))
             if not part:
                 break
+            require(len(chunks) + len(part) <= cap, "SOURCE_FILE_BOUND_EXCEEDED", str(path))
             chunks.extend(part)
         last = os.fstat(fd)
         require(len(chunks) <= cap, "SOURCE_FILE_BOUND_EXCEEDED", str(path))
@@ -211,7 +212,10 @@ def bounded_git(root: Path, args: tuple[str, ...], cap: int) -> bytes:
             require(left > CLEANUP_RESERVE_NS, "GIT_COMMAND_WHOLE_OPERATION_TIMEOUT")
             for key, _ in selector.select(min(0.05, (left - CLEANUP_RESERVE_NS) / 1e9)):
                 output, limit = streams[key.fd]
-                part = os.read(key.fd, min(65536, limit + 1 - len(output)))
+                try:
+                    part = os.read(key.fd, min(65536, limit + 1 - len(output)))
+                except BlockingIOError:
+                    continue
                 if not part:
                     selector.unregister(key.fd)
                     continue
@@ -254,6 +258,8 @@ class GitObjects:
 
     def commit(self, commit: str) -> tuple[str, tuple[str, ...]]:
         raw = self.run("cat-file", "commit", oid(commit), cap=65536)
+        actual = hashlib.sha1(b"commit " + str(len(raw)).encode() + b"\0" + raw).hexdigest()
+        require(actual == commit, "GIT_COMMIT_IDENTITY_MISMATCH")
         header = raw.split(b"\n\n", 1)[0]
         trees = [line[5:].decode("ascii") for line in header.splitlines() if line.startswith(b"tree ")]
         parents = tuple(oid(line[7:].decode("ascii")) for line in header.splitlines() if line.startswith(b"parent "))
@@ -631,6 +637,617 @@ def write_github_outputs(path: Path | None, receipt: dict[str, Any]) -> None:
         os.close(fd)
 
 
+# Provider/experiment admission is separate from the local source dispatcher.
+# These functions accept original decoded provider objects and actual local Git
+# observations. Offline tests use explicitly labelled in-memory metadata seeds.
+from datetime import datetime, timezone
+
+ISSUE_NUMBER = 847
+ISSUE_ID = 6018431984
+ISSUE_NODE = "I_kwDOUE9X8c8AAAABZrn78A"
+ISSUE_CREATED = "2026-10-24T22:45:25Z"
+AUTHOR_ID = 33591504
+FREEZE_KIND = "FE09_A3_F0_R1_EXECUTION_FREEZE"
+API_PREFIX = "https://api.github.com/repos/" + REPOSITORY + "/"
+ISSUE_URL = API_PREFIX + "issues/847"
+FIVE_READ = {key: "read" for key in ("contents", "packages", "actions", "issues", "pull-requests")}
+API_BODY_CAPS = (131072, 2097152, 16384, 524288, 524288, 65536, 1048576, 131072,
+                 65536, 131072, 16384, 524288, 524288, 65536, 1048576, 131072, 65536)
+API_LABELS = ("pre-run", "pre-jobs", "pre-main-ref", "pre-source-first", "pre-source-second",
+              "pre-issue-before", "pre-comments", "pre-selected-comment", "pre-issue-after",
+              "post-run", "post-main-ref", "post-source-first", "post-source-second",
+              "post-issue-before", "post-comments", "post-selected-comment", "post-issue-after")
+CONTROL_BYTES = 8388608
+API_ACTIVE_NS = 60_000_000_000
+FREEZE_CONSTANTS = {
+    "schema_version": 1, "kind": FREEZE_KIND, "experiment_id": IDENTITY,
+    "repository_id": REPOSITORY_ID, "repository_full_name": REPOSITORY,
+    "issue_number": ISSUE_NUMBER, "issue_id": ISSUE_ID, "issue_node_id": ISSUE_NODE,
+    "head_ref": BRANCH, "scientific_baseline_sha": SCIENTIFIC_BASE,
+    "decision": "APPROVED_FOR_REGISTERED_FINITE_A3_EXECUTION",
+    "allowed_events": ["pull_request", "push"], "allowed_run_attempts": [1],
+}
+FREEZE_GIT_FIELDS = ("integration_base_sha", "integration_base_tree", "candidate_sha", "candidate_tree")
+FREEZE_DOC_FIELDS = {
+    "source_lock_sha256": "source-lock.json", "test_contract_sha256": "test-contract.json",
+    "execution_baseline_sha256": "EXECUTION_BASELINE.json",
+    "admission_controls_sha256": "ADMISSION_NEGATIVE_CONTROLS.json", "readme_sha256": "README.md",
+}
+FREEZE_KEYS = set(FREEZE_CONSTANTS) | set(FREEZE_GIT_FIELDS) | set(FREEZE_DOC_FIELDS) | {"independent_review_report_sha256"}
+
+
+def utc_ns(value: Any, reason: str = "STRICT_METADATA_SCHEMA_DRIFT") -> int:
+    require(isinstance(value, str) and re.fullmatch(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z", value) is not None,
+            reason)
+    try:
+        delta = datetime.strptime(value, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc) - datetime(1970, 1, 1, tzinfo=timezone.utc)
+    except ValueError as exc:
+        raise AdmissionError(reason) from exc
+    return (delta.days * 86400 + delta.seconds) * 1_000_000_000
+
+
+def positive_id(value: Any, reason: str) -> int:
+    require(type(value) is int and 0 < value < 2**63, reason)
+    return value
+
+
+def provider_repository(value: Any, reason: str = "REPOSITORY_IDENTITY_DRIFT") -> None:
+    require(isinstance(value, dict) and type(value.get("id")) is int and
+            value["id"] == REPOSITORY_ID and value.get("full_name") == REPOSITORY, reason)
+
+
+def provider_owner(value: Any, reason: str) -> None:
+    require(isinstance(value, dict) and type(value.get("id")) is int and value["id"] == AUTHOR_ID and
+            value.get("login") == "jiying2007" and value.get("type") == "User", reason)
+
+
+def no_next_link(headers: Any, reason: str) -> None:
+    require(isinstance(headers, dict) and all(isinstance(k, str) and isinstance(v, str) for k, v in headers.items()), reason)
+    links = [value for key, value in headers.items() if key.lower() == "link"]
+    require(len(links) <= 1, reason)
+    if links:
+        # A malformed Link value cannot be used as a completeness witness.
+        for item in links[0].split(","):
+            require(re.fullmatch(r'\s*<https://api\.github\.com/[^<>\r\n]+>;\s*rel="(?:prev|first|last|next)"\s*', item) is not None, reason)
+            require('rel="next"' not in item, reason)
+
+
+def validate_run(run: Any, actual: dict[str, Any]) -> None:
+    require(isinstance(run, dict), "STRICT_METADATA_SCHEMA_DRIFT")
+    provider_repository(run.get("repository"))
+    provider_repository(run.get("head_repository"))
+    require(positive_id(run.get("id"), "RUN_HEAD_BINDING_DRIFT") == actual["run_id"], "RUN_HEAD_BINDING_DRIFT")
+    require(type(run.get("run_attempt")) is int and run["run_attempt"] == actual["attempt"] == 1,
+            "RUN_ATTEMPT_NOT_REGISTERED")
+    require(run.get("event") == actual["event"] and actual["event"] in ("pull_request", "push"),
+            "EVENT_NOT_REGISTERED")
+    require(run.get("head_sha") == actual["event_head"], "RUN_HEAD_BINDING_DRIFT")
+    require(run.get("head_branch") == (BRANCH if actual["event"] == "pull_request" else "main"),
+            "RUN_HEAD_BINDING_DRIFT")
+    require(run.get("path") == ".github/workflows/verify.yml" and run.get("name") == "Verify",
+            "RUN_WORKFLOW_BINDING_DRIFT")
+    require(run.get("status") in ("queued", "in_progress", "completed") and
+            run.get("conclusion") in (None, "success"), "ACTUAL_RUN_FAILED_OR_CANCELLED")
+    utc_ns(run.get("created_at"))
+
+
+def validate_jobs(jobs: Any, headers: dict[str, str], run_id: int) -> dict[str, Any]:
+    reason = "ACTUAL_JOBS_PAGE_INCOMPLETE"
+    require(isinstance(jobs, dict) and type(jobs.get("total_count")) is int and
+            isinstance(jobs.get("jobs"), list), reason)
+    values = jobs["jobs"]
+    require(0 < jobs["total_count"] == len(values) <= 100, reason)
+    no_next_link(headers, reason)
+    ids: set[int] = set()
+    selected: list[dict[str, Any]] = []
+    for item in values:
+        require(isinstance(item, dict), reason)
+        job_id = positive_id(item.get("id"), reason)
+        require(job_id not in ids and type(item.get("run_id")) is int and item["run_id"] == run_id, reason)
+        ids.add(job_id)
+        if item.get("name") in ("frontend-s3-t3s2b1ba3", "quality / frontend-s3-t3s2b1ba3"):
+            selected.append(item)
+    require(len(selected) == 1, "ACTUAL_A3_JOB_NOT_UNIQUE")
+    job = selected[0]
+    require(isinstance(job.get("steps"), list) and bool(job["steps"]), "ORIGINAL_JOB_DEADLINE_UNPROVEN")
+    started: list[int] = []
+    numbers: set[int] = set()
+    for step in job["steps"]:
+        require(isinstance(step, dict), "ORIGINAL_JOB_DEADLINE_UNPROVEN")
+        number = positive_id(step.get("number"), "ORIGINAL_JOB_DEADLINE_UNPROVEN")
+        require(number not in numbers, "ORIGINAL_JOB_DEADLINE_UNPROVEN")
+        numbers.add(number)
+        if step.get("started_at") is not None:
+            started.append(utc_ns(step["started_at"], "ORIGINAL_JOB_DEADLINE_UNPROVEN"))
+    require(bool(started), "ORIGINAL_JOB_DEADLINE_UNPROVEN")
+    return {"job_id": job["id"], "job_name": job["name"], "earliest_step_epoch_ns": min(started),
+            "original_job_deadline_epoch_ns": min(started) + 900_000_000_000}
+
+
+def bind_collector_budget(job: dict[str, Any], stage_monotonic_ns: int, stage_epoch_ns: int) -> DurationBudget:
+    require(strict_int(stage_monotonic_ns) and strict_int(stage_epoch_ns), "TIME_BUDGET_INVALID")
+    admitted = min(600_000_000_000, job["original_job_deadline_epoch_ns"] - stage_epoch_ns - 300_000_000_000)
+    require(admitted > 0, "A3_ENCLOSING_BUDGET_EXHAUSTED")
+    return DurationBudget(stage_monotonic_ns, admitted)
+
+
+def validate_associations(values: Any, headers: dict[str, str], *, role: str,
+                          event_sha: str, event_pr_number: int | None) -> dict[str, Any]:
+    reason = "ASSOCIATED_PR_LIST_INCOMPLETE"
+    require(isinstance(values, list) and len(values) < 100, reason)
+    no_next_link(headers, reason)
+    ids: set[int] = set()
+    candidates: list[dict[str, Any]] = []
+    for item in values:
+        require(isinstance(item, dict), reason)
+        key = positive_id(item.get("id"), reason)
+        number = positive_id(item.get("number"), reason)
+        require(key not in ids, "ASSOCIATED_PR_NOT_UNIQUE")
+        ids.add(key)
+        head, base = item.get("head", {}), item.get("base", {})
+        require(isinstance(head, dict) and isinstance(base, dict), reason)
+        provider_repository(base.get("repo"), reason)
+        require(isinstance(head.get("repo"), dict) and type(head["repo"].get("id")) is int,
+                reason)
+        registered = (head["repo"].get("id") == REPOSITORY_ID and
+                      head["repo"].get("full_name") == REPOSITORY and
+                      head.get("ref") == BRANCH and base.get("ref") == "main")
+        if not registered:
+            continue
+        if role == "pull_request":
+            # Closed prior PRs for exactly the same C also make its association
+            # nonunique; reopening a fresh PR is not a fresh science allowance.
+            if head.get("sha") == event_sha:
+                candidates.append(item)
+        else:
+            require(role == "push", "EVENT_NOT_REGISTERED")
+            if item.get("merge_commit_sha") == event_sha and item.get("state") == "closed" and item.get("merged_at") is not None:
+                candidates.append(item)
+    require(len(candidates) == 1, "ASSOCIATED_PR_NOT_UNIQUE")
+    if role == "pull_request":
+        require(candidates[0]["number"] == event_pr_number, "ASSOCIATED_PR_NOT_UNIQUE")
+    return candidates[0]
+
+
+def graph_node(graph: dict[str, Any], commit: str, reason: str) -> dict[str, Any]:
+    value = graph.get(commit)
+    require(isinstance(value, dict) and isinstance(value.get("tree"), str) and
+            SHA1.fullmatch(value["tree"]) is not None and isinstance(value.get("parents"), list) and
+            all(isinstance(parent, str) and SHA1.fullmatch(parent) is not None for parent in value["parents"]), reason)
+    return value
+
+
+def graph_has_ancestor(graph: dict[str, Any], ancestor: str, descendant: str) -> bool:
+    pending, seen = [descendant], set()
+    while pending:
+        current = pending.pop()
+        if current == ancestor:
+            return True
+        if current in seen:
+            continue
+        seen.add(current)
+        value = graph.get(current)
+        if not isinstance(value, dict) or not isinstance(value.get("parents"), list):
+            return False
+        pending.extend(value["parents"])
+    return False
+
+
+def derive_actual_source(run: dict[str, Any], actual: dict[str, Any], pr: Any,
+                         association: dict[str, Any], main_ref: Any,
+                         graph: dict[str, Any], qualified_base: dict[str, Any],
+                         previous: dict[str, Any] | None = None) -> dict[str, Any]:
+    validate_run(run, actual)
+    require(isinstance(pr, dict), "PR_SOURCE_IDENTITY_DRIFT")
+    require(positive_id(pr.get("id"), "PR_SOURCE_IDENTITY_DRIFT") == association["id"] and
+            positive_id(pr.get("number"), "PR_SOURCE_IDENTITY_DRIFT") == association["number"],
+            "PR_SOURCE_IDENTITY_DRIFT")
+    provider_owner(pr.get("user"), "PR_SOURCE_IDENTITY_DRIFT")
+    require(pr.get("draft") is False, "PR_SOURCE_IDENTITY_DRIFT")
+    head, base = pr.get("head", {}), pr.get("base", {})
+    require(isinstance(head, dict) and isinstance(base, dict), "PR_SOURCE_IDENTITY_DRIFT")
+    for value in (head, base):
+        provider_repository(value.get("repo"), "PR_SOURCE_IDENTITY_DRIFT")
+    require(head.get("ref") == BRANCH and base.get("ref") == "main", "PR_SOURCE_IDENTITY_DRIFT")
+    c, b = oid(head.get("sha")), oid(base.get("sha"))
+    if previous is not None:
+        require((b, c, pr["id"], pr["number"]) ==
+                (previous["B"], previous["C"], previous["PR_id"], previous["PR_number"]),
+                "SOURCE_IDENTITY_CHANGED_AFTER_PRE")
+    require(isinstance(qualified_base, dict) and qualified_base.get("commit") == b and
+            qualified_base.get("status") == "QUALIFIED_PROTECTED_BASE_WITH_GUARD",
+            "INTEGRATION_BASE_NOT_QUALIFIED")
+    base_node = graph_node(graph, b, "C_BASE_ANCESTRY_DRIFT")
+    candidate_node = graph_node(graph, c, "C_BASE_ANCESTRY_DRIFT")
+    require(base_node["tree"] == qualified_base.get("tree"), "INTEGRATION_BASE_NOT_QUALIFIED")
+    require(graph_has_ancestor(graph, b, c), "C_BASE_ANCESTRY_DRIFT")
+    require(isinstance(main_ref, dict) and main_ref.get("ref") == "refs/heads/main" and
+            isinstance(main_ref.get("object"), dict) and main_ref["object"].get("type") == "commit",
+            "PROTECTED_MAIN_REF_DRIFT")
+    checkout = actual["checkout"]
+    node = graph_node(graph, checkout, "EXECUTION_TREE_NOT_REVIEWED_C")
+    if actual["event"] == "pull_request":
+        require(pr.get("state") == "open" and pr.get("merged") is False and
+                actual["event_head"] == c and actual.get("event_pr_number") == pr["number"],
+                "PR_SOURCE_IDENTITY_DRIFT")
+        require(main_ref["object"].get("sha") == b, "PROTECTED_MAIN_REF_DRIFT")
+        require(pr.get("merge_commit_sha") == checkout and node["parents"] == [b, c],
+                "PR_TEST_MERGE_RELATION_DRIFT")
+    else:
+        require(actual["event"] == "push" and actual["event_head"] == checkout,
+                "MAIN_C_DERIVATION_NOT_PROVIDER_BOUND")
+        require(pr.get("state") == "closed" and pr.get("merged") is True and
+                pr.get("merge_commit_sha") == checkout, "MAIN_C_DERIVATION_NOT_PROVIDER_BOUND")
+        require(main_ref["object"].get("sha") == checkout, "PROTECTED_MAIN_REF_DRIFT")
+        require(node["parents"] == [b], "MAIN_SQUASH_PARENT_DRIFT")
+        require(utc_ns(pr.get("merged_at")) <= utc_ns(run["created_at"]), "MERGE_RUN_ORDER_INVALID")
+    require(node["tree"] == candidate_node["tree"], "EXECUTION_TREE_NOT_REVIEWED_C")
+    return {"event": actual["event"], "run_id": actual["run_id"], "attempt": 1,
+            "run_created_at": run["created_at"], "B": b, "B_tree": base_node["tree"],
+            "C": c, "C_tree": candidate_node["tree"], "checkout": checkout,
+            "PR_id": pr["id"], "PR_number": pr["number"]}
+
+
+def validate_registration_issue(issue: Any) -> int:
+    reason = "REGISTRATION_ISSUE_IDENTITY_DRIFT"
+    require(isinstance(issue, dict) and type(issue.get("number")) is int and issue["number"] == ISSUE_NUMBER and
+            type(issue.get("id")) is int and issue["id"] == ISSUE_ID and issue.get("node_id") == ISSUE_NODE and
+            issue.get("created_at") == ISSUE_CREATED and issue.get("url") == ISSUE_URL and
+            issue.get("repository_url") == API_PREFIX.rstrip("/"), reason)
+    provider_owner(issue.get("user"), reason)
+    require(issue.get("state") == "open" and "pull_request" not in issue, "REGISTRATION_ISSUE_NOT_OPEN")
+    require(type(issue.get("comments")) is int and 0 <= issue["comments"] <= 100,
+            "STRICT_METADATA_SCHEMA_DRIFT")
+    return issue["comments"]
+
+
+def freeze_body(comment: dict[str, Any]) -> dict[str, Any] | None:
+    body = comment.get("body")
+    require(isinstance(body, str), "FREEZE_COMMENT_LIST_INVALID")
+    if FREEZE_KIND not in body or not body.lstrip().startswith(("{", "```")):
+        return None
+    try:
+        value = strict_json(body.encode("utf-8"), 131072)
+    except (AdmissionError, UnicodeError) as exc:
+        raise AdmissionError("FREEZE_JSON_NOT_STRICT") from exc
+    require(isinstance(value, dict), "FREEZE_JSON_NOT_STRICT")
+    if value.get("kind") == FREEZE_KIND and value.get("experiment_id") == IDENTITY:
+        require(isinstance(value.get("candidate_sha"), str) and SHA1.fullmatch(value["candidate_sha"]) is not None,
+                "FREEZE_SCHEMA_DRIFT")
+    return value if value.get("kind") == FREEZE_KIND else None
+
+
+def validate_freeze_payload(value: dict[str, Any], source: dict[str, Any],
+                            documents: dict[str, str]) -> None:
+    require(set(value) == FREEZE_KEYS, "FREEZE_SCHEMA_DRIFT")
+    for key, expected in FREEZE_CONSTANTS.items():
+        actual = value[key]
+        require(type(actual) is type(expected) and actual == expected, "FREEZE_SCHEMA_DRIFT")
+        if isinstance(expected, list):
+            require(len(actual) == len(expected) and all(type(a) is type(b) for a, b in zip(actual, expected)),
+                    "FREEZE_SCHEMA_DRIFT")
+    for key in FREEZE_GIT_FIELDS:
+        require(isinstance(value[key], str) and SHA1.fullmatch(value[key]) is not None,
+                "FREEZE_SCHEMA_DRIFT")
+    for key in (*FREEZE_DOC_FIELDS, "independent_review_report_sha256"):
+        require(isinstance(value[key], str) and SHA256.fullmatch(value[key]) is not None,
+                "FREEZE_SCHEMA_DRIFT")
+    expected_source = {"integration_base_sha": source["B"], "integration_base_tree": source["B_tree"],
+                       "candidate_sha": source["C"], "candidate_tree": source["C_tree"]}
+    require(all(value[k] == v for k, v in expected_source.items()), "FREEZE_SOURCE_IDENTITY_DRIFT")
+    require(set(documents) == set(FREEZE_DOC_FIELDS), "EXECUTION_SOURCE_CLOSURE_INCOMPLETE")
+    require(all(value[key] == digest for key, digest in documents.items()), "FREEZE_SOURCE_IDENTITY_DRIFT")
+
+
+def select_freeze(comments: Any, headers: dict[str, str], issue_before: Any,
+                  source: dict[str, Any], documents: dict[str, str]) -> dict[str, Any]:
+    count = validate_registration_issue(issue_before)
+    require(isinstance(comments, list) and len(comments) == count <= 100,
+            "FREEZE_COMMENT_LIST_INCOMPLETE")
+    no_next_link(headers, "FREEZE_COMMENT_LIST_INCOMPLETE")
+    seen: set[int] = set()
+    matches: list[tuple[dict[str, Any], dict[str, Any]]] = []
+    for comment in comments:
+        require(isinstance(comment, dict), "FREEZE_COMMENT_LIST_INVALID")
+        number = positive_id(comment.get("id"), "FREEZE_COMMENT_LIST_INVALID")
+        require(number not in seen, "FREEZE_COMMENT_LIST_INVALID")
+        seen.add(number)
+        require(comment.get("issue_url") == ISSUE_URL, "FREEZE_COMMENT_ISSUE_DRIFT")
+        value = freeze_body(comment)
+        if value is not None and value.get("experiment_id") == IDENTITY and value.get("candidate_sha") == source["C"]:
+            matches.append((comment, value))
+    require(len(matches) == 1, "FREEZE_FOR_ACTUAL_C_NOT_UNIQUE")
+    comment, value = matches[0]
+    validate_freeze_payload(value, source, documents)
+    provider_owner(comment.get("user"), "FREEZE_AUTHOR_IDENTITY_DRIFT")
+    require(comment.get("created_at") == comment.get("updated_at"), "FREEZE_COMMENT_EDITED")
+    require(utc_ns(comment.get("created_at")) < utc_ns(source["run_created_at"]), "FREEZE_NOT_BEFORE_RUN")
+    return {"comment": comment, "payload": value,
+            "body_sha256": hashlib.sha256(comment["body"].encode("utf-8")).hexdigest()}
+
+
+def finish_freeze_checkpoint(selected: dict[str, Any], direct: Any, issue_before: Any,
+                             issue_after: Any, previous: dict[str, Any] | None = None) -> dict[str, Any]:
+    before = validate_registration_issue(issue_before)
+    after = validate_registration_issue(issue_after)
+    require(before == after, "FREEZE_COMMENT_CHECKPOINT_RACE")
+    require(isinstance(direct, dict), "FREEZE_DIRECT_LIST_MISMATCH")
+    comment = selected["comment"]
+    keys = ("id", "body", "created_at", "updated_at", "issue_url")
+    require(all(key in direct and direct[key] == comment.get(key) for key in keys),
+            "FREEZE_DIRECT_LIST_MISMATCH")
+    require(isinstance(direct.get("user"), dict) and
+            all(direct["user"].get(key) == comment["user"][key] for key in ("id", "login", "type")),
+            "FREEZE_DIRECT_LIST_MISMATCH")
+    result = {"comment_id": comment["id"], "body_sha256": selected["body_sha256"],
+              "author": {key: comment["user"][key] for key in ("id", "login", "type")},
+              "created_at": comment["created_at"], "updated_at": comment["updated_at"],
+              "payload": selected["payload"], "complete_checkpoint": True}
+    if previous is not None:
+        require(result == previous, "FREEZE_CHANGED_AFTER_PRE")
+    return result
+
+
+@dataclasses.dataclass
+class AcquisitionLedger:
+    next_route: int = 1
+    active_ns: int = 0
+    raw_bytes: int = 0
+    helper_starts: int = 0
+    helper_reaped: bool = False
+    accounted_routes: set[int] = dataclasses.field(default_factory=set)
+
+    def admit_start(self, route: int) -> None:
+        require(self.next_route == len(self.accounted_routes) + 1, "API_BUDGET_ACCOUNTING_DRIFT")
+        require(type(route) is int and route == self.next_route and 1 <= route <= 17,
+                "API_REQUEST_BUDGET_EXCEEDED")
+        require(self.active_ns < API_ACTIVE_NS, "API_AGGREGATE_BUDGET_EXCEEDED")
+        self.next_route += 1
+
+    def account(self, route: int, body_bytes: int, exchange_bytes: int, duration_ns: int) -> None:
+        require(type(route) is int and route == self.next_route - 1 == len(self.accounted_routes) + 1 and
+                route not in self.accounted_routes and 1 <= route <= 17, "API_BUDGET_ACCOUNTING_DRIFT")
+        require(strict_int(body_bytes) and body_bytes <= API_BODY_CAPS[route - 1], "API_BODY_BOUND_EXCEEDED")
+        require(strict_int(exchange_bytes) and exchange_bytes <= 16384, "API_EXCHANGE_BOUND_EXCEEDED")
+        require(strict_int(duration_ns) and duration_ns <= COMMAND_NS, "API_WHOLE_OPERATION_TIMEOUT")
+        require(self.active_ns + duration_ns <= API_ACTIVE_NS, "API_AGGREGATE_BUDGET_EXCEEDED")
+        require(self.raw_bytes + body_bytes + exchange_bytes <= CONTROL_BYTES, "CONTROL_EVIDENCE_BOUND_EXCEEDED")
+        self.active_ns += duration_ns
+        self.raw_bytes += body_bytes + exchange_bytes
+        self.accounted_routes.add(route)
+
+    def start_helper(self) -> None:
+        require(type(self.helper_starts) is int and self.helper_starts == 0, "METADATA_HELPER_RETRY_NOT_ALLOWED")
+        self.helper_starts += 1
+
+    def finish(self) -> None:
+        require(self.next_route == 18 and self.accounted_routes == set(range(1, 18)), "FREEZE_POST_CHECKPOINT_INCOMPLETE")
+        require(type(self.helper_starts) is int and self.helper_starts == 1 and self.helper_reaped is True,
+                "METADATA_HELPER_LIFECYCLE_INCOMPLETE")
+
+
+def validate_api_exchange(route: int, body: bytes, exchange: dict[str, Any], expected_url: str) -> Any:
+    require(type(route) is int and 1 <= route <= 17 and isinstance(body, bytes), "API_ROUTE_NOT_REGISTERED")
+    require(expected_url.startswith(API_PREFIX) and exchange.get("url") == expected_url and
+            exchange.get("method") == "GET", "API_ROUTE_NOT_REGISTERED")
+    require(type(exchange.get("status")) is int and exchange["status"] == 200 and
+            exchange.get("complete") is True, "API_RESPONSE_NOT_ADMITTED")
+    headers = exchange.get("headers", {})
+    require(isinstance(headers, dict), "API_RESPONSE_NOT_ADMITTED")
+    encoding = [v for k, v in headers.items() if k.lower() == "content-encoding"]
+    require(len(encoding) <= 1 and (not encoding or encoding[0].lower() == "identity"),
+            "API_RESPONSE_NOT_ADMITTED")
+    require(len(body) <= API_BODY_CAPS[route - 1], "API_BODY_BOUND_EXCEEDED")
+    require(exchange.get("body_sha256") == hashlib.sha256(body).hexdigest() and
+            type(exchange.get("body_bytes")) is int and exchange["body_bytes"] == len(body),
+            "CONTROL_ORIGINAL_EVIDENCE_INCOMPLETE")
+    return strict_json(body, API_BODY_CAPS[route - 1])
+
+
+def provider_metadata_fixture(role: str = "pull_request") -> dict[str, Any]:
+    """Nonempty typed offline fixture; none of these objects are live evidence."""
+    repository = {"id": REPOSITORY_ID, "full_name": REPOSITORY}
+    user = {"id": AUTHOR_ID, "login": "jiying2007", "type": "User"}
+    b, c, m, s = (letter * 40 for letter in "1234")
+    checkout = m if role == "pull_request" else s
+    actual = {"run_id": 42, "attempt": 1, "event": role,
+              "event_head": c if role == "pull_request" else s,
+              "checkout": checkout, "event_pr_number": 123 if role == "pull_request" else None}
+    run = {"id": 42, "run_attempt": 1, "event": role, "head_sha": actual["event_head"],
+           "head_branch": BRANCH if role == "pull_request" else "main",
+           "repository": copy.deepcopy(repository), "head_repository": copy.deepcopy(repository),
+           "path": ".github/workflows/verify.yml", "name": "Verify", "status": "in_progress",
+           "conclusion": None, "created_at": "2026-10-25T00:00:01Z"}
+    pr = {"id": 456, "number": 123, "draft": False, "state": "open" if role == "pull_request" else "closed",
+          "merged": role == "push", "merged_at": None if role == "pull_request" else "2026-10-25T00:00:00Z",
+          "merge_commit_sha": checkout, "user": copy.deepcopy(user),
+          "head": {"ref": BRANCH, "sha": c, "repo": copy.deepcopy(repository)},
+          "base": {"ref": "main", "sha": b, "repo": copy.deepcopy(repository)}}
+    graph = {b: {"tree": "a" * 40, "parents": []}, c: {"tree": "b" * 40, "parents": [b]},
+             m: {"tree": "b" * 40, "parents": [b, c]}, s: {"tree": "b" * 40, "parents": [b]}}
+    qualified = {"status": "QUALIFIED_PROTECTED_BASE_WITH_GUARD", "commit": b, "tree": "a" * 40}
+    main_ref = {"ref": "refs/heads/main", "object": {"type": "commit", "sha": b if role == "pull_request" else s}}
+    association = copy.deepcopy(pr)
+    source = derive_actual_source(run, actual, pr, association, main_ref, graph, qualified)
+    documents = {key: hashlib.sha256(("OFFLINE METADATA FIXTURE / " + name).encode()).hexdigest()
+                 for key, name in FREEZE_DOC_FIELDS.items()}
+    payload = copy.deepcopy(FREEZE_CONSTANTS)
+    payload.update({"integration_base_sha": b, "integration_base_tree": "a" * 40,
+                    "candidate_sha": c, "candidate_tree": "b" * 40,
+                    "independent_review_report_sha256": hashlib.sha256(b"OFFLINE REVIEW FIXTURE").hexdigest(),
+                    **documents})
+    comment = {"id": 789, "issue_url": ISSUE_URL, "user": copy.deepcopy(user),
+               "created_at": "2026-10-24T23:59:50Z", "updated_at": "2026-10-24T23:59:50Z",
+               "body": json.dumps(payload, sort_keys=True)}
+    issue = {"number": ISSUE_NUMBER, "id": ISSUE_ID, "node_id": ISSUE_NODE, "url": ISSUE_URL,
+             "repository_url": API_PREFIX.rstrip("/"), "created_at": ISSUE_CREATED,
+             "user": copy.deepcopy(user), "state": "open", "comments": 1}
+    jobs = {"total_count": 2, "jobs": [
+        {"id": 101, "run_id": 42, "name": "quality / frontend-s3-t3s2b1ba3",
+         "steps": [{"number": 1, "name": "Set up job", "started_at": "2026-10-25T00:00:02Z"},
+                   {"number": 2, "name": "Checkout", "started_at": "2026-10-25T00:00:03Z"}]},
+        {"id": 102, "run_id": 42, "name": "unrelated-metadata-fixture", "steps": []}]}
+    return {"OFFLINE_METADATA_FIXTURE_ONLY": True, "actual": actual, "run": run, "pr": pr,
+            "associations": [association], "main_ref": main_ref, "graph": graph,
+            "qualified_base": qualified, "source": source, "documents": documents,
+            "payload": payload, "comments": [comment], "direct": copy.deepcopy(comment),
+            "issue_before": issue, "issue_after": copy.deepcopy(issue), "headers": {}, "jobs": jobs}
+
+
+def fixture_source(seed: dict[str, Any], previous: dict[str, Any] | None = None) -> dict[str, Any]:
+    association = validate_associations(seed["associations"], seed["headers"], role=seed["actual"]["event"],
+                                         event_sha=seed["actual"]["event_head"],
+                                         event_pr_number=seed["actual"].get("event_pr_number"))
+    return derive_actual_source(seed["run"], seed["actual"], seed["pr"], association,
+                                seed["main_ref"], seed["graph"], seed["qualified_base"], previous)
+
+
+def fixture_freeze(seed: dict[str, Any], previous: dict[str, Any] | None = None) -> dict[str, Any]:
+    selected = select_freeze(seed["comments"], seed["headers"], seed["issue_before"],
+                             seed["source"], seed["documents"])
+    return finish_freeze_checkpoint(selected, seed["direct"], seed["issue_before"],
+                                     seed["issue_after"], previous)
+
+
+def provider_metadata_self_test() -> dict[str, Any]:
+    """Finite original-byte/typed-object controls; no process, HTTP or DSP."""
+    seed = provider_metadata_fixture()
+    completed: list[dict[str, str]] = []
+    positives: list[str] = []
+    first = fixture_freeze(seed)
+    require(fixture_source(seed) == seed["source"], "SELF_TEST_PROVIDER_POSITIVE")
+    require(fixture_freeze(seed, first) == first, "SELF_TEST_PROVIDER_POSITIVE")
+    positives.append("ADMP01")
+    main = provider_metadata_fixture("push")
+    require(fixture_source(main) == main["source"] and fixture_freeze(main)["complete_checkpoint"],
+            "SELF_TEST_PROVIDER_POSITIVE")
+    positives.append("ADMP02")
+    ordinary = copy.deepcopy(seed)
+    ordinary["comments"].append({"id": 790, "issue_url": ISSUE_URL, "body": "Ordinary offline discussion fixture."})
+    ordinary["issue_before"]["comments"] = ordinary["issue_after"]["comments"] = 2
+    require(fixture_freeze(ordinary, first) == first, "SELF_TEST_PROVIDER_POSITIVE")
+    positives.append("ADMP06")
+
+    def reject(name: str, reason: str, subject: dict[str, Any], check: Any) -> None:
+        require(subject.get("OFFLINE_METADATA_FIXTURE_ONLY") is True, "SELF_TEST_FIXTURE_LABEL_REQUIRED")
+        try:
+            check(subject)
+        except AdmissionError as exc:
+            require(exc.reason == reason, "SELF_TEST_WRONG_DENIAL", name + ":" + exc.reason)
+        else:
+            raise AdmissionError("SELF_TEST_DID_NOT_REJECT", name)
+        completed.append({"name": name, "expected_reason": reason, "actual_reason": reason})
+
+    def mutate(path: tuple[Any, ...], value: Any, original: dict[str, Any] = seed) -> dict[str, Any]:
+        result = copy.deepcopy(original)
+        target: Any = result
+        for key in path[:-1]:
+            target = target[key]
+        target[path[-1]] = value
+        return result
+
+    source_cases = [
+        ("wrong_event", "EVENT_NOT_REGISTERED", ("run", "event"), "workflow_dispatch"),
+        ("attempt2", "RUN_ATTEMPT_NOT_REGISTERED", ("run", "run_attempt"), 2),
+        ("run_head_mismatch", "RUN_HEAD_BINDING_DRIFT", ("run", "head_sha"), "9" * 40),
+        ("wrong_run_repo", "REPOSITORY_IDENTITY_DRIFT", ("run", "repository", "id"), REPOSITORY_ID + 1),
+        ("wrong_main_pre", "PROTECTED_MAIN_REF_DRIFT", ("main_ref", "object", "sha"), "9" * 40),
+        ("PR_is_draft", "PR_SOURCE_IDENTITY_DRIFT", ("pr", "draft"), True),
+        ("PR_is_fork", "PR_SOURCE_IDENTITY_DRIFT", ("pr", "head", "repo", "id"), REPOSITORY_ID + 1),
+        ("PR_base_not_main", "PR_SOURCE_IDENTITY_DRIFT", ("pr", "base", "ref"), "other"),
+        ("PR_base_not_closed_B", "INTEGRATION_BASE_NOT_QUALIFIED", ("qualified_base", "commit"), "9" * 40),
+        ("M_wrong_parents", "PR_TEST_MERGE_RELATION_DRIFT", ("graph", "3" * 40, "parents"), ["2" * 40, "1" * 40]),
+        ("M_tree_not_C", "EXECUTION_TREE_NOT_REVIEWED_C", ("graph", "3" * 40, "tree"), "e" * 40),
+        ("C_not_descendant_B", "C_BASE_ANCESTRY_DRIFT", ("graph", "2" * 40, "parents"), []),
+    ]
+    for name, reason, path, value in source_cases:
+        reject(name, reason, mutate(path, value), fixture_source)
+    for name, reason, path, value in (
+        ("S_wrong_parent", "MAIN_SQUASH_PARENT_DRIFT", ("graph", "4" * 40, "parents"), ["1" * 40, "2" * 40]),
+        ("S_tree_not_C", "EXECUTION_TREE_NOT_REVIEWED_C", ("graph", "4" * 40, "tree"), "e" * 40),
+        ("merged_after_run", "MERGE_RUN_ORDER_INVALID", ("pr", "merged_at"), "2026-10-25T00:00:02Z"),
+        ("wrong_merge_commit", "MAIN_C_DERIVATION_NOT_PROVIDER_BOUND", ("pr", "merge_commit_sha"), "9" * 40),
+    ):
+        reject(name, reason, mutate(path, value, main), fixture_source)
+    reject("associated_PR_missing", "ASSOCIATED_PR_NOT_UNIQUE", mutate(("associations",), [], main), fixture_source)
+    duplicate = copy.deepcopy(main); duplicate["associations"].append(copy.deepcopy(duplicate["associations"][0])); duplicate["associations"][1]["id"] += 1
+    reject("associated_PR_duplicate", "ASSOCIATED_PR_NOT_UNIQUE", duplicate, fixture_source)
+    full = copy.deepcopy(main); full["associations"] *= 100
+    reject("associated_page_full", "ASSOCIATED_PR_LIST_INCOMPLETE", full, fixture_source)
+    reject("wrong_main_post", "PROTECTED_MAIN_REF_DRIFT", mutate(("main_ref", "object", "sha"), "9" * 40),
+           lambda x: fixture_source(x, seed["source"]))
+    reject("PR_head_changed", "SOURCE_IDENTITY_CHANGED_AFTER_PRE", mutate(("pr", "head", "sha"), "9" * 40),
+           lambda x: fixture_source(x, seed["source"]))
+
+    for name, reason, path, value in (
+        ("wrong_issue_number", "REGISTRATION_ISSUE_IDENTITY_DRIFT", ("issue_before", "number"), 848),
+        ("wrong_issue_id", "REGISTRATION_ISSUE_IDENTITY_DRIFT", ("issue_before", "id"), ISSUE_ID + 1),
+        ("wrong_issue_node", "REGISTRATION_ISSUE_IDENTITY_DRIFT", ("issue_before", "node_id"), "other"),
+        ("wrong_issue_owner", "REGISTRATION_ISSUE_IDENTITY_DRIFT", ("issue_before", "user", "id"), AUTHOR_ID + 1),
+        ("closed_issue", "REGISTRATION_ISSUE_NOT_OPEN", ("issue_before", "state"), "closed"),
+        ("comment_list_paginated", "FREEZE_COMMENT_LIST_INCOMPLETE", ("headers", "Link"), '<https://api.github.com/repos/jiying2007/audio-pipeline/issues/847/comments?page=2>; rel="next"'),
+        ("comment_count_mismatch", "FREEZE_COMMENT_LIST_INCOMPLETE", ("issue_before", "comments"), 2),
+        ("comment_count_changed_within_checkpoint", "FREEZE_COMMENT_CHECKPOINT_RACE", ("issue_after", "comments"), 2),
+        ("comment_count_bool", "STRICT_METADATA_SCHEMA_DRIFT", ("issue_before", "comments"), True),
+        ("wrong_freeze_author_login", "FREEZE_AUTHOR_IDENTITY_DRIFT", ("comments", 0, "user", "login"), "other"),
+        ("wrong_freeze_author_ID", "FREEZE_AUTHOR_IDENTITY_DRIFT", ("comments", 0, "user", "id"), AUTHOR_ID + 1),
+        ("wrong_freeze_author_type", "FREEZE_AUTHOR_IDENTITY_DRIFT", ("comments", 0, "user", "type"), "Bot"),
+        ("freeze_edited", "FREEZE_COMMENT_EDITED", ("comments", 0, "updated_at"), "2026-10-24T23:59:51Z"),
+        ("freeze_wrong_issue_URL", "FREEZE_COMMENT_ISSUE_DRIFT", ("comments", 0, "issue_url"), API_PREFIX + 'issues/848'),
+        ("direct_list_body_mismatch", "FREEZE_DIRECT_LIST_MISMATCH", ("direct", "body"), '{}'),
+    ):
+        reject(name, reason, mutate(path, value), fixture_freeze)
+    for name, when in (("freeze_created_at_run_second", "2026-10-25T00:00:01Z"),
+                       ("freeze_created_after_run", "2026-10-25T00:00:02Z")):
+        test = mutate(("comments", 0, "created_at"), when); test["comments"][0]["updated_at"] = when
+        reject(name, "FREEZE_NOT_BEFORE_RUN", test, fixture_freeze)
+    dup = copy.deepcopy(seed); dup["comments"] *= 2; dup["issue_before"]["comments"] = dup["issue_after"]["comments"] = 2
+    reject("comment_duplicate_ID", "FREEZE_COMMENT_LIST_INVALID", dup, fixture_freeze)
+    dup["comments"] = [copy.deepcopy(seed["comments"][0]), copy.deepcopy(seed["comments"][0])]; dup["comments"][1]["id"] = 790
+    reject("two_matching_C_freezes", "FREEZE_FOR_ACTUAL_C_NOT_UNIQUE", dup, fixture_freeze)
+    reject("POST_new_duplicate", "FREEZE_FOR_ACTUAL_C_NOT_UNIQUE", dup, lambda x: fixture_freeze(x, first))
+    for name, reason, change in (
+        ("no_matching_C_freeze", "FREEZE_FOR_ACTUAL_C_NOT_UNIQUE", {"candidate_sha": "9" * 40}),
+        ("freeze_unknown_field", "FREEZE_SCHEMA_DRIFT", {"extra": "unknown"}),
+        ("freeze_bool_integer", "FREEZE_SCHEMA_DRIFT", {"repository_id": True}),
+        ("freeze_short_or_upper_hash", "FREEZE_SCHEMA_DRIFT", {"candidate_sha": "A" * 40}),
+        ("freeze_wrong_tree", "FREEZE_SOURCE_IDENTITY_DRIFT", {"candidate_tree": "e" * 40}),
+        ("freeze_wrong_lock", "FREEZE_SOURCE_IDENTITY_DRIFT", {"source_lock_sha256": "e" * 64}),
+        ("freeze_wrong_contract", "FREEZE_SOURCE_IDENTITY_DRIFT", {"test_contract_sha256": "e" * 64}),
+    ):
+        test = copy.deepcopy(seed); body = dict(test["payload"], **change); test["comments"][0]["body"] = json.dumps(body)
+        reject(name, reason, test, fixture_freeze)
+    original_body = seed["comments"][0]["body"]
+    for name, body in (
+        ("freeze_markdown_fence", "```json\n" + original_body + "\n```"),
+        ("freeze_duplicate_key", original_body[:-1] + ', "candidate_sha":"' + seed["source"]["C"] + '"}'),
+        ("freeze_nonfinite", original_body[:-1] + ', "nonfinite": NaN}'),
+    ):
+        reject(name, "FREEZE_JSON_NOT_STRICT", mutate(("comments", 0, "body"), body), fixture_freeze)
+    missing = copy.deepcopy(seed); missing["comments"] = []; missing["issue_before"]["comments"] = missing["issue_after"]["comments"] = 0
+    reject("POST_missing_freeze", "FREEZE_FOR_ACTUAL_C_NOT_UNIQUE", missing, lambda x: fixture_freeze(x, first))
+    recreated = copy.deepcopy(seed); recreated["comments"][0]["id"] = recreated["direct"]["id"] = 790
+    reject("POST_recreated_comment", "FREEZE_CHANGED_AFTER_PRE", recreated, lambda x: fixture_freeze(x, first))
+    changed = copy.deepcopy(seed); changed["comments"][0]["body"] += "\n"; changed["direct"]["body"] += "\n"
+    reject("POST_body_changed", "FREEZE_CHANGED_AFTER_PRE", changed, lambda x: fixture_freeze(x, first))
+
+    job = validate_jobs(seed["jobs"], {}, seed["actual"]["run_id"])
+    require(job["earliest_step_epoch_ns"] == utc_ns("2026-10-25T00:00:02Z"), "SELF_TEST_JOB_DEADLINE")
+    for name, reason, path, value in (
+        ("jobs_incomplete", "ACTUAL_JOBS_PAGE_INCOMPLETE", ("jobs", "total_count"), 3),
+        ("wrong_job_selector", "ACTUAL_A3_JOB_NOT_UNIQUE", ("jobs", "jobs", 0, "name"), "quality / frontend-rss-f1"),
+        ("duplicate_A3_job", "ACTUAL_A3_JOB_NOT_UNIQUE", ("jobs", "jobs", 1, "name"), "frontend-s3-t3s2b1ba3"),
+        ("missing_earliest_step", "ORIGINAL_JOB_DEADLINE_UNPROVEN", ("jobs", "jobs", 0, "steps"), []),
+    ):
+        reject(name, reason, mutate(path, value), lambda x: validate_jobs(x["jobs"], {}, x["actual"]["run_id"]))
+    reject("nonpositive_enclosing_budget", "A3_ENCLOSING_BUDGET_EXHAUSTED", seed,
+           lambda unused: bind_collector_budget(job, 10**18, job["original_job_deadline_epoch_ns"] - 300_000_000_000))
+    return {"negative_cases": completed, "positive_cases": positives,
+            "fixture_role": "OFFLINE_TYPED_METADATA_ONLY_NOT_PROVIDER_EVIDENCE",
+            "network_requests": 0, "subprocess_starts": 0, "scientific_C_target_starts": 0,
+            "DSP_frames": 0, "registered117_controls_complete": False}
+
+
 def self_test() -> dict[str, Any]:
     """Pure metadata cases: no Git process, HTTP, filesystem fixture or C code."""
     count = 0
@@ -683,8 +1300,11 @@ def self_test() -> dict[str, Any]:
     count += 1
     require(not source_ready({}, {}), "SELF_TEST_PENDING_SOURCE")
     count += 1
+    provider_controls = provider_metadata_self_test()
     return {"experiment_id": IDENTITY, "status": "BOOTSTRAP_PURE_METADATA_CONTROLS_PASS",
-            "actual_cases": count, "registered117_controls_complete": False,
+            "actual_cases": count + len(provider_controls["negative_cases"]) + len(provider_controls["positive_cases"]),
+            "local_source_control_cases": count, "provider_metadata_controls": provider_controls,
+            "registered117_controls_complete": False,
             "network_requests": 0, "subprocess_starts": 0, "scientific_C_target_starts": 0,
             "DSP_frames": 0, "real_transport_or_kill_wait_tested": False}
 

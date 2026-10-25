@@ -1102,6 +1102,26 @@ static void test_engineering_endurance(uint32_t frames, uint32_t cycles) {
 }
 
 
+/* The SPSC event queue has only two slots. Drain the start and the
+ * separately signalled path-change event before sending capture frames, so
+ * the test cannot manufacture an unrelated queue overflow. */
+static void wait_runtime_event_kind(ap_runtime_t *runtime, ap_event_kind_t expected) {
+    unsigned i;
+    for (i = 0u; i < 2000u; ++i) {
+        ap_event_t event;
+        const ap_status_t status = ap_runtime_receive_event(runtime, &event);
+        if (status == AP_OK) {
+            if (event.kind == expected) return;
+            /* Never accidentally consume the reset that this test proves. */
+            assert(event.kind != AP_EVENT_AEC_RESET);
+        } else {
+            assert(status == AP_EEMPTY);
+            sleep_ms(1u);
+        }
+    }
+    assert(!"expected runtime event missing");
+}
+
 /* Each completed frame boundary must observe a new AEC epoch, even if
  * reset lowered the counter below its previous runtime high-water mark. */
 static unsigned drain_aec_reset_events(ap_runtime_t *runtime) {
@@ -1126,12 +1146,14 @@ static void test_reset_event_epoch_rebase(void) {
     assert(ap_pipeline_init(pipeline_state, sizeof(pipeline_state), &pcfg, &pipeline) == AP_OK);
     runtime = open_default(pipeline, &rcfg);
     assert(ap_runtime_start(runtime) == AP_OK);
+    wait_runtime_event_kind(runtime, AP_EVENT_RUNTIME_STARTED);
     command.struct_size = sizeof(command);
     command.api_version = AP_RUNTIME_API_VERSION;
 
     for (i = 0u; i < 3u; ++i) {
         command.kind = AP_RUNTIME_COMMAND_ECHO_PATH_CHANGE;
         assert(ap_runtime_command(runtime, &command) == AP_OK);
+        wait_runtime_event_kind(runtime, AP_EVENT_ECHO_PATH_CHANGE);
         (void)process_one(runtime, mic, render, output);
         assert(drain_aec_reset_events(runtime) == 1u);
     }
@@ -1143,6 +1165,7 @@ static void test_reset_event_epoch_rebase(void) {
 
     command.kind = AP_RUNTIME_COMMAND_ECHO_PATH_CHANGE;
     assert(ap_runtime_command(runtime, &command) == AP_OK);
+    wait_runtime_event_kind(runtime, AP_EVENT_ECHO_PATH_CHANGE);
     (void)process_one(runtime, mic, render, output);
     /* Without rebasing last_aec_resets, the 1st new epoch event is hidden. */
     assert(drain_aec_reset_events(runtime) == 1u);

@@ -206,6 +206,89 @@ class MetadataTests(unittest.TestCase):
                 with patch.object(F1, "bounded_file", side_effect=lambda p: mutated[str(p)]):
                     self.reject(reason, F1.validate_actual_routes, root)
 
+    def test_integer_stage_budget_at_large_epoch(self):
+        epoch = 1_792_876_123_987_654_321
+        mono = 987_654_321_987_654
+        row = F1.stage_admission(epoch + 240_000_000_000, epoch, mono)
+        self.assertEqual(row["admitted_stage_duration_ns"], 180_000_000_000)
+        self.assertEqual(row["stage_deadline_monotonic_ns"], mono + 180_000_000_000)
+        self.reject("INSUFFICIENT_F1_STAGE_WINDOW", F1.stage_admission,
+                    epoch + 240_000_000_000 - 1, epoch, mono)
+
+    def test_deadline_never_adds_float_epsilon(self):
+        origin = 999_999_123_456_789
+        F1.enforce_deadline(origin, origin + 180_000_000_000, 180_000_000_000, "late")
+        self.reject("late", F1.enforce_deadline, origin, origin + 180_000_000_001, 180_000_000_000, "late")
+
+    def test_engineering_work_cleanup_model_only(self):
+        origin = 123_456_789
+        row = F1.engineering_deadlines(origin, origin + 1_000_000_000)
+        row.update(fixture="P04", timeout_trigger_monotonic_ns=origin + 800_000_000,
+                   reap_finished_monotonic_ns=origin + 850_000_000,
+                   encoding_finished_monotonic_ns=origin + 900_000_000,
+                   owned_child_reaped=True, signal_number=9,
+                   reason="F1R1_ENGINEERING_INVOCATION_TIMEOUT")
+        F1.validate_engineering_completion(row)
+        late = dict(row, encoding_finished_monotonic_ns=origin + 1_000_000_001)
+        self.reject("F1R1_ENGINEERING_INVOCATION_LIMIT", F1.validate_engineering_completion, late)
+        self.reject("F1R1_ENGINEERING_FULL_WINDOW_REQUIRED", F1.engineering_deadlines,
+                    origin, origin + 999_999_999)
+
+    def test_real_calendar_parse(self):
+        self.assertIsInstance(F1.strict_UTC_seconds("2026-10-24T16:50:18Z"), int)
+        self.reject("F1R1_STRICT_UTC_TIME", F1.strict_UTC_seconds, "2026-02-30T00:00:00Z")
+
+    @staticmethod
+    def wire(phase="ENTRY", **extra):
+        value = dict(v=1, phase=phase, nonce="a" * 64, ordinal=1, pid=123,
+                     ppid=122, monotonic_ns=1)
+        value.update(extra)
+        return (json.dumps(value, separators=(",", ":")) + "\n").encode()
+
+    def test_wire_positive_and_exact_limits(self):
+        self.assertEqual(F1.validate_wire(self.wire())["phase"], "ENTRY")
+        self.reject("F1R1_WIRE_BYTES_LIMIT", F1.validate_wire, b"x" * 256 + b"\n")
+        self.reject("F1R1_WIRE_ASCII_LF_FRAME", F1.validate_wire, self.wire()[:-1] + b"\r\n")
+
+    def test_wire_duplicate_and_extra_fields(self):
+        raw = self.wire().replace(b'{', b'{"nonce":"' + b'a' * 64 + b'",', 1)
+        self.assertLessEqual(len(raw), 256)
+        self.reject("F1R1_WIRE_DUPLICATE_JSON_KEY", F1.validate_wire, raw)
+        self.reject("F1R1_WIRE_FIELD_SET", F1.validate_wire, self.wire(override=1))
+        self.reject("F1R1_STRICT_INTEGER_PID", F1.validate_wire, self.wire(pid=True))
+
+    def test_original_status_singleton_units_and_boundaries(self):
+        raw = b"Name:\tfixture\nPid:\t123\nPPid:\t122\nNSpid:\t123\nVmHWM:\t9 kB\nVmRSS:\t8 kB\nThreads:\t1\n"
+        parsed = F1.parse_proc_status(raw)
+        self.assertEqual(parsed["VmHWM_bytes"], 9216)
+        self.assertEqual(parsed["namespace_mapping_sha256"], F1.sha(b"[123]"))
+        self.reject("F1R1_REQUIRED_PROC_FIELDS", F1.parse_proc_status, raw.replace(b"VmHWM:\t9 kB\n", b""))
+        self.reject("F1R1_DUPLICATE_PROC_FIELD", F1.parse_proc_status, raw + b"VmRSS:\t8 kB\n")
+        self.reject("F1R1_PROC_UNIT", F1.parse_proc_status, raw.replace(b"9 kB", b"9 MB"))
+        self.reject("F1R1_PROC_STATUS_BYTES_LIMIT", F1.parse_proc_status, b"x" * 8193)
+
+    def test_original_stat_comm_with_spaces_and_parentheses(self):
+        fields = ["S", "122"] + ["0"] * 17 + ["456"] + ["0"] * 5
+        raw = ("123 (a name ) and ( more) " + " ".join(fields) + "\n").encode()
+        value = F1.parse_proc_stat(raw)
+        self.assertEqual((value["pid"], value["ppid"], value["start_ticks"]), (123, 122, 456))
+        self.assertEqual(value["comm"], "a name ) and ( more")
+        self.reject("F1R1_RAW_STAT_BYTES_LIMIT", F1.parse_proc_stat, b"x" * 1537)
+
+    def test_wire_sequence_and_observation_before_ack(self):
+        messages, observed = [], {}
+        for i, phase in enumerate(("PREEXEC", "ENTRY", "RETURN")):
+            extra = {"rss_kib": 0} if phase == "PREEXEC" else {"return_code": 0} if phase == "RETURN" else {}
+            messages.append(self.wire(phase, monotonic_ns=i * 10 + 1, **extra))
+            ack = dict(v=1, phase="ACK", for_phase=phase, nonce="a" * 64,
+                       ordinal=1, child_pid=123, launcher_pid=122, monotonic_ns=i * 10 + 4)
+            messages.append((json.dumps(ack, separators=(",", ":")) + "\n").encode())
+            observed[phase] = (i * 10 + 2, i * 10 + 3)
+        F1.validate_wire_sequence(messages, observed, nonce="a" * 64, ordinal=1, child_pid=123, launcher_pid=122)
+        bad = dict(observed, ENTRY=(12, 15))
+        self.reject("F1R1_OBSERVATION_BEFORE_ACK", F1.validate_wire_sequence,
+                    messages, bad, nonce="a" * 64, ordinal=1, child_pid=123, launcher_pid=122)
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

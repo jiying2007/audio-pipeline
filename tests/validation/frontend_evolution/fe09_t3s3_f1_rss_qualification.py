@@ -8,6 +8,7 @@ The protected-base copy of this module is the policy oracle for later changes.
 from __future__ import annotations
 
 import argparse
+import calendar
 import datetime as dt
 import hashlib
 import json
@@ -94,6 +95,173 @@ def integer(value: object, low: int = 0, high: int = (1 << 63) - 1) -> bool:
 
 def finite(value: object, low: float = 0) -> bool:
     return type(value) in (int, float) and math.isfinite(value) and value >= low
+
+
+def strict_UTC_seconds(value: object) -> int:
+    require(type(value) is str and re.fullmatch(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z", value) is not None,
+            "F1R1_STRICT_UTC_TIME")
+    try:
+        parsed = dt.datetime.strptime(value, "%Y-%m-%dT%H:%M:%SZ")
+    except ValueError as exc:
+        raise Rejected("F1R1_STRICT_UTC_TIME") from exc
+    return calendar.timegm(parsed.timetuple())
+
+
+def stage_admission(original_job_deadline_epoch_ns: int,
+                    stage_started_epoch_ns: int, stage_started_monotonic_ns: int) -> dict:
+    """Save the admitted integer duration itself; never subtract big floats."""
+    require(all(integer(n) for n in (original_job_deadline_epoch_ns,
+                                     stage_started_epoch_ns, stage_started_monotonic_ns)),
+            "F1R1_STRICT_INTEGER_TIME")
+    effective_ns = min(180_000_000_000,
+                       original_job_deadline_epoch_ns - stage_started_epoch_ns - 60_000_000_000)
+    require(effective_ns == 180_000_000_000, "INSUFFICIENT_F1_STAGE_WINDOW")
+    return {"stage_started_epoch_ns": stage_started_epoch_ns,
+            "stage_started_monotonic_ns": stage_started_monotonic_ns,
+            "admitted_stage_duration_ns": effective_ns,
+            "stage_deadline_monotonic_ns": stage_started_monotonic_ns + effective_ns,
+            "original_job_deadline_epoch_ns": original_job_deadline_epoch_ns,
+            "archive_reserve_ns": 60_000_000_000}
+
+
+def enforce_deadline(started_ns: int, finished_ns: int, duration_ns: int,
+                     reason: str) -> None:
+    require(all(integer(n) for n in (started_ns, finished_ns, duration_ns)) and
+            started_ns <= finished_ns <= started_ns + duration_ns, reason)
+
+
+def engineering_deadlines(started_ns: int, enclosing_deadline_ns: int) -> dict:
+    require(integer(started_ns) and integer(enclosing_deadline_ns) and
+            enclosing_deadline_ns - started_ns >= 1_000_000_000,
+            "F1R1_ENGINEERING_FULL_WINDOW_REQUIRED")
+    return {"invocation_started_monotonic_ns": started_ns,
+            "work_deadline_monotonic_ns": started_ns + 800_000_000,
+            "final_deadline_monotonic_ns": started_ns + 1_000_000_000,
+            "admitted_invocation_duration_ns": 1_000_000_000,
+            "cleanup_reserve_ns": 200_000_000}
+
+
+def validate_engineering_completion(record: dict) -> None:
+    require(record["admitted_invocation_duration_ns"] == 1_000_000_000 and
+            record["work_deadline_monotonic_ns"] == record["invocation_started_monotonic_ns"] + 800_000_000 and
+            record["final_deadline_monotonic_ns"] == record["invocation_started_monotonic_ns"] + 1_000_000_000 and
+            record["cleanup_reserve_ns"] == 200_000_000,
+            "F1R1_ENGINEERING_CLOCK_RESTART")
+    enforce_deadline(record["invocation_started_monotonic_ns"], record["encoding_finished_monotonic_ns"],
+                     1_000_000_000, "F1R1_ENGINEERING_INVOCATION_LIMIT")
+    require(record["owned_child_reaped"] is True, "F1R1_ENGINEERING_OWNED_REAP_REQUIRED")
+    if record["fixture"] == "P04":
+        require(record["timeout_trigger_monotonic_ns"] >= record["work_deadline_monotonic_ns"] and
+                record["timeout_trigger_monotonic_ns"] <= record["reap_finished_monotonic_ns"] <= record["encoding_finished_monotonic_ns"] and
+                record["signal_number"] == 9 and record["reason"] == "F1R1_ENGINEERING_INVOCATION_TIMEOUT",
+                "F1R1_ENGINEERING_EXPECTED_OUTCOME")
+
+
+WIRE_COMMON = ("v", "phase", "nonce", "ordinal", "pid", "ppid", "monotonic_ns")
+WIRE_FIELDS = {
+    "PREEXEC": set(WIRE_COMMON + ("rss_kib",)),
+    "ENTRY": set(WIRE_COMMON),
+    "RETURN": set(WIRE_COMMON + ("return_code",)),
+    "ACK": {"v", "phase", "for_phase", "nonce", "ordinal", "child_pid", "launcher_pid", "monotonic_ns"},
+}
+
+
+def validate_wire(raw: bytes) -> dict:
+    require(type(raw) is bytes and len(raw) <= 256, "F1R1_WIRE_BYTES_LIMIT")
+    require(raw.endswith(b"\n") and b"\n" not in raw[:-1] and b"\r" not in raw and
+            raw.isascii() and not any(byte in raw[:-1] for byte in (9, 11, 12, 32)),
+            "F1R1_WIRE_ASCII_LF_FRAME")
+    try:
+        record = strict_json(raw, 256)
+    except Rejected as exc:
+        if exc.reason == "F1R1_DUPLICATE_JSON_KEY":
+            raise Rejected("F1R1_WIRE_DUPLICATE_JSON_KEY") from exc
+        raise
+    require(type(record) is dict and record.get("phase") in WIRE_FIELDS,
+            "F1R1_WIRE_FIELD_SET")
+    phase = record["phase"]
+    require(set(record) == WIRE_FIELDS[phase], "F1R1_WIRE_FIELD_SET")
+    require(type(record["v"]) is int and record["v"] == 1 and
+            integer(record["ordinal"], 1, 36) and integer(record["monotonic_ns"]) and
+            type(record["nonce"]) is str and re.fullmatch("[0-9a-f]{64}", record["nonce"]),
+            "F1R1_WIRE_FIELD_TYPES")
+    pids = ("child_pid", "launcher_pid") if phase == "ACK" else ("pid", "ppid")
+    require(all(integer(record[k], 1, (1 << 31) - 1) for k in pids), "F1R1_STRICT_INTEGER_PID")
+    if phase == "ACK":
+        require(record["for_phase"] in ("PREEXEC", "ENTRY", "RETURN"), "F1R1_WIRE_FIELD_SET")
+    if phase == "PREEXEC":
+        require(integer(record["rss_kib"]), "F1R1_WIRE_FIELD_TYPES")
+    if phase == "RETURN":
+        require(integer(record["return_code"], -(1 << 31), (1 << 31) - 1), "F1R1_WIRE_FIELD_TYPES")
+    return record
+
+
+def parse_proc_status(raw: bytes) -> dict:
+    require(type(raw) is bytes and len(raw) <= 8192, "F1R1_PROC_STATUS_BYTES_LIMIT")
+    required = {"Pid", "PPid", "NSpid", "VmHWM", "VmRSS", "Threads"}
+    values = {}
+    for line in raw.decode("utf-8", errors="strict").splitlines():
+        name, sep, value = line.partition(":")
+        if name not in required:
+            continue
+        require(sep == ":" and name not in values, "F1R1_DUPLICATE_PROC_FIELD", name)
+        values[name] = value.strip()
+    require(set(values) == required, "F1R1_REQUIRED_PROC_FIELDS")
+    parsed = {}
+    for name in ("Pid", "PPid", "Threads"):
+        require(re.fullmatch("[0-9]+", values[name]) is not None, "F1R1_STRICT_INTEGER_PID")
+        parsed[name] = int(values[name])
+        require(integer(parsed[name], 1, (1 << 31) - 1), "F1R1_STRICT_INTEGER_PID")
+    parts = values["NSpid"].split()
+    require(parts and all(re.fullmatch("[0-9]+", p) and integer(int(p), 1, (1 << 31) - 1) for p in parts),
+            "F1R1_PID_NAMESPACE_IDENTITY")
+    parsed["NSpid"] = [int(p) for p in parts]
+    parsed["namespace_mapping_sha256"] = sha(json.dumps(parsed["NSpid"], separators=(",", ":")).encode("ascii"))
+    for name in ("VmHWM", "VmRSS"):
+        match = re.fullmatch(r"([0-9]+)\s+kB", values[name])
+        require(match is not None, "F1R1_PROC_UNIT")
+        parsed[name + "_kib"] = int(match[1])
+        require(integer(parsed[name + "_kib"]), "F1R1_PROC_COUNTER_RANGE")
+        parsed[name + "_bytes"] = parsed[name + "_kib"] * 1024
+    return parsed
+
+
+def parse_proc_stat(raw: bytes) -> dict:
+    require(type(raw) is bytes and len(raw) <= 1536, "F1R1_RAW_STAT_BYTES_LIMIT")
+    text = raw.decode("utf-8", errors="strict")
+    left, right = text.find("("), text.rfind(") ")
+    require(left > 0 and right > left, "F1R1_RAW_STAT_FIELDS")
+    pid_text = text[:left].strip()
+    fields = text[right + 2:].split()
+    require(re.fullmatch("[0-9]+", pid_text) is not None and len(fields) >= 20 and
+            re.fullmatch("[0-9]+", fields[1]) is not None and
+            re.fullmatch("[0-9]+", fields[19]) is not None,
+            "F1R1_RAW_STAT_FIELDS")
+    pid, ppid, ticks = int(pid_text), int(fields[1]), int(fields[19])
+    require(integer(pid, 1, (1 << 31) - 1) and integer(ppid, 1, (1 << 31) - 1) and integer(ticks),
+            "F1R1_STRICT_INTEGER_PID")
+    return {"pid": pid, "ppid": ppid, "start_ticks": ticks, "comm": text[left + 1:right]}
+
+
+def validate_wire_sequence(messages: list[bytes], observations: dict,
+                           *, nonce: str, ordinal: int, child_pid: int, launcher_pid: int) -> list[dict]:
+    require(len(messages) == 6, "F1R1_CHECKPOINT_COVERAGE")
+    rows = [validate_wire(raw) for raw in messages]
+    previous = -1
+    for index, phase in enumerate(("PREEXEC", "ENTRY", "RETURN")):
+        child, ack = rows[2 * index:2 * index + 2]
+        require(child["phase"] == phase and ack["phase"] == "ACK" and ack["for_phase"] == phase,
+                "F1R1_CHECKPOINT_ORDER")
+        require(child["ordinal"] == ordinal and ack["ordinal"] == ordinal, "F1R1_CASE_ORDINAL")
+        require(child["nonce"] == nonce and ack["nonce"] == nonce and
+                child["pid"] == ack["child_pid"] == child_pid and
+                child["ppid"] == ack["launcher_pid"] == launcher_pid, "F1R1_ACK_BINDING")
+        start, end = observations[phase]
+        require(integer(start) and integer(end) and start <= end, "F1R1_OBSERVATION_INTERVAL")
+        require(previous <= child["monotonic_ns"] <= start, "F1R1_CHECKPOINT_ORDER")
+        require(end <= ack["monotonic_ns"], "F1R1_OBSERVATION_BEFORE_ACK")
+        previous = ack["monotonic_ns"]
+    return rows
 
 
 def oid(value: object) -> bool:

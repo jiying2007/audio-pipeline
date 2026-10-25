@@ -537,6 +537,17 @@ static void test_recorder_validation_record_and_export(void) {
     config.pre_roll_frames = UINT32_MAX;
     config.post_roll_frames = UINT32_MAX;
     assert(ap_flight_recorder_state_size(&config) == 0u);
+    /* These totals wrap to small positive numbers on 32-bit size_t.
+     * They must be rejected before any narrowing arithmetic. */
+    config.pre_roll_frames = 1u;
+    config.post_roll_frames = UINT32_MAX;
+    assert(ap_flight_recorder_state_size(&config) == 0u);
+    config.pre_roll_frames = 2u;
+    config.post_roll_frames = UINT32_MAX;
+    assert(ap_flight_recorder_state_size(&config) == 0u);
+    config.pre_roll_frames = 1u;
+    config.post_roll_frames = UINT32_MAX - 1u;
+    assert(ap_flight_recorder_state_size(&config) == 0u);
 
     config = ap_flight_recorder_config_default(16000u, 2u);
     config.pre_roll_frames = 1u;
@@ -1090,6 +1101,83 @@ static void test_engineering_endurance(uint32_t frames, uint32_t cycles) {
            metadata_faults, missing_render, path_commands, cycles, first_hash);
 }
 
+
+/* Each completed frame boundary must observe a new AEC epoch, even if
+ * reset lowered the counter below its previous runtime high-water mark. */
+static unsigned drain_aec_reset_events(ap_runtime_t *runtime) {
+    ap_event_t event;
+    unsigned resets = 0u;
+    while (ap_runtime_receive_event(runtime, &event) == AP_OK) {
+        if (event.kind == AP_EVENT_AEC_RESET) resets++;
+    }
+    return resets;
+}
+
+static void test_reset_event_epoch_rebase(void) {
+    ap_config_t pcfg = ap_config_default(AP_PROFILE_CALL);
+    ap_runtime_config_t rcfg = ap_runtime_config_default();
+    ap_pipeline_t *pipeline = NULL;
+    ap_runtime_t *runtime;
+    ap_runtime_command_t command = {0};
+    int16_t mic[AP_MAX_IO_FRAME_SAMPLES * AP_MAX_MIC_CHANNELS] = {0};
+    int16_t render[AP_MAX_IO_FRAME_SAMPLES] = {0};
+    int16_t output[AP_MAX_IO_FRAME_SAMPLES] = {0};
+    unsigned i;
+    assert(ap_pipeline_init(pipeline_state, sizeof(pipeline_state), &pcfg, &pipeline) == AP_OK);
+    runtime = open_default(pipeline, &rcfg);
+    assert(ap_runtime_start(runtime) == AP_OK);
+    command.struct_size = sizeof(command);
+    command.api_version = AP_RUNTIME_API_VERSION;
+
+    for (i = 0u; i < 3u; ++i) {
+        command.kind = AP_RUNTIME_COMMAND_ECHO_PATH_CHANGE;
+        assert(ap_runtime_command(runtime, &command) == AP_OK);
+        (void)process_one(runtime, mic, render, output);
+        assert(drain_aec_reset_events(runtime) == 1u);
+    }
+    command.kind = AP_RUNTIME_COMMAND_RESET;
+    assert(ap_runtime_command(runtime, &command) == AP_OK);
+    (void)process_one(runtime, mic, render, output);
+    /* This one is the explicit RESET command event. */
+    assert(drain_aec_reset_events(runtime) == 1u);
+
+    command.kind = AP_RUNTIME_COMMAND_ECHO_PATH_CHANGE;
+    assert(ap_runtime_command(runtime, &command) == AP_OK);
+    (void)process_one(runtime, mic, render, output);
+    /* Without rebasing last_aec_resets, the 1st new epoch event is hidden. */
+    assert(drain_aec_reset_events(runtime) == 1u);
+    ap_runtime_deinit(runtime);
+}
+
+static void test_input_full_flood_preserves_notification(void) {
+    ap_config_t pcfg = ap_config_default(AP_PROFILE_CALL);
+    ap_runtime_config_t rcfg = ap_runtime_config_default();
+    ap_pipeline_t *pipeline = NULL;
+    ap_runtime_t *runtime;
+    ap_event_t event;
+    int16_t mic[AP_MAX_IO_FRAME_SAMPLES * AP_MAX_MIC_CHANNELS] = {0};
+    int16_t render[AP_MAX_IO_FRAME_SAMPLES] = {0};
+    unsigned full_events = 0u;
+    unsigned i;
+    assert(ap_pipeline_init(pipeline_state, sizeof(pipeline_state), &pcfg, &pipeline) == AP_OK);
+    runtime = open_default(pipeline, &rcfg);
+    for (i = 0u; i < AP_BUILD_RUNTIME_QUEUE_DEPTH; ++i)
+        assert(ap_runtime_submit_frame(runtime, mic, render, NULL) == AP_OK);
+    for (i = 0u; i < 100000u; ++i)
+        assert(ap_runtime_submit_frame(runtime, mic, render, NULL) == AP_EFULL);
+    assert(metrics(runtime).input_full_events == 100000u);
+    assert(ap_runtime_start(runtime) == AP_OK);
+    assert(wait_processed(runtime, AP_BUILD_RUNTIME_QUEUE_DEPTH));
+    while (ap_runtime_receive_event(runtime, &event) == AP_OK) {
+        if (event.kind == AP_EVENT_INPUT_QUEUE_FULL) {
+            full_events++;
+            assert(event.count == 100000u);
+        }
+    }
+    assert(full_events == 1u);
+    ap_runtime_deinit(runtime);
+}
+
 int main(int argc, char **argv) {
     if (argc != 1) {
         uint32_t frames, cycles;
@@ -1106,6 +1194,8 @@ int main(int argc, char **argv) {
     test_runtime_tuning_projects_pending_commands();
     test_runtime_tuning_resyncs_caller_owned_pipeline();
     test_command_validation_and_queue_pressure();
+    test_reset_event_epoch_rebase();
+    test_input_full_flood_preserves_notification();
     test_control_flood_progress_and_stop();
     test_directional_gap_counts();
     test_metadata_event_drop_and_output_backpressure();

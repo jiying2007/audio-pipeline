@@ -160,7 +160,8 @@ def evidence_negatives(source: Path) -> None:
     ref.verify_output(source)
     tests = ('short-trace', 'wrong-score', 'wrong-mode', 'stale-receipt',
              'mutated-source', 'missing-case', 'binary-tamper', 'failed-status', 'nested-hidden-file',
-             'unreviewed-admission', 'wrong-authority', 'global-stale-identity', 'control-code-drift')
+             'unreviewed-admission', 'wrong-authority', 'global-stale-identity', 'control-code-drift',
+             'missing-adapter-evidence', 'empty-control-source-map', 'changed-ground-truth-label')
     for test in tests:
         with tempfile.TemporaryDirectory(prefix='fe-evidence-negative-') as tmp:
             root = Path(tmp) / 'evidence'; shutil.copytree(source, root)
@@ -199,6 +200,17 @@ def evidence_negatives(source: Path) -> None:
             elif test == 'control-code-drift':
                 first = next(iter(report['control_files_sha256']))
                 report['control_files_sha256'][first] = '0' * 64
+            elif test == 'missing-adapter-evidence':
+                shutil.rmtree(root / 'sanitizer-adapter-tests')
+                (root / 'libfvad-runner-sanitized').unlink()
+                report.pop('adapter_tests', None)
+            elif test == 'empty-control-source-map':
+                report['control_files_sha256'] = {}
+            elif test == 'changed-ground-truth-label':
+                label = root / 'cases' / str(case['seed']) / case['case_id'] / 'vad.labels'
+                rows = label.read_text().splitlines()
+                rows[0] = '0' if rows[0] == '1' else '1'
+                label.write_text('\n'.join(rows) + '\n')
             else:
                 (root / 'nested').mkdir(); (root / 'nested/manifest.json').write_text('must not be hidden')
                 try:

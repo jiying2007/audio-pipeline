@@ -217,6 +217,75 @@ def seal_output(root: Path, report: dict) -> None:
         for p in sorted(root.rglob('*')) if p.is_file() and p != root / 'SHA256SUMS'))
 
 
+def expected_frozen_case_inputs(plan: dict) -> dict[tuple[int, str], dict]:
+    """Regenerate the pre-registered deterministic regression inputs independently.
+
+    Neither result.json nor a restamped artifact can designate its own truth
+    labels or mic samples. No stored evaluation score is used as an oracle.
+    """
+    expected = {}
+    with tempfile.TemporaryDirectory(prefix='fe-libfvad-verify-corpus-') as tmp:
+        workspace = Path(tmp)
+        for seed in (plan['calibration_seed'], *plan['evaluation_seeds']):
+            generated = workspace / f'seed-{seed}'
+            run_logged([sys.executable, ROOT / 'validation/tools/build_validation_corpus.py',
+                        '--output', generated, '--seed', seed],
+                       workspace / f'generator-{seed}.log')
+            corpus_path = generated / 'corpus.json'
+            corpus = load_json(corpus_path)
+            run_validation.validate_corpus_shape(corpus, run_validation.load_authority())
+            require(corpus['tier'] == 'regression', 'regenerated corpus role drift')
+            cases = {case['case_id']: case for case in corpus['cases']}
+            for case_id in plan['case_ids']:
+                case = cases[case_id]
+                require(case['mic_channels'] == 1 and case['sample_rate_hz'] == 16000,
+                        'regenerated case geometry drift')
+                expected[(seed, case_id)] = {
+                    'mic_sha256': sha256(verified_file(generated, case['mic_audio']).read_bytes()),
+                    'labels_sha256': sha256(verified_file(generated, case['vad_labels']).read_bytes()),
+                    'source_case': case,
+                    'source_corpus_sha256': sha256(corpus_path.read_bytes()),
+                }
+    return expected
+
+
+def verify_adapter_test_evidence(root: Path, report: dict) -> None:
+    expected_result = {'reset_rate_mode_replay': 'PASS', 'transparent_pcm': 'PASS',
+                       'stable_prefix_frames': 10, 'negative_cli_cases': 3,
+                       'limits': 'finite cases; decisions are available after the full 10 ms frame'}
+    require(report.get('adapter_tests') == {'native': expected_result,
+                                            'sanitized': expected_result},
+            'missing/changed adapter self-test matrix')
+    require((root / 'libfvad-runner-sanitized').is_file(),
+            'missing sanitized adapter binary')
+    for directory in ('adapter-tests', 'sanitizer-adapter-tests'):
+        probe = root / directory
+        needed = {'self-test.log'}
+        for case in ('a', 'b'):
+            needed.update({case + '.pcm', case + '-out.pcm',
+                           case + '.jsonl', case + '.log'})
+        for negative in ('empty', 'partial', 'mode'):
+            needed.update({negative + '.pcm', negative + '.log'})
+        require(probe.is_dir() and all((probe / name).is_file() for name in needed),
+                f'missing adapter/sanitizer evidence: {directory}')
+        traces = []
+        samples = [((i * 193) % 10000) - 5000 for i in range(160 * 20)]
+        source = struct.pack('<%dh' % len(samples), *samples)
+        inputs = (source, source[:160 * 10 * 2] + bytes(160 * 10 * 2))
+        for name, payload in zip(('a', 'b'), inputs):
+            require((probe / (name + '.pcm')).read_bytes() == payload,
+                    f'adapter probe input changed: {directory}/{name}')
+            require((probe / (name + '-out.pcm')).read_bytes() == payload,
+                    f'adapter transparency drift: {directory}/{name}')
+            traces.append(strict_trace(probe / (name + '.jsonl'), 20, 2))
+        require(traces[0][:10] == traces[1][:10],
+                f'adapter future-leak prefix drift: {directory}')
+        require((probe / 'empty.pcm').read_bytes() == b'' and
+                (probe / 'partial.pcm').read_bytes() == source[:-1] and
+                (probe / 'mode.pcm').read_bytes() == source,
+                f'negative adapter payload drift: {directory}')
+
+
 def verify_output(root: Path, execution_source: str | None = None) -> dict:
     require(not (root / 'failure.json').exists(), 'failed evidence cannot pass')
     require(all(not p.is_symlink() for p in root.rglob('*')), 'symlink evidence forbidden')
@@ -252,8 +321,18 @@ def verify_output(root: Path, execution_source: str | None = None) -> dict:
         require(identity['source_sha'] == source_sha and identity['config_sha256'] == cfg_digest
                 and identity['evaluator_sha256'] == evaluator_digest, 'reference identity mismatch')
     require(report['b0_build_info'].get('AP_BUILD_SOURCE_REVISION') == B0, 'baseline build identity mismatch')
-    for name, digest in report['control_files_sha256'].items():
-        require(sha256(verified_file(ROOT, name).read_bytes()) == digest, 'control code drift')
+    # Require the *complete* registered 11-file closure, not only whichever
+    # subset a restamped candidate chooses to self-declare.
+    controls = (Path(__file__), HERE / 'libfvad_runner.c', HERE / 'contracts.py',
+                PLAN, ADMISSION, LOCK, CATALOG,
+                ROOT / 'validation/tools/build_validation_corpus.py',
+                ROOT / 'validation/tools/run_validation_engine.py',
+                ROOT / 'validation/tools/run_validation.py',
+                ROOT / 'validation/authority.json')
+    expected_controls = {str(p.relative_to(ROOT)): sha256(p.read_bytes()) for p in controls}
+    require(report.get('control_files_sha256') == expected_controls,
+            'missing/changed control source closure')
+    verify_adapter_test_evidence(root, report)
     require(record['files_sha256'] == reviewed['files_sha256'] and
             record['materialized_source_sha256'] == reviewed['materialized_source_sha256'], 'source receipt mismatch')
     for name, digest in record['files_sha256'].items():
@@ -265,6 +344,7 @@ def verify_output(root: Path, execution_source: str | None = None) -> dict:
             sha256((root / 'frozen-selection.json').read_bytes()), 'frozen selection mismatch')
     chosen = selection['mode']
     cfg_sha = sha256((root / 'experiment.json').read_bytes())
+    frozen_inputs = expected_frozen_case_inputs(plan)
     expected_directories = set()
     def recompute(section, seeds, modes):
         rows = report[section]['cases']
@@ -275,9 +355,20 @@ def verify_output(root: Path, execution_source: str | None = None) -> dict:
         for row in rows:
             directory = root / 'cases' / str(row['seed']) / row['case_id']
             expected_directories.add(directory)
-            labels = [int(x) for x in (directory / 'vad.labels').read_text().splitlines()]
+            labels_path = directory / 'vad.labels'
+            labels = [int(x) for x in labels_path.read_text().splitlines()]
             data = (directory / 'mic.pcm').read_bytes()
             require(len(data) == len(labels) * 320, 'input/label size mismatch')
+            frozen = frozen_inputs[(row['seed'], row['case_id'])]
+            require(sha256(data) == frozen['mic_sha256'] and
+                    sha256(labels_path.read_bytes()) == frozen['labels_sha256'],
+                    'frozen PCM/ground-truth label mismatch')
+            require(load_json(directory / 'case.json') == {
+                'source_case': frozen['source_case'],
+                'source_corpus_sha256': frozen['source_corpus_sha256'],
+                'execution_profile': 'vad-isolated-same-raw-input',
+                'experiment_role': section + '-D0-replay',
+            }, 'frozen case source/role mismatch')
             expected_arms = {'b0', *[f'libfvad-{m}' for m in modes]}
             require(set(row['arms']) == expected_arms, 'arm set mismatch')
             require({p.name for p in directory.iterdir() if p.is_dir()} == expected_arms, 'unexpected arm directory')

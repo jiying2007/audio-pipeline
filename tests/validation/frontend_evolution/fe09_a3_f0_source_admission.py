@@ -361,9 +361,9 @@ def is_leaf_path(path: str) -> bool:
 # source checkpoint.  They are deliberately outside the embedded Git reader;
 # neither leaf's shell digest depends on a digest of itself.
 REVIEWED_F1_SHELL_SHA256: frozenset[str] = frozenset({
-    "5f56f9465c0cab5320cb70544ac3cc8d5edaeb71c928bcdd61c700f50de20bbb",
+    "4ef6ea7e344e28bb167d24ec3be8e09f3f9eed7adbbf78bc1ed37a84f2f2e3e2",
 })
-F1_METADATA_COMMAND = "python3 tests/validation/frontend_evolution/test_fe09_t3s3_f1_rss_qualification.py\n"
+F1_METADATA_COMMAND = "python3 -I tests/validation/frontend_evolution/test_fe09_t3s3_f1_rss_qualification.py\n"
 F1_SCOPE_STEP = (
     "      - name: F1 protected-base source scope and mandatory routing\n"
     "        id: f1_scope\n"
@@ -469,6 +469,45 @@ def normalize_f1_verify_job(text: str, name: str) -> str:
     return text.rstrip() + "\n"
 
 
+def validate_a3_job_permissions(job: str) -> None:
+    fields = yaml_children(job, 4)
+    require("permissions" in fields and "secrets" not in fields and "secrets." not in job,
+            "A3_PERMISSION_CLOSURE_DRIFT")
+    permissions = yaml_children(fields["permissions"], 6)
+    require(set(permissions) == set(FIVE_READ) and
+            all(yaml_value(value) == "read" for value in permissions.values()),
+            "A3_PERMISSION_CLOSURE_DRIFT")
+
+
+def validate_verify_dispatch(jobs: dict[str, str]) -> None:
+    impact = yaml_children(jobs["impact"], 4)
+    require("outputs" in impact, "A3_REQUIRED_DISPATCH_MISSING")
+    outputs = yaml_children(impact["outputs"], 6)
+    require("a3_required" in outputs and
+            yaml_value(outputs["a3_required"]) == "${{ steps.a3_scope.outputs.a3_required }}",
+            "A3_REQUIRED_DISPATCH_MISSING")
+    guard = "        run: sh .github/scripts/verify-docs-gate.sh --a3-scope-only\n"
+    require(jobs["impact"].count(guard) == 1 and jobs["impact"].count("        id: a3_scope\n") == 1 and
+            jobs["impact"].count("        id: impact\n") == 1 and
+            jobs["impact"].index(guard) < jobs["impact"].index("        id: impact\n"),
+            "A3_OWNED_CI_FRAGMENT_DRIFT")
+    for name in ("fast-docs", "fast-code"):
+        require(jobs[name].count("          sh .github/scripts/verify-docs-gate.sh\n") == 1,
+                "A3_OWNED_CI_FRAGMENT_DRIFT")
+    caller = yaml_children(jobs["quality"], 4)
+    require("with" in caller and "uses" in caller and "needs" in caller and
+            yaml_value(caller["uses"]) == "./.github/workflows/quality.yml" and
+            yaml_value(caller["needs"]) == "[impact, fast-gate]", "A3_REQUIRED_DISPATCH_MISSING")
+    inputs = yaml_children(caller["with"], 6)
+    require("run_a3" in inputs and yaml_value(inputs["run_a3"]) == "${{ needs.impact.outputs.a3_required == 'true' }}",
+            "A3_REQUIRED_DISPATCH_MISSING")
+    for exact in ("          A3_REQUIRED: ${{ needs.impact.outputs.a3_required }}\n",
+                  "          A3_DISPOSITION: ${{ needs.quality.outputs.a3_disposition }}\n",
+                  "          # A3_R1_SUMMARY_BEGIN\n", "          # A3_R1_SUMMARY_END\n",
+                  "              test \"$A3_DISPOSITION\" = QUALIFIED_FINITE_A3_LIVE_ROLL_COMPLETE\n"):
+        require(jobs["summary"].count(exact) == 1, "A3_OWNED_CI_FRAGMENT_DRIFT")
+
+
 def workflow_projection(raw: bytes, workflow: str) -> bytes:
     require(len(raw) <= FILE_CAP and b"\t" not in raw and b"\r" not in raw,
             "A3_OWNED_CI_FRAGMENT_UNCLASSIFIED")
@@ -490,11 +529,17 @@ def workflow_projection(raw: bytes, workflow: str) -> bytes:
         top["owned_inputs"] = {key: inputs[key] for key in ("run_a3", "run_extended")}
         top["owned_outputs"] = {"a3_disposition": outputs["a3_disposition"]}
         require("frontend-s3-t3s2b1ba3" in jobs, "A3_REQUIRED_DISPATCH_MISSING")
+        validate_a3_job_permissions(jobs["frontend-s3-t3s2b1ba3"])
+        own_fields = yaml_children(jobs["frontend-s3-t3s2b1ba3"], 4)
+        require("if" in own_fields and yaml_value(own_fields["if"]) == "inputs.run_extended || inputs.run_a3",
+                "A3_OWNED_CI_FRAGMENT_DRIFT")
         top["owned_jobs"] = {"frontend-s3-t3s2b1ba3": jobs["frontend-s3-t3s2b1ba3"]}
     else:
         require(workflow == "verify", "A3_OWNED_CI_FRAGMENT_UNCLASSIFIED")
         selected = ("impact", "fast-docs", "fast-code", "fast-gate", "quality", "summary")
         require(set(selected) <= set(jobs), "A3_REQUIRED_DISPATCH_MISSING")
+        validate_a3_job_permissions(jobs["quality"])
+        validate_verify_dispatch(jobs)
         top["owned_jobs"] = {key: normalize_f1_verify_job(jobs[key], key) for key in selected}
     return json.dumps(top, sort_keys=True, separators=(",", ":")).encode()
 
@@ -592,16 +637,43 @@ def scope_receipt(source: dict[str, str], disposition: str, changed: tuple[str, 
             "provider_lineage_and_external_freeze_still_required": True}
 
 
-def local_scope(root: Path, event_path: Path, env: dict[str, str]) -> dict[str, Any]:
-    git = GitObjects(root)
+def validate_scope_receipt(receipt: dict[str, Any], protected_original_paths: tuple[str, ...] = ()) -> None:
+    require(receipt.get("phase") == "LOCAL_SOURCE_SCOPE_ONLY" and receipt.get("experiment_id") == IDENTITY,
+            "SOURCE_SCOPE_DENIED")
+    require(type(receipt.get("api_requests")) is int and receipt["api_requests"] == 0,
+            "FAST_SCOPE_API_NOT_ALLOWED")
+    require(type(receipt.get("HTTP_helper_starts")) is int and receipt["HTTP_helper_starts"] == 0,
+            "SOURCE_ONLY_PROCESS_NOT_ALLOWED")
+    require(receipt.get("scientific_execution_admitted") is False and
+            type(receipt.get("scientific_C_target_starts")) is int and receipt["scientific_C_target_starts"] == 0 and
+            type(receipt.get("DSP_frames")) is int and receipt["DSP_frames"] == 0,
+            "METADATA_RESULT_FALSELY_PROMOTED")
+    require(receipt.get("disposition") in (BOOTSTRAP, UNRELATED, REQUIRED) and
+            type(receipt.get("a3_required")) is bool and
+            receipt["a3_required"] == (receipt["disposition"] == REQUIRED), "A3_SCOPE_NOT_ENFORCED")
+    changed = receipt.get("changed_paths")
+    require(isinstance(changed, list) and all(isinstance(path, str) for path in changed),
+            "SOURCE_SCOPE_DIFF_INCOMPLETE")
+    if receipt["disposition"] == UNRELATED:
+        require(not any(is_leaf_path(path) or path in protected_original_paths for path in changed),
+                "UNRELATED_SCOPE_PROOF_FAILED")
+
+
+def local_scope(root: Path, event_path: Path, env: dict[str, str],
+                git_reader: GitObjects | None = None) -> dict[str, Any]:
+    git = git_reader or GitObjects(root)
     head = git.head()
     _, parents = git.commit(head)
     event = strict_json(read_regular(event_path, FILE_CAP))
     source = local_source(event, env, head, parents)
+    base_entry = git.entry(source["B"], GUARD)
+    require(base_entry is None or base_entry.mode == "100644", "PROTECTED_POLICY_MODE_DRIFT")
     base_guard = git.blob(source["B"], GUARD, required=False)
     changed = git.changed_paths(source["B"], head)
     if base_guard is None:
-        return scope_receipt(source, BOOTSTRAP, changed)
+        result = scope_receipt(source, BOOTSTRAP, changed)
+        validate_scope_receipt(result)
+        return result
     # A script invoked from the candidate tree may not impersonate the B copy.
     require(read_regular(Path(__file__), FILE_CAP) == base_guard, "PROTECTED_POLICY_SOURCE_DRIFT")
     candidate_guard = git.blob(head, GUARD, required=False)
@@ -618,7 +690,9 @@ def local_scope(root: Path, event_path: Path, env: dict[str, str]) -> dict[str, 
     baseline = strict_json(git.blob(head, DOC_ROOT + "/EXECUTION_BASELINE.json") or b"")
     decision = classify_scope(source, base_guard, candidate_guard, changed,
                               shared_unchanged, source_ready(lock, baseline), original_paths)
-    return scope_receipt(source, decision, changed)
+    result = scope_receipt(source, decision, changed)
+    validate_scope_receipt(result, original_paths)
+    return result
 
 
 def write_github_outputs(path: Path | None, receipt: dict[str, Any]) -> None:
@@ -828,9 +902,135 @@ def graph_has_ancestor(graph: dict[str, Any], ancestor: str, descendant: str) ->
         seen.add(current)
         value = graph.get(current)
         if not isinstance(value, dict) or not isinstance(value.get("parents"), list):
-            return False
+            # A bounded actual-object witness needs one complete path to B;
+            # an unexpanded other merge parent does not negate that path.
+            continue
         pending.extend(value["parents"])
     return False
+
+
+SCIENCE_FIELDS = ("data_role", "hypothesis", "success_decision", "failure_decision",
+                  "dependencies", "source_config", "profiles", "process_model", "new_root",
+                  "transaction", "io_faults", "execution_matrix", "controls", "acceptance")
+ORIGINAL_COMPARISON = "5187c5e59526d4047b3965b44c770ab21edbde9f"
+SOURCE_ROW_FIELDS = ("path", "bytes", "sha256", "git_blob_sha1")
+
+
+def source_row(path: str, raw: bytes, mode: str = "100644") -> dict[str, Any]:
+    return {"path": safe_path(path), "mode": mode, "bytes": len(raw),
+            "sha256": hashlib.sha256(raw).hexdigest(),
+            "git_blob_sha1": hashlib.sha1(b"blob " + str(len(raw)).encode() + b"\0" + raw).hexdigest()}
+
+
+def validate_frozen_rows(rows: Any, actual: dict[str, dict[str, Any]], paths: set[str], reason: str) -> None:
+    require(isinstance(rows, list) and len(rows) == len(paths) and
+            all(isinstance(row, dict) and isinstance(row.get("path"), str) for row in rows), reason)
+    require({row["path"] for row in rows} == paths and set(actual) == paths, reason)
+    for row in rows:
+        path = safe_path(row["path"])
+        observed = actual[path]
+        require(isinstance(observed, dict) and observed.get("mode") == "100644" and
+                strict_int(row.get("bytes"), 1) and
+                isinstance(row.get("sha256"), str) and SHA256.fullmatch(row["sha256"]) is not None and
+                isinstance(row.get("git_blob_sha1"), str) and SHA1.fullmatch(row["git_blob_sha1"]) is not None and
+                all(type(row.get(key)) is type(observed.get(key)) and row.get(key) == observed.get(key)
+                    for key in SOURCE_ROW_FIELDS), reason, path)
+
+
+def validate_source_documents(documents: dict[str, bytes], protected_documents: dict[str, bytes],
+                              candidate: str, original: dict[str, dict[str, Any]],
+                              implementation: dict[str, dict[str, Any]],
+                              protected_guard: dict[str, Any], actual_guard: bytes,
+                              locked_programs: dict[str, bytes]) -> dict[str, Any]:
+    """Pure validation of actual original blobs and completed C documents.
+
+    The runtime supplies Git observations from actual B/C and both immutable
+    original commits. Offline tests supply explicitly labelled model rows.
+    Neither a candidate CLI pin nor these documents grant execution alone.
+    """
+    names = {"README.md", "source-lock.json", "test-contract.json", "EXECUTION_BASELINE.json",
+             "ADMISSION_NEGATIVE_CONTROLS.json"}
+    require(set(documents) == names and set(protected_documents) == names and
+            all(isinstance(value, bytes) for value in documents.values()),
+            "EXECUTION_SOURCE_CLOSURE_INCOMPLETE")
+    lock = strict_json(documents["source-lock.json"])
+    baseline = strict_json(documents["EXECUTION_BASELINE.json"])
+    contract = strict_json(documents["test-contract.json"])
+    base_lock = strict_json(protected_documents["source-lock.json"])
+    base_contract = strict_json(protected_documents["test-contract.json"])
+    base_baseline = strict_json(protected_documents["EXECUTION_BASELINE.json"])
+    require(all(isinstance(value, dict) for value in (lock, baseline, contract, base_lock, base_contract, base_baseline)),
+            "EXECUTION_SOURCE_CLOSURE_INCOMPLETE")
+    require(set(lock) == set(base_lock), "SOURCE_FREEZE_SELF_REFERENCE")
+    require(set(baseline) == set(base_baseline) and
+            all(baseline[key] == base_baseline[key] for key in base_baseline if key not in ("status", "integration_base")),
+            "SOURCE_FREEZE_SELF_REFERENCE")
+    require(lock.get("id") == baseline.get("id") == contract.get("id") == IDENTITY and
+            lock.get("original_baseline") == SCIENTIFIC_BASE and baseline.get("source_baseline") == SCIENTIFIC_BASE and
+            lock.get("original_comparison_commit") == ORIGINAL_COMPARISON,
+            "IMMUTABLE_SCIENTIFIC_SOURCE_DRIFT")
+    require(lock.get("source_self_reference_policy") == base_lock.get("source_self_reference_policy") and
+            lock.get("execution_admitted_by_this_file") is False and
+            baseline.get("candidate_source_identity") == {
+                "location": "external issue847 freeze and runtime provider/Git observations only",
+                "C_or_tree_embedded_in_this_file": False,
+                "future_comment_ID_or_body_hash_embedded": False,
+                "document_alone_authorizes_execution": False}, "SOURCE_FREEZE_SELF_REFERENCE")
+    lock_digest = hashlib.sha256(documents["source-lock.json"]).hexdigest().encode()
+    require(candidate.encode() not in documents["source-lock.json"] and
+            candidate.encode() not in documents["EXECUTION_BASELINE.json"] and
+            lock_digest not in documents["source-lock.json"] and
+            all(lock_digest not in value for value in locked_programs.values()), "SOURCE_FREEZE_SELF_REFERENCE")
+    require(all(field in contract and field in base_contract and contract[field] == base_contract[field]
+                for field in SCIENCE_FIELDS), "IMMUTABLE_SCIENTIFIC_SOURCE_DRIFT")
+    require(documents["ADMISSION_NEGATIVE_CONTROLS.json"] == protected_documents["ADMISSION_NEGATIVE_CONTROLS.json"],
+            "IMMUTABLE_SCIENTIFIC_SOURCE_DRIFT")
+    trusted_rows = base_lock.get("known_immutable_files")
+    require(isinstance(trusted_rows, list) and len(trusted_rows) == 88 and
+            all(isinstance(row, dict) and isinstance(row.get("path"), str) for row in trusted_rows),
+            "IMMUTABLE_SCIENTIFIC_SOURCE_CLOSURE_INVALID")
+    original_paths = {safe_path(row["path"]) for row in trusted_rows}
+    require(len(original_paths) == 88 and lock.get("known_immutable_file_count") == 88 and
+            type(lock["known_immutable_file_count"]) is int and lock.get("known_immutable_files") == trusted_rows,
+            "IMMUTABLE_SCIENTIFIC_SOURCE_DRIFT")
+    validate_frozen_rows(trusted_rows, original, original_paths, "IMMUTABLE_SCIENTIFIC_SOURCE_DRIFT")
+    expected = {"tests/validation/frontend_evolution/" + name for name in SOURCE_FILES} | set(HOOKS)
+    require(source_ready(lock, baseline), "EXECUTION_SOURCE_CLOSURE_INCOMPLETE")
+    rows = lock["pending_implementation_files"] + lock["pending_hookup_files"]
+    validate_frozen_rows(rows, implementation, expected, "EXECUTION_SOURCE_CLOSURE_INCOMPLETE")
+    require(set(locked_programs) == {"tests/validation/frontend_evolution/" + name for name in SOURCE_FILES},
+            "EXECUTION_SOURCE_CLOSURE_INCOMPLETE")
+    base = baseline["integration_base"]
+    require(set(base) == {"status", "commit", "tree", "verify_run_id", "verify_attempt", "required_summary_job_id",
+                         "release_run_id", "release_attempt", "release_job_id", "convergence_job_id",
+                         "protected_guard_path", "protected_guard_mode", "protected_guard_blob", "protected_guard_bytes",
+                         "protected_guard_sha256", "root_independent_main_closure_report_sha256",
+                         "all_fields_complete_before_final_C_required"}, "INTEGRATION_BASE_NOT_QUALIFIED")
+    require(base.get("protected_guard_path") == GUARD and base.get("protected_guard_mode") == "100644" and
+            protected_guard.get("mode") == "100644", "PROTECTED_POLICY_MODE_DRIFT")
+    for key in ("verify_run_id", "required_summary_job_id", "release_run_id", "release_job_id", "convergence_job_id"):
+        positive_id(base.get(key), "INTEGRATION_BASE_NOT_QUALIFIED")
+    require(type(base.get("verify_attempt")) is int and base["verify_attempt"] == 1 and
+            type(base.get("release_attempt")) is int and base["release_attempt"] == 1 and
+            base.get("all_fields_complete_before_final_C_required") is True and
+            isinstance(base.get("root_independent_main_closure_report_sha256"), str) and
+            SHA256.fullmatch(base["root_independent_main_closure_report_sha256"]) is not None,
+            "INTEGRATION_BASE_NOT_QUALIFIED")
+    require(base["protected_guard_blob"] == protected_guard.get("git_blob_sha1") and
+            type(base["protected_guard_bytes"]) is int and base["protected_guard_bytes"] == protected_guard.get("bytes") and
+            base["protected_guard_sha256"] == protected_guard.get("sha256") and
+            actual_guard == locked_programs[GUARD] and source_row(GUARD, actual_guard) == protected_guard,
+            "PROTECTED_POLICY_SOURCE_DRIFT")
+    require(lock.get("original_direct_translation_units") == base_lock.get("original_direct_translation_units") and
+            lock.get("original_included_translation_unit") == base_lock.get("original_included_translation_unit") and
+            lock.get("generated_header_requirement") == base_lock.get("generated_header_requirement"),
+            "EXECUTION_SOURCE_CLOSURE_INCOMPLETE")
+    return {"qualified_base": base,
+            "document_hashes": {field: hashlib.sha256(documents[name]).hexdigest()
+                                for field, name in FREEZE_DOC_FIELDS.items()},
+            "original88": [original[path] for path in sorted(original)],
+            "implementation_and_hooks9": [implementation[path] for path in sorted(implementation)],
+            "scientific_execution_admitted": False, "source_closed_before_freeze": True}
 
 
 def derive_actual_source(run: dict[str, Any], actual: dict[str, Any], pr: Any,
@@ -1187,6 +1387,7 @@ def metadata_http_worker() -> int:
     import http.client
     import urllib.error
     import urllib.request
+    require(sys.flags.isolated == 1, "ISOLATED_STANDARD_LIBRARY_RUNTIME_REQUIRED")
     require(os.environ.get("FE_A3_OWNED_HTTP_WORKER") == "1", "METADATA_WORKER_PARENT_REQUIRED")
     require(os.environ.get("GITHUB_RUN_ATTEMPT") == "1", "RUN_ATTEMPT_NOT_REGISTERED")
     token = os.environ.get("GH_TOKEN", "")
@@ -1371,6 +1572,12 @@ class OwnedHTTPWorker:
         url = api_route_url(request)
         self.ledger.admit_start(route)
         budget = self._budget()
+        # Install the original deadline before any operation can raise. Even
+        # an unexpected decoder/capture exception cannot mint a cleanup cap.
+        self.failed_budget = budget
+        self.failed_operation = {"route": route, "failure_reason": "OPERATION_NOT_COMPLETED",
+                                 "start_monotonic_ns": budget.start_ns,
+                                 "admitted_duration_ns": budget.duration_ns}
         body, wire = bytearray(), bytearray()
         observed: dict[str, Any] | None = None
         done: dict[str, Any] | None = None
@@ -1471,6 +1678,10 @@ class OwnedHTTPWorker:
             failure = exc.reason
         except (OSError, UnicodeError, ValueError):
             failure = "API_ACQUISITION_FAILED"
+        except BaseException:
+            # Deep malformed JSON or interruption must retain this same
+            # operation budget; it may not escape to a fresh cleanup window.
+            failure = "API_ACQUISITION_FAILED"
         finally:
             selector.close()
             if failure:
@@ -1538,6 +1749,8 @@ class OwnedHTTPWorker:
                                      "body_bytes_received": len(body), "exchange_bytes_prepared": len(exchange_raw),
                                      "original_members_captured": captured}
             raise AdmissionError(failure)
+        self.failed_budget = None
+        self.failed_operation = None
         return value, exchange
 
     def close(self) -> None:
@@ -1562,6 +1775,540 @@ class OwnedHTTPWorker:
             self.lifecycle["stderr_bytes"] = len(self.stderr)
             self.lifecycle["stderr_sha256"] = hashlib.sha256(self.stderr).hexdigest()
             self.lifecycle["stderr_hex"] = bytes(self.stderr).hex()
+            if self.failed_budget is not None and self.failed_operation is not None:
+                self.failed_operation["actual_elapsed_through_finalization_ns"] = time.monotonic_ns() - self.failed_budget.start_ns
+
+
+class AdmissionActivity:
+    """One cumulative PRE/POST active clock; the scientific gap is excluded."""
+    def __init__(self, ledger: AcquisitionLedger, collector_budget: DurationBudget):
+        self.ledger = ledger
+        self.collector_budget = collector_budget
+        self.phase: dict[str, Any] | None = None
+        self.phases: list[dict[str, Any]] = []
+
+    def begin(self, name: str, start_ns: int | None = None) -> None:
+        require(self.phase is None, "API_BUDGET_ACCOUNTING_DRIFT")
+        now = time.monotonic_ns() if start_ns is None else start_ns
+        require(strict_int(now) and now <= time.monotonic_ns(), "MONOTONIC_CLOCK_INVALID")
+        self.phase = {"phase": name, "start_monotonic_ns": now,
+                      "previous_active_ns": self.ledger.active_ns}
+
+    def sync(self, now_ns: int | None = None) -> int:
+        require(self.phase is not None, "API_BUDGET_ACCOUNTING_DRIFT")
+        now = time.monotonic_ns() if now_ns is None else now_ns
+        elapsed = now - self.phase["start_monotonic_ns"]
+        already = self.ledger.active_ns - self.phase["previous_active_ns"]
+        # Request records already include their measured DNS/body/capture and
+        # cleanup interval. Account the remaining elapsed phase exactly once.
+        require(strict_int(elapsed) and elapsed >= already, "API_BUDGET_ACCOUNTING_DRIFT")
+        self.ledger.account_validation(elapsed - already)
+        require(self.collector_budget.remaining_ns(now) > 0, "A3_ENCLOSING_BUDGET_EXHAUSTED")
+        return now
+
+    def end(self) -> None:
+        try:
+            now = self.sync()
+        except AdmissionError as exc:
+            assert self.phase is not None
+            self.phases.append(dict(self.phase, actual_end_monotonic_ns=time.monotonic_ns(),
+                                    complete=False, failure_reason=exc.reason))
+            self.phase = None
+            raise
+        assert self.phase is not None
+        self.phases.append(dict(self.phase, actual_end_monotonic_ns=now, complete=True,
+                                actual_elapsed_ns=now - self.phase["start_monotonic_ns"],
+                                cumulative_active_ns=self.ledger.active_ns))
+        self.phase = None
+
+
+class AdmissionGit(GitObjects):
+    def __init__(self, root: Path, activity: AdmissionActivity):
+        super().__init__(root)
+        self.activity = activity
+
+    def run(self, *args: str, cap: int = FILE_CAP) -> bytes:
+        self.activity.sync()
+        # Each existing Git reader owns a complete five-second operation.
+        # Admit it only when that entire allowance fits both enclosing clocks.
+        require(API_ACTIVE_NS - self.activity.ledger.active_ns >= COMMAND_NS and
+                self.activity.collector_budget.remaining_ns() >= COMMAND_NS,
+                "API_AGGREGATE_BUDGET_EXCEEDED")
+        try:
+            return super().run(*args, cap=cap)
+        finally:
+            self.activity.sync()
+
+
+def actual_source_graph(git: GitObjects, b: str, c: str, checkout: str) -> dict[str, Any]:
+    graph: dict[str, Any] = {}
+    def add(commit: str) -> tuple[str, ...]:
+        if commit not in graph:
+            require(len(graph) < 256, "C_BASE_ANCESTRY_DRIFT")
+            tree, parents = git.commit(commit)
+            graph[commit] = {"tree": tree, "parents": list(parents)}
+        return tuple(graph[commit]["parents"])
+    for value in (b, c, checkout):
+        add(oid(value))
+    pending, expanded = [c], set()
+    while pending:
+        current = pending.pop()
+        if current == b:
+            break
+        if current in expanded:
+            continue
+        expanded.add(current)
+        parents = add(current)
+        if b in parents:
+            break
+        pending.extend(parents)
+    require(graph_has_ancestor(graph, b, c), "C_BASE_ANCESTRY_DRIFT")
+    return graph
+
+
+def actual_source_closure(git: GitObjects, root: Path, source: dict[str, Any]) -> dict[str, Any]:
+    documents: dict[str, bytes] = {}
+    protected: dict[str, bytes] = {}
+    for name in (*FREEZE_DOC_FIELDS.values(),):
+        path = DOC_ROOT + "/" + name
+        documents[name] = git.blob(source["C"], path) or b""
+        protected[name] = git.blob(source["B"], path) or b""
+    lock = strict_json(documents["source-lock.json"])
+    base_lock = strict_json(protected["source-lock.json"])
+    require(isinstance(base_lock, dict) and isinstance(base_lock.get("known_immutable_files"), list) and
+            len(base_lock["known_immutable_files"]) == 88, "IMMUTABLE_SCIENTIFIC_SOURCE_CLOSURE_INVALID")
+    original: dict[str, dict[str, Any]] = {}
+    implementation: dict[str, dict[str, Any]] = {}
+    programs: dict[str, bytes] = {}
+    def observed(path: str) -> tuple[bytes, dict[str, Any]]:
+        path = safe_path(path)
+        entry = git.entry(source["C"], path)
+        require(entry is not None and entry.mode == "100644", "EXECUTION_SOURCE_CLOSURE_INCOMPLETE", path)
+        raw = git.blob(source["C"], path) or b""
+        actual_path = root / path
+        require(actual_path.resolve(strict=True) == actual_path and
+                read_regular(actual_path, FILE_CAP) == raw, "EXECUTION_WORKTREE_SOURCE_DRIFT", path)
+        row = source_row(path, raw, entry.mode)
+        require(row["git_blob_sha1"] == entry.blob, "GIT_BLOB_IDENTITY_MISMATCH")
+        return raw, row
+    for item in base_lock["known_immutable_files"]:
+        require(isinstance(item, dict), "IMMUTABLE_SCIENTIFIC_SOURCE_CLOSURE_INVALID")
+        path = safe_path(item.get("path"))
+        _, row = observed(path)
+        for original_commit in (SCIENTIFIC_BASE, ORIGINAL_COMPARISON):
+            entry = git.entry(original_commit, path)
+            require(entry is not None and entry.mode == "100644" and entry.blob == row["git_blob_sha1"],
+                    "IMMUTABLE_SCIENTIFIC_SOURCE_DRIFT", path)
+        original[path] = row
+    for path in sorted({"tests/validation/frontend_evolution/" + name for name in SOURCE_FILES} | set(HOOKS)):
+        raw, row = observed(path)
+        implementation[path] = row
+        if path not in HOOKS:
+            programs[path] = raw
+    for name, raw in documents.items():
+        path = root / DOC_ROOT / name
+        require(path.resolve(strict=True) == path and read_regular(path, FILE_CAP) == raw,
+                "EXECUTION_WORKTREE_SOURCE_DRIFT", DOC_ROOT + "/" + name)
+    guard_entry = git.entry(source["B"], GUARD)
+    require(guard_entry is not None and guard_entry.mode == "100644", "PROTECTED_POLICY_MODE_DRIFT")
+    guard = git.blob(source["B"], GUARD) or b""
+    result = validate_source_documents(documents, protected, source["C"], original, implementation,
+                                       source_row(GUARD, guard), read_regular(Path(__file__), FILE_CAP), programs)
+    require(result["qualified_base"]["commit"] == source["B"] and
+            result["qualified_base"]["tree"] == source["B_tree"], "INTEGRATION_BASE_NOT_QUALIFIED")
+    require(lock["original_direct_translation_units"] and len(lock["original_direct_translation_units"]) == 20,
+            "EXECUTION_SOURCE_CLOSURE_INCOMPLETE")
+    result["actual_checkout"] = source["checkout"]
+    result["actual_candidate"] = source["C"]
+    result["actual_candidate_tree"] = source["C_tree"]
+    return result
+
+
+class ProviderAdmission:
+    """Live coordinator, callable only by the frozen collector after scope.
+
+    Merely importing this class does not read the network. Offline controls
+    never instantiate it; source-only scope never creates the HTTP child.
+    The collector supplies its real entry clocks, never a CLI deadline or C.
+    """
+    def __init__(self, root: Path, event_path: Path, env: dict[str, str], output: Path,
+                 stage_monotonic_ns: int, stage_epoch_ns: int):
+        require(sys.flags.isolated == 1, "ISOLATED_STANDARD_LIBRARY_RUNTIME_REQUIRED")
+        self.root = root.resolve(strict=True)
+        self.output = output
+        self.stage_monotonic_ns, self.stage_epoch_ns = stage_monotonic_ns, stage_epoch_ns
+        require(strict_int(stage_monotonic_ns) and strict_int(stage_epoch_ns) and
+                stage_monotonic_ns <= time.monotonic_ns() and stage_epoch_ns <= time.time_ns(), "TIME_BUDGET_INVALID")
+        self.ledger = AcquisitionLedger()
+        self.activity = AdmissionActivity(self.ledger, DurationBudget(stage_monotonic_ns, 600_000_000_000))
+        self.activity.begin("PRE", stage_monotonic_ns)
+        self.git = AdmissionGit(self.root, self.activity)
+        self.worker: OwnedHTTPWorker | None = None
+        self.pre_receipt: dict[str, Any] | None = None
+        self.post_receipt: dict[str, Any] | None = None
+        self.post_validated = False
+        self.failure: dict[str, Any] | None = None
+        self.source: dict[str, Any] | None = None
+        self.freeze: dict[str, Any] | None = None
+        self.closure: dict[str, Any] | None = None
+        self.graph: dict[str, Any] = {}
+        self.job: dict[str, Any] | None = None
+        self.scope = local_scope(self.root, event_path, env, self.git)
+        require(self.scope.get("disposition") == REQUIRED and self.scope.get("api_requests") == 0 and
+                self.scope.get("HTTP_helper_starts") == 0 and self.scope.get("scientific_execution_admitted") is False,
+                "PROVIDER_ACQUISITION_SCOPE_REQUIRED")
+        local = self.scope["actual_local_source"]
+        event = strict_json(read_regular(event_path, FILE_CAP))
+        run_raw = env.get("GITHUB_RUN_ID", "")
+        require(re.fullmatch(r"[1-9][0-9]{0,18}", run_raw) is not None, "ACTUAL_RUN_BINDING_REQUIRED")
+        pr_number = None
+        if local["event"] == "pull_request":
+            pr_number = positive_id(event.get("number"), "PR_SOURCE_IDENTITY_DRIFT")
+            require(event["pull_request"].get("number") == pr_number and
+                    env.get("GITHUB_REF") == f"refs/pull/{pr_number}/merge", "PR_SOURCE_IDENTITY_DRIFT")
+        self.actual = {"run_id": positive_id(int(run_raw), "ACTUAL_RUN_BINDING_REQUIRED"), "attempt": 1,
+                       "event": local["event"], "event_head": local["C"] if pr_number else local["checkout"],
+                       "checkout": local["checkout"], "event_pr_number": pr_number}
+        baseline = strict_json(self.git.blob(local["checkout"], DOC_ROOT + "/EXECUTION_BASELINE.json") or b"")
+        require(isinstance(baseline, dict) and isinstance(baseline.get("integration_base"), dict),
+                "INTEGRATION_BASE_NOT_QUALIFIED")
+        self.qualified_base = baseline["integration_base"]
+        require(self.qualified_base.get("commit") == local["B"], "INTEGRATION_BASE_NOT_QUALIFIED")
+        self.request_identity = {"route": 0, "role": local["event"], "run_id": self.actual["run_id"],
+                                 "pr_number": pr_number, "C": local["C"] or None,
+                                 "S": local["checkout"] if local["event"] == "push" else None,
+                                 "comment_id": None}
+        self.worker = OwnedHTTPWorker(self.scope, self.activity.collector_budget, self.ledger, output)
+        self.activity.sync()
+
+    @property
+    def collector_budget(self) -> DurationBudget:
+        return self.activity.collector_budget
+
+    def _read(self, route: int) -> tuple[Any, dict[str, Any]]:
+        require(self.worker is not None, "METADATA_WORKER_PARENT_REQUIRED")
+        self.activity.sync()
+        value, exchange = self.worker.request(self.request_identity | {"route": route})
+        self.activity.sync()
+        return value, exchange
+
+    def _source_phase(self, post: bool) -> tuple[dict[str, Any], dict[str, Any]]:
+        if self.actual["event"] == "push" and not post:
+            require(self.request_identity["C"] is None and self.request_identity["pr_number"] is None,
+                    "MAIN_C_DERIVATION_NOT_PROVIDER_BOUND")
+        run, _ = self._read(10 if post else 1)
+        validate_run(run, self.actual)
+        if not post:
+            jobs, exchange = self._read(2)
+            self.job = validate_jobs(jobs, exchange["headers"], self.actual["run_id"])
+            try:
+                budget = bind_collector_budget(self.job, self.stage_monotonic_ns, self.stage_epoch_ns)
+            except AdmissionError:
+                self.activity.collector_budget = DurationBudget(self.stage_monotonic_ns, 0)
+                assert self.worker is not None
+                self.worker.collector_budget = self.activity.collector_budget
+                raise
+            self.activity.collector_budget = budget
+            assert self.worker is not None
+            self.worker.collector_budget = budget
+            self.activity.sync()
+        main_ref, _ = self._read(11 if post else 3)
+        first, first_exchange = self._read(12 if post else 4)
+        if self.actual["event"] == "push":
+            association = validate_associations(first, first_exchange["headers"], role="push",
+                                                 event_sha=self.actual["checkout"], event_pr_number=None)
+            self.request_identity["pr_number"] = association["number"]
+            pr, _ = self._read(13 if post else 5)
+        else:
+            pr = first
+            # C comes from the actual event and is checked against the actual
+            # PR; no freeze or CLI supplied C is read to select this route.
+            second, second_exchange = self._read(13 if post else 5)
+            association = validate_associations(second, second_exchange["headers"], role="pull_request",
+                                                 event_sha=self.actual["event_head"],
+                                                 event_pr_number=self.actual["event_pr_number"])
+        require(isinstance(pr, dict) and isinstance(pr.get("base"), dict) and isinstance(pr.get("head"), dict),
+                "PR_SOURCE_IDENTITY_DRIFT")
+        b, c = oid(pr["base"].get("sha")), oid(pr["head"].get("sha"))
+        graph = actual_source_graph(self.git, b, c, self.actual["checkout"])
+        source = derive_actual_source(run, self.actual, pr, association, main_ref, graph,
+                                      self.qualified_base, self.source if post else None)
+        require(b == self.scope["actual_local_source"]["B"], "PROTECTED_POLICY_SOURCE_DRIFT")
+        self.request_identity["C"] = source["C"]
+        self.graph.update(graph)
+        return run, source
+
+    def _freeze_phase(self, source: dict[str, Any], post: bool) -> dict[str, Any]:
+        require(self.closure is not None and self.closure.get("source_closed_before_freeze") is True,
+                "EXECUTION_SOURCE_CLOSURE_INCOMPLETE")
+        issue_before, _ = self._read(14 if post else 6)
+        comments, exchange = self._read(15 if post else 7)
+        selected = select_freeze(comments, exchange["headers"], issue_before, source,
+                                  self.closure["document_hashes"])
+        self.request_identity["comment_id"] = selected["comment"]["id"]
+        direct, _ = self._read(16 if post else 8)
+        issue_after, _ = self._read(17 if post else 9)
+        return finish_freeze_checkpoint(selected, direct, issue_before, issue_after, self.freeze if post else None)
+
+    def pre(self) -> dict[str, Any]:
+        require(self.pre_receipt is None and self.ledger.next_route == 1, "API_REQUEST_BUDGET_EXCEEDED")
+        try:
+            _, self.source = self._source_phase(False)
+            self.closure = actual_source_closure(self.git, self.root, self.source)
+            self.freeze = self._freeze_phase(self.source, False)
+            require(self.ledger.accounted_routes == set(range(1, 10)), "FREEZE_PRE_CHECKPOINT_INCOMPLETE")
+            self.activity.end()
+            self.pre_receipt = {"state": "PRE_ADMITTED_FOR_REGISTERED_FIXED_MATRIX_ONLY",
+                                "source": self.source, "freeze": self.freeze, "source_closure": self.closure,
+                                "actual_job": self.job, "scientific_result_complete": False,
+                                "collector_budget": self.collector_budget.receipt()}
+            return self.pre_receipt
+        except BaseException as exc:
+            self._deny(exc, "PRE")
+            raise
+
+    def post(self) -> dict[str, Any]:
+        require(self.pre_receipt is not None and self.post_receipt is None and self.ledger.next_route == 10,
+                "FREEZE_POST_CHECKPOINT_INCOMPLETE")
+        self.activity.begin("POST")
+        try:
+            _, source = self._source_phase(True)
+            require(source == self.source, "SOURCE_IDENTITY_CHANGED_AFTER_PRE")
+            # Recheck all actual source payloads as well as provider lineage.
+            closure = actual_source_closure(self.git, self.root, source)
+            require(closure == self.closure, "SOURCE_IDENTITY_CHANGED_AFTER_PRE")
+            freeze = self._freeze_phase(source, True)
+            require(freeze == self.freeze, "FREEZE_CHANGED_AFTER_PRE")
+            assert self.worker is not None
+            self.worker.close()
+            self.ledger.finish()
+            # close() includes FD closure and diagnostic hash/hex capture.
+            # The final phase cut is after that work, not before finalization.
+            self.activity.end()
+            self.post_validated = True
+            self.post_receipt = {"state": "COMPLETE_PROVIDER_SOURCE_AND_FREEZE_CHECKPOINTS",
+                                 "same_source": True, "same_freeze": True,
+                                 "scientific_result_complete": False,
+                                 "control_plane": self.control_receipt(),
+                                 "collector_budget": self.collector_budget.receipt()}
+            return self.post_receipt
+        except BaseException as exc:
+            self._deny(exc, "POST")
+            raise
+
+    def _deny(self, exc: BaseException, phase: str) -> None:
+        self.post_validated = False
+        self.failure = {"phase": phase, "reason": getattr(exc, "reason", type(exc).__name__),
+                        "provider_freeze_admitted": False}
+        try:
+            self.abort()
+        except BaseException as cleanup:
+            self.failure["cleanup_denial"] = getattr(cleanup, "reason", type(cleanup).__name__)
+
+    def abort(self) -> None:
+        if self.activity.phase is None:
+            self.activity.begin("DENIAL_CLEANUP")
+        try:
+            if self.worker is not None:
+                self.worker.close()
+        finally:
+            self.activity.end()
+
+    def control_receipt(self) -> dict[str, Any]:
+        return {"request_count": self.ledger.next_route - 1,
+                "request_count_role": "PARENT_ADMITTED_FIXED_GET_ATTEMPTS_NO_RETRY",
+                "successful_operation_count": len(self.ledger.accounted_routes),
+                "active_acquisition_ns": self.ledger.active_ns,
+                "validation_and_finalization_ns": self.ledger.validation_ns,
+                "raw_control_bytes": self.ledger.raw_bytes,
+                "request_records": copy.deepcopy(self.ledger.request_records),
+                "active_phases": copy.deepcopy(self.activity.phases),
+                "helper": copy.deepcopy(self.worker.lifecycle) if self.worker is not None else None,
+                "failed_operation": copy.deepcopy(self.worker.failed_operation) if self.worker is not None else None,
+                "failure": copy.deepcopy(self.failure),
+                "full_PRE_and_POST": self.post_validated and self.failure is None and
+                                     self.ledger.accounted_routes == set(range(1, 18)) and self.ledger.helper_reaped}
+
+
+def coordinator_metadata_self_test() -> dict[str, Any]:
+    """Exercise real phase logic with typed in-memory provider/Git readers.
+
+    __init__, OwnedHTTPWorker, Git process readers and source/DSP are never
+    invoked. This observes parser/route order, not real transport lifecycle.
+    """
+    traces: list[dict[str, Any]] = []
+    negatives: list[dict[str, str]] = []
+    for role in ("pull_request", "push"):
+        seed = provider_metadata_fixture(role)
+        coordinator = ProviderAdmission.__new__(ProviderAdmission)
+        coordinator.actual = copy.deepcopy(seed["actual"])
+        coordinator.source = None
+        coordinator.freeze = None
+        coordinator.qualified_base = copy.deepcopy(seed["qualified_base"])
+        coordinator.scope = {"actual_local_source": {"B": "1" * 40}}
+        coordinator.graph = {}
+        coordinator.stage_monotonic_ns = time.monotonic_ns()
+        coordinator.stage_epoch_ns = utc_ns(seed["run"]["created_at"])
+        coordinator.ledger = AcquisitionLedger()
+        coordinator.activity = AdmissionActivity(coordinator.ledger, DurationBudget(coordinator.stage_monotonic_ns, 600_000_000_000))
+        coordinator.activity.begin("OFFLINE_METADATA_PHASE_MODEL")
+        coordinator.request_identity = {"route": 0, "role": role, "run_id": 42,
+                                        "pr_number": 123 if role == "pull_request" else None,
+                                        "C": "2" * 40 if role == "pull_request" else None,
+                                        "S": "4" * 40 if role == "push" else None, "comment_id": None}
+        class TypedGitModel:
+            def commit(self, commit: str) -> tuple[str, tuple[str, ...]]:
+                value = seed["graph"][commit]
+                return value["tree"], tuple(value["parents"])
+        class UnstartedWorkerModel:
+            collector_budget = coordinator.activity.collector_budget
+        coordinator.git = TypedGitModel()
+        coordinator.worker = UnstartedWorkerModel()
+        requested: list[dict[str, Any]] = []
+        mapping = {1: "run", 2: "jobs", 3: "main_ref", 6: "issue_before", 7: "comments", 8: "direct", 9: "issue_after",
+                   10: "run", 11: "main_ref", 14: "issue_before", 15: "comments", 16: "direct", 17: "issue_after"}
+        mapping.update({4: "pr" if role == "pull_request" else "associations", 5: "associations" if role == "pull_request" else "pr",
+                        12: "pr" if role == "pull_request" else "associations", 13: "associations" if role == "pull_request" else "pr"})
+        def read_model(route: int) -> tuple[Any, dict[str, Any]]:
+            request = coordinator.request_identity | {"route": route}
+            requested.append({"route": route, "url": api_route_url(request), "C_before_read": request["C"]})
+            if route in (6, 7, 8, 9, 14, 15, 16, 17):
+                require(coordinator.source == seed["source"], "SELF_TEST_SOURCE_BEFORE_FREEZE")
+            return copy.deepcopy(seed[mapping[route]]), {"headers": {}}
+        coordinator._read = read_model
+        if role == "push":
+            coordinator.request_identity["C"] = "2" * 40
+            try:
+                coordinator._source_phase(False)
+            except AdmissionError as exc:
+                require(exc.reason == "MAIN_C_DERIVATION_NOT_PROVIDER_BOUND" and not requested,
+                        "SELF_TEST_WRONG_DENIAL")
+            else:
+                raise AdmissionError("SELF_TEST_DID_NOT_REJECT", "push_self_declared_C")
+            negatives.append({"name": "push_self_declared_C", "actual_reason": "MAIN_C_DERIVATION_NOT_PROVIDER_BOUND"})
+            coordinator.request_identity["C"] = None
+        _, coordinator.source = coordinator._source_phase(False)
+        coordinator.closure = {"source_closed_before_freeze": True, "document_hashes": seed["documents"]}
+        coordinator.freeze = coordinator._freeze_phase(coordinator.source, False)
+        _, post_source = coordinator._source_phase(True)
+        post_freeze = coordinator._freeze_phase(post_source, True)
+        require(post_source == coordinator.source and post_freeze == coordinator.freeze and
+                [row["route"] for row in requested] == list(range(1, 18)), "SELF_TEST_COORDINATOR_ROUTE_ORDER")
+        coordinator.activity.end()
+        traces.append({"role": role, "modeled_routes": requested,
+                       "actual_HTTP_requests": 0, "actual_subprocess_starts": 0,
+                       "source_derived_before_first_comment_read": True})
+    return {"fixture_role": "OFFLINE_COORDINATOR_METHOD_MODEL_ONLY", "traces": traces,
+            "negative_cases": negatives, "real_transport_or_kill_wait_tested": False}
+
+
+def source_closure_metadata_fixture() -> dict[str, Any]:
+    """Typed, nonempty metadata model; these bytes are never compiled/imported."""
+    original = {f"offline_original/input_{index:02d}.c": source_row(
+        f"offline_original/input_{index:02d}.c", f"ORIGINAL_MODEL_{index}\n".encode()) for index in range(88)}
+    programs = {"tests/validation/frontend_evolution/" + name: ("OFFLINE_MODEL_" + name + "\n").encode()
+                for name in SOURCE_FILES}
+    implementation = {path: source_row(path, raw) for path, raw in programs.items()}
+    implementation.update({path: source_row(path, ("OFFLINE_HOOK_MODEL_" + path).encode()) for path in HOOKS})
+    lock = {"id": IDENTITY, "original_baseline": SCIENTIFIC_BASE, "original_comparison_commit": ORIGINAL_COMPARISON,
+            "known_immutable_file_count": 88, "known_immutable_files": list(original.values()),
+            "pending_implementation_files": [implementation[path] for path in programs],
+            "pending_hookup_files": [implementation[path] for path in HOOKS],
+            "source_self_reference_policy": {"own_member_digest_omitted": True,
+                                             "containing_execution_commit_not_embedded": True,
+                                             "future_comment_identity_not_embedded": True},
+            "execution_admitted_by_this_file": False,
+            "original_direct_translation_units": list(original)[:20],
+            "original_included_translation_unit": list(original)[20],
+            "generated_header_requirement": {"bytes": "OFFLINE_MODEL_ONLY"}}
+    guard = implementation[GUARD]
+    base = {"status": "QUALIFIED_PROTECTED_BASE_WITH_GUARD", "commit": "1" * 40, "tree": "a" * 40,
+            "verify_run_id": 1, "verify_attempt": 1, "required_summary_job_id": 2,
+            "release_run_id": 3, "release_attempt": 1, "release_job_id": 4, "convergence_job_id": 5,
+            "protected_guard_path": GUARD, "protected_guard_mode": "100644", "protected_guard_blob": guard["git_blob_sha1"],
+            "protected_guard_bytes": guard["bytes"], "protected_guard_sha256": guard["sha256"],
+            "root_independent_main_closure_report_sha256": "c" * 64,
+            "all_fields_complete_before_final_C_required": True}
+    baseline = {"id": IDENTITY, "source_baseline": SCIENTIFIC_BASE, "status": "OFFLINE_SOURCE_CLOSURE_MODEL",
+                "integration_base": base, "candidate_source_identity": {
+                    "location": "external issue847 freeze and runtime provider/Git observations only",
+                    "C_or_tree_embedded_in_this_file": False, "future_comment_ID_or_body_hash_embedded": False,
+                    "document_alone_authorizes_execution": False}}
+    contract = {"id": IDENTITY, **{field: {"offline_scientific_field": field} for field in SCIENCE_FIELDS}}
+    def encoded(value: Any) -> bytes:
+        return json.dumps(value, sort_keys=True, separators=(",", ":")).encode()
+    documents = {"README.md": b"OFFLINE_SOURCE_METADATA_MODEL_ONLY\n", "source-lock.json": encoded(lock),
+                 "EXECUTION_BASELINE.json": encoded(baseline), "test-contract.json": encoded(contract),
+                 "ADMISSION_NEGATIVE_CONTROLS.json": b'{"role":"OFFLINE_MODEL_ONLY"}'}
+    return {"OFFLINE_METADATA_FIXTURE_ONLY": True, "documents": documents, "protected_documents": copy.deepcopy(documents),
+            "candidate": "e" * 40, "original": original, "implementation": implementation,
+            "protected_guard": copy.deepcopy(guard), "actual_guard": programs[GUARD], "locked_programs": programs}
+
+
+def validate_source_fixture(seed: dict[str, Any]) -> dict[str, Any]:
+    require(seed.get("OFFLINE_METADATA_FIXTURE_ONLY") is True, "SELF_TEST_FIXTURE_ROLE")
+    return validate_source_documents(*(seed[key] for key in (
+        "documents", "protected_documents", "candidate", "original", "implementation", "protected_guard",
+        "actual_guard", "locked_programs")))
+
+
+def source_closure_metadata_self_test() -> dict[str, Any]:
+    seed = source_closure_metadata_fixture()
+    valid = validate_source_fixture(seed)
+    require(valid["source_closed_before_freeze"] is True and valid["scientific_execution_admitted"] is False,
+            "SELF_TEST_SOURCE_CLOSURE_SEED")
+    completed: list[dict[str, str]] = []
+    def reject(name: str, reason: str, changed: dict[str, Any]) -> None:
+        try:
+            validate_source_fixture(changed)
+        except AdmissionError as exc:
+            require(exc.reason == reason, "SELF_TEST_WRONG_DENIAL", name + ":" + exc.reason)
+        else:
+            raise AdmissionError("SELF_TEST_DID_NOT_REJECT", name)
+        completed.append({"name": name, "actual_reason": reason})
+    def document_change(changed: dict[str, Any], name: str, action: Any) -> None:
+        value = strict_json(changed["documents"][name])
+        action(value)
+        changed["documents"][name] = json.dumps(value, sort_keys=True, separators=(",", ":")).encode()
+    for name, key, value, reason in (
+        ("candidate_guard_used_as_authority", "actual_guard", b"CANDIDATE_DIFFERENT_GUARD", "PROTECTED_POLICY_SOURCE_DRIFT"),
+        ("guard_mode_symlink", "mode", "120000", "PROTECTED_POLICY_MODE_DRIFT"),
+        ("guard_blob_changed", "git_blob_sha1", "f" * 40, "PROTECTED_POLICY_SOURCE_DRIFT"),
+    ):
+        changed = copy.deepcopy(seed)
+        if key == "actual_guard":
+            changed[key] = value
+        else:
+            changed["protected_guard"][key] = value
+        reject(name, reason, changed)
+    changed = copy.deepcopy(seed)
+    changed["locked_programs"][GUARD] += b"C_BYTE_CHANGED\n"
+    changed["implementation"][GUARD] = source_row(GUARD, changed["locked_programs"][GUARD])
+    document_change(changed, "source-lock.json", lambda lock: lock.update(
+        pending_implementation_files=[changed["implementation"][row["path"]] for row in lock["pending_implementation_files"]]))
+    reject("C_guard_differs_B", "PROTECTED_POLICY_SOURCE_DRIFT", changed)
+    changed = copy.deepcopy(seed)
+    path = next(iter(changed["original"]))
+    changed["original"][path] = source_row(path, b"ALTERED_ORIGINAL_BYTE_AND_RESEALED_C")
+    document_change(changed, "source-lock.json", lambda lock: lock.update(known_immutable_files=list(changed["original"].values())))
+    reject("original_source_byte_changed", "IMMUTABLE_SCIENTIFIC_SOURCE_DRIFT", changed)
+    changed = copy.deepcopy(seed)
+    changed["implementation"]["unregistered_extra_TU.c"] = source_row("unregistered_extra_TU.c", b"EXTRA_SOURCE")
+    reject("unlocked_new_source", "EXECUTION_SOURCE_CLOSURE_INCOMPLETE", changed)
+    changed = copy.deepcopy(seed)
+    document_change(changed, "source-lock.json", lambda lock: lock["pending_implementation_files"][0].update(bytes=None))
+    reject("pending_lock_row", "EXECUTION_SOURCE_CLOSURE_INCOMPLETE", changed)
+    changed = copy.deepcopy(seed)
+    document_change(changed, "source-lock.json", lambda lock: lock.update(source_lock_sha256="f" * 64))
+    reject("source_lock_self_hash", "SOURCE_FREEZE_SELF_REFERENCE", changed)
+    changed = copy.deepcopy(seed)
+    changed["locked_programs"][GUARD] += hashlib.sha256(changed["documents"]["source-lock.json"]).hexdigest().encode()
+    reject("verifier_embeds_lock_hash", "SOURCE_FREEZE_SELF_REFERENCE", changed)
+    changed = copy.deepcopy(seed)
+    document_change(changed, "EXECUTION_BASELINE.json", lambda baseline: baseline.update(future_comment_id=123456))
+    reject("future_comment_embedded", "SOURCE_FREEZE_SELF_REFERENCE", changed)
+    return {"negative_cases": completed, "fixture_role": "OFFLINE_SOURCE_CLOSURE_METADATA_MODEL_ONLY",
+            "actual_source_compilations": 0, "network_requests": 0, "subprocess_starts": 0}
 
 
 def transport_metadata_self_test() -> dict[str, Any]:
@@ -1897,10 +2644,14 @@ def self_test() -> dict[str, Any]:
     count += 1
     provider_controls = provider_metadata_self_test()
     transport_controls = transport_metadata_self_test()
+    closure_controls = source_closure_metadata_self_test()
+    coordinator_controls = coordinator_metadata_self_test()
     return {"experiment_id": IDENTITY, "status": "BOOTSTRAP_PURE_METADATA_CONTROLS_PASS",
-            "actual_cases": count + len(provider_controls["negative_cases"]) + len(provider_controls["positive_cases"]) + len(transport_controls["negative_cases"]),
+            "actual_cases": count + len(provider_controls["negative_cases"]) + len(provider_controls["positive_cases"]) + len(transport_controls["negative_cases"]) + len(closure_controls["negative_cases"]) + len(coordinator_controls["negative_cases"]),
             "local_source_control_cases": count, "provider_metadata_controls": provider_controls,
             "transport_metadata_controls": transport_controls,
+            "source_closure_metadata_controls": closure_controls,
+            "coordinator_metadata_controls": coordinator_controls,
             "registered117_controls_complete": False,
             "network_requests": 0, "subprocess_starts": 0, "scientific_C_target_starts": 0,
             "DSP_frames": 0, "real_transport_or_kill_wait_tested": False}
@@ -1922,6 +2673,7 @@ def main() -> int:
         if args.self_test:
             receipt = self_test()
         else:
+            require(sys.flags.isolated == 1, "ISOLATED_STANDARD_LIBRARY_RUNTIME_REQUIRED")
             event_path = args.event or Path(os.environ.get("GITHUB_EVENT_PATH", ""))
             require(str(event_path) not in ("", "."), "ACTUAL_EVENT_PATH_REQUIRED")
             receipt = local_scope(args.root, event_path, dict(os.environ))

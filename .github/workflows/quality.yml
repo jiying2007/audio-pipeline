@@ -3102,9 +3102,9 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          python3 tests/validation/frontend_evolution/fe09_a3_f0_live_roll_qualification.py \
+          python3 -I tests/validation/frontend_evolution/fe09_a3_f0_live_roll_qualification.py \
             --collect --output fe09-a3-f0-live-roll --execution-source "$GITHUB_SHA"
-          python3 tests/validation/frontend_evolution/fe09_a3_f0_live_roll_qualification.py \
+          python3 -I tests/validation/frontend_evolution/fe09_a3_f0_live_roll_qualification.py \
             --verify --output fe09-a3-f0-live-roll --execution-source "$GITHUB_SHA"
           echo 'disposition=QUALIFIED_FINITE_A3_LIVE_ROLL_COMPLETE' >> "$GITHUB_OUTPUT"
       - name: Retain A3 original evidence and bounded partial failure
@@ -3140,5 +3140,5 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python3 tests/validation/frontend_evolution/fe09_a3_f0_live_roll_qualification.py \
+          python3 -I tests/validation/frontend_evolution/fe09_a3_f0_live_roll_qualification.py \
             --verify --output fe09-a3-f0-live-roll-readback --execution-source "$GITHUB_SHA"

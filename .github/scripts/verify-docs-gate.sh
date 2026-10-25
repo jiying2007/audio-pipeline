@@ -7,7 +7,7 @@ set -eu
 # This phase uses only actual event/local Git and never grants A3 execution.
 if [ "${1:-}" != --f1-scope-only ]; then
   if [ -n "${GITHUB_EVENT_NAME:-}" ]; then
-    python3 - <<'PY_A3_PROTECTED_BASE'
+    python3 -I - <<'PY_A3_PROTECTED_BASE'
 #!/usr/bin/env python3
 """FE09 A3 R1 protected-base source admission.
 
@@ -392,6 +392,8 @@ try:
     head = git.head()
     _, parents = git.commit(head)
     source = local_source(strict_json(read_regular(event_path,FILE_CAP)),dict(os.environ),head,parents)
+    protected_entry = git.entry(source["B"],GUARD)
+    require(protected_entry is None or protected_entry.mode == "100644","PROTECTED_POLICY_MODE_DRIFT")
     protected = git.blob(source["B"],GUARD,required=False)
     if protected is None:
         emit_bootstrap(source,git.changed_paths(source["B"],head))
@@ -417,7 +419,7 @@ PY_A3_PROTECTED_BASE
   fi
 fi
 # A3_R1_SOURCE_SCOPE_GUARD_END
-python3 tests/validation/frontend_evolution/fe09_a3_f0_source_admission.py --self-test
+python3 -I tests/validation/frontend_evolution/fe09_a3_f0_source_admission.py --self-test
 
 python3 tests/validation/frontend_evolution/test_contracts.py
 python3 scripts/ci_impact.py --self-test

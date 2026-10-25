@@ -96,7 +96,7 @@ def registered_forward_patch(version: str) -> bytes:
 
 
 def current_maintenance_version(src: dict[str, str], item: dict) -> str:
-    match = re.search(r"(?m)^project\\(audio_pipeline VERSION ([0-9]+\\.[0-9]+\\.[0-9]+) LANGUAGES C\\)$",
+    match = re.search(r"(?m)^project\(audio_pipeline VERSION ([0-9]+\.[0-9]+\.[0-9]+) LANGUAGES C\)$",
                       src["CMakeLists.txt"])
     need(match is not None, "CURRENT_VERSION_NOT_PARSED")
     version = match.group(1)
@@ -152,7 +152,7 @@ def reconstruct(destination: Path, src: dict[str, str], item: dict, patch: bytes
                                    input=forward, cwd=destination, capture_output=True,
                                    timeout=20, check=False)
         need(inventory.returncode == 0, "REGISTERED_FORWARD_INVENTORY_INVALID")
-        forward_paths = [line.split("\\t")[-1] for line in inventory.stdout.decode("utf-8").splitlines()]
+        forward_paths = [line.split("\t")[-1] for line in inventory.stdout.decode("utf-8").splitlines()]
         need(len(forward_paths) == 2 and set(forward_paths) ==
              {"CMakeLists.txt", "src/platform/linux/ap_runtime.c"},
              "REGISTERED_FORWARD_PATCH_SCOPE_DRIFT")
@@ -254,7 +254,7 @@ def self_test() -> None:
     reject(lambda: policy(raw, patch + b"\ndiff --git a/extra b/extra\n"),
            "INVERSE_PATCH_OR_SOURCE_SET_DRIFT")
     changed = dict(src)
-    changed["CMakeLists.txt"] = re.sub(r"VERSION 2\\.3\\.[0-9]+", "VERSION 3.0.0",
+    changed["CMakeLists.txt"] = re.sub(r"VERSION 2\.3\.[0-9]+", "VERSION 3.0.0",
                                              changed["CMakeLists.txt"], count=1)
     reject(lambda: check_current(changed, item))
     changed = dict(src)
@@ -330,7 +330,7 @@ def self_test() -> None:
             for path, binding in item["source_bindings"].items():
                 need(major.git_blob(raw_file(reconstructed / path)) == binding["before_blob"],
                      "REGISTERED_FORWARD_HISTORICAL_RECONSTRUCTION_DRIFT")
-            candidate["src/platform/linux/ap_runtime.c"] += "\\n"
+            candidate["src/platform/linux/ap_runtime.c"] += "\n"
             reject(lambda bad=candidate: check_current(bad, item),
                    "CURRENT_MAINTENANCE_SOURCE_DRIFT_src/platform/linux/ap_runtime.c")
     need(rejected == 16, "MAINTENANCE_NEGATIVES_INCOMPLETE")

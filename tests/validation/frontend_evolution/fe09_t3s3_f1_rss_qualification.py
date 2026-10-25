@@ -99,11 +99,11 @@ def finite(value: object, low: float = 0) -> bool:
 
 def strict_UTC_seconds(value: object) -> int:
     require(type(value) is str and re.fullmatch(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z", value) is not None,
-            "F1R1_STRICT_UTC_TIME")
+            "F1R1_STRICT_UTC_TIMESTAMP")
     try:
         parsed = dt.datetime.strptime(value, "%Y-%m-%dT%H:%M:%SZ")
     except ValueError as exc:
-        raise Rejected("F1R1_STRICT_UTC_TIME") from exc
+        raise Rejected("F1R1_STRICT_UTC_TIMESTAMP") from exc
     return calendar.timegm(parsed.timetuple())
 
 
@@ -262,6 +262,170 @@ def validate_wire_sequence(messages: list[bytes], observations: dict,
         require(end <= ack["monotonic_ns"], "F1R1_OBSERVATION_BEFORE_ACK")
         previous = ack["monotonic_ns"]
     return rows
+
+
+def validate_schema(value: object, schema: dict) -> None:
+    """Strict registered schema subset; no external references or coercions."""
+    if "const" in schema:
+        expected = schema["const"]
+        require(type(value) is type(expected) and value == expected, "F1R1_FREEZE_SCHEMA")
+    kind = schema.get("type")
+    if kind == "object":
+        require(type(value) is dict and set(value) == set(schema["required"]) and
+                schema["additionalProperties"] is False, "F1R1_FREEZE_SCHEMA")
+        for key, rule in schema["properties"].items():
+            validate_schema(value[key], rule)
+    elif kind == "string":
+        require(type(value) is str, "F1R1_FREEZE_SCHEMA")
+    elif kind == "integer":
+        require(type(value) is int, "F1R1_FREEZE_SCHEMA")
+    if "pattern" in schema:
+        require(type(value) is str and re.fullmatch(schema["pattern"], value), "F1R1_FREEZE_SCHEMA")
+
+
+def actual_provider_C(event: str, run: dict, association: list[dict] | None,
+                      detail: dict, git_role: dict) -> dict:
+    """Pure provider/Git binding, always before inspecting an approval body.
+
+    Acquisition is deliberately absent from bootstrap. These arguments are only
+    observations after a future bounded real acquisition, or labelled templates.
+    """
+    require(event in ("pull_request", "push"), "F1R1_EVENT_SCOPE_NO_SCIENCE")
+    require(run.get("event") == event and oid(run.get("head_sha")), "F1R1_RUN_EVENT_SOURCE")
+    if event == "push":
+        source = run["head_sha"]
+        require(type(association) is list and len(association) <= 100,
+                "F1R1_MAIN_PROVIDER_ASSOCIATION_REQUIRED")
+        require(all(integer(p.get("id"), 1) and integer(p.get("number"), 1) for p in association) and
+                len({p["id"] for p in association}) == len(association) and
+                len({p["number"] for p in association}) == len(association),
+                "F1R1_UNIQUE_MAIN_PR_ASSOCIATION")
+        matches = [p for p in association if p.get("merge_commit_sha") == source and
+                   p.get("head", {}).get("ref") == REGISTERED_BRANCH and
+                   p.get("base", {}).get("ref") == "main"]
+        require(len(matches) == 1, "F1R1_UNIQUE_MAIN_PR_ASSOCIATION")
+        selected = matches[0]
+        require(detail.get("id") == selected["id"] and detail.get("number") == selected["number"] and
+                detail.get("head", {}).get("sha") == selected.get("head", {}).get("sha"),
+                "F1R1_MAIN_PROVIDER_ASSOCIATION_REQUIRED")
+        require(detail.get("merged") is True and type(detail.get("merged_at")) is str and
+                detail.get("merge_commit_sha") == source, "F1R1_ACTUAL_MERGED_PR_REQUIRED")
+        strict_UTC_seconds(detail["merged_at"])
+        require(git_role.get("S") == source and len(git_role.get("S_parents", [])) == 1,
+                "F1R1_IMMUTABLE_MAIN_PARENT_B")
+        base = git_role["S_parents"][0]
+        candidate = detail.get("head", {}).get("sha")
+        require(git_role.get("S_tree") == git_role.get("C_tree") and oid(git_role.get("C_tree")),
+                "F1R1_FULL_TREE_EQUALITY")
+    else:
+        candidate = run["head_sha"]
+        require(detail.get("head", {}).get("sha") == candidate, "F1R1_RUN_PR_ASSOCIATION")
+        selected = [p for p in run.get("pull_requests", []) if p.get("number") == detail.get("number")]
+        require(len(selected) == 1 and selected[0].get("head", {}).get("sha") == candidate,
+                "F1R1_RUN_PR_ASSOCIATION")
+        base = detail.get("base", {}).get("sha")
+        require(git_role.get("M_parents") == [base, candidate], "F1R1_EXACT_PR_MERGE_PARENTS")
+        require(git_role.get("M_tree") == git_role.get("C_tree") and oid(git_role.get("C_tree")),
+                "F1R1_FULL_TREE_EQUALITY")
+    require(oid(candidate) and oid(base), "F1R1_SOURCE_OID_REQUIRED")
+    for side in ("head", "base"):
+        repo_id = detail.get(side, {}).get("repo", {}).get("id")
+        require(type(repo_id) is int and repo_id == REPOSITORY_ID, "F1R1_SAME_REPOSITORY_SCOPE")
+    require(detail["head"].get("ref") == REGISTERED_BRANCH and detail["base"].get("ref") == "main",
+            "F1R1_REGISTERED_BRANCH_SCOPE")
+    require(oid(git_role.get("B_tree")), "F1R1_SOURCE_OID_REQUIRED")
+    return {"C": candidate, "B": base, "C_tree": git_role["C_tree"], "B_tree": git_role["B_tree"],
+            "PR_number": detail["number"], "actual_C_derived_before_freeze": True}
+
+
+def validate_freeze_sweep(sweep: dict, *, schema: dict, source: dict,
+                          expected_digests: dict, original_run_created_at: str) -> dict:
+    """Complete issue/count/list/direct/issue readback; never does HTTP."""
+    require(source.get("actual_C_derived_before_freeze") is True and oid(source.get("C")) and oid(source.get("B")),
+            "F1R1_MAIN_PROVIDER_ASSOCIATION_REQUIRED")
+    expected_user = {"login": "jiying2007", "id": 33591504, "type": "User"}
+    expected_url = "https://api.github.com/repos/" + REPOSITORY + "/issues/845"
+    repository = sweep["repository"]
+    require(type(repository.get("id")) is int and repository["id"] == REPOSITORY_ID and
+            repository.get("full_name") == REPOSITORY, "F1R1_FREEZE_REPOSITORY_IDENTITY")
+
+    def exact_author(user: object) -> bool:
+        return type(user) is dict and all(type(user.get(k)) is type(v) and user.get(k) == v
+                                          for k, v in expected_user.items())
+
+    for key in ("issue_before", "issue_after"):
+        issue = sweep[key]
+        require("pull_request" not in issue, "F1R1_FREEZE_ISSUE_NOT_PR")
+        require(type(issue.get("id")) is int and issue["id"] == 6015285792 and
+                issue.get("node_id") == "I_kwDOUE9X8c8AAAABZon6IA" and
+                type(issue.get("number")) is int and issue["number"] == 845 and
+                issue.get("created_at") == "2026-10-24T16:50:18Z" and
+                issue.get("url") == expected_url and
+                issue.get("repository_url") == "https://api.github.com/repos/" + REPOSITORY and
+                exact_author(issue.get("user")), "F1R1_FREEZE_ISSUE_IDENTITY")
+    comments = sweep["comments"]
+    require(type(comments) is list and len(comments) <= 100 and
+            integer(sweep["issue_before"].get("comments")) and
+            sweep["issue_before"]["comments"] == len(comments) == sweep["issue_after"].get("comments") and
+            type(sweep["issue_after"].get("comments")) is int and not sweep.get("comments_has_next_page", False),
+            "F1R1_COMPLETE_COMMENT_LIST")
+    require(all(integer(c.get("id"), 1) for c in comments) and len({c["id"] for c in comments}) == len(comments),
+            "F1R1_COMPLETE_COMMENT_LIST")
+    def parse_body(raw: bytes) -> dict:
+        require(len(raw) <= 16384, "F1R1_FREEZE_BODY_BYTES_LIMIT")
+        parsed = strict_json(raw, 16384)
+        require(type(parsed) is dict, "F1R1_FREEZE_SCHEMA")
+        require(parsed.get("experiment_id") == EXPERIMENT, "F1R1_EXACT_EXPERIMENT_IDENTITY")
+        require(parsed.get("decision") == "F1_R1_APPROVE_EXACT_SOURCE_FOR_REGISTERED_PR_AND_MAIN_FIRST_EXECUTION",
+                "F1R1_EXACT_EXECUTION_DECISION")
+        validate_schema(parsed, schema)
+        strict_UTC_seconds(parsed["reviewed_at_utc"])
+        return parsed
+    matching = []
+    for comment in comments:
+        if not exact_author(comment.get("user")):
+            continue
+        body = comment.get("body")
+        require(type(body) is str, "F1R1_FREEZE_SCHEMA")
+        if not body.lstrip().startswith("{"):
+            continue
+        raw = body.encode("utf-8")
+        parsed = parse_body(raw)
+        if parsed["source"]["reviewed_head_C"] == source["C"]:
+            matching.append((comment, parsed, raw))
+    require(matching, "F1R1_UNIQUE_MATCHING_C_FREEZE")
+    require(len(matching) == 1, "F1R1_DUPLICATE_C_FREEZE")
+    selected, listed_body, listed_raw = matching[0]
+    direct = sweep["selected_comment"]
+    require(exact_author(direct.get("user")), "F1R1_FREEZE_AUTHOR_IDENTITY")
+    require(direct.get("issue_url") == expected_url and selected.get("issue_url") == expected_url,
+            "F1R1_COMMENT_ISSUE_ASSOCIATION")
+    require(type(selected.get("node_id")) is str and selected["node_id"], "F1R1_FIXED_COMMENT_IDENTITY")
+    require(type(direct.get("body")) is str, "F1R1_FREEZE_SCHEMA")
+    raw = direct["body"].encode("utf-8")
+    body = parse_body(raw)
+    created = strict_UTC_seconds(direct.get("created_at"))
+    updated = strict_UTC_seconds(direct.get("updated_at"))
+    reviewed = strict_UTC_seconds(body["reviewed_at_utc"])
+    require(created == updated, "F1R1_FREEZE_COMMENT_EDITED")
+    require(reviewed <= created, "F1R1_REVIEW_TIMESTAMP")
+    require(created < strict_UTC_seconds(original_run_created_at), "F1R1_FREEZE_NOT_BEFORE_ORIGINAL_RUN")
+    expected_source = {"reviewed_head_C": source["C"], "protected_base_B": source["B"],
+                       "reviewed_tree_C": source["C_tree"], "protected_base_tree_B": source["B_tree"]}
+    require(all(body["source"][k] == v for k, v in expected_source.items()), "F1R1_EXTERNAL_SOURCE_IDENTITY")
+    require(body["digests"] == expected_digests, "F1R1_EXTERNAL_SOURCE_DIGEST")
+    for key in ("id", "node_id", "created_at", "updated_at", "body"):
+        require(type(direct.get(key)) is type(selected.get(key)) and direct.get(key) == selected.get(key),
+                "F1R1_PRE_POST_FREEZE_STABILITY")
+    require(body == listed_body and raw == listed_raw, "F1R1_PRE_POST_FREEZE_STABILITY")
+    return {"id": selected["id"], "node_id": selected["node_id"],
+            "author": expected_user, "issue_url": expected_url,
+            "created_at": selected["created_at"], "updated_at": selected["updated_at"],
+            "body": raw, "body_sha256": sha(raw), "source": expected_source}
+
+
+def validate_freeze_pair(pre: dict, post: dict) -> None:
+    require(pre == post, "F1R1_PRE_POST_FREEZE_STABILITY")
 
 
 def oid(value: object) -> bool:

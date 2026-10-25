@@ -236,7 +236,7 @@ class MetadataTests(unittest.TestCase):
 
     def test_real_calendar_parse(self):
         self.assertIsInstance(F1.strict_UTC_seconds("2026-10-24T16:50:18Z"), int)
-        self.reject("F1R1_STRICT_UTC_TIME", F1.strict_UTC_seconds, "2026-02-30T00:00:00Z")
+        self.reject("F1R1_STRICT_UTC_TIMESTAMP", F1.strict_UTC_seconds, "2026-02-30T00:00:00Z")
 
     @staticmethod
     def wire(phase="ENTRY", **extra):
@@ -288,6 +288,129 @@ class MetadataTests(unittest.TestCase):
         bad = dict(observed, ENTRY=(12, 15))
         self.reject("F1R1_OBSERVATION_BEFORE_ACK", F1.validate_wire_sequence,
                     messages, bad, nonce="a" * 64, ordinal=1, child_pid=123, launcher_pid=122)
+
+    @staticmethod
+    def freeze_template():
+        # Explicit synthetic provider template; it is never live authority.
+        root = MODULE.resolve().parents[3]
+        contract = json.loads((root / F1.REG / "test-contract.json").read_text())
+        schema = contract["external_freeze"]["body_schema"]
+        def expand(rule):
+            if "const" in rule:
+                return copy.deepcopy(rule["const"])
+            if rule.get("type") == "object":
+                return {key: expand(value) for key, value in rule["properties"].items()}
+            return "a" * 64
+        body = expand(schema)
+        body["source"].update(protected_base_B=B, protected_base_tree_B="4" * 40,
+                              reviewed_head_C=C, reviewed_tree_C="5" * 40)
+        body["reviewed_at_utc"] = "2026-10-24T17:00:00Z"
+        user = {"login": "jiying2007", "id": 33591504, "type": "User"}
+        url = "https://api.github.com/repos/" + F1.REPOSITORY + "/issues/845"
+        comment = dict(id=101, node_id="SYNTHETIC_COMMENT_101", user=user,
+                       issue_url=url, created_at="2026-10-24T17:00:01Z",
+                       updated_at="2026-10-24T17:00:01Z", body=json.dumps(body))
+        other_body = copy.deepcopy(body)
+        other_body["source"]["reviewed_head_C"] = "6" * 40
+        other = dict(comment, id=102, node_id="SYNTHETIC_COMMENT_102", body=json.dumps(other_body))
+        issue = dict(id=6015285792, number=845, node_id="I_kwDOUE9X8c8AAAABZon6IA",
+                     created_at="2026-10-24T16:50:18Z", user=user, url=url,
+                     repository_url="https://api.github.com/repos/" + F1.REPOSITORY, comments=2)
+        sweep = dict(repository=dict(id=F1.REPOSITORY_ID, full_name=F1.REPOSITORY),
+                     issue_before=copy.deepcopy(issue), issue_after=copy.deepcopy(issue),
+                     comments=[comment, other], selected_comment=copy.deepcopy(comment),
+                     comments_has_next_page=False)
+        args = dict(schema=schema, source=dict(C=C, B=B, C_tree="5" * 40, B_tree="4" * 40,
+                                               actual_C_derived_before_freeze=True),
+                    expected_digests=body["digests"], original_run_created_at="2026-10-24T17:00:02Z")
+        return sweep, args
+
+    def test_freeze_complete_counted_sweep_template(self):
+        sweep, args = self.freeze_template()
+        record = F1.validate_freeze_sweep(sweep, **args)
+        self.assertEqual(record["id"], 101)
+        self.assertEqual(record["body_sha256"], F1.sha(sweep["selected_comment"]["body"].encode()))
+        F1.validate_freeze_pair(record, copy.deepcopy(record))
+
+    def test_freeze_complete_list_and_POST_duplicate(self):
+        sweep, args = self.freeze_template()
+        F1.validate_freeze_sweep(sweep, **args)
+        for kind in ("wrong_count", "next_page", "duplicate_C"):
+            bad = copy.deepcopy(sweep)
+            if kind == "wrong_count":
+                bad["issue_after"]["comments"] += 1
+                reason = "F1R1_COMPLETE_COMMENT_LIST"
+            elif kind == "next_page":
+                bad["comments_has_next_page"] = True
+                reason = "F1R1_COMPLETE_COMMENT_LIST"
+            else:
+                body = json.loads(bad["comments"][1]["body"])
+                body["source"]["reviewed_head_C"] = C
+                bad["comments"][1]["body"] = json.dumps(body)
+                reason = "F1R1_DUPLICATE_C_FREEZE"
+            with self.subTest(mutation=kind):
+                self.reject(reason, F1.validate_freeze_sweep, bad, **args)
+
+    def test_freeze_same_tree_other_C_not_selected(self):
+        sweep, args = self.freeze_template()
+        body = json.loads(sweep["comments"][0]["body"])
+        body["source"]["reviewed_head_C"] = "0" * 40
+        sweep["comments"][0]["body"] = json.dumps(body)
+        self.reject("F1R1_UNIQUE_MATCHING_C_FREEZE", F1.validate_freeze_sweep, sweep, **args)
+
+    def test_freeze_creation_edit_and_equal_second(self):
+        sweep, args = self.freeze_template()
+        F1.validate_freeze_sweep(sweep, **args)
+        changed = copy.deepcopy(sweep)
+        changed["selected_comment"]["updated_at"] = "2026-10-24T17:00:02Z"
+        self.reject("F1R1_FREEZE_COMMENT_EDITED", F1.validate_freeze_sweep, changed, **args)
+        equal = dict(args, original_run_created_at="2026-10-24T17:00:01Z")
+        self.reject("F1R1_FREEZE_NOT_BEFORE_ORIGINAL_RUN", F1.validate_freeze_sweep, sweep, **equal)
+
+    def test_freeze_direct_record_mutation_predicates(self):
+        sweep, args = self.freeze_template()
+        F1.validate_freeze_sweep(sweep, **args)
+        cases = [
+            ("reviewed_at_utc", "2026-02-30T00:00:00Z", "F1R1_STRICT_UTC_TIMESTAMP"),
+            ("reviewed_at_utc", "2026-10-24T17:00:02Z", "F1R1_REVIEW_TIMESTAMP"),
+            ("reviewed_at_utc", "2026-10-24T16:59:59Z", "F1R1_PRE_POST_FREEZE_STABILITY"),
+            ("decision", "GENERAL_REVIEW_LOOKS_GOOD", "F1R1_EXACT_EXECUTION_DECISION"),
+            ("experiment_id", "OLD_F1", "F1R1_EXACT_EXPERIMENT_IDENTITY"),
+        ]
+        for field, value, reason in cases:
+            with self.subTest(field=field, value=value):
+                bad = copy.deepcopy(sweep)
+                body = json.loads(bad["selected_comment"]["body"])
+                body[field] = value
+                bad["selected_comment"]["body"] = json.dumps(body)
+                self.reject(reason, F1.validate_freeze_sweep, bad, **args)
+
+    def test_freeze_direct_author_and_source_digest(self):
+        sweep, args = self.freeze_template()
+        bad = copy.deepcopy(sweep)
+        bad["selected_comment"]["user"]["id"] += 1
+        self.reject("F1R1_FREEZE_AUTHOR_IDENTITY", F1.validate_freeze_sweep, bad, **args)
+        bad = copy.deepcopy(sweep)
+        body = json.loads(bad["selected_comment"]["body"])
+        body["digests"]["source_lock_sha256"] = "b" * 64
+        bad["selected_comment"]["body"] = json.dumps(body)
+        self.reject("F1R1_EXTERNAL_SOURCE_DIGEST", F1.validate_freeze_sweep, bad, **args)
+
+    def test_main_actual_PR_before_freeze_and_immutable_B(self):
+        S = "7" * 40
+        detail = dict(id=9001, number=9001, head=pr_event()["pull_request"]["head"],
+                      base=dict(pr_event()["pull_request"]["base"], sha="8" * 40),
+                      merged=True, merged_at="2026-10-24T18:00:00Z", merge_commit_sha=S)
+        run = dict(event="push", head_sha=S)
+        graph = dict(S=S, S_parents=[B], S_tree="5" * 40, C_tree="5" * 40, B_tree="4" * 40)
+        actual = F1.actual_provider_C("push", run, [detail], detail, graph)
+        self.assertEqual((actual["C"], actual["B"]), (C, B))
+        self.assertNotEqual(actual["B"], detail["base"]["sha"])
+        self.reject("F1R1_MAIN_PROVIDER_ASSOCIATION_REQUIRED", F1.actual_provider_C,
+                    "push", run, None, detail, graph)
+        second = dict(detail, id=9002, number=9002)
+        self.reject("F1R1_UNIQUE_MAIN_PR_ASSOCIATION", F1.actual_provider_C,
+                    "push", run, [detail, second], detail, graph)
 
 
 if __name__ == "__main__":

@@ -24,6 +24,7 @@ jobs:
       full: ${{ steps.impact.outputs.full }}
       run_ci: ${{ steps.impact.outputs.run_ci }}
       run_quality: ${{ steps.impact.outputs.run_quality }}
+      a3_required: ${{ steps.a3_scope.outputs.a3_required }}
       run_audio: ${{ steps.impact.outputs.run_audio }}
       run_tuning: ${{ steps.impact.outputs.run_tuning }}
       run_resource: ${{ steps.impact.outputs.run_resource }}
@@ -45,6 +46,10 @@ jobs:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           fetch-depth: 0
+      - name: Classify A3 source scope from protected base
+        id: a3_scope
+        shell: bash
+        run: sh .github/scripts/verify-docs-gate.sh --a3-scope-only
       - name: Validate every workflow YAML document
         shell: bash
         run: |
@@ -293,11 +298,18 @@ jobs:
 
   quality:
     needs: [impact, fast-gate]
-    if: always() && needs.fast-gate.result == 'success' && needs.impact.outputs.run_quality == 'true'
+    if: always() && needs.fast-gate.result == 'success' && (needs.impact.outputs.run_quality == 'true' || needs.impact.outputs.a3_required == 'true')
+    permissions:
+      contents: read
+      packages: read
+      actions: read
+      issues: read
+      pull-requests: read
     uses: ./.github/workflows/quality.yml
     with:
       run_abi: ${{ needs.impact.outputs.run_abi == 'true' }}
       run_extended: ${{ needs.impact.outputs.run_extended == 'true' }}
+      run_a3: ${{ needs.impact.outputs.a3_required == 'true' }}
 
   audio-quality:
     needs: [impact, fast-gate]
@@ -341,12 +353,29 @@ jobs:
           CODEQL_RESULT: ${{ needs.codeql.result }}
           EXPECT_LAB: ${{ needs.impact.outputs.run_lab }}
           EXPECT_CI: ${{ needs.impact.outputs.run_ci }}
-          EXPECT_QUALITY: ${{ needs.impact.outputs.run_quality }}
+          EXPECT_QUALITY: ${{ needs.impact.outputs.run_quality == 'true' || needs.impact.outputs.a3_required == 'true' }}
+          A3_REQUIRED: ${{ needs.impact.outputs.a3_required }}
+          A3_DISPOSITION: ${{ needs.quality.outputs.a3_disposition }}
           EXPECT_AUDIO: ${{ needs.impact.outputs.run_audio }}
           EXPECT_RESOURCE: ${{ needs.impact.outputs.run_resource }}
           EXPECT_CODEQL: ${{ needs.impact.outputs.run_codeql }}
         run: |
           set -euo pipefail
+          # A3_R1_SUMMARY_BEGIN
+          case "$A3_REQUIRED" in
+            true)
+              test "$QUALITY_RESULT" = success
+              test "$A3_DISPOSITION" = QUALIFIED_FINITE_A3_LIVE_ROLL_COMPLETE
+              ;;
+            false)
+              case "$A3_DISPOSITION" in
+                ''|SOURCE_METADATA_ONLY_UNRELATED|SOURCE_METADATA_ONLY_BOOTSTRAP_NO_A3_EXECUTION) ;;
+                *) echo 'A3_UNEXPECTED_SOURCE_DISPOSITION' >&2; exit 1 ;;
+              esac
+              ;;
+            *) echo 'A3_GUARD_OUTPUT_REQUIRED' >&2; exit 1 ;;
+          esac
+          # A3_R1_SUMMARY_END
           python3 scripts/ci_failure.py --output /tmp/verification-summary.json aggregate --enforce \
             --impact "$IMPACT_RESULT" --docs-only "$DOCS_ONLY" \
             --fast "$FAST_RESULT" --hosted-real "$HOSTED_REAL_RESULT" \

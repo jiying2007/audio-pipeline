@@ -11,6 +11,14 @@ on:
         type: boolean
         required: false
         default: true
+      run_a3:
+        type: boolean
+        required: false
+        default: false
+    outputs:
+      a3_disposition:
+        description: A3 source-only disposition or completely qualified finite experiment
+        value: ${{ jobs.frontend-s3-t3s2b1ba3.outputs.disposition }}
 
 permissions:
   contents: read
@@ -3059,3 +3067,78 @@ jobs:
           path: fe-ns-agc-vad/
           if-no-files-found: error
           retention-days: 30
+
+  frontend-s3-t3s2b1ba3:
+    if: inputs.run_extended || inputs.run_a3
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      packages: read
+      actions: read
+      issues: read
+      pull-requests: read
+    outputs:
+      disposition: ${{ steps.a3_execution.outputs.disposition || steps.a3_source.outputs.disposition }}
+    container:
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:69d38c66e09885b78eb3abba3f8b7dcc92363b71430dc39fc7f74978ffae2e57
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Bind A3 source scope to actual protected base
+        id: a3_source
+        shell: bash
+        run: sh .github/scripts/verify-docs-gate.sh --a3-scope-only
+      - name: Collect the externally admitted finite A3 matrix
+        id: a3_execution
+        if: steps.a3_source.outputs.a3_required == 'true'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python3 tests/validation/frontend_evolution/fe09_a3_f0_live_roll_qualification.py \
+            --collect --output fe09-a3-f0-live-roll --execution-source "$GITHUB_SHA"
+          python3 tests/validation/frontend_evolution/fe09_a3_f0_live_roll_qualification.py \
+            --verify --output fe09-a3-f0-live-roll --execution-source "$GITHUB_SHA"
+          echo 'disposition=QUALIFIED_FINITE_A3_LIVE_ROLL_COMPLETE' >> "$GITHUB_OUTPUT"
+      - name: Retain A3 original evidence and bounded partial failure
+        id: a3_upload
+        if: always() && (steps.a3_execution.outcome == 'success' || steps.a3_execution.outcome == 'failure')
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: frontend-fe09-a3-f0-live-roll-${{ github.run_id }}
+          path: fe09-a3-f0-live-roll/
+          retention-days: 30
+          if-no-files-found: error
+      - name: Require the exact A3 upload identity
+        if: steps.a3_execution.outcome == 'success'
+        shell: bash
+        env:
+          ARTIFACT_ID: ${{ steps.a3_upload.outputs.artifact-id }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import os,re
+          value=os.environ['ARTIFACT_ID']
+          assert re.fullmatch(r'[1-9][0-9]{0,18}',value) and int(value)<2**63
+          print('A3_EXACT_UPLOAD_ID',value)
+          PY
+      - name: Download the exact current A3 artifact
+        if: steps.a3_execution.outcome == 'success'
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          artifact-ids: ${{ steps.a3_upload.outputs.artifact-id }}
+          path: fe09-a3-f0-live-roll-readback
+      - name: Independently reverify original A3 archive without another target
+        if: steps.a3_execution.outcome == 'success'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tests/validation/frontend_evolution/fe09_a3_f0_live_roll_qualification.py \
+            --verify --output fe09-a3-f0-live-roll-readback --execution-source "$GITHUB_SHA"

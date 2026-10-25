@@ -69,7 +69,7 @@ def strict_int(value: Any, minimum: int = 0) -> bool:
 
 
 def oid(value: Any) -> str:
-    require(isinstance(value, str) and SHA1.fullmatch(value) is not None,
+    require(isinstance(value, str) and SHA1.fullmatch(value) is not None and value != "0" * 40,
             "GIT_OBJECT_ID_INVALID")
     return value
 
@@ -156,9 +156,10 @@ def local_git_environment() -> dict[str, str]:
     # Never inherit GIT_CONFIG_PARAMETERS, alternates, tracing, replacement,
     # protocol overrides or a candidate-controlled global configuration.
     result = {key: value for key, value in os.environ.items()
-              if not key.startswith("GIT_")}
+              if not key.startswith("GIT_") and key not in ("GH_TOKEN", "GITHUB_TOKEN")}
     result.update({"GIT_ALLOW_PROTOCOL": "", "GIT_NO_LAZY_FETCH": "1",
                    "GIT_NO_REPLACE_OBJECTS": "1", "GIT_TERMINAL_PROMPT": "0",
+                   "GIT_LITERAL_PATHSPECS": "1", "GIT_OPTIONAL_LOCKS": "0",
                    "GIT_CONFIG_NOSYSTEM": "1", "GIT_CONFIG_GLOBAL": os.devnull,
                    "GIT_CONFIG_SYSTEM": os.devnull, "GIT_PAGER": "cat",
                    "LC_ALL": "C"})
@@ -166,11 +167,11 @@ def local_git_environment() -> dict[str, str]:
 
 
 def _reap_owned(proc: subprocess.Popen[bytes], budget: DurationBudget) -> None:
-    if proc.poll() is None:
-        try:
-            os.killpg(proc.pid, signal.SIGKILL)
-        except ProcessLookupError:
-            pass
+    # Do not reap the leader with poll() before addressing its owned session.
+    try:
+        os.killpg(proc.pid, signal.SIGKILL)
+    except ProcessLookupError:
+        pass
     left = budget.remaining_ns()
     try:
         proc.wait(timeout=left / 1_000_000_000)
@@ -182,6 +183,11 @@ def _reap_owned(proc: subprocess.Popen[bytes], budget: DurationBudget) -> None:
 def bounded_git(root: Path, args: tuple[str, ...], cap: int) -> bytes:
     """No transport/lazy fetch; output is bounded during acquisition, not after."""
     require(strict_int(cap, 1) and cap <= DIFF_CAP, "GIT_OUTPUT_BOUND_INVALID")
+    require(bool(args) and args[0] in ("rev-parse", "cat-file", "ls-tree", "diff"),
+            "GIT_COMMAND_NOT_READ_ONLY")
+    if args[0] == "diff":
+        require(all(flag in args for flag in ("--no-renames", "--no-ext-diff", "--no-textconv")),
+                "SOURCE_SCOPE_DIFF_INCOMPLETE")
     budget = DurationBudget.start(COMMAND_NS)
     command = ["git", "--no-lazy-fetch", "--no-replace-objects", "--no-pager",
                "-c", "protocol.allow=never", "-c", "core.fsmonitor=false",
@@ -209,15 +215,14 @@ def bounded_git(root: Path, args: tuple[str, ...], cap: int) -> bytes:
                 if not part:
                     selector.unregister(key.fd)
                     continue
+                require(len(output) + len(part) <= limit, "GIT_OUTPUT_BOUND_EXCEEDED")
                 output.extend(part)
-                require(len(output) <= limit, "GIT_OUTPUT_BOUND_EXCEEDED")
-        if proc.poll() is None:
-            left = budget.remaining_ns()
-            require(left > CLEANUP_RESERVE_NS, "GIT_COMMAND_WHOLE_OPERATION_TIMEOUT")
-            try:
-                proc.wait(timeout=(left - CLEANUP_RESERVE_NS) / 1e9)
-            except subprocess.TimeoutExpired as exc:
-                raise AdmissionError("GIT_COMMAND_WHOLE_OPERATION_TIMEOUT") from exc
+        left = budget.remaining_ns()
+        require(left > CLEANUP_RESERVE_NS, "GIT_COMMAND_WHOLE_OPERATION_TIMEOUT")
+        try:
+            proc.wait(timeout=(left - CLEANUP_RESERVE_NS) / 1e9)
+        except subprocess.TimeoutExpired as exc:
+            raise AdmissionError("GIT_COMMAND_WHOLE_OPERATION_TIMEOUT") from exc
         require(proc.returncode == 0, "GIT_OBJECT_READ_FAILED",
                 bytes(stderr[:512]).decode("utf-8", errors="replace"))
         require(budget.remaining_ns() > 0, "GIT_COMMAND_WHOLE_OPERATION_TIMEOUT")
@@ -249,9 +254,9 @@ class GitObjects:
 
     def commit(self, commit: str) -> tuple[str, tuple[str, ...]]:
         raw = self.run("cat-file", "commit", oid(commit), cap=65536)
-        header = raw.split(b"\n\n", 1)[0].decode("ascii")
-        trees = [line[5:] for line in header.splitlines() if line.startswith("tree ")]
-        parents = tuple(oid(line[7:]) for line in header.splitlines() if line.startswith("parent "))
+        header = raw.split(b"\n\n", 1)[0]
+        trees = [line[5:].decode("ascii") for line in header.splitlines() if line.startswith(b"tree ")]
+        parents = tuple(oid(line[7:].decode("ascii")) for line in header.splitlines() if line.startswith(b"parent "))
         require(len(trees) == 1, "GIT_COMMIT_HEADER_INVALID")
         return oid(trees[0]), parents
 
@@ -346,6 +351,184 @@ def is_leaf_path(path: str) -> bool:
     return path.startswith(DOC_ROOT + "/") or path.startswith(SOURCE_PREFIX)
 
 
+# Peer loader entries are filled only from the independently reviewable F1
+# source checkpoint.  They are deliberately outside the embedded Git reader;
+# neither leaf's shell digest depends on a digest of itself.
+REVIEWED_F1_SHELL_SHA256: frozenset[str] = frozenset({
+    "5f56f9465c0cab5320cb70544ac3cc8d5edaeb71c928bcdd61c700f50de20bbb",
+})
+F1_METADATA_COMMAND = "python3 tests/validation/frontend_evolution/test_fe09_t3s3_f1_rss_qualification.py\n"
+F1_SCOPE_STEP = (
+    "      - name: F1 protected-base source scope and mandatory routing\n"
+    "        id: f1_scope\n"
+    "        run: sh .github/scripts/verify-docs-gate.sh --f1-scope-only\n"
+)
+F1_SUMMARY_BLOCK = (
+    "          # F1_R1_SUMMARY_BEGIN\n"
+    "          case \"$F1_REQUIRED\" in true|false) ;; *) echo 'F1R1_GUARD_OUTPUT_REQUIRED' >&2; exit 1 ;; esac\n"
+    "          if [ \"$F1_REQUIRED\" = true ]; then\n"
+    "            test \"$QUALITY_RESULT\" = success\n"
+    "            test \"$F1_DISPOSITION\" = FE09_T3S3_F1_R1_COMPLETE_RSS_OBSERVATION_NO_DEVICE_PROMOTION\n"
+    "          else\n"
+    "            case \"$F1_DISPOSITION\" in\n"
+    "              ''|SOURCE_METADATA_ONLY|F1_SOURCE_METADATA_ONLY_OUT_OF_SCOPE) ;;\n"
+    "              *) echo 'F1R1_UNEXPECTED_SOURCE_DISPOSITION' >&2; exit 1 ;;\n"
+    "            esac\n"
+    "          fi\n"
+    "          # F1_R1_SUMMARY_END\n"
+)
+
+
+def yaml_mapping(text: str, indent: int) -> dict[str, str]:
+    """Project canonical plain mappings, never interpreting YAML aliases.
+
+    The exact relevant blocks are retained as bytes. This intentionally accepts
+    less spelling than a general YAML parser; an unknown relevant shape denies.
+    """
+    lines = text.splitlines(keepends=True)
+    starts: list[tuple[int, str]] = []
+    for index, line in enumerate(lines):
+        if not line.strip() or line.lstrip().startswith("#"):
+            continue
+        leading = len(line) - len(line.lstrip(" "))
+        if leading == indent:
+            match = re.fullmatch(r" *([A-Za-z_][A-Za-z0-9_-]*):(?:[^\n]*)\n?", line)
+            require(match is not None, "A3_OWNED_CI_FRAGMENT_UNCLASSIFIED")
+            name = match.group(1)
+            require(name not in [key for _, key in starts], "A3_OWNED_CI_FRAGMENT_UNCLASSIFIED")
+            starts.append((index, name))
+        elif leading < indent:
+            raise AdmissionError("A3_OWNED_CI_FRAGMENT_UNCLASSIFIED")
+    require(bool(starts), "A3_OWNED_CI_FRAGMENT_UNCLASSIFIED")
+    result: dict[str, str] = {}
+    for index, (start, name) in enumerate(starts):
+        end = starts[index + 1][0] if index + 1 < len(starts) else len(lines)
+        result[name] = "".join(lines[start:end]).rstrip() + "\n"
+    return result
+
+
+def yaml_children(block: str, indent: int) -> dict[str, str]:
+    first, _, rest = block.partition("\n")
+    require(first.strip().endswith(":"), "A3_OWNED_CI_FRAGMENT_UNCLASSIFIED")
+    return yaml_mapping(rest, indent)
+
+
+def yaml_value(block: str) -> str:
+    first, _, rest = block.partition("\n")
+    require(not rest.strip(), "A3_OWNED_CI_FRAGMENT_UNCLASSIFIED")
+    return first.split(":", 1)[1].strip()
+
+
+def normalized_quality_expression(value: str, caller: bool) -> str:
+    prefix = "always() && needs.fast-gate.result == 'success' && (" if caller else "${{ "
+    suffix = ")" if caller else " }}"
+    require(value.startswith(prefix) and value.endswith(suffix), "A3_REQUIRED_DISPATCH_MISSING")
+    terms = value[len(prefix):-len(suffix)].split(" || ")
+    a3 = "needs.impact.outputs.a3_required == 'true'"
+    quality = "needs.impact.outputs.run_quality == 'true'"
+    f1 = "needs.impact.outputs.f1_required == 'true'"
+    require(len(terms) == len(set(terms)) and {a3, quality} <= set(terms) <= {a3, quality, f1},
+            "A3_REQUIRED_DISPATCH_MISSING")
+    return prefix + quality + " || " + a3 + suffix
+
+
+def normalize_f1_verify_job(text: str, name: str) -> str:
+    """Only registered peer syntax can disappear from the A3 projection."""
+    exact_lines = (
+        "      f1_required: ${{ steps.f1_scope.outputs.f1_required }}\n",
+        "      run_f1: ${{ needs.impact.outputs.f1_required == 'true' }}\n",
+        "          F1_REQUIRED: ${{ needs.impact.outputs.f1_required }}\n",
+        "          F1_DISPOSITION: ${{ needs.quality.outputs.f1_disposition }}\n",
+    )
+    for item in exact_lines:
+        require(text.count(item) <= 1, "A3_OWNED_CI_FRAGMENT_UNCLASSIFIED")
+        text = text.replace(item, "")
+    for item in (F1_SCOPE_STEP, F1_SUMMARY_BLOCK):
+        require(text.count(item) <= 1, "A3_OWNED_CI_FRAGMENT_UNCLASSIFIED")
+        text = text.replace(item, "")
+    if name == "quality":
+        fields = yaml_children(text, 4)
+        require("if" in fields, "A3_REQUIRED_DISPATCH_MISSING")
+        original = fields["if"]
+        normalized = "    if: " + normalized_quality_expression(yaml_value(original), True) + "\n"
+        text = text.replace(original, normalized, 1)
+    if name == "summary":
+        matches = list(re.finditer(r"^          EXPECT_QUALITY: ([^\n]+)$", text, re.M))
+        require(len(matches) == 1, "A3_REQUIRED_DISPATCH_MISSING")
+        old = matches[0].group(0)
+        text = text.replace(old, "          EXPECT_QUALITY: " +
+                            normalized_quality_expression(matches[0].group(1), False), 1)
+    require(not re.search(r"f1_required|f1_scope|F1_REQUIRED|F1_DISPOSITION|run_f1|f1_disposition|F1_R1_SUMMARY", text),
+            "A3_OWNED_CI_FRAGMENT_UNCLASSIFIED")
+    return text.rstrip() + "\n"
+
+
+def workflow_projection(raw: bytes, workflow: str) -> bytes:
+    require(len(raw) <= FILE_CAP and b"\t" not in raw and b"\r" not in raw,
+            "A3_OWNED_CI_FRAGMENT_UNCLASSIFIED")
+    text = raw.decode("utf-8")
+    require(not re.search(r"^\s*(?:<<:|[A-Za-z_][A-Za-z0-9_-]*:\s*[&*])", text, re.M),
+            "A3_OWNED_CI_FRAGMENT_UNCLASSIFIED")
+    top = yaml_mapping(text, 0)
+    require("jobs" in top and "on" in top, "A3_OWNED_CI_FRAGMENT_UNCLASSIFIED")
+    jobs = yaml_children(top.pop("jobs"), 2)
+    if workflow == "quality":
+        triggers = yaml_children(top.pop("on"), 2)
+        require(set(triggers) == {"workflow_call"}, "A3_OWNED_CI_FRAGMENT_UNCLASSIFIED")
+        call = yaml_children(triggers["workflow_call"], 4)
+        inputs = yaml_children(call.pop("inputs"), 6)
+        outputs = yaml_children(call.pop("outputs"), 6)
+        require({"run_a3", "run_extended"} <= set(inputs) and "a3_disposition" in outputs,
+                "A3_REQUIRED_DISPATCH_MISSING")
+        top["workflow_call_global"] = call
+        top["owned_inputs"] = {key: inputs[key] for key in ("run_a3", "run_extended")}
+        top["owned_outputs"] = {"a3_disposition": outputs["a3_disposition"]}
+        require("frontend-s3-t3s2b1ba3" in jobs, "A3_REQUIRED_DISPATCH_MISSING")
+        top["owned_jobs"] = {"frontend-s3-t3s2b1ba3": jobs["frontend-s3-t3s2b1ba3"]}
+    else:
+        require(workflow == "verify", "A3_OWNED_CI_FRAGMENT_UNCLASSIFIED")
+        selected = ("impact", "fast-docs", "fast-code", "fast-gate", "quality", "summary")
+        require(set(selected) <= set(jobs), "A3_REQUIRED_DISPATCH_MISSING")
+        top["owned_jobs"] = {key: normalize_f1_verify_job(jobs[key], key) for key in selected}
+    return json.dumps(top, sort_keys=True, separators=(",", ":")).encode()
+
+
+def shell_projection(raw: bytes) -> bytes:
+    text = raw.decode("utf-8")
+    begin = "# A3_R1_SOURCE_SCOPE_GUARD_BEGIN\n"
+    end = "# A3_R1_SOURCE_SCOPE_GUARD_END\n"
+    require(text.count(begin) == text.count(end) == 1, "A3_OWNED_CI_FRAGMENT_UNCLASSIFIED")
+    require(text.index(begin) < text.index(end), "A3_OWNED_CI_FRAGMENT_UNCLASSIFIED")
+    fbegin = "# F1_R1_SOURCE_SCOPE_GUARD_BEGIN\n"
+    fend = "# F1_R1_SOURCE_SCOPE_GUARD_END\n"
+    require(text.count(fbegin) == text.count(fend) <= 1, "A3_OWNED_CI_FRAGMENT_UNCLASSIFIED")
+    if fbegin in text:
+        start, stop = text.index(fbegin), text.index(fend) + len(fend)
+        require(start < stop <= text.index(begin), "A3_OWNED_CI_FRAGMENT_UNCLASSIFIED")
+        foreign = text[start:stop]
+        require(hashlib.sha256(foreign.encode()).hexdigest() in REVIEWED_F1_SHELL_SHA256,
+                "A3_PEER_SHELL_NOT_REVIEWED")
+        text = text[:start] + text[stop:]
+    require(text.count(F1_METADATA_COMMAND) <= 1, "A3_OWNED_CI_FRAGMENT_UNCLASSIFIED")
+    text = text.replace(F1_METADATA_COMMAND, "")
+    start, stop = text.index(begin), text.index(end) + len(end)
+    # Only blank boundaries outside the exact owned code are insignificant.
+    # Never normalize whitespace inside Python/shell bodies or heredoc data.
+    return json.dumps({"prefix": text[:start].rstrip("\n"),
+                       "A3_owned_block": text[start:stop],
+                       "suffix": text[stop:].lstrip("\n")},
+                      sort_keys=True, separators=(",", ":")).encode()
+
+
+def shared_hooks_unchanged(before: dict[str, bytes], after: dict[str, bytes]) -> bool:
+    require(set(before) == set(after) == set(HOOKS), "A3_OWNED_CI_FRAGMENT_UNCLASSIFIED")
+    for path in HOOKS:
+        project = (lambda value: workflow_projection(value, "verify" if path.endswith("verify.yml") else "quality")) if path.endswith(".yml") else shell_projection
+        if project(before[path]) != project(after[path]):
+            return False
+    return True
+
+
 def source_ready(lock: dict[str, Any], baseline: dict[str, Any]) -> bool:
     """Readiness requests provider admission; it never grants execution."""
     if not isinstance(lock, dict) or not isinstance(baseline, dict):
@@ -364,7 +547,9 @@ def source_ready(lock: dict[str, Any], baseline: dict[str, Any]) -> bool:
     if not isinstance(files, list) or not isinstance(hooks, list) or len(files) != 6 or len(hooks) != 3:
         return False
     expected = {"tests/validation/frontend_evolution/" + name for name in SOURCE_FILES} | set(HOOKS)
-    if {row.get("path") for row in files + hooks if isinstance(row, dict)} != expected:
+    if not all(isinstance(row, dict) and isinstance(row.get("path"), str) for row in files + hooks):
+        return False
+    if {row["path"] for row in files + hooks} != expected:
         return False
     for row in files + hooks:
         if not isinstance(row, dict) or not strict_int(row.get("bytes"), 1):
@@ -377,13 +562,14 @@ def source_ready(lock: dict[str, Any], baseline: dict[str, Any]) -> bool:
 
 def classify_scope(source: dict[str, str], base_guard: bytes | None,
                    candidate_guard: bytes | None, changed: tuple[str, ...],
-                   shared_unchanged: bool, ready: bool) -> str:
+                   shared_unchanged: bool, ready: bool,
+                   original_paths: tuple[str, ...] = ()) -> str:
     require(source.get("event") in ("pull_request", "push"), "EVENT_NOT_REGISTERED")
     if base_guard is None:
         return BOOTSTRAP
     require(candidate_guard == base_guard, "PROTECTED_POLICY_SOURCE_DRIFT")
     require(shared_unchanged, "A3_OWNED_CI_FRAGMENT_DRIFT")
-    if not any(is_leaf_path(path) for path in changed):
+    if not any(is_leaf_path(path) or path in original_paths for path in changed):
         return UNRELATED
     if source["event"] == "pull_request":
         require(source.get("head_ref") == BRANCH, "A3_SCOPE_OUTSIDE_REGISTERED_BRANCH")
@@ -413,13 +599,19 @@ def local_scope(root: Path, event_path: Path, env: dict[str, str]) -> dict[str, 
     # A script invoked from the candidate tree may not impersonate the B copy.
     require(read_regular(Path(__file__), FILE_CAP) == base_guard, "PROTECTED_POLICY_SOURCE_DRIFT")
     candidate_guard = git.blob(head, GUARD, required=False)
-    # The next small checkpoint supplies the conservative shared-hook projection.
-    # Until then no changed shared hook can be admitted by this bootstrap source.
-    shared_unchanged = all(git.blob(source["B"], path) == git.blob(head, path) for path in HOOKS)
+    before = {path: git.blob(source["B"], path) or b"" for path in HOOKS}
+    after = {path: git.blob(head, path) or b"" for path in HOOKS}
+    shared_unchanged = shared_hooks_unchanged(before, after)
+    protected_lock = strict_json(git.blob(source["B"], DOC_ROOT + "/source-lock.json") or b"")
+    original_rows = protected_lock.get("known_immutable_files", [])
+    require(isinstance(original_rows, list) and len(original_rows) == 88,
+            "IMMUTABLE_SCIENTIFIC_SOURCE_CLOSURE_INVALID")
+    original_paths = tuple(safe_path(row.get("path")) for row in original_rows if isinstance(row, dict))
+    require(len(set(original_paths)) == 88, "IMMUTABLE_SCIENTIFIC_SOURCE_CLOSURE_INVALID")
     lock = strict_json(git.blob(head, DOC_ROOT + "/source-lock.json") or b"")
     baseline = strict_json(git.blob(head, DOC_ROOT + "/EXECUTION_BASELINE.json") or b"")
     decision = classify_scope(source, base_guard, candidate_guard, changed,
-                              shared_unchanged, source_ready(lock, baseline))
+                              shared_unchanged, source_ready(lock, baseline), original_paths)
     return scope_receipt(source, decision, changed)
 
 

@@ -233,6 +233,39 @@ def run_suite() -> dict:
             positive("exact_m2_source_template_pr_" + pins, model_for(area, m2_base, gated_head), checkout=m2_base)
             positive("exact_m2_source_template_push_" + pins,
                      model_for(area, m2_base, gated_head, push=True), checkout=m2_base)
+        # Preserve the earlier source registration as historical evidence, but
+        # never accept it (or a mixture of its real blobs) as the current core.
+        historical_closures = contract["historical_m2_source_closures"]
+        assert len(historical_closures) == 1 and historical_closures[0]["review_id"] == "2026-10-20"
+        previous = historical_closures[0]
+        assert previous["source_review_commit"] == "a42427693484409f9954125dada37d5db6c6f51e"
+        old_copies = {path: M.Git(area).run(["cat-file", "blob", identity["git_blob"]]).decode()
+                      for path, identity in previous["files"].items()}
+        for path, raw in old_copies.items():
+            assert hashlib.sha256(raw.encode()).hexdigest() == previous["files"][path]["sha256"]
+        for name, registration in (
+                ("previous_registration", previous),
+                ("previous_source_commit", dict(contract["preregistered_m2_source_closure"],
+                                               source_review_commit=previous["source_review_commit"]))):
+            old_contract = dict(contract, preregistered_m2_source_closure=registration)
+            old_base = changed(m2_base, {M.CONTRACT: json.dumps(old_contract, sort_keys=True, indent=2) + "\n"})
+            old_head = changed(old_base, {M.WORKFLOW: gated})
+            negative("m2_reject_" + name, model_for(area, old_base, old_head),
+                     {"M2_SOURCE_PREREGISTRATION_DRIFT"}, checkout=old_base)
+        old_base = changed(m2_base, dict(old_copies,
+            **{".github/program/workflow_pin_only_bot714_20261024.json": None}))
+        old_head = changed(old_base, {M.WORKFLOW: gated})
+        negative("m2_previous_complete_core_not_current", model_for(area, old_base, old_head),
+                 {"M2_PROTECTED_SOURCE_CLOSURE_DRIFT"}, checkout=old_base)
+        for path in M.M2_SOURCE_FILES:
+            old_path = path.replace("_20261024.json", "_20261020.json")
+            if old_copies[old_path] == source_copies[path]:
+                continue
+            mixed_base = changed(m2_base, {path: old_copies[old_path]})
+            mixed_head = changed(mixed_base, {M.WORKFLOW: gated})
+            negative("m2_previous_blob_mixed_" + Path(path).name,
+                     model_for(area, mixed_base, mixed_head), {"M2_PROTECTED_SOURCE_CLOSURE_DRIFT"},
+                     checkout=mixed_base)
         for path in M.M2_SOURCE_FILES:
             corrupt_base = changed(m2_base, {path: source_copies[path] + "\n"})
             corrupt_head = changed(corrupt_base, {M.WORKFLOW: gated})

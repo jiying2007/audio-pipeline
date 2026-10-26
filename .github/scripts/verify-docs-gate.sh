@@ -77,6 +77,9 @@ python3 tests/validation/frontend_evolution/test_fe09_b3_f0_deadline_r1.py
 # runs B3/F0 DSP nor inherits its historical R1 scientific verdict.
 python3 tests/validation/frontend_evolution/fe09_b3_f0_r2_source_admission.py --self-test
 python3 tests/validation/frontend_evolution/fe09_b3_f0_r2_source_admission.py --check
+# F0 has a separate 88-member source lock; B3's 77-member gate does not qualify it.
+python3 tests/validation/frontend_evolution/fe09_t3s3_f0_r2_source_admission.py --self-test
+python3 tests/validation/frontend_evolution/fe09_t3s3_f0_r2_source_admission.py --check
 python3 .github/program/workflow_pin_only_scope.py --self-test
 python3 .github/program/workflow_pin_only_replay_t1.py --self-test
 python3 .github/program/workflow_pin_only_actual_tree_t1m1.py --self-test

@@ -140,7 +140,9 @@ def source_record(source: str, require_committed: bool = True) -> dict:
     paths = OWN + sorted(p for p in DOCS.iterdir() if p.is_file()) + [
         ROOT / ".github/workflows/quality.yml",
         ROOT / ".github/scripts/verify-docs-gate.sh",
-        ROOT / "docs/research/frontend-evolution-v1/FE09_B3_F0_FORWARD_SOURCE_R2_20261025/PREREGISTRATION.json"]
+        ROOT / "docs/research/frontend-evolution-v1/FE09_B3_F0_FORWARD_SOURCE_R2_20261025/PREREGISTRATION.json",
+        ROOT / "docs/research/frontend-evolution-v1/FE09_B3_F0_FORWARD_SOURCE_R2_20261025/T2_EXECUTOR_SOURCE_REVIEW.json",
+        HERE / "fe09_b3_f0_r2_t2_derivation_contract.py"]
     if require_committed:
         need(not original.git("diff", "--name-only", "HEAD"), "F0_R2_DIRTY_EXECUTION_WORKTREE")
         for path in paths:

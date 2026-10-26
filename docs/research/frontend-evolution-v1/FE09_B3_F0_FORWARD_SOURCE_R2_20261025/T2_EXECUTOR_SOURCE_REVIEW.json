@@ -36,7 +36,7 @@
       "immutable_scientific_functions": true
     }
   ],
-  "locked_derivation_checker_git_blob": "b4a41535af448c39fd47aad99cc915e80d3d4015",
+  "locked_derivation_checker_git_blob": "913c7c665c33345e1717456693fd5a1b9e3578f3",
   "version_behavior": {
     "2.3.56": "UNCHANGED_R1_B3_AND_F0_ONLY",
     "2.3.57": "R2_B3_AND_R2_F0_EXACT_TWO_SOURCE_EXCEPTIONS",

@@ -99,7 +99,7 @@ def git(*args: str, input_bytes: bytes | None = None, cwd: Path = ROOT) -> bytes
 
 def safe_path(path: str) -> Path:
     value = PurePosixPath(path)
-    need(bool(path) and not value.is_absolute() and ".." not in value.parts and
+    need(bool(value.parts) and bool(path) and not value.is_absolute() and ".." not in value.parts and
          "\\" not in path and path == value.as_posix() and
          all(part not in (".", "") for part in value.parts), "SOURCE_PATH_INVALID")
     return ROOT / path
@@ -184,8 +184,7 @@ def frozen_rows(lock: dict) -> list[dict]:
     need(len(set(names)) == len(names), "R1_LOCK_DUPLICATE_SOURCE")
     for row in rows:
         safe_path(row["path"])
-        need(row["git_blob_sha1"] == git_blob_of_row(row, base=True) if False else
-             bool(re.fullmatch(r"[0-9a-f]{40}", row["git_blob_sha1"])),
+        need(bool(re.fullmatch(r"[0-9a-f]{40}", row["git_blob_sha1"])),
              "R1_LOCK_MALFORMED_GIT_BLOB")
         need(type(row["bytes"]) is int and row["bytes"] > 0 and
              bool(re.fullmatch(r"[0-9a-f]{64}", row["sha256"])),
@@ -368,7 +367,7 @@ def self_test() -> dict:
             count += 1
         else:
             raise Reject("R2_NEGATIVE_ACCEPTED_UNREGISTERED_VERSION")
-    for path in ("../secrets", "/tmp/source", "sub\\name", "x/../y"):
+    for path in ("../secrets", "/tmp/source", "sub\\name", "x/../y", "."):
         try:
             safe_path(path)
         except Reject:
@@ -387,7 +386,7 @@ def self_test() -> dict:
         count += 1
     else:
         raise Reject("R2_NEGATIVE_ACCEPTED_NONFINITE_JSON")
-    need(count == 12, "R2_SOURCE_NEGATIVE_MATRIX_INCOMPLETE")
+    need(count == 13, "R2_SOURCE_NEGATIVE_MATRIX_INCOMPLETE")
     return {"status": "R2_T1_OFFLINE_SOURCE_NEGATIVES_PASS",
             "rejected": count, "dsp_executed": False}
 

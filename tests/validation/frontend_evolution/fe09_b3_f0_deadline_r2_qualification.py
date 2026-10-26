@@ -225,7 +225,9 @@ def source_preflight(execution_source: str, require_committed: bool = True) -> d
     paths = OWN_FILES + sorted(p for p in DOCS.iterdir() if p.is_file()) + [
         ROOT / ".github/workflows/quality.yml",
         ROOT / ".github/research/evidence-index.json",
-        ROOT / "docs/research/frontend-evolution-v1/FE09_B3_F0_FORWARD_SOURCE_R2_20261025/PREREGISTRATION.json"]
+        ROOT / "docs/research/frontend-evolution-v1/FE09_B3_F0_FORWARD_SOURCE_R2_20261025/PREREGISTRATION.json",
+        ROOT / "docs/research/frontend-evolution-v1/FE09_B3_F0_FORWARD_SOURCE_R2_20261025/T2_EXECUTOR_SOURCE_REVIEW.json",
+        HERE / "fe09_b3_f0_r2_t2_derivation_contract.py"]
     if require_committed:
         need(not git("diff", "--name-only", "HEAD"),
              "R2_TRACKED_WORKTREE_NOT_IMMUTABLE")

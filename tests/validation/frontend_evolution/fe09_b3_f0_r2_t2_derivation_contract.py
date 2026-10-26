@@ -111,6 +111,10 @@ def check_source_derivation(parent: str, forward: str, profile: dict) -> dict:
 
 
 def self_test() -> dict:
+    # R2-T1 itself is protected-main code; a T2 candidate cannot rewrite its
+    # source gate and simultaneously bless a substituted R2 implementation.
+    source_file("fe09_b3_f0_r2_source_admission.py",
+                "6b9e9e5e3e044aa586420be3b3aadd229a90b67f")
     result = {}
     for name, profile in SOURCES.items():
         original = source_file(profile["parent"], profile["parent_blob"])

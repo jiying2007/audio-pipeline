@@ -77,6 +77,11 @@ python3 tests/validation/frontend_evolution/test_fe09_b3_f0_deadline_r1.py
 # runs B3/F0 DSP nor inherits its historical R1 scientific verdict.
 python3 tests/validation/frontend_evolution/fe09_b3_f0_r2_source_admission.py --self-test
 python3 tests/validation/frontend_evolution/fe09_b3_f0_r2_source_admission.py --check
+# R2 T2 executor source audit only: both derivations retain byte-exact R1
+# scientific functions and immutable resource/error budgets; NO DSP is run.
+python3 tests/validation/frontend_evolution/fe09_b3_f0_r2_t2_derivation_contract.py --self-test
+python3 tests/validation/frontend_evolution/fe09_b3_f0_deadline_r2_qualification.py --self-test
+python3 tests/validation/frontend_evolution/fe09_t3s3_f0_call_resource_r2_qualification.py --self-test
 python3 .github/program/workflow_pin_only_scope.py --self-test
 python3 .github/program/workflow_pin_only_replay_t1.py --self-test
 python3 .github/program/workflow_pin_only_actual_tree_t1m1.py --self-test

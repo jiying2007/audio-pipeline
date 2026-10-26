@@ -110,7 +110,58 @@ def check_source_derivation(parent: str, forward: str, profile: dict) -> dict:
             "source_names_exact": True}
 
 
+def verify_review_manifest() -> None:
+    root = Path(__file__).resolve().parents[3]
+    review = root / "docs/research/frontend-evolution-v1/FE09_B3_F0_FORWARD_SOURCE_R2_20261025/T2_EXECUTOR_SOURCE_REVIEW.json"
+    need(review.is_file() and not review.is_symlink(), "R2_T2_SOURCE_REVIEW_REQUIRED")
+    def unique_pairs(pairs):
+        result = {}
+        for key, value in pairs:
+            need(key not in result, "R2_T2_REVIEW_DUPLICATE_JSON_KEY")
+            result[key] = value
+        return result
+    data = json.loads(review.read_bytes(), object_pairs_hook=unique_pairs)
+    need(data["identity"] == "FE09-B3-F0-FORWARD-SOURCE-R2-T2-EXECUTOR-REVIEW" and
+         data["authority"] == "SOURCE_CODE_ONLY_BEFORE_ANY_R2_DSP_EXECUTION" and
+         data["prerequisite_protected_main"] == "82065957e65931f47e3873c498aeb80faf2d9ab4" and
+         data["r2_b3_frames_executed"] == 0 and data["r2_f0_frames_executed"] == 0 and
+         data["source_quality_thresholds_relaxed"] is False and
+         data["original_r1_receipts_unchanged"] is True and
+         data["independent_replay_accepted"] is False and
+         all(data[k] is False for k in ("public_four_microphone_sdk_qualified",
+                                       "ssc305_hil_qualified",
+                                       "device_product_or_shipping_promotion",
+                                       "commercial_source_redistribution_authorized")),
+         "R2_T2_SOURCE_SCOPE_OR_NONPROMOTION_DRIFT")
+    rows = data["source_pairs"]
+    need(len(rows) == len(SOURCES) and {r["kind"].lower() for r in rows} == set(SOURCES),
+         "R2_T2_REGISTERED_EXECUTOR_SET_DRIFT")
+    for item in rows:
+        spec = SOURCES[item["kind"].lower()]
+        need(item["original"] == "tests/validation/frontend_evolution/" + spec["parent"]
+             and item["candidate"] == "tests/validation/frontend_evolution/" + spec["forward"]
+             and item["original_git_blob"] == spec["parent_blob"]
+             and item["candidate_git_blob"] == spec["forward_blob"]
+             and set(item["allowed_changed_functions"]) == spec["changed_functions"]
+             and item["immutable_scientific_functions"] is True,
+             "R2_T2_EXECUTOR_SOURCE_REGISTER_DRIFT")
+    b3 = data["fixed_b3"]
+    f0 = data["fixed_f0"]
+    need(b3["targets"] == ["native", "sanitized", "arm"] and
+         b3["trajectories_per_target"] == 11 and b3["frames_per_trajectory"] == 600 and
+         b3["required_frames"] == 19800 and b3["required_api_negatives"] == 48 and
+         b3["semantic_negatives"] == 8 and b3["outer_budget_seconds"] == 300 and
+         b3["target_budget_seconds"] == {"native": 120, "sanitized": 180, "arm": 300} and
+         b3["job_timeout_seconds"] == 900 and b3["reserve_seconds"] == 60 and
+         b3["artifact_cap_bytes"] == 33554432 and
+         f0["processes"] == 36 and f0["frames_per_process"] == 600 and
+         f0["frames"] == 21600 and f0["statistics_groups"] == 144 and
+         f0["original_host_wait4_and_target_budget_rules_unchanged"] is True,
+         "R2_T2_REVIEWED_FINITE_BUDGET_DRIFT")
+
+
 def self_test() -> dict:
+    verify_review_manifest()
     # R2-T1 itself is protected-main code; a T2 candidate cannot rewrite its
     # source gate and simultaneously bless a substituted R2 implementation.
     source_file("fe09_b3_f0_r2_source_admission.py",

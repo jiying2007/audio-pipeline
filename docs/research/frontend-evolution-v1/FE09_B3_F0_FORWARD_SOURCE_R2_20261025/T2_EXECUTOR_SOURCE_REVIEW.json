@@ -13,7 +13,7 @@
       "original": "tests/validation/frontend_evolution/fe09_b3_f0_deadline_r1_qualification.py",
       "original_git_blob": "54dab4274df8044dbbd23bf05ef169bd21123c74",
       "candidate": "tests/validation/frontend_evolution/fe09_b3_f0_deadline_r2_qualification.py",
-      "candidate_git_blob": "6de327ae6be30adc3870ac7a19dd506da19c2a38",
+      "candidate_git_blob": "d94fa5ffc568945a5ee2a92d2f8761ec7df0c91c",
       "allowed_changed_functions": [
         "source_preflight",
         "self_test",
@@ -26,7 +26,7 @@
       "original": "tests/validation/frontend_evolution/fe09_t3s3_f0_call_resource_qualification.py",
       "original_git_blob": "e22cc4f0eede6e844b985e0bece8e9dcbf2e02cd",
       "candidate": "tests/validation/frontend_evolution/fe09_t3s3_f0_call_resource_r2_qualification.py",
-      "candidate_git_blob": "52554d4dcc8550231bd2b5b44e97e53754db9b22",
+      "candidate_git_blob": "8ac87edbbd89289ec4b6fc2739af6460a6fd01d0",
       "allowed_changed_functions": [
         "check_locked_rows",
         "source_record",
@@ -36,7 +36,7 @@
       "immutable_scientific_functions": true
     }
   ],
-  "locked_derivation_checker_git_blob": "913c7c665c33345e1717456693fd5a1b9e3578f3",
+  "locked_derivation_checker_git_blob": "d0965732f7656dcc1c782e3813c6c32d5d9af2f5",
   "version_behavior": {
     "2.3.56": "UNCHANGED_R1_B3_AND_F0_ONLY",
     "2.3.57": "R2_B3_AND_R2_F0_EXACT_TWO_SOURCE_EXCEPTIONS",

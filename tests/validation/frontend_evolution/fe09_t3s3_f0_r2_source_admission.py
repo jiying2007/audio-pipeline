@@ -148,7 +148,10 @@ def verify_current(revision: str | None = None) -> dict:
     # 22 F0-only rows to unverified archives.
     for row in rows:
         path = row["path"]
-        check_one(b3.committed_bytes(path), row,
+        actual = b3.committed_bytes(path)
+        require(actual == b3.worktree_bytes(path),
+                "F0_UNCOMMITTED_OR_SYMLINK_SOURCE:" + path)
+        check_one(actual, row,
                   (b3.SOURCE_PROFILES[version][path], expected[path])
                   if path in expected else None)
     return {

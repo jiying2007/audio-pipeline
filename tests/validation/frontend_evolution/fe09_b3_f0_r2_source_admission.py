@@ -69,7 +69,7 @@ SOURCE_CONTROLS = {
 IMMUTABLE_INPUT_DIGESTS = {
     "test-contract.json": "74e7294b1433207d222f9732326b68b33303c1ef63c8b6001283963419117284",
     "input-fixture-lock.independent.json": "9e8cdd3c2889cd071ccfa92e8358de9f15fa371f1e4fc136e6be566ab0765d27",
-    "source-lock-gate-selection.json": "cca7a798ad09f2b272d734090e492066a1e077dd1dca",
+    "source-lock-gate-selection.json": "cca7a798ad09f2b272d73409067cbecc57f6225d90890e492066a1e077dd1dca",
 }
 
 class Reject(ValueError):

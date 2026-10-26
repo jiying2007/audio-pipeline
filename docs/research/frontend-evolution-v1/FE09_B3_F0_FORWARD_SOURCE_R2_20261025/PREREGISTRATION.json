@@ -12,7 +12,9 @@
     "executable_member_count": 66,
     "original_current_build_blobs": {
       "CMakeLists.txt": "3659b13659baaac99fd6e7e56fcb45cba243955c",
-      "src/platform/linux/ap_runtime.c": "7124a9c04d46f4d907c3d9831b3d4aa35ab8414e"
+      "src/platform/linux/ap_runtime.c": "7124a9c04d46f4d907c3d9831b3d4aa35ab8414e",
+      "cmake/audio-pipeline.pc.in": "b59e0a0d22c2ace435a0d9a87495e22afefac0e7",
+      "cmake/audio-pipeline-runtime.pc.in": "802d2bcb7e81418072fbd510f4889fdcc051915e"
     },
     "immutable_result_identity": "FE09-B3-F0-C4-16K-RENDER-PAP-DEADLINE-R1",
     "only_qualified_current_source": "71ce0cc5a75a72e7203c81e8712e76abf987fc9e",
@@ -36,18 +38,25 @@
       "runtime_git_blob": "519cf2732289af74c0285d3bbff4cae556bc7d07",
       "forward_patch_git_blob": "7e5fe35b78ff44950c0941c8bec34f71ce5b1e15",
       "candidate_pr": 850,
-      "candidate_promoted": false
+      "candidate_promoted": false,
+      "additional_locked_member_git_blobs": {}
     },
     "2.3.58": {
       "cmake_git_blob": "231cf6085b2b6f7a962433327075d629e16b330e",
       "runtime_git_blob": "519cf2732289af74c0285d3bbff4cae556bc7d07",
       "forward_patch_git_blob": "dade779a6293c7c9bd72e48611710abe3d2d8f0c",
       "candidate_pr": 851,
-      "candidate_promoted": false
+      "candidate_promoted": false,
+      "additional_locked_member_git_blobs": {
+        "cmake/audio-pipeline.pc.in": "50ced32c570a23a6fe1f2d3af4284d4a27f04096",
+        "cmake/audio-pipeline-runtime.pc.in": "b06489e6c60654eee0ad05874fe582b1ea411d50"
+      },
+      "additional_locked_member_review_status": "PR851_BUILD_PACKAGING_CANDIDATE_SOURCE_REQUIRES_INDEPENDENT_R2_T1_AND_PROTECTED_ADMISSION"
     }
   },
   "source_qualification_requirements": [
-    "full 77-member R1 frozen inventory readback with 66 compiled members; exactly CMakeLists.txt and src/platform/linux/ap_runtime.c may use the preregistered version-specific new blobs; every other original compiled source remains byte-identical",
+    "full 77-member R1 frozen inventory readback with 66 compiled members; 2.3.57 may change exactly CMakeLists.txt and src/platform/linux/ap_runtime.c to reviewed Git blobs; 2.3.58 may also change exactly cmake/audio-pipeline.pc.in and cmake/audio-pipeline-runtime.pc.in to the separately enumerated Git blobs; every other original locked member remains byte-identical",
+    "for 2.3.58, both pkg-config template changes are packaging-only build-snapshot members, not new DSP science; independently compare original 304/348-byte Git blobs and new exact Git blobs and verify template semantics, installed relocation and all compiler/link/build graph inputs; never silently classify changed source as unchanged",
     "before any execution: independent protected-main approval of exact versioned source, Git patch blob, compiler flags, source-role changes, maintained versions, and reverse reconstruction to original R1 identities",
     "source checkout SHA and clean tracked state verified; no branch-generated self-signed source lock or intermediate compiled-artifact substitution",
     "exact public CMake dependency closure re-audited because private study build uses add_subdirectory(AP_REPO_ROOT)",

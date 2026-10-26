@@ -1,0 +1,12 @@
+# FE09 B3/F0 R2 T2 — actual-executor source review
+
+**Status: SOURCE CODE REGISTERED; ZERO R2 DSP EXECUTIONS SO FAR.** This is the only authorized path to qualify the protected `2.3.57/2.3.58` source profiles. It does not alter, amend or re-label a single byte of the R1 archive, including its `LOCKED_EXECUTABLE_SOURCE_CHANGED` zero-frame negatives.
+
+The associated `T2_EXECUTOR_SOURCE_REVIEW.json` records exact source blobs, including the protected R1 B3 and F0 scripts, the independent protected T1 source gate, and the new R2 B3/F0 scripts. The independent `fe09_b3_f0_r2_t2_derivation_contract.py` compares *every unchanged scientific function body and all unchanged top-level variables byte-for-byte* against its original R1 parent. The only admitted differences are the named versioned source admission and receipt/UI entrypoints. An immutable science function, class, budget, fixed schedule or static global may not be changed during R2 admission.
+
+The `quality/frontend-reference` workflow selects its runner only from the exact `project(audio_pipeline VERSION …)` declaration. `2.3.56` always runs original R1 B3 and original F0. `2.3.57` and `2.3.58` use distinct R2 B3 and R2 F0 on the *same exact checkout*; unregistered versions reject. Original R1 artifact filenames are retained exclusively for 2.3.56, and the new R2 archives use separate names even on failure. Both executions always retain the original strict 300/120/180/300/900/60-second and 32 MiB B3 limits, the 19,800 frames, 48 API rejected cases, eight semantic negatives, plus F0 36 actual processes, 21,600 distinct frames and 144 statistics groups.
+
+**Strict two-stage execution authority:** this T2 source PR must first pass its new offline code-derivation/self-test controls, the full required summary and protected squash into main. Main remains `2.3.56`, so this proposal does not execute any R2 DSP. *Only after this code itself is independently approved on protected main* may the actual versioned shipping-code candidate PRs #850 and #851 be refreshed against that main and their fresh B3/F0 measured executions run.
+
+**T3 is still separate:** no new B3/F0 artifact may be called admitted until exact-head source, full retained member manifests, true timing/resource/PCM metrics, all source/semantic negatives, protected merge, fresh-main Verify and matching Release have been independently verified. Genuine HIL/SSC305, physical four-mic acoustic superiority, KWS/ASR improvements, product qualification, and public data rights remain outside this host-only research scope.
+

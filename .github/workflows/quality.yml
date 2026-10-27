@@ -63,6 +63,23 @@ jobs:
           export PKG_CONFIG_PATH="$PWD/stage/lib/pkgconfig:$PWD/stage/lib64/pkgconfig"
           cc tests/consumer/consumer.c -o /tmp/audio-pipeline-pc $(pkg-config --cflags --libs audio-pipeline)
           /tmp/audio-pipeline-pc
+      - name: Verify relocated multiarch pkg-config core and runtime consumers
+        run: |
+          set -euo pipefail
+          cmake -S . -B build-sdk-multiarch -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_INSTALL_LIBDIR=lib/x86_64-linux-gnu \
+            -DAP_BUILD_TESTS=OFF -DAP_BUILD_BENCH=OFF -DAP_BUILD_EXAMPLES=OFF
+          cmake --build build-sdk-multiarch --parallel
+          cmake --install build-sdk-multiarch --prefix "$PWD/stage-multiarch"
+          mv stage-multiarch stage-multiarch-relocated
+          export PKG_CONFIG_PATH="$PWD/stage-multiarch-relocated/lib/x86_64-linux-gnu/pkgconfig"
+          for package in audio-pipeline audio-pipeline-runtime; do
+            pkg-config --exists "$package"
+            test "$(realpath -m "$(pkg-config --variable=prefix "$package")")" = "$PWD/stage-multiarch-relocated"
+            cc tests/consumer/consumer.c -o "/tmp/${package}-multiarch" \
+              $(pkg-config --cflags --libs "$package")
+            "/tmp/${package}-multiarch"
+          done
 
   sku-memory-rom:
     if: inputs.run_extended

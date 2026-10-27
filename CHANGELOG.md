@@ -1,3 +1,17 @@
+# 2.3.58
+
+- Compile dedicated instrumented libFuzzer core and Linux Runtime libraries, rather than instrumenting only driver entrypoints, without modifying the uninstrumented SDK.
+- Validate real internal fuzz coverage counters and exercise pipeline, runtime-command and flight-recorder drivers in CI.
+- Derive relocatable pkg-config prefix from GNUInstallDirs, including multiarch lib/<triplet>/pkgconfig, and consume relocated core/runtime packages in CI.
+- Build/packaging qualification only; no DSP algorithm, public ABI, thresholds or hardware promotion changes.
+
+# 2.3.57
+
+- Rebase Linux Runtime diagnostic event baselines after pipeline RESET/start so the first new-epoch AEC fault is observable.
+- Coalesce input-queue-full worker notifications while retaining saturating aggregate counts and all input rejection metrics; avoid unbounded semaphore wake backlogs.
+- Reject 32-bit Flight Recorder pre/post capacity overflow before size_t narrowing, including post-roll trigger addition.
+- Add targeted Runtime epoch, 100k queue-full and 32-bit recorder adversarial regressions; no public ABI or DSP acoustic policy change.
+
 # 2.3.56
 
 - Fix Linux Runtime output-slot status ownership and bound command draining so control traffic cannot indefinitely postpone frames or stop checks.

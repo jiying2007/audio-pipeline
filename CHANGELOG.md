@@ -1,3 +1,10 @@
+# 2.3.57
+
+- Rebase Linux Runtime diagnostic event baselines after pipeline RESET/start so the first new-epoch AEC fault is observable.
+- Coalesce input-queue-full worker notifications while retaining saturating aggregate counts and all input rejection metrics; avoid unbounded semaphore wake backlogs.
+- Reject 32-bit Flight Recorder pre/post capacity overflow before size_t narrowing, including post-roll trigger addition.
+- Add targeted Runtime epoch, 100k queue-full and 32-bit recorder adversarial regressions; no public ABI or DSP acoustic policy change.
+
 # 2.3.56
 
 - Fix Linux Runtime output-slot status ownership and bound command draining so control traffic cannot indefinitely postpone frames or stop checks.

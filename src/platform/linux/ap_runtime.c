@@ -345,6 +345,7 @@ static int recorder_rate_supported(uint32_t rate) {
 }
 
 static int recorder_config_valid(const ap_flight_recorder_config_t *config) {
+    uint64_t capacity64;
     size_t capacity;
     size_t stride;
     if (!config || config->struct_size < sizeof(*config) ||
@@ -354,9 +355,12 @@ static int recorder_config_valid(const ap_flight_recorder_config_t *config) {
         !config->mic_channels || config->mic_channels > 2u ||
         (config->record_mask & ~AP_DIAG_RECORD_ALL) != 0u)
         return 0;
-    capacity = (size_t)config->pre_roll_frames +
-               (size_t)config->post_roll_frames + 1u;
-    if (!capacity || capacity > UINT32_MAX) return 0;
+    /* Validate before narrowing to size_t (including 32-bit armhf). The
+     * trigger's post_roll + 1 and the ring capacity must fit uint32_t. */
+    capacity64 = (uint64_t)config->pre_roll_frames +
+                 (uint64_t)config->post_roll_frames + UINT64_C(1);
+    if (capacity64 > UINT32_MAX || capacity64 > SIZE_MAX) return 0;
+    capacity = (size_t)capacity64;
     stride = recorder_slot_stride(config);
     if (!stride || stride > UINT32_MAX || stride > SIZE_MAX / capacity) return 0;
     if (sizeof(ap_flight_recorder_t) > SIZE_MAX - capacity * stride) return 0;
@@ -873,6 +877,19 @@ static void runtime_note_discontinuity(ap_runtime_t *runtime,
                        1u);
 }
 
+/* Metrics are reset by ap_pipeline_reset(), but the worker's event
+ * comparators live in runtime. Rebase them at every pipeline epoch boundary
+ * so a new small counter value is not hidden behind the previous epoch. */
+static void runtime_resync_event_baselines(ap_runtime_t *runtime) {
+    ap_metrics_t metrics;
+    ap_pipeline_get_metrics(runtime->pipeline, &metrics);
+    runtime->last_render_underruns = metrics.render_underruns;
+    runtime->last_delay_jumps = metrics.delay_jumps;
+    runtime->last_aec_resets = metrics.aec_resets;
+    runtime->last_aec_converged = metrics.aec_converged;
+    runtime->last_valid_erle = metrics.erle_valid ? metrics.erle_db : 0.0f;
+}
+
 static void runtime_apply_command(ap_runtime_t *runtime,
                                   const ap_rt_command_t *command) {
     ap_metrics_t metrics;
@@ -894,6 +911,7 @@ static void runtime_apply_command(ap_runtime_t *runtime,
         break;
     case AP_RUNTIME_COMMAND_RESET:
         ap_pipeline_reset(runtime->pipeline);
+        runtime_resync_event_baselines(runtime);
         runtime_emit_event(runtime, AP_EVENT_AEC_RESET, AP_EVENT_WARN, 0, 0, 1u);
         break;
     case AP_RUNTIME_COMMAND_SET_QUALITY:
@@ -1364,6 +1382,7 @@ ap_status_t ap_runtime_start(ap_runtime_t *runtime) {
     /* Caller-owned until start: rebuild from current tuning plus queued work. */
     if (runtime_resync_tuning_projection(runtime) != AP_OK)
         return AP_ESTATE;
+    runtime_resync_event_baselines(runtime);
     if (atomic_exchange_explicit(&runtime->running, 1u, memory_order_acq_rel))
         return AP_ESTATE;
     if (pthread_attr_init(&attr) == 0) {
@@ -1420,10 +1439,24 @@ ap_status_t ap_runtime_submit_frame(ap_runtime_t *runtime,
     tail = atomic_load_explicit(&runtime->in_tail, memory_order_acquire);
     if (head - tail >= AP_RT_DEPTH) {
         counter64_add(&runtime->input_full_events, 1u);
-        atomic_fetch_add_explicit(&runtime->pending_input_full,
-                                  1u,
-                                  memory_order_relaxed);
-        (void)sem_post(&runtime->wake);
+        /* Only the transition from no pending full notification to a
+         * pending one needs to wake the worker. A flood of rejected frames
+         * must not produce an unbounded semaphore backlog. Saturate the
+         * aggregated notification count rather than wrapping it. */
+        {
+            unsigned pending = atomic_load_explicit(&runtime->pending_input_full,
+                                                    memory_order_relaxed);
+            while (pending != UINT32_MAX) {
+                if (atomic_compare_exchange_weak_explicit(&runtime->pending_input_full,
+                                                          &pending, pending + 1u,
+                                                          memory_order_acq_rel,
+                                                          memory_order_relaxed)) {
+                    if (pending == 0u)
+                        (void)sem_post(&runtime->wake);
+                    break;
+                }
+            }
+        }
         return AP_EFULL;
     }
     dst = &runtime->in[head & AP_RT_MASK];

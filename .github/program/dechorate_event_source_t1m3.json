@@ -85,6 +85,40 @@
     }
   ],
   "historical_base_sha": "cb85d2bbffa2e1ac6d6f0a48a66619062b726cc0",
+  "historical_m2_source_closures": [
+    {
+      "actual_m1_prerequisite_observed_by_this_helper": false,
+      "files": {
+        ".github/program/workflow_pin_only_actual_tree_t1m1.py": {
+          "bytes": 30095,
+          "git_blob": "7270db96f88673260b6076d9bfa44b9a63372f3b",
+          "mode": "100644",
+          "sha256": "6d080c55e0334b96279f826e1615802cf1a8b58d57c1d9c8900900560d25ffd7"
+        },
+        ".github/program/workflow_pin_only_bot714_20261020.json": {
+          "bytes": 33609,
+          "git_blob": "da3b67aab856e81a7b76e64af1ed0736c63cf6ae",
+          "mode": "100644",
+          "sha256": "47ac0756f4989f619403f3689ce3fc305ec82469730da908559937ef03f86abb"
+        },
+        ".github/program/workflow_pin_only_scope.py": {
+          "bytes": 22373,
+          "git_blob": "2c3bafe13f9f6cb036bdd01328dd4f12fd336b4e",
+          "mode": "100644",
+          "sha256": "fcce117736d32a2cafd3c95fc93a27f906f40b64f632116cd90e8ba1759d68cb"
+        },
+        ".github/program/workflow_pin_pr_consumer.py": {
+          "bytes": 17822,
+          "git_blob": "3be0bf88aa4ac637531dbf5fa020b5cb540a82da",
+          "mode": "100644",
+          "sha256": "be63c093dac9125ac7c2603b69ea1c8211705eea1a8d143b110a3f0c01d5dab7"
+        }
+      },
+      "protected_main_closure_observed_by_this_helper": false,
+      "review_id": "2026-10-20",
+      "source_review_commit": "a42427693484409f9954125dada37d5db6c6f51e"
+    }
+  ],
   "implementation_stage": "DORMANT_SOURCE_AND_EVENT_RANGE_ONLY",
   "maintenance_push_admission_enabled": false,
   "microset_fingerprint_sha256": "7e5077c77e9700699eedd27d76357a820bcae2f14ee5f211a7afdb0ae2620953",
@@ -128,22 +162,22 @@
     "actual_m1_prerequisite_observed_by_this_helper": false,
     "files": {
       ".github/program/workflow_pin_only_actual_tree_t1m1.py": {
-        "bytes": 30095,
-        "git_blob": "7270db96f88673260b6076d9bfa44b9a63372f3b",
+        "bytes": 31169,
+        "git_blob": "e91dbfd957699f879b05f9fc6baa9152b8e466be",
         "mode": "100644",
-        "sha256": "6d080c55e0334b96279f826e1615802cf1a8b58d57c1d9c8900900560d25ffd7"
+        "sha256": "156c2f14f02c12fe11de83d52f4c3e54a84e2ebbb558b5dd387a023d547299dc"
       },
-      ".github/program/workflow_pin_only_bot714_20261020.json": {
-        "bytes": 33609,
-        "git_blob": "da3b67aab856e81a7b76e64af1ed0736c63cf6ae",
+      ".github/program/workflow_pin_only_bot714_20261024.json": {
+        "bytes": 35036,
+        "git_blob": "eb588ecdd21408e452b15e344fc1cc84c43c39bd",
         "mode": "100644",
-        "sha256": "47ac0756f4989f619403f3689ce3fc305ec82469730da908559937ef03f86abb"
+        "sha256": "639dcc39a2dcb35e68867b9a161bea4299a1162e89d54406fced250d07edb976"
       },
       ".github/program/workflow_pin_only_scope.py": {
-        "bytes": 22373,
-        "git_blob": "2c3bafe13f9f6cb036bdd01328dd4f12fd336b4e",
+        "bytes": 23702,
+        "git_blob": "1548fa4ea5297a5bae5f82ffa9f7268daf9e7e3a",
         "mode": "100644",
-        "sha256": "fcce117736d32a2cafd3c95fc93a27f906f40b64f632116cd90e8ba1759d68cb"
+        "sha256": "257eaca86109021ea33e2dc3191fcc9326cbee361c22c9b0c6e88862f7f8f1db"
       },
       ".github/program/workflow_pin_pr_consumer.py": {
         "bytes": 17822,
@@ -153,11 +187,14 @@
       }
     },
     "protected_main_closure_observed_by_this_helper": false,
-    "review_id": "2026-10-20",
-    "source_review_commit": "a42427693484409f9954125dada37d5db6c6f51e"
+    "review_id": "2026-10-24",
+    "source_review_commit": "74ac99649916f441d3674602fb4a8aff5c79da00"
   },
   "preregistration": "https://github.com/jiying2007/audio-pipeline/issues/759",
-  "registration_amendment_utc": "2026-10-20T06:39:12Z",
+  "registration_amendment_history_utc": [
+    "2026-10-20T06:39:12Z"
+  ],
+  "registration_amendment_utc": "2026-10-24T16:44:45Z",
   "schema_version": 1,
   "science_anchor_sha": "7e8f26ba6d7330624091291d9e1336e5ff9c09dc",
   "scientific_experiment_executed": false,
@@ -169,6 +206,8 @@
     "EXACT_PROTECTED_SOURCE_BINDING:reviewed-2026-10-20-pins": "37b81866e29a0b1b60b148c87b06a5cfdd6feeb5083a23a90d1aec369a15147d",
     "EXACT_SOURCE_BINDING_WITH_DIRECT_PR_M2:original-pins": "34bbf6c3e1fa97a2b2ef8e3b003ea062ac100ece686f32718a273dbd0494fb9c",
     "EXACT_SOURCE_BINDING_WITH_DIRECT_PR_M2:reviewed-2026-10-20-pins": "87e30facaabcc81ecc17c3b739251aff03f83c5c44f482c3166cd2fd559abc95",
+    "EXACT_SOURCE_BINDING_WITH_GOVERNANCE_V2:original-pins": "ff5f0f37e6f4b34d559f6d5b790572fd2510374c92421e124dfb17d11417b702",
+    "EXACT_SOURCE_BINDING_WITH_GOVERNANCE_V2:reviewed-2026-10-20-pins": "c65706341be517ff57cec775b0e3a3f561e66dc9d5b20a96db379366a526f0a6",
     "ORIGINAL_FROZEN_WORKFLOW:original-pins": "cab7e3836a8cac7e7d44aaca4cd16a6faaebf064f2f8f069da2692102a2d44e7",
     "ORIGINAL_FROZEN_WORKFLOW:reviewed-2026-10-20-pins": "cd40d21d7ab38a9ec829fbea9363c650c4a8b33730ff930bb52d71a3cae362f4"
   }

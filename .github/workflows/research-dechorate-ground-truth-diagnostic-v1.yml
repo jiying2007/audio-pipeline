@@ -16,6 +16,7 @@ on:
 
 permissions:
   contents: read
+  actions: read
 
 concurrency:
   group: research-dechorate-ground-truth-diagnostic-v1-${{ github.ref }}
@@ -72,6 +73,7 @@ jobs:
       - name: Bind diagnostic to exact source and research-only scope
         env:
           EXPECTED_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           test "$(git -c "safe.directory=$PWD" rev-parse HEAD)" = "$EXPECTED_SHA"
@@ -92,15 +94,15 @@ jobs:
           subprocess.run(['git','-c','safe.directory='+str(Path.cwd()),'-c','core.hooksPath=/dev/null',
               'worktree','add','--detach',str(policy),base],check=True)
           receipt=Path.cwd()/'dechorate-ground-truth-v1-out'/'source-range.json'
-          subprocess.run([sys.executable,str(policy/'.github/program/dechorate_event_source_t1m3.py'),
-              '--event-file',str(event_file),'--receipt',str(receipt)],check=True)
+          subprocess.run([sys.executable,str(policy/'.github/program/dechorate_governance_v2.py'),'consumer',
+              '--event-file',str(event_file),'--output',str(receipt)],check=True)
           PY
 
       - name: Preserve the independent source-range decision
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
-          name: dechorate-event-source-range-${{ github.run_id }}
+          name: dechorate-event-source-range-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
             dechorate-ground-truth-v1-out/source-range.json
             dechorate-ground-truth-v1-out/source-range.json.sha256

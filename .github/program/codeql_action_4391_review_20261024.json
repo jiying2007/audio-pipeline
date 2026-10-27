@@ -1,0 +1,288 @@
+{
+  "actual_caller_originals": [
+    {
+      "bytes": 667,
+      "commit": "7138b17acd6246cc779efa7597d25771ddfc8c7a",
+      "git_blob": "5bce8b9e29d43c01c999261a18bb7801229f0ea8",
+      "label": "historical_base",
+      "path": ".github/workflows/codeql.yml",
+      "permissions": {
+        "contents": "read",
+        "security-events": "write"
+      },
+      "saved_as": "historical_base-codeql.yml",
+      "sha256": "8ea43584ca66ccad8dc637d48a6cbdb44c157dd16cc9976220bf34514cefe891"
+    },
+    {
+      "bytes": 667,
+      "commit": "e2c8685fb8492c2ef724932abe6bc5553c9abb66",
+      "git_blob": "1bd6a707d5d648c554e149c52ca462cdd229611e",
+      "label": "actual_bot_head",
+      "path": ".github/workflows/codeql.yml",
+      "permissions": {
+        "contents": "read",
+        "security-events": "write"
+      },
+      "saved_as": "actual_bot_head-codeql.yml",
+      "sha256": "e8d8ebb7c70f53ebd404d98c0f6e068f9832e20afa3400d988137f8a6f3e4a4a"
+    }
+  ],
+  "boundaries": {
+    "action_supply_chain_attested": false,
+    "actual_current_m1_positive": false,
+    "automatic_workflow_skip_enabled_by_this_record": false,
+    "hosted_new_target_qualified_by_this_review": false,
+    "scientific_experiment_executed": false,
+    "shipping_or_hardware_authority": false
+  },
+  "completed_at_utc": "2026-10-24T16:32:48.765468+00:00",
+  "decision": "OFFICIAL_SOURCE_REVIEW_COMPLETE_PENDING_PROTECTED_SOURCE_AND_LIVE_GATES",
+  "historical_actual_m1": {
+    "base": "7138b17acd6246cc779efa7597d25771ddfc8c7a",
+    "decision": "T1_ACTUAL_BOT_TREE_NOT_ADMITTED",
+    "head": "e2c8685fb8492c2ef724932abe6bc5553c9abb66",
+    "preserved": true
+  },
+  "identity": "T1_PIN_REVIEW_20261024_CODEQL_4391",
+  "independent_chinese_review_sha256": "1651598a34b0f5431fc2bd99e6c166bc3743faf7dead07eacd1fecedbca2ddc4",
+  "independent_full_review_sha256": "a28c96c119740e051a43f2495693bf0b4fbcb48218cd4279f395da64a1b7e938",
+  "key_file_hashes": {
+    "v4.39.0": {
+      "analyze/action.yml": {
+        "bytes": 5295,
+        "git_blob": "d70401c0a48ad4246c1ef34787e79f5cad4d8281",
+        "sha256": "46967f21b52b5f78ba49192d432bca6c6b8a1027b3d2eb8b29d33c3f3012ec78"
+      },
+      "init/action.yml": {
+        "bytes": 8704,
+        "git_blob": "7787a0a07175b4aa206a25105aa7d2f7fb985696",
+        "sha256": "93bb5117fc0c22922e865515a8a863aa2182cf872b124735904d4051afb83854"
+      },
+      "lib/defaults.json": {
+        "bytes": 153,
+        "git_blob": "71decd839bcea97cb900cae3deadef06d20600df",
+        "sha256": "4d609c9871636e46473aa5f87fb8d3a46e821ac3184e104fbb57b1e6e765fa90"
+      },
+      "lib/entry-points.js": {
+        "bytes": 7117201,
+        "git_blob": "650857e9c381fef9229a0b5792f6090263b0dd5c",
+        "sha256": "7db5b937efd4e2ff2ac6d78fd305abd2798c039500ed21a32c275b8c11d95371"
+      },
+      "package-lock.json": {
+        "bytes": 363359,
+        "git_blob": "42ba4bf1ce9fa616dbbcc79ce0529b6b1c7c0b0c",
+        "sha256": "2c08863575bf3bf77b090e7baf1ad11ae0fb11934e6041fd5a5aefb77e521761"
+      },
+      "package.json": {
+        "bytes": 3184,
+        "git_blob": "755d561f100919cc4fb0d7dfaa4f452c3e78c6c0",
+        "sha256": "ce1c76385dd68123c86a2d03ff94e8cb871ef8fd39bf28e6531709313cc51466"
+      },
+      "src/actions-util.ts": {
+        "bytes": 16931,
+        "git_blob": "13e33a8e9d773e472238059da83cda580c1a8d7e",
+        "sha256": "b968281ca1ea1d0a11f8d181866c712108d97226a87cda1f6f1935664f497387"
+      },
+      "src/api-client.ts": {
+        "bytes": 14397,
+        "git_blob": "6a5e99468c6696d96f606d84a59946334f957267",
+        "sha256": "692641d0af104a77e5a884a355381eff6b5a2408d5ad39c70a0eb1fba9f71121"
+      },
+      "src/config-utils.ts": {
+        "bytes": 59353,
+        "git_blob": "de506aac058707ca825684e6062ff1689880cfbf",
+        "sha256": "2853f184c6b3a638a6ee985c5aeb2dcb9222c9c8ddfdc2fc32e6d0490f785594"
+      },
+      "src/database-upload.ts": {
+        "bytes": 11460,
+        "git_blob": "35dfd907855d2e7218dfb28194636acc5166a764",
+        "sha256": "75fef75991ee8232312d91d09479515100d6bbdc216ebdc3cf31e520945345c9"
+      },
+      "src/feature-flags.ts": {
+        "bytes": 35355,
+        "git_blob": "f74d0bd2502eea3996d63128347e6b6fa863f998",
+        "sha256": "73890ca0bb5d5f650c253e544457b91fcd6cc4f7a7e1c4a7f7a30fb7fc5e925e"
+      },
+      "src/init-action-post-helper.ts": {
+        "bytes": 20304,
+        "git_blob": "f9021b789311eb05f01f727f8b538b21c631f99f",
+        "sha256": "305d869813121ce38fd15e27ed50bc5c413f2c505513778d74f671d8b75d07d6"
+      },
+      "src/setup-codeql.ts": {
+        "bytes": 38645,
+        "git_blob": "07666d630250e82a96d203d39618e2523c7b96a5",
+        "sha256": "51f3672d63462e816c8ecfebcc0164ac675931a23e27079457c5b90c4c767bf2"
+      },
+      "src/tools-download.ts": {
+        "bytes": 12092,
+        "git_blob": "a92dad0acf176688f67dc709fed0ca457aed38b2",
+        "sha256": "040f7728cb6661ed3cbb1468603e1440cf7879fa242601a270311420075ac679"
+      },
+      "src/util.ts": {
+        "bytes": 38182,
+        "git_blob": "c7bd9e8d3a7c8174a1192c08814876df2a9fc2fb",
+        "sha256": "023350ad820ab31d3f49f431bb31718020bff5d7332e755d08a8e6325b16350f"
+      }
+    },
+    "v4.39.1": {
+      "analyze/action.yml": {
+        "bytes": 5295,
+        "git_blob": "d70401c0a48ad4246c1ef34787e79f5cad4d8281",
+        "sha256": "46967f21b52b5f78ba49192d432bca6c6b8a1027b3d2eb8b29d33c3f3012ec78"
+      },
+      "init/action.yml": {
+        "bytes": 8937,
+        "git_blob": "8d26999f7afe7bf513c8d5dbfe5cfac846b2ff1d",
+        "sha256": "04e0e7ab95dd63445d773be6a9bd042a34d028d7ddbe1d687568e1b21aa24264"
+      },
+      "lib/defaults.json": {
+        "bytes": 153,
+        "git_blob": "cde5136e28d3f3998f7e2e26a24da82e21e2a576",
+        "sha256": "35e190067f2a81eeeb8b42b367e7ccbeee31eb048613030aedef4690a4b99702"
+      },
+      "lib/entry-points.js": {
+        "bytes": 7118122,
+        "git_blob": "98c7f0488d2272d89f91d499238ed5ca5711f560",
+        "sha256": "3a0e7e9ab47eaa0fc40380178dd4f119adc54dd51c15633ee41dc78ff511dbdd"
+      },
+      "package-lock.json": {
+        "bytes": 363359,
+        "git_blob": "d702b0f6f5d300d0095ce27e9f84d44f5c90b0b9",
+        "sha256": "ed7c482b1d165f8ee4d960b8dedabe334323a1a0baba90eb7b8fcfb34889dd27"
+      },
+      "package.json": {
+        "bytes": 3184,
+        "git_blob": "209ded679783c915e2e2b0e3446a8b1aa41e4967",
+        "sha256": "4e3bb92e0181c110623912fd76dbf5104a45a6fd026232e381d0d70cf892eaff"
+      },
+      "src/actions-util.ts": {
+        "bytes": 16931,
+        "git_blob": "13e33a8e9d773e472238059da83cda580c1a8d7e",
+        "sha256": "b968281ca1ea1d0a11f8d181866c712108d97226a87cda1f6f1935664f497387"
+      },
+      "src/api-client.ts": {
+        "bytes": 15142,
+        "git_blob": "7aa4d61d7547b79546201db8d5e9c97e486ba250",
+        "sha256": "2705fe920a00e5bc249ef8ae6fc9a3f8db43751511f585cd08aa070415f9a2ac"
+      },
+      "src/config-utils.ts": {
+        "bytes": 59303,
+        "git_blob": "7bb7a37c024aebe20cf1aff83f1d964467a9824b",
+        "sha256": "8e4427514de1f223d6359a999a3b43c8d6281b7e45c65b3a738d18347bdfb031"
+      },
+      "src/database-upload.ts": {
+        "bytes": 11680,
+        "git_blob": "2a24a2e1d42e28c51373525fd64210d28239395f",
+        "sha256": "622f89bd483dedf9a082b81a9c6cc461984d8b68c5310d18c62ce76a04dec519"
+      },
+      "src/feature-flags.ts": {
+        "bytes": 34640,
+        "git_blob": "a380c1a633411d0433a8b32aa47b6dd4296e5f87",
+        "sha256": "f37509e2ad12172b1abaa0bc22928ca97263ad519c74f0b8c36cf175c3bc2b43"
+      },
+      "src/init-action-post-helper.ts": {
+        "bytes": 21131,
+        "git_blob": "cfaab312fb35222856105532e24972912432b735",
+        "sha256": "b9c0fc360d792f4e78f0fc4f0b77f46ee573ef41f1478e84325e39dce3eb227d"
+      },
+      "src/setup-codeql.ts": {
+        "bytes": 38528,
+        "git_blob": "b4d7416a17720bb447ca72a98f95ad704c991e50",
+        "sha256": "228cfc99f56851931d5a58633cb329fa85d1cd7f7b6cdd3b6c838767549901cd"
+      },
+      "src/tools-download.ts": {
+        "bytes": 12092,
+        "git_blob": "a92dad0acf176688f67dc709fed0ca457aed38b2",
+        "sha256": "040f7728cb6661ed3cbb1468603e1440cf7879fa242601a270311420075ac679"
+      },
+      "src/util.ts": {
+        "bytes": 37315,
+        "git_blob": "ba0c3c7d46fa6a546ed5f51a9d02b3642636791a",
+        "sha256": "7b42050922b07e35310cc8a3d7ab70d1e33e37b1af311c227cf977e672114b48"
+      }
+    }
+  },
+  "limits": {
+    "bundle_rebuilt": false,
+    "codeql_binary_downloaded_or_executed": false,
+    "git_signature_independently_cryptographically_verified": false,
+    "hosted_regression_completed_by_this_review": false,
+    "language_pack_changelogs_are_partial_connector_excerpts": true,
+    "npm_install_or_scripts_executed": false,
+    "policy_changed": false,
+    "remote_changed": false,
+    "signature_claim_provider": "GitHub REST commit verification",
+    "third_party_action_code_executed": false
+  },
+  "limits_scope": "Independent upstream-source review only; not a claim that this separately reviewed policy implementation changes no files.",
+  "new_commit": "9b3254085494b55a0f7c4c2b3d2d52cc712ce370",
+  "official_compare": {
+    "ahead_commits": 62,
+    "base": "6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee",
+    "changed_files": 64,
+    "head": "9b3254085494b55a0f7c4c2b3d2d52cc712ce370",
+    "merge_base": "6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee",
+    "patch_sha256": "abfb1c5ce11a36dff5104d94e5ae0196c2d7bd762e7dd832857b40389d96e911",
+    "url": "https://github.com/github/codeql-action/compare/6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee...9b3254085494b55a0f7c4c2b3d2d52cc712ce370"
+  },
+  "official_repository": "github/codeql-action",
+  "official_target": {
+    "commit_signature_reason": "valid",
+    "commit_signature_verified_by_github": true,
+    "release_id": 419751066,
+    "release_immutable": true,
+    "release_published_at": "2026-10-21T15:48:42Z",
+    "release_url": "https://github.com/github/codeql-action/releases/tag/v4.39.1",
+    "tag": "v4.39.1",
+    "tag_object": "8498dc4c2b27cdd99baf0f87955b29ebbf30c78d",
+    "tag_signature_reason": "unsigned",
+    "tag_signature_verified": false,
+    "tree": "aa352d914a7590e46ae3b89c12ef2b32e18f3f7b"
+  },
+  "old_commit": "6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee",
+  "review_id": "2026-10-24",
+  "review_recommendation": "No blocking source incompatibility observed for the actual Ubuntu/c-cpp/manual workflow; suitable to propose separately protected exact-pin non-acoustic dependency maintenance review, subject to actual hosted CodeQL and repository gates. Not M1/M2/M3 admission.",
+  "runtime_findings": [
+    {
+      "area": "authentication",
+      "finding": "Explicit internal empty externalRepoAuth now suppresses fallback auth; ordinary unset/empty/whitespace action inputs still normalize to undefined by unchanged getOptionalInput, preserving the current caller path. Database upload now constructs the client from the same supplied apiDetails."
+    },
+    {
+      "area": "toolcache",
+      "finding": "Cleanup of unused CodeQL bundles is enabled on the first setup/download on eligible GitHub-hosted runners with a shared workspace filesystem, without the earlier feature flag. It is not deletion of arbitrary toolcache tools."
+    },
+    {
+      "area": "TRAP",
+      "finding": "When overlay analysis is active, TRAP caching defaults off without the earlier feature flag; an explicit trap-caching input is still respected."
+    },
+    {
+      "area": "SARIF",
+      "finding": "Failed-SARIF generation/test upload decisions and artifact root handling change; current workflow does not set the test/skip flags. Actual successful upload/post-processing remains required in hosted logs."
+    },
+    {
+      "area": "CLI",
+      "finding": "Published defaults advance 2.27.2 to2.27.3. Existing feature flags/tools selection can choose actual versions; hosted evidence must record what ran, not infer it from defaults."
+    }
+  ],
+  "schema_version": 1,
+  "source_inventory": {
+    "bundled_hunks": 54,
+    "dependency_hunks": 4,
+    "dependency_hunks_scope": "generated getOctokitOptions symbol renames only; all other hunks map to first-party source",
+    "manifest_sha256": "356692f85720a96a18d381ad64a1e16058bd3e16534202c345692f45b27bb00e",
+    "unique_blobs": 279,
+    "unique_bytes": 17939287
+  },
+  "static_checks_passed": [
+    "279 complete official Git blobs independently match Git object IDs, sizes and local views",
+    "package.json differs only in own root package version fields",
+    "package-lock.json differs only in own root package version fields",
+    "analyze metadata is byte-identical; init differs only in trap-caching documentation; both use node24",
+    "parseGitHubUrl moved without function text changes",
+    "optional input normalization helper is unchanged",
+    "source and distributed defaults JSON are identical",
+    "complete 64-file official Git diff agrees with actual API compare file list and saved patch",
+    "all bundled dependency hunks are four generated symbol renames; remaining distribution hunks are first-party src modules",
+    "historical B7138 versus actual bot H e2 CodeQL caller differs only by two exact action pin replacements"
+  ]
+}

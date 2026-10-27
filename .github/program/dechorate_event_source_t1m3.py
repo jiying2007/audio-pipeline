@@ -43,11 +43,18 @@ BIND_STEP = "Bind diagnostic to exact source and research-only scope"
 UPLOAD_OLD = "043fb46d1a93c77aae656e7c1c64a875d1fc6a0a"
 UPLOAD_NEW = "cf430e030ddbb5b0abf93d22962f4752f3646cd9"
 M2_PROFILE = "EXACT_SOURCE_BINDING_WITH_DIRECT_PR_M2"
+V2_PROFILE = "EXACT_SOURCE_BINDING_WITH_GOVERNANCE_V2"
+V2_SOURCE_FILES = (
+    ".github/program/dechorate_governance_v2.py",
+    ".github/program/dechorate_governance_v2.json",
+    ".github/workflows/ci-dechorate-governance-evidence.yml",
+    "scripts/github_governance.py",
+)
 M2_SOURCE_FILES = (
     ".github/program/workflow_pin_pr_consumer.py",
     ".github/program/workflow_pin_only_actual_tree_t1m1.py",
     ".github/program/workflow_pin_only_scope.py",
-    ".github/program/workflow_pin_only_bot714_20261020.json",
+    ".github/program/workflow_pin_only_bot714_20261024.json",
 )
 # These are reviewable literal templates, not a general YAML interpreter or
 # an editable shell slot. No candidate-supplied token is interpolated here.
@@ -311,7 +318,7 @@ def scientific_step(text: str, name: str) -> bytes:
 
 
 def workflow_templates(anchor: str) -> dict[str, str]:
-    """Six exact bodies: three execution profiles, each old or reviewed new pins.
+    """Exact source profiles, each with original or reviewed upload pins.
 
     The protected registration permits only the complete October 20 upload
     transition. It does not authorize arbitrary uses, partial updates, mutable
@@ -323,8 +330,23 @@ def workflow_templates(anchor: str) -> dict[str, str]:
     repaired = anchor.replace(old_bind, SOURCE_BIND_TEMPLATE + "\n" + SOURCE_RECEIPT_TEMPLATE, 1)
     gated = repaired.replace("jobs:\n  diagnostic:\n",
         "jobs:\n" + M2_JOB_TEMPLATE + "  diagnostic:\n" + M2_DIAGNOSTIC_CONDITION, 1)
+    # Source-only registration: this does not edit or enable the scientific
+    # workflow. Attempt 1 records a challenge; attempt 2 needs authenticated PRE.
+    # The strict legacy validate_ruleset path below remains unchanged.
+    v2_bind = SOURCE_BIND_TEMPLATE.replace(
+        '          EXPECTED_SHA: ${{ github.event.pull_request.head.sha || github.sha }}\n',
+        '          EXPECTED_SHA: ${{ github.event.pull_request.head.sha || github.sha }}\n'
+        '          GITHUB_TOKEN: ${{ github.token }}\n').replace(
+        "str(policy/'.github/program/dechorate_event_source_t1m3.py'),\n"
+        "              '--event-file',str(event_file),'--receipt',str(receipt)",
+        "str(policy/'.github/program/dechorate_governance_v2.py'),'consumer',\n"
+        "              '--event-file',str(event_file),'--output',str(receipt)")
+    v2 = gated.replace(SOURCE_BIND_TEMPLATE, v2_bind, 1).replace(
+        "permissions:\n  contents: read\n", "permissions:\n  contents: read\n  actions: read\n", 1).replace(
+        "name: dechorate-event-source-range-${{ github.run_id }}\n",
+        "name: dechorate-event-source-range-${{ github.run_id }}-${{ github.run_attempt }}\n", 1)
     variants = {"ORIGINAL_FROZEN_WORKFLOW": anchor,
-                "EXACT_PROTECTED_SOURCE_BINDING": repaired, M2_PROFILE: gated}
+                "EXACT_PROTECTED_SOURCE_BINDING": repaired, M2_PROFILE: gated, V2_PROFILE: v2}
     result = {}
     for profile, text in variants.items():
         need(UPLOAD_OLD in text and UPLOAD_NEW not in text, "ORIGINAL_UPLOAD_PIN_DRIFT")
@@ -338,8 +360,8 @@ def workflow_templates(anchor: str) -> dict[str, str]:
 
 def protected_m2_closure(git: Git, base: str, contract: dict) -> dict:
     registered = contract.get("preregistered_m2_source_closure")
-    need(type(registered) is dict and registered.get("review_id") == "2026-10-20" and
-         registered.get("source_review_commit") == "a42427693484409f9954125dada37d5db6c6f51e" and
+    need(type(registered) is dict and registered.get("review_id") == "2026-10-24" and
+         registered.get("source_review_commit") == "74ac99649916f441d3674602fb4a8aff5c79da00" and
          registered.get("actual_m1_prerequisite_observed_by_this_helper") is False and
          registered.get("protected_main_closure_observed_by_this_helper") is False and
          type(registered.get("files")) is dict and set(registered["files"]) == set(M2_SOURCE_FILES),
@@ -420,7 +442,8 @@ def frozen_science(git: Git, base: str, head: str, contract: dict) -> dict:
     for revision in (base, head):
         text = git.regular_blob(revision, WORKFLOW)[1].decode("utf-8")
         permissions = re.findall(r"(?ms)^permissions:\n.*?(?=^\S|\Z)", text)
-        need(len(permissions) == 1 and permissions[0].strip() == "permissions:\n  contents: read",
+        need(len(permissions) == 1 and permissions[0].strip() in (
+                 "permissions:\n  contents: read", "permissions:\n  contents: read\n  actions: read"),
              "WORKFLOW_TOKEN_PERMISSION_DRIFT")
         for name in SCIENTIFIC_STEPS:
             frozen = scientific_step(anchor_workflow, name)
@@ -428,8 +451,14 @@ def frozen_science(git: Git, base: str, head: str, contract: dict) -> dict:
                  scientific_step(text, name) == frozen, "ORIGINAL_SCIENTIFIC_STEP_BODY_DRIFT")
         profiles[revision] = workflow_profile(text, variants)
     m2_source = (protected_m2_closure(git, base, contract) if any(
-        name.startswith(M2_PROFILE + ":") for name in profiles.values()) else None)
-    return {"historical_base_sha": FROZEN_BASE, "science_anchor_sha": SCIENCE_ANCHOR,
+        name.split(":", 1)[0] in (M2_PROFILE, V2_PROFILE) for name in profiles.values()) else None)
+    v2_source = {}
+    if any(name.startswith(V2_PROFILE + ":") for name in profiles.values()):
+        for path in V2_SOURCE_FILES:
+            blob, raw = git.regular_blob(base, path)
+            v2_source[path] = {"mode": "100644", "git_blob": blob, "bytes": len(raw),
+                               "sha256": hashlib.sha256(raw).hexdigest()}
+    result = {"historical_base_sha": FROZEN_BASE, "science_anchor_sha": SCIENCE_ANCHOR,
             "source_qualification_ancestor_sha": QUALIFICATION_BASE, "files": original,
             "predecessor_qualification": manifest["predecessor_qualification"],
             "corpus_inventory_sha256": digest(inventory["expected_selected_objects"]),
@@ -437,6 +466,9 @@ def frozen_science(git: Git, base: str, head: str, contract: dict) -> dict:
             "original_scientific_steps": len(SCIENTIFIC_STEPS),
             "workflow_execution_profiles": {"base": profiles[base], "head": profiles[head]},
             "protected_m2_source_identity": m2_source}
+    if v2_source:
+        result["protected_v2_source_identity"] = v2_source
+    return result
 
 
 def current_scope(git: Git, scope: dict) -> dict:

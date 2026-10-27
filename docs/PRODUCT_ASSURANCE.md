@@ -15,6 +15,22 @@ A software release requires all of the following:
 
 Routine workflow `GITHUB_TOKEN` is not proof of repository administration state. Governance read and bootstrap write credentials stay separate and minimum-scope.
 
+For both main and version-tag Rulesets, the audit requires a visible `bypass_actors`
+field containing exactly an empty JSON array. GitHub may omit this sensitive field
+depending on the requester's ruleset access; an administration-read credential
+alone does not establish its visibility. Missing or malformed fields fail the
+audit and require review; they must not be interpreted as having no bypass actors.
+
+Coverage proof also requires an explicit `conditions.ref_name.exclude` equal to
+`[]`, matching the canonical bootstrap configuration. The string-array `include`
+must contain `refs/heads/main` or `~DEFAULT_BRANCH` for main, or `refs/tags/v*` or
+`refs/tags/v**` for version tags. Multiple include entries remain supported when
+one of these existing anchors proves the required scope. Missing or malformed
+ref conditions and every nonempty exclusion fail the audit, even if the exclusion
+appears unrelated to the required refs. This deliberately narrower proof contract
+does not approximate GitHub's pattern matching; other patterns alone are not
+accepted as coverage evidence.
+
 ## Repository-side commercial readiness
 
 `software-commercial-ready` is a repository/integration status, not a Product Qualification status. It may be claimed only when all of the following remain true:

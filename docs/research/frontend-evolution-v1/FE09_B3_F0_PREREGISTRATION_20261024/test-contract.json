@@ -1,0 +1,420 @@
+{
+  "schema_version": 1,
+  "id": "FE09-B3-F0-C4-16K-RENDER-PAP-V1",
+  "status": "FROZEN_PREREGISTRATION_NOT_EXECUTION_EVIDENCE",
+  "profile": {
+    "input_rate_hz": 16000,
+    "internal_rate_hz": 16000,
+    "hop_samples": 160,
+    "frame_ms": 10,
+    "physical_mics": 4,
+    "render_owner_enabled": true,
+    "owner_queue_depth": 2,
+    "capture_source_id": 104,
+    "render_source_id": 204,
+    "source_generation": 900001,
+    "capture_clock_authority": 0,
+    "physical_to_capture_slot": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "array": {
+      "positions_m": [
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          0.035,
+          0,
+          0
+        ],
+        [
+          0.07,
+          0,
+          0
+        ],
+        [
+          0.105,
+          0,
+          0
+        ]
+      ],
+      "direction": [
+        0,
+        1,
+        0
+      ],
+      "reference_mic": 0,
+      "active_mask": 15,
+      "gain": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "calibration_latency_samples": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "interpolation": "FE_ARRAY_FIR33_HANN"
+    },
+    "mono": {
+      "base": "ap_config_default(AP_PROFILE_CALL), AP_RESOURCE_STANDARD",
+      "io_rate_hz": 16000,
+      "internal_rate_hz": 16000,
+      "mic_channels": 1,
+      "required_compiled_stage_mask": 255,
+      "effective_stage_mask": 253,
+      "quality": "AP_QUALITY_FULL",
+      "aec_backend": "MDF",
+      "aec_filter_ms": 96,
+      "aec_mu": 0.22,
+      "aec_adapt_stride": 2,
+      "max_delay_ms": 180,
+      "initial_delay_ms": 40,
+      "ns_floor": 0.12,
+      "agc_target_dbfs": -20,
+      "limiter_dbfs": -2,
+      "enable_delay_tracking": 1,
+      "enable_clock_drift_compensation": 1
+    }
+  },
+  "fixture": {
+    "role": "D0 disclosed deterministic integer synthetic; engineering branch coverage only",
+    "frames_per_trace": 600,
+    "total_samples": 96000,
+    "lcg": {
+      "recurrence": "state=(1664525*state+1013904223) modulo 2^32; update before each sample extraction",
+      "render_seed": 2654435769,
+      "near_seed": 608135816,
+      "mic_noise_seeds": [
+        286331153,
+        572662306,
+        858993459,
+        1145324612
+      ]
+    },
+    "render_formula": "r[n]=((render_rng[n]>>16)&8191)-4096, n=0..95999",
+    "near_formula": "near_rng advances every sample; z[n]=((near_rng[n]>>16)&32767)-16384 only for 1-based capture frames 161..280, else 0",
+    "echo_formula": "e[n]=0 for n<640, otherwise C99 truncation-toward-zero r[n-640]/4",
+    "mic_noise_formula": "Each mic j advances its independent RNG every sample; vj[n]=((rngj[n]>>24)&127)-64",
+    "capture_formula": "mic[j,n]=e[n]+z[n]+vj[n], packed S16 interleaved in physical identity order; integer construction fits S16 without clipping",
+    "critical_semantics": "Capture bytes are identical between ALL_P and PAP. PAP represents unavailable reference delivery while synthetic capture still contains the known far signal; it does not assert DAC silence or physical ADC/DAC clocks.",
+    "source_pcm_hashes": "Compute and freeze exact generated little-endian S16 SHA256 before DSP output is inspected; generator formula/seed cannot be tuned after outcomes.",
+    "no_oracle_gates": true,
+    "no_timestamps_api": true
+  },
+  "cases": [
+    {
+      "id": "ALL_P",
+      "capture_frames": "1..600 continuous",
+      "render_events": [
+        {
+          "first": 1,
+          "last": 600,
+          "event": "PRESENT",
+          "epoch": 1,
+          "gap_flag": 0
+        }
+      ],
+      "explicit_mono_notifications": []
+    },
+    {
+      "id": "PAP",
+      "capture_frames": "1..600 continuous",
+      "render_events": [
+        {
+          "first": 1,
+          "last": 200,
+          "event": "PRESENT",
+          "epoch": 1,
+          "gap_flag": 0
+        },
+        {
+          "first": 201,
+          "last": 240,
+          "event": "ABSENT",
+          "epoch": 1,
+          "reason": "FE_B1S0_ABSENT_SOURCE_REPORTED",
+          "pcm_count": 0,
+          "gap_flag": 0
+        },
+        {
+          "first": 241,
+          "last": 241,
+          "event": "PRESENT",
+          "epoch": 2,
+          "gap_flag": "FE_B1S0_RENDER_GAP"
+        },
+        {
+          "first": 242,
+          "last": 600,
+          "event": "PRESENT",
+          "epoch": 2,
+          "gap_flag": 0
+        }
+      ],
+      "explicit_mono_notifications": [
+        {
+          "before_capture_frame": 201,
+          "flags": "AP_DISCONTINUITY_RENDER_GAP",
+          "lost_frames": 1
+        },
+        {
+          "before_capture_frame": 241,
+          "flags": "AP_DISCONTINUITY_RENDER_GAP",
+          "lost_frames": 1
+        }
+      ],
+      "expected_capture_frames": 600,
+      "expected_present_pushes": 560,
+      "expected_absent_tokens": 40,
+      "expected_explicit_notify_calls": 2
+    }
+  ],
+  "composition": {
+    "execution_model": "Finite caller-serialized owner API driver. No new pthread/liveness qualification; existing owner SPSC source is reused byte-exact.",
+    "front_end": "Capture-only B1 with render_channels=0 via T2-B0 and owner B1-S0. Reference SRC is separate T2-B0 state. Original SRC/FIR33/owner functions only.",
+    "float_s16_boundary": "Reuse R0 finite/round-nearest saturating conversion, explicit FE_TONEAREST, record clip counts independently for beam and reference; never wrap or normalize.",
+    "event_order": "Preflight complete downstream binding/length/alias/capacity invariants and original owner-event availability/identity. Source-owner enabled Render without token is PENDING. Consume one admitted original owner event. First ABSENT after PRESENT or first PRESENT after ABSENT causes one mono AP_DISCONTINUITY_RENDER_GAP notification with lost_frames=1 before mono render/capture calls; successive same-kind events do not notify. Push one actual converted reference only on PRESENT; process one BF mono frame; publish staged output/receipt.",
+    "reset_fact": "All valid mono discontinuity flags currently reset mono boundary SRC, HPF, SYNC, Activity, AEC, RES, NS, AGC and VAD. lost_frames is ignored. processed_frames is cumulative. External Capture SRC/FIR33 must not be reset by these two Render notifications.",
+    "reset_accounting": "Count explicit notify calls independently. Report total aec_resets, delay_jumps and automatically observed AEC resets separately; do not require total aec_resets==2 or disable trackers to force it.",
+    "absence_fact": "Owner EMPTY is pending, never ABSENT. ABSENT has no source PCM. Unwritten reference output is poison/sentinel and must never reach SDK push_render. SDK internal zero reference on underrun is not fabricated source PCM.",
+    "atomicity": "Ordinary REJECT/PENDING/FULL returns are precommit and preserve source worker tails, front-end/ref histories, complete mono state and external output/receipt. Original owner process_one is the last potentially rejecting stateful phase and already rolls back its own BF/ref transaction. Under the frozen initialized16k mono pointer, required SYNC stage, exact160 nonnull disjoint buffers and constant legal RENDER_GAP flag, ap_pipeline_notify_stream_discontinuity, push_render and process_capture all pass their only error guards and return AP_OK; their subsequent DSP bodies are non-failing. These exact guards are source-locked and checked before owner commit. An unexpected postcommit SDK status is an internal invariant breach: stop that run, preserve partial failure evidence, emit fatal COMPOSITION_INVARIANT_BREACH and refuse further use of the fixture. It is never ordinary REJECT, success, transactional no-mutation or recoverable retry. No speculative live-state snapshot/rollback is introduced.",
+    "APX3_scope": "No new recorder/serializer in this leaf. Existing APX3/FBS1 semantics are retained as source contract: absent file has no Render PCM; owner event/epoch/reason stays in FBS1. No 600-frame claim for bounded24 source_chunks.",
+    "seam_api": "Exactly two private operations: bind(fresh bridge, original owner queue/core, fresh actual mono SDK, declared disjoint arena extents) and process_one(bound bridge, int16 output, output_count, aligned work/work_bytes, receipt). No generic discontinuity/control/reset/rebind API. Source producer operations remain the original owner APIs.",
+    "binding": "Bind requires C4/16k, source generation/IDs/depth and original capture-only core fixed as above; all states are fresh with zero accepted/processed frames, disjoint state/work/output domains, mono full compiled mask0xff/effective mask0xfd/qualityFULL. Each process preflight checks the immutable binding and effective fixed mono configuration, all pointers/counts/extents, output/receipt alias exclusions and bounded counter room before source consumption.",
+    "capture_clock_gap_boundary": "This leaf accepts only continuous capture sequence and immutable source generation; original owner sequence gaps and changed generation are rejected at admission. There is no live CAPTURE_GAP/CLOCK_RESET/rebind command in the minimal seam. A fresh initializer between isolated cases does not qualify recovery or clock continuity.",
+    "underrun_accounting": "render_underruns can increment both for get_reference unavailable history and for note_capture staleness in one frame; it is not the owner ABSENT token count. Source absence40 is counted independently; no equality between metric underruns and missing source frames is imposed."
+  },
+  "independent_controls": {
+    "direct_reference": "Separate test path outside the new composition adapter directly invokes unchanged T2-B0 capture/render and actual mono APIs. Its expected schedule is literal ALL_P or frame ranges201..240 with notify at201/241; it does not call adapter event classification/reset logic or consume adapter-produced control receipts. It receives the exact same fixture PCM, tracks actual reference ordinal independently and reads effective config independently. It is literal-control replay, not an oracle DTD/AEC feed. It may share only immutable PCM fixture data, conversion specification and original first-party DSP functions with the adapter; it must not share transition classification or control generation.",
+    "comparison": "Per accepted frame, new adapter output PCM, public metrics fields, actual reference push count and capture-only BF output/state ledger must match this independent direct-control execution within the same build. Compare canonical fields where allocations contain different pointers; never memcmp unrelated object addresses.",
+    "front_end_control": "ALL_P and PAP must have identical capture input, BF output and canonical capture-only source/FIR33 histories after every accepted frame. At Render notify boundaries, compare external capture state before/after notify byte-exact on the same allocation.",
+    "causality_control": "One additional observed PAP pass changes all capture and actual-present Render samples after frame240 by integer sign inversion. All PCM/public-metric/accepted-event evidence through frame240 must exactly match original PAP; do not adapt any thresholds or inspect future samples."
+  },
+  "observation": {
+    "pattern_precedent": "device_event_d12.c read-only __wrap_* -> __real_* pattern; no copied tracker/DSP or algorithm emulation.",
+    "instrumentation": "Research-only bounded RAM counters/records; each wrapper calls its exact original function once with unmodified arguments and results. File output occurs after processing.",
+    "wrapped_functions": [
+      "ap_hpf_process",
+      "ap_sync_track_delay",
+      "ap_sync_get_reference",
+      "ap_activity_process",
+      "ap_aec_backend_process",
+      "ap_ns_process",
+      "ap_agc_process_controlled",
+      "ap_vad_process",
+      "ap_sync_push_render",
+      "ap_sync_reset",
+      "ap_aec_backend_reset",
+      "ap_res_process",
+      "ap_beamformer_process",
+      "ap_pipeline_notify_stream_discontinuity"
+    ],
+    "expected_counts": "For each complete 600-frame trace: HPF/SYNC-track/SYNC-reference/Activity/AEC/NS/AGC/VAD each600; actual SYNC-push600 or560. Legacy mono BF0 and standalone time-domain RES0. Reset counts include measured automatic resets and are classified, not forced. Explicit notify API calls are0 for ALL_P and2 for PAP; initialization and negative-control calls are tagged separately. AEC resets from automatic SYNC route jumps remain additional measured events.",
+    "frequency_res": "ap_ns_process enable_frequency_res must be1 in FULL NS+RES. Actual result.frequency_res_active must equal the source predicate enable && echo-pointer-present && mode!=SAFE && actual_far && !actual_DT. Require at least one observed active and inactive frame across each fixed trace; require an actual DT frame and both AGC allow_gain_increase branches across the fixed trace. Unreached branch is INCONCLUSIVE, never tune fixture or gates after execution.",
+    "gates": "The actual Activity result must feed AEC and NS unchanged; AGC allow_gain_increase must equal !(actual_far&&!actual_DT). No ground-truth near/far schedule enters DSP controls.",
+    "transparency": "Observed and plain binaries link the exact same original DSP static library and run same fixture/config. Final per-frame PCM and public metrics fields must match bitwise within each target/build; observer disabled/enabled must not change results.",
+    "internal_precision": "Read true SYNC delay samples in the read-only wrapper; public estimated_delay_ms is not precise enough for sub-ms ledger."
+  },
+  "build": {
+    "public_source": "Unmodified root project through a private parent CMake add_subdirectory; actual audio_pipeline static library, not mock/reimplemented modules.",
+    "unity_caveat": "Root CMake sets UNITY_BUILD ON. After add_subdirectory, private parent sets target audio_pipeline UNITY_BUILD OFF and INTERPROCEDURAL_OPTIMIZATION FALSE; plain and observed use this identical isolated build. CMAKE_UNITY_BUILD=OFF alone is insufficient.",
+    "settings": [
+      "AP_BUILD_PIPELINE=ON",
+      "AP_BUILD_TESTS=OFF",
+      "AP_BUILD_BENCH=OFF",
+      "AP_BUILD_EXAMPLES=OFF",
+      "AP_ENABLE_LINUX_RUNTIME=OFF",
+      "AP_BUILD_MAX_MIC_CHANNELS=2",
+      "AP_ENABLE_FAST_MATH=OFF",
+      "AP_AEC_BACKEND=MDF",
+      "AP_SIMD_BACKEND=SCALAR",
+      "AP_RESAMPLER_MODE=BANDLIMITED",
+      "AP_NS_ESTIMATOR=EMA",
+      "AP_MODULES=RESAMPLER,HPF,BF,SYNC,ACTIVITY,AEC,RES,NS,AGC,VAD",
+      "C11; -ffp-contract=off; -fno-fast-math; -fno-lto; FE_TONEAREST",
+      "Private test/observer targets inherit exact actual audio_pipeline compile definitions via target-property readback so private struct layouts match; source root CMake remains unchanged."
+    ],
+    "targets": [
+      {
+        "id": "native",
+        "compiler": "cc",
+        "optimization": "-O2"
+      },
+      {
+        "id": "sanitized",
+        "compiler": "cc",
+        "optimization": "-O1 -g",
+        "flags": "-fsanitize=address,undefined -fno-omit-frame-pointer",
+        "env": "ASAN_OPTIONS=detect_leaks=1:abort_on_error=1; UBSAN_OPTIONS=halt_on_error=1"
+      },
+      {
+        "id": "arm",
+        "compiler": "arm-linux-gnueabihf-gcc",
+        "toolchain": "cmake/toolchains/arm-linux-gnueabihf.cmake",
+        "optimization": "-O2",
+        "execution": "qemu-arm -L /usr/arm-linux-gnueabihf"
+      }
+    ],
+    "identity": "Pin exact source/ELF/library/generated build header/effective config/compiler versions/compile+link recipes. Cross-target bitwise equality is not asserted; each target must satisfy same semantic contract and repeat within itself."
+  },
+  "budget": {
+    "targets": 3,
+    "frames_per_case": 600,
+    "full_case_runs_per_target": {
+      "plain_repeats_each_of_2_cases": 2,
+      "observed_repeats_each_of_2_cases": 2,
+      "direct_control_replays_each_of_2_cases": 1,
+      "mutated_future_PAP_passes": 1
+    },
+    "accepted_capture_frames_per_target": 6600,
+    "accepted_capture_frames_total": 19800,
+    "accepted_audio_seconds_total": 198,
+    "API_rejection_cases_per_target": 16,
+    "receipt_semantic_mutations": 8,
+    "adaptive_search": 0,
+    "parameter_retuning": 0,
+    "new_structures": 0,
+    "extra_dataset_downloads": 0,
+    "repeat_policy": "No automatic repeat-until-pass; each declared repeat is evidence. Infrastructure failures retained and separately classified.",
+    "timeout_seconds": {
+      "each_build": 240,
+      "native_total_execution": 120,
+      "sanitized_total_execution": 180,
+      "arm_total_execution": 300
+    },
+    "metadata_output_cap_bytes": 33554432,
+    "PCM_retention": "No full PCM uploaded by default; retain stream hashes, bounded negative witness and all failures in same existing evidence path.",
+    "qualification_invocation": "Counts/limits apply to each complete invocation on one immutable execution source. Local partial targets are reported only as locally executed and cannot qualify missing Arm/sanitizer modes. PR and distinct pushed-main each require their own full invocation; no result inheritance or combined partial-pass claim.",
+    "per_invocation_total_targets": 3,
+    "build_invocations_per_full_qualification": {
+      "configure": 3,
+      "build": 3,
+      "per_target_outputs": "one unchanged-source static library and two test binaries (plain and observed); no repeated build-until-pass"
+    },
+    "added_stage_wall_deadline_seconds": 300,
+    "existing_job_timeout_minutes_unchanged": 15,
+    "artifact_closeout_reserve_seconds": 60,
+    "deadline_enforcement": "One monotonic outer300s deadline for all B3 configure/build/execute/verify children in each invocation. Every child timeout is min(its declared cap, remaining outer budget, remaining existing frontend-reference job budget minus60s archival reserve). Workflow records an existing-job15min deadline before qualification work; no timeout enlargement. If insufficient time or a required tool is absent, retain BLOCKED/FAILED evidence without auto-rerun, target omission, or green claim. Local partial invocation still uses this300s outer cap and reports only chosen executed targets.",
+    "observer_ram_cap_bytes": 262144,
+    "observer_storage": "At most600 frame records of at most384 bytes and at most8192 auxiliary bytes per active observed process, reuse per trace after outside-processing export. Compile-time sizeof checks and actual allocation totals recorded; no heap growth or I/O in frame wrapper. This instrumentation memory is separately reported and never folded into a claimed192KiB product budget.",
+    "counting_definition": "19800 counts successful composed SDK process_capture frames, not source-publication attempts. Isolated negative setup contributes exactly5 successful producer publications per target (N04: one Capture; N16: two Capture plus two PRESENT Render), zero composed frames. Record these separately and destroy only the explicitly labelled isolated negative fixture; no accepted case silently drops source frames."
+  },
+  "api_rejections": [
+    {
+      "id": "N01",
+      "case": "wrong capture owner ID",
+      "expect": "REJECT, no producer publication"
+    },
+    {
+      "id": "N02",
+      "case": "wrong Render source generation",
+      "expect": "REJECT, no producer publication"
+    },
+    {
+      "id": "N03",
+      "case": "capture sequence2 submitted when original owner requires first sequence1",
+      "expect": "REJECT, no producer publication"
+    },
+    {
+      "id": "N04",
+      "case": "enabled Render has no token after valid capture enqueue",
+      "expect": "PENDING/EMPTY; no tails/front-end/mono/output progress; not ABSENT"
+    },
+    {
+      "id": "N05",
+      "case": "reentry PRESENT at241 without required gap",
+      "expect": "REJECT before queue publication"
+    },
+    {
+      "id": "N06",
+      "case": "reentry gap with stale epoch1 rather than2",
+      "expect": "REJECT before queue publication"
+    },
+    {
+      "id": "N07",
+      "case": "ABSENT with reason0 rather than source-reported reason",
+      "expect": "REJECT before publication"
+    },
+    {
+      "id": "N08",
+      "case": "PRESENT reference length159 rather than160",
+      "expect": "REJECT before publication"
+    },
+    {
+      "id": "N09",
+      "case": "composed external output count159",
+      "expect": "REJECT before owner consume or mono mutation"
+    },
+    {
+      "id": "N10",
+      "case": "composed output aliases actual mono state arena",
+      "expect": "REJECT before owner consume or mono mutation"
+    },
+    {
+      "id": "N11",
+      "case": "bound owner source_generation deliberately changed from900001 to900002 before process",
+      "expect": "admission REJECT before owner/mono/output mutation; no clock reset or implicit rebind"
+    },
+    {
+      "id": "N12",
+      "case": "fresh mono config clears required NS stage from0xfd",
+      "expect": "configuration admission REJECT, not reduced-stage success"
+    },
+    {
+      "id": "N13",
+      "case": "fresh original source/owner bound at32000 rather than admitted16000",
+      "expect": "bind REJECT before state/output publication; no composed32k qualification"
+    },
+    {
+      "id": "N14",
+      "case": "attempt fresh bind using already-consumed original owner or mono processed state",
+      "expect": "bind REJECT without resetting or reusing source generation as fresh"
+    },
+    {
+      "id": "N15",
+      "case": "work_bytes one byte below the required original work size",
+      "expect": "precommit REJECT with same tails/front-end/mono/output"
+    },
+    {
+      "id": "N16",
+      "case": "submit to depth2 full owner queue",
+      "expect": "FULL/backpressure, no overwrite/publication/DSP progress"
+    }
+  ],
+  "rejection_snapshot_scope": "Evaluate once per target at fixed quiescent checkpoints already traversed by declared functional runs or fresh empty isolated fixtures. N05/N06 use the already reached before-frame241 checkpoint, N14 the already reached post-frame1 checkpoint; do not replay audio to create preconditions. Only N04/N16 make the explicitly counted5 extra successful setup source publications, no composed SDK frames. Compare relevant queue heads/tails/slots, B0/ref SRC, capture BF arena, complete mono arena, external output/receipt canaries; no snapshots while producers run.",
+  "semantic_mutations": [
+    "S01 replace ABSENT with PRESENT zero payload in a resealed receipt; frozen source-event/hash ledger rejects it, while genuine PRESENT silence remains legal at API level",
+    "S02 claim time-domain RES execution or remove actual frequency-RES coverage",
+    "S03 alter stage call count/order or actual gate argument lineage",
+    "S04 change source/effective-config/build identity",
+    "S05 delete an accepted frame or alter output stream hash/count",
+    "S06 erase explicit gap/reset event or claim external capture/BF reset across Render-only event",
+    "S07 alter observed/plain/direct-control equivalence witness",
+    "S08 set any public SDK/acoustic superiority/device/shipping qualification flag true"
+  ],
+  "acceptance": {
+    "primary": "All fixed functional source/ownership/timing/reject and real-stage consistency requirements hold in all3 targets, within each-build repeated and independent-control comparisons.",
+    "coverage": "Required actual estimator/gain/frequency-RES branches reached by fixed D0 fixture; otherwise honestly INCONCLUSIVE.",
+    "acoustic_metrics": "Record output levels, observed ERLE-valid frames, AEC/reset/underrun counts and failures descriptively only. No dB/quality/winner/latency-efficacy threshold.",
+    "latency_ledger": "Verify same profile: input SRC identity0, external FIR33 common22 samples, mono public latency10ms=160 samples; declared sum182 samples/11.375ms. This excludes queue/scheduler/device timing and is not a measured end-to-end deadline.",
+    "resource_ledger": "Report actual config-specific front-end arena, work/rollback, owner queue, mono state, observer/reference-control buffers, compiler stack/ELF and hosted elapsed by explicit scope. No192KiB or10ms SSC305 PASS."
+  },
+  "nonpromotion": [
+    "No public C4/3.x or modified 2.x API/ABI",
+    "No new selected algorithm/order/topology",
+    "No independent acoustics or C4 superiority",
+    "No 32/48k/UCA/C1/C2 composition claim from this leaf",
+    "No live capture/clock recovery qualification",
+    "No new APX3/rolling/durability result",
+    "No complete process resource/SSC305/HIL/E001/shipping qualification"
+  ]
+}

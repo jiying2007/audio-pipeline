@@ -63,6 +63,23 @@ jobs:
           export PKG_CONFIG_PATH="$PWD/stage/lib/pkgconfig:$PWD/stage/lib64/pkgconfig"
           cc tests/consumer/consumer.c -o /tmp/audio-pipeline-pc $(pkg-config --cflags --libs audio-pipeline)
           /tmp/audio-pipeline-pc
+      - name: Verify relocated multiarch pkg-config core and runtime consumers
+        run: |
+          set -euo pipefail
+          cmake -S . -B build-sdk-multiarch -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_INSTALL_LIBDIR=lib/x86_64-linux-gnu \
+            -DAP_BUILD_TESTS=OFF -DAP_BUILD_BENCH=OFF -DAP_BUILD_EXAMPLES=OFF
+          cmake --build build-sdk-multiarch --parallel
+          cmake --install build-sdk-multiarch --prefix "$PWD/stage-multiarch"
+          mv stage-multiarch stage-multiarch-relocated
+          export PKG_CONFIG_PATH="$PWD/stage-multiarch-relocated/lib/x86_64-linux-gnu/pkgconfig"
+          for package in audio-pipeline audio-pipeline-runtime; do
+            pkg-config --exists "$package"
+            test "$(realpath -m "$(pkg-config --variable=prefix "$package")")" = "$PWD/stage-multiarch-relocated"
+            cc tests/consumer/consumer.c -o "/tmp/${package}-multiarch" \
+              $(pkg-config --cflags --libs "$package")
+            "/tmp/${package}-multiarch"
+          done
 
   sku-memory-rom:
     if: inputs.run_extended
@@ -151,7 +168,7 @@ jobs:
     if: inputs.run_extended
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:db214be9b1eb6d0b979811003f0fbd510a9adbee099a3e7fd7e8b2edcc481d50
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:69d38c66e09885b78eb3abba3f8b7dcc92363b71430dc39fc7f74978ffae2e57
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
@@ -201,7 +218,7 @@ jobs:
     if: inputs.run_extended
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:db214be9b1eb6d0b979811003f0fbd510a9adbee099a3e7fd7e8b2edcc481d50
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:69d38c66e09885b78eb3abba3f8b7dcc92363b71430dc39fc7f74978ffae2e57
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
@@ -225,7 +242,7 @@ jobs:
   static-analysis:
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:db214be9b1eb6d0b979811003f0fbd510a9adbee099a3e7fd7e8b2edcc481d50
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:69d38c66e09885b78eb3abba3f8b7dcc92363b71430dc39fc7f74978ffae2e57
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
@@ -258,11 +275,82 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     container:
-      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:db214be9b1eb6d0b979811003f0fbd510a9adbee099a3e7fd7e8b2edcc481d50
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:69d38c66e09885b78eb3abba3f8b7dcc92363b71430dc39fc7f74978ffae2e57
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
     steps:
+      - name: Record actual existing frontend-reference job deadline
+        shell: bash
+        env:
+          GH_READ_TOKEN: ${{ github.token }}
+        run: |
+          python3 - <<'PY'
+          import datetime
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+          import time
+          import urllib.request
+
+          # This is the first executable step, before checkout or qualification.
+          # Observe Actions' real job start; never restart a 15-minute clock at B3.
+          path = Path(os.environ['RUNNER_TEMP']) / 'fe09-frontend-job-deadline.json'
+          observation = Path(os.environ['RUNNER_TEMP']) / 'fe09-frontend-job-observation'
+          observation.mkdir()
+          record = {'schema_version': 1, 'status': 'BLOCKED',
+                    'run_id': int(os.environ['GITHUB_RUN_ID']),
+                    'run_attempt': int(os.environ['GITHUB_RUN_ATTEMPT']),
+                    'observed_at_epoch': time.time(), 'timeout_minutes': 15,
+                    'archive_reserve_seconds': 60}
+          try:
+              repo = os.environ['GITHUB_REPOSITORY']
+              if repo != 'jiying2007/audio-pipeline':
+                  raise ValueError('REPOSITORY_IDENTITY')
+              url = (f'https://api.github.com/repos/{repo}/actions/runs/'
+                     f'{record["run_id"]}/attempts/{record["run_attempt"]}/jobs?per_page=100')
+              request = urllib.request.Request(url, headers={
+                  'Accept': 'application/vnd.github+json',
+                  'Authorization': 'Bearer ' + os.environ['GH_READ_TOKEN'],
+                  'X-GitHub-Api-Version': '2022-11-28'})
+              with urllib.request.urlopen(request, timeout=15) as response:
+                  body = response.read(2097153)
+                  status = response.status
+              (observation / 'jobs.json').write_bytes(body)
+              metadata = {'schema_version': 1, 'repository': repo,
+                          'run_id': record['run_id'], 'run_attempt': record['run_attempt'],
+                          'endpoint': url, 'api_version': '2022-11-28', 'response_status': status,
+                          'request_started_epoch': record['observed_at_epoch'],
+                          'response_observed_epoch': time.time(), 'body_bytes': len(body),
+                          'body_sha256': hashlib.sha256(body).hexdigest()}
+              (observation / 'request.json').write_text(json.dumps(metadata, sort_keys=True) + '\n')
+              if status != 200 or not 0 < len(body) <= 2097152:
+                  raise ValueError('ACTUAL_JOB_API_RESPONSE_BOUND')
+              jobs = json.loads(body)['jobs']
+              matches = [j for j in jobs if j.get('name') in
+                         ('frontend-reference', 'quality / frontend-reference')
+                         and j.get('status') == 'in_progress']
+              if len(matches) != 1:
+                  raise ValueError('ACTUAL_JOB_START_NOT_UNIQUE_OR_VISIBLE')
+              job = matches[0]
+              started = datetime.datetime.fromisoformat(
+                  job['started_at'].replace('Z', '+00:00')).timestamp()
+              if not 0 < started <= time.time():
+                  raise ValueError('ACTUAL_JOB_START_INVALID')
+              record.update(status='OBSERVED_ACTUAL_JOB_START', job_id=job['id'],
+                            job_name=job['name'], started_at=job['started_at'],
+                            started_at_epoch=started, deadline_epoch=started + 900)
+          except Exception as error:
+              # Existing predecessor work can continue; B3 must retain BLOCKED
+              # evidence if the actual original deadline could not be observed.
+              record['failure'] = type(error).__name__ + ': ' + str(error)
+          path.write_text(json.dumps(record, sort_keys=True) + '\n')
+          with open(os.environ['GITHUB_ENV'], 'a') as environment:
+              environment.write('FE_FRONTEND_JOB_DEADLINE_FILE=' + str(path) + '\n')
+              environment.write('FE_FRONTEND_JOB_API_OBSERVATION_DIR=' + str(observation) + '\n')
+          print('FE09_ORIGINAL_JOB_DEADLINE', record['status'])
+          PY
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           fetch-depth: 0
@@ -779,6 +867,78 @@ jobs:
           path: fe-doa-a1/
           if-no-files-found: error
           retention-days: 30
+      - name: Qualify exact-version FE09 B3-F0 functional CALL Render absence and reentry
+        id: fe09_b3_f0
+        shell: bash
+        run: |
+          set -euo pipefail
+          # The immutable 2.3.56 R1 science remains the only R1 executor.
+          # Registered 2.3.57/2.3.58 require a separately reviewed new R2
+          # source identity and a fresh full B3 run; unknown versions fail.
+          version=$(sed -nE 's/^project\(audio_pipeline VERSION ([0-9]+\.[0-9]+\.[0-9]+) LANGUAGES C\).*$/\1/p' CMakeLists.txt)
+          case "$version" in
+            2.3.56)
+              script=tests/validation/frontend_evolution/fe09_b3_f0_deadline_r1_qualification.py
+              source_kind=deadline-r1 ;;
+            2.3.57|2.3.58)
+              script=tests/validation/frontend_evolution/fe09_b3_f0_deadline_r2_qualification.py
+              source_kind=forward-r2 ;;
+            *) echo "UNREGISTERED_B3_SCIENCE_EXECUTION_VERSION:$version" >&2; exit 2 ;;
+          esac
+          echo "source_kind=$source_kind" >> "$GITHUB_OUTPUT"
+          python3 "$script" --self-test
+          python3 "$script" --collect --output fe09-b3-f0 --execution-source "$GITHUB_SHA"
+      - name: Preserve FE09 B3-F0 deadline R1 exact-run composition evidence and failures
+        if: always() && (steps.fe09_b3_f0.outcome == 'success' || steps.fe09_b3_f0.outcome == 'failure') && steps.fe09_b3_f0.outputs.source_kind == 'deadline-r1'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: frontend-fe09-b3-f0-deadline-r1-${{ github.run_id }}-attempt-${{ github.run_attempt }}
+          path: fe09-b3-f0/
+          if-no-files-found: error
+          retention-days: 30
+      - name: Preserve distinct FE09 B3-F0 R2 exact-run evidence and failures
+        if: always() && (steps.fe09_b3_f0.outcome == 'success' || steps.fe09_b3_f0.outcome == 'failure') && steps.fe09_b3_f0.outputs.source_kind == 'forward-r2'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: frontend-fe09-b3-f0-forward-r2-${{ github.run_id }}-attempt-${{ github.run_attempt }}
+          path: fe09-b3-f0/
+          if-no-files-found: error
+          retention-days: 30
+      - name: Characterize exact-version FE09 actual CALL process resources and frame costs
+        id: fe09_t3s3_f0
+        shell: bash
+        run: |
+          set -euo pipefail
+          version=$(sed -nE 's/^project\(audio_pipeline VERSION ([0-9]+\.[0-9]+\.[0-9]+) LANGUAGES C\).*$/\1/p' CMakeLists.txt)
+          case "$version" in
+            2.3.56)
+              script=tests/validation/frontend_evolution/fe09_t3s3_f0_call_resource_qualification.py
+              source_kind=original-v1 ;;
+            2.3.57|2.3.58)
+              script=tests/validation/frontend_evolution/fe09_t3s3_f0_call_resource_r2_qualification.py
+              source_kind=forward-r2 ;;
+            *) echo "UNREGISTERED_F0_RESOURCE_EXECUTION_VERSION:$version" >&2; exit 2 ;;
+          esac
+          echo "source_kind=$source_kind" >> "$GITHUB_OUTPUT"
+          python3 "$script" --self-test
+          python3 "$script" --collect --output fe09-t3s3-f0 --execution-source "$GITHUB_SHA" \
+            --toolchain-image ghcr.io/jiying2007/audio-pipeline-ci@sha256:69d38c66e09885b78eb3abba3f8b7dcc92363b71430dc39fc7f74978ffae2e57
+      - name: Preserve FE09 actual CALL original resource evidence and failures
+        if: always() && (steps.fe09_t3s3_f0.outcome == 'success' || steps.fe09_t3s3_f0.outcome == 'failure') && steps.fe09_t3s3_f0.outputs.source_kind == 'original-v1'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: frontend-fe09-t3s3-f0-${{ github.run_id }}-attempt-${{ github.run_attempt }}
+          path: fe09-t3s3-f0/
+          if-no-files-found: error
+          retention-days: 30
+      - name: Preserve distinct FE09 F0 R2 actual CALL process evidence and failures
+        if: always() && (steps.fe09_t3s3_f0.outcome == 'success' || steps.fe09_t3s3_f0.outcome == 'failure') && steps.fe09_t3s3_f0.outputs.source_kind == 'forward-r2'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: frontend-fe09-t3s3-f0-forward-r2-${{ github.run_id }}-attempt-${{ github.run_attempt }}
+          path: fe09-t3s3-f0/
+          if-no-files-found: error
+          retention-days: 30
       - name: Preserve reference evidence and failures
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -793,7 +953,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     container:
-      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:db214be9b1eb6d0b979811003f0fbd510a9adbee099a3e7fd7e8b2edcc481d50
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:69d38c66e09885b78eb3abba3f8b7dcc92363b71430dc39fc7f74978ffae2e57
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
@@ -906,7 +1066,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 18
     container:
-      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:db214be9b1eb6d0b979811003f0fbd510a9adbee099a3e7fd7e8b2edcc481d50
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:69d38c66e09885b78eb3abba3f8b7dcc92363b71430dc39fc7f74978ffae2e57
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
@@ -1016,7 +1176,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 18
     container:
-      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:db214be9b1eb6d0b979811003f0fbd510a9adbee099a3e7fd7e8b2edcc481d50
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:69d38c66e09885b78eb3abba3f8b7dcc92363b71430dc39fc7f74978ffae2e57
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
@@ -1126,7 +1286,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 22
     container:
-      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:db214be9b1eb6d0b979811003f0fbd510a9adbee099a3e7fd7e8b2edcc481d50
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:69d38c66e09885b78eb3abba3f8b7dcc92363b71430dc39fc7f74978ffae2e57
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
@@ -1238,7 +1398,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     container:
-      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:db214be9b1eb6d0b979811003f0fbd510a9adbee099a3e7fd7e8b2edcc481d50
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:69d38c66e09885b78eb3abba3f8b7dcc92363b71430dc39fc7f74978ffae2e57
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
@@ -1363,7 +1523,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     container:
-      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:db214be9b1eb6d0b979811003f0fbd510a9adbee099a3e7fd7e8b2edcc481d50
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:69d38c66e09885b78eb3abba3f8b7dcc92363b71430dc39fc7f74978ffae2e57
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
@@ -1453,7 +1613,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     container:
-      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:db214be9b1eb6d0b979811003f0fbd510a9adbee099a3e7fd7e8b2edcc481d50
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:69d38c66e09885b78eb3abba3f8b7dcc92363b71430dc39fc7f74978ffae2e57
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
@@ -1529,7 +1689,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     container:
-      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:db214be9b1eb6d0b979811003f0fbd510a9adbee099a3e7fd7e8b2edcc481d50
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:69d38c66e09885b78eb3abba3f8b7dcc92363b71430dc39fc7f74978ffae2e57
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
@@ -1608,7 +1768,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     container:
-      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:db214be9b1eb6d0b979811003f0fbd510a9adbee099a3e7fd7e8b2edcc481d50
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:69d38c66e09885b78eb3abba3f8b7dcc92363b71430dc39fc7f74978ffae2e57
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
@@ -1701,7 +1861,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     container:
-      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:db214be9b1eb6d0b979811003f0fbd510a9adbee099a3e7fd7e8b2edcc481d50
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:69d38c66e09885b78eb3abba3f8b7dcc92363b71430dc39fc7f74978ffae2e57
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
@@ -1776,7 +1936,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     container:
-      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:db214be9b1eb6d0b979811003f0fbd510a9adbee099a3e7fd7e8b2edcc481d50
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:69d38c66e09885b78eb3abba3f8b7dcc92363b71430dc39fc7f74978ffae2e57
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
@@ -1852,7 +2012,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     container:
-      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:db214be9b1eb6d0b979811003f0fbd510a9adbee099a3e7fd7e8b2edcc481d50
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:69d38c66e09885b78eb3abba3f8b7dcc92363b71430dc39fc7f74978ffae2e57
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
@@ -1929,7 +2089,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     container:
-      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:db214be9b1eb6d0b979811003f0fbd510a9adbee099a3e7fd7e8b2edcc481d50
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:69d38c66e09885b78eb3abba3f8b7dcc92363b71430dc39fc7f74978ffae2e57
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
@@ -2008,7 +2168,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     container:
-      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:db214be9b1eb6d0b979811003f0fbd510a9adbee099a3e7fd7e8b2edcc481d50
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:69d38c66e09885b78eb3abba3f8b7dcc92363b71430dc39fc7f74978ffae2e57
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
@@ -2085,7 +2245,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     container:
-      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:db214be9b1eb6d0b979811003f0fbd510a9adbee099a3e7fd7e8b2edcc481d50
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:69d38c66e09885b78eb3abba3f8b7dcc92363b71430dc39fc7f74978ffae2e57
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
@@ -2174,7 +2334,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     container:
-      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:db214be9b1eb6d0b979811003f0fbd510a9adbee099a3e7fd7e8b2edcc481d50
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:69d38c66e09885b78eb3abba3f8b7dcc92363b71430dc39fc7f74978ffae2e57
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
@@ -2446,7 +2606,7 @@ jobs:
     needs: [frontend-reference, frontend-gate-guard]
     runs-on: ubuntu-24.04
     container:
-      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:db214be9b1eb6d0b979811003f0fbd510a9adbee099a3e7fd7e8b2edcc481d50
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:69d38c66e09885b78eb3abba3f8b7dcc92363b71430dc39fc7f74978ffae2e57
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
@@ -2501,7 +2661,7 @@ jobs:
     needs: frontend-spatial
     runs-on: ubuntu-24.04
     container:
-      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:db214be9b1eb6d0b979811003f0fbd510a9adbee099a3e7fd7e8b2edcc481d50
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:69d38c66e09885b78eb3abba3f8b7dcc92363b71430dc39fc7f74978ffae2e57
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
@@ -2546,7 +2706,7 @@ jobs:
     needs: frontend-gate-guard
     runs-on: ubuntu-24.04
     container:
-      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:db214be9b1eb6d0b979811003f0fbd510a9adbee099a3e7fd7e8b2edcc481d50
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:69d38c66e09885b78eb3abba3f8b7dcc92363b71430dc39fc7f74978ffae2e57
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
@@ -2597,7 +2757,7 @@ jobs:
     needs: frontend-sync-faults
     runs-on: ubuntu-24.04
     container:
-      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:db214be9b1eb6d0b979811003f0fbd510a9adbee099a3e7fd7e8b2edcc481d50
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:69d38c66e09885b78eb3abba3f8b7dcc92363b71430dc39fc7f74978ffae2e57
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
@@ -2636,7 +2796,7 @@ jobs:
     needs: frontend-sync-route-reset
     runs-on: ubuntu-24.04
     container:
-      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:db214be9b1eb6d0b979811003f0fbd510a9adbee099a3e7fd7e8b2edcc481d50
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:69d38c66e09885b78eb3abba3f8b7dcc92363b71430dc39fc7f74978ffae2e57
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
@@ -2682,7 +2842,7 @@ jobs:
     needs: frontend-sync-timestamp-authority
     runs-on: ubuntu-24.04
     container:
-      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:db214be9b1eb6d0b979811003f0fbd510a9adbee099a3e7fd7e8b2edcc481d50
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:69d38c66e09885b78eb3abba3f8b7dcc92363b71430dc39fc7f74978ffae2e57
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
@@ -2735,7 +2895,7 @@ jobs:
     needs: frontend-sync-timestamp-authority
     runs-on: ubuntu-24.04
     container:
-      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:db214be9b1eb6d0b979811003f0fbd510a9adbee099a3e7fd7e8b2edcc481d50
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:69d38c66e09885b78eb3abba3f8b7dcc92363b71430dc39fc7f74978ffae2e57
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
@@ -2788,7 +2948,7 @@ jobs:
     needs: frontend-aec-res-collab
     runs-on: ubuntu-24.04
     container:
-      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:db214be9b1eb6d0b979811003f0fbd510a9adbee099a3e7fd7e8b2edcc481d50
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:69d38c66e09885b78eb3abba3f8b7dcc92363b71430dc39fc7f74978ffae2e57
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
@@ -2845,7 +3005,7 @@ jobs:
     needs: frontend-res-immediate-dt
     runs-on: ubuntu-24.04
     container:
-      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:db214be9b1eb6d0b979811003f0fbd510a9adbee099a3e7fd7e8b2edcc481d50
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:69d38c66e09885b78eb3abba3f8b7dcc92363b71430dc39fc7f74978ffae2e57
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
@@ -2891,7 +3051,7 @@ jobs:
     needs: frontend-res-oracle-near-bound
     runs-on: ubuntu-24.04
     container:
-      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:db214be9b1eb6d0b979811003f0fbd510a9adbee099a3e7fd7e8b2edcc481d50
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:69d38c66e09885b78eb3abba3f8b7dcc92363b71430dc39fc7f74978ffae2e57
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
@@ -2948,7 +3108,7 @@ jobs:
     needs: frontend-ns-frequency-res
     runs-on: ubuntu-24.04
     container:
-      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:db214be9b1eb6d0b979811003f0fbd510a9adbee099a3e7fd7e8b2edcc481d50
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:69d38c66e09885b78eb3abba3f8b7dcc92363b71430dc39fc7f74978ffae2e57
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}

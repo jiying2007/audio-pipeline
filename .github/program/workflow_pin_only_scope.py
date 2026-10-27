@@ -36,10 +36,11 @@ TRUSTED = {
 # Historical T0/M0 evidence is immutable. A later source review must select its
 # own exact transitions; neither a version tag nor an arbitrary target is policy.
 HISTORICAL_REVIEW = "historical-t0"
-CURRENT_REVIEW = "2026-10-20"
+PREVIOUS_REVIEW = "2026-10-20"
+CURRENT_REVIEW = "2026-10-24"
 REVIEWED = {
     HISTORICAL_REVIEW: TRUSTED,
-    CURRENT_REVIEW: {
+    PREVIOUS_REVIEW: {
         "actions/upload-artifact": TRUSTED["actions/upload-artifact"],
         "github/codeql-action/init": (
             "2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2",
@@ -47,6 +48,15 @@ REVIEWED = {
         "github/codeql-action/analyze": (
             "2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2",
             "6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee", "# v4"),
+    },
+    CURRENT_REVIEW: {
+        "actions/upload-artifact": TRUSTED["actions/upload-artifact"],
+        "github/codeql-action/init": (
+            "2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2",
+            "9b3254085494b55a0f7c4c2b3d2d52cc712ce370", "# v4"),
+        "github/codeql-action/analyze": (
+            "2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2",
+            "9b3254085494b55a0f7c4c2b3d2d52cc712ce370", "# v4"),
     },
 }
 SHA = re.compile(r"[0-9a-f]{40}")
@@ -463,6 +473,18 @@ def self_test() -> None:
             classify_text(before, current_after.replace(current_codeql, "e" * 40),
                           review=CURRENT_REVIEW) is None,
             "UNREVIEWED_CURRENT_PIN_ADMITTED")
+    # Each source review keeps its own exact CodeQL target. In particular the
+    # real October 24 bot target must remain denied by the October 20 review.
+    require(REVIEWED[PREVIOUS_REVIEW]["github/codeql-action/init"][1] ==
+            "6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee",
+            "PREVIOUS_REVIEW_REWRITTEN")
+    for proposed in (HISTORICAL_REVIEW, PREVIOUS_REVIEW, CURRENT_REVIEW):
+        proposed_pin = REVIEWED[proposed]["github/codeql-action/init"][1]
+        proposed_after = after.replace(new_codeql, proposed_pin)
+        for selected in (HISTORICAL_REVIEW, PREVIOUS_REVIEW, CURRENT_REVIEW):
+            accepted = classify_text(before, proposed_after, review=selected) is not None
+            require(accepted == (proposed == selected),
+                    "CROSS_REVIEW_TARGET_ADMISSION_" + proposed + "_" + selected)
     try:
         classify_text(before, current_after, review="future-unreviewed")
     except ScopeError:
@@ -470,7 +492,7 @@ def self_test() -> None:
     else:
         raise ScopeError("UNKNOWN_REVIEW_ADMITTED")
     print("WORKFLOW_PIN_ONLY_CLASSIFIER_SELF_TEST_PASS negatives=" +
-          str(len(mutations) + 12 + len(nonstep_sources)))
+          str(len(mutations) + 18 + len(nonstep_sources)) + " review_cross_controls=9")
 
 
 def main() -> None:

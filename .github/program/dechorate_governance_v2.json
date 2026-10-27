@@ -1,0 +1,83 @@
+{
+  "allowed_change_paths": [
+    ".github/program/dechorate_governance_v2.py",
+    ".github/program/test_dechorate_governance_v2.py",
+    ".github/program/dechorate_governance_v2.json",
+    ".github/program/T1_DECHORATE_GOVERNANCE_V2.md",
+    ".github/workflows/ci-dechorate-governance-evidence.yml",
+    ".github/scripts/verify-docs-gate.sh",
+    ".github/program/dechorate_event_source_t1m3.py",
+    ".github/program/dechorate_event_source_t1m3.json",
+    ".github/program/test_dechorate_event_source_t1m3.py"
+  ],
+  "base_sha": "5187c5e59526d4047b3965b44c770ab21edbde9f",
+  "budgets": {
+    "artifact_download_seconds": 45,
+    "max_artifact_page_items": 99,
+    "max_producer_page_items": 99,
+    "producer_job_minutes": 8,
+    "public_http_seconds": 15,
+    "receipt_bytes": 96000,
+    "zip_bytes": 180000
+  },
+  "candidate_id": "DECHORATE_GOVERNANCE_TRANSPORT_V2_F0",
+  "canonical_pr": 833,
+  "consumer_attempts": {
+    "pull_request": [
+      1,
+      2
+    ],
+    "push": [
+      1,
+      2
+    ]
+  },
+  "current_decision": "SOURCE_ONLY_PENDING_REAL_HOSTED_PROTOCOL_AND_INDEPENDENT_READBACK",
+  "execution_closure": [
+    ".github/program/dechorate_governance_v2.py",
+    ".github/program/dechorate_governance_v2.json",
+    ".github/workflows/ci-dechorate-governance-evidence.yml",
+    ".github/program/dechorate_event_source_t1m3.py",
+    ".github/program/dechorate_event_source_t1m3.json",
+    "scripts/github_governance.py",
+    ".github/program/workflow_pin_pr_consumer.py",
+    ".github/program/workflow_pin_only_actual_tree_t1m1.py",
+    ".github/program/workflow_pin_only_scope.py",
+    ".github/program/workflow_pin_only_bot714_20261020.json"
+  ],
+  "existing_dependencies": {
+    ".github/program/dechorate_event_source_t1m3.py": "dfa8fe7730590a8cd8ce97392e7fd072763fec59b3bae53581cfed93f34c7300",
+    ".github/program/dechorate_event_source_t1m3.json": "687f506a0c742aa600596a77781adffcc083524549cc04dee9808e6eb7bd165e",
+    "scripts/github_governance.py": "c292105f27126e643f8984bd0ecb52faf7beac83ddeffff9413b97a68893c4fa",
+    ".github/program/workflow_pin_pr_consumer.py": "be63c093dac9125ac7c2603b69ea1c8211705eea1a8d143b110a3f0c01d5dab7",
+    ".github/program/workflow_pin_only_actual_tree_t1m1.py": "156c2f14f02c12fe11de83d52f4c3e54a84e2ebbb558b5dd387a023d547299dc",
+    ".github/program/workflow_pin_only_scope.py": "257eaca86109021ea33e2dc3191fcc9326cbee361c22c9b0c6e88862f7f8f1db",
+    ".github/program/workflow_pin_only_bot714_20261020.json": "47ac0756f4989f619403f3689ce3fc305ec82469730da908559937ef03f86abb"
+  },
+  "maintenance_push_admission_enabled": false,
+  "new_source_identity": "exact protected Git commit D; all new files bound by Git mode/blob/length/SHA256 without self-hash",
+  "original_failure": {
+    "artifact_id": 12526094926,
+    "attempt": 1,
+    "pr": 833,
+    "reason": "MAIN_RULESET_IDENTITY_OR_BYPASS_DRIFT",
+    "run_id": 40013222347
+  },
+  "producer_attempts": [
+    1
+  ],
+  "production_admission_enabled": false,
+  "schema_version": 2,
+  "scientific_experiment_executed": false,
+  "scope": "source-only; authenticated PRE/POST for measured canonical833 PR and single-parent merged main push; no M3 skip",
+  "historical_existing_dependencies": {
+    ".github/program/dechorate_event_source_t1m3.json": "d01181f971569a60579067b4c8a3ce428525570e6e451368bd08708eac43f928",
+    ".github/program/dechorate_event_source_t1m3.py": "8002174cd3a5418fffb400da811dc35d684ee7a2293e2f8c25422838cd64cff3",
+    ".github/program/workflow_pin_only_actual_tree_t1m1.py": "6d080c55e0334b96279f826e1615802cf1a8b58d57c1d9c8900900560d25ffd7",
+    ".github/program/workflow_pin_only_bot714_20261020.json": "47ac0756f4989f619403f3689ce3fc305ec82469730da908559937ef03f86abb",
+    ".github/program/workflow_pin_only_scope.py": "fcce117736d32a2cafd3c95fc93a27f906f40b64f632116cd90e8ba1759d68cb",
+    ".github/program/workflow_pin_pr_consumer.py": "be63c093dac9125ac7c2603b69ea1c8211705eea1a8d143b110a3f0c01d5dab7",
+    "scripts/github_governance.py": "c292105f27126e643f8984bd0ecb52faf7beac83ddeffff9413b97a68893c4fa"
+  },
+  "forward_review_scope": "source-only: exact 2026-10-25 protected-main program evolution, original historical M2 pins retained; offline fixtures updated; no measured PRE/POST or shipping promotion"
+}

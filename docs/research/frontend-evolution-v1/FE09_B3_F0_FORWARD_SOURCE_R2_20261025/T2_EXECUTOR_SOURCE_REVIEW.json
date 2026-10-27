@@ -1,0 +1,89 @@
+{
+  "schema_version": 1,
+  "identity": "FE09-B3-F0-FORWARD-SOURCE-R2-T2-EXECUTOR-REVIEW",
+  "authority": "SOURCE_CODE_ONLY_BEFORE_ANY_R2_DSP_EXECUTION",
+  "prerequisite_protected_main": "82065957e65931f47e3873c498aeb80faf2d9ab4",
+  "original_r1_source_lock_sha256": "32bd625ee640bf60310bcdc9980a5f8a41711300aee66f029fbf65c98a9bb49d",
+  "original_f0_source_lock_sha256": "16cd84381647bef1015fc8ef338bb9b10dd09ce4669248355ac4f48745d8a4ff",
+  "prereg_source_git_blob": "7ed23487462d0a011a06255d1886eccfec385a63",
+  "independent_t1_git_blob": "6b9e9e5e3e044aa586420be3b3aadd229a90b67f",
+  "source_pairs": [
+    {
+      "kind": "B3",
+      "original": "tests/validation/frontend_evolution/fe09_b3_f0_deadline_r1_qualification.py",
+      "original_git_blob": "54dab4274df8044dbbd23bf05ef169bd21123c74",
+      "candidate": "tests/validation/frontend_evolution/fe09_b3_f0_deadline_r2_qualification.py",
+      "candidate_git_blob": "d94fa5ffc568945a5ee2a92d2f8761ec7df0c91c",
+      "allowed_changed_functions": [
+        "source_preflight",
+        "self_test",
+        "main"
+      ],
+      "immutable_scientific_functions": true
+    },
+    {
+      "kind": "F0",
+      "original": "tests/validation/frontend_evolution/fe09_t3s3_f0_call_resource_qualification.py",
+      "original_git_blob": "e22cc4f0eede6e844b985e0bece8e9dcbf2e02cd",
+      "candidate": "tests/validation/frontend_evolution/fe09_t3s3_f0_call_resource_r2_qualification.py",
+      "candidate_git_blob": "8ac87edbbd89289ec4b6fc2739af6460a6fd01d0",
+      "allowed_changed_functions": [
+        "check_locked_rows",
+        "source_record",
+        "self_test",
+        "main"
+      ],
+      "immutable_scientific_functions": true
+    }
+  ],
+  "locked_derivation_checker_git_blob": "d0965732f7656dcc1c782e3813c6c32d5d9af2f5",
+  "version_behavior": {
+    "2.3.56": "UNCHANGED_R1_B3_AND_F0_ONLY",
+    "2.3.57": "R2_B3_AND_R2_F0_EXACT_TWO_SOURCE_EXCEPTIONS",
+    "2.3.58": "R2_B3_AND_R2_F0_EXACT_FOUR_SOURCE_EXCEPTIONS",
+    "other": "FAIL_CLOSED"
+  },
+  "fixed_b3": {
+    "targets": [
+      "native",
+      "sanitized",
+      "arm"
+    ],
+    "trajectories_per_target": 11,
+    "frames_per_trajectory": 600,
+    "required_frames": 19800,
+    "required_api_negatives": 48,
+    "semantic_negatives": 8,
+    "outer_budget_seconds": 300,
+    "target_budget_seconds": {
+      "native": 120,
+      "sanitized": 180,
+      "arm": 300
+    },
+    "job_timeout_seconds": 900,
+    "reserve_seconds": 60,
+    "artifact_cap_bytes": 33554432
+  },
+  "fixed_f0": {
+    "targets": [
+      "native",
+      "sanitized",
+      "arm"
+    ],
+    "processes": 36,
+    "frames_per_process": 600,
+    "frames": 21600,
+    "statistics_groups": 144,
+    "original_host_wait4_and_target_budget_rules_unchanged": true
+  },
+  "exact_ci_runs_required": true,
+  "r2_b3_frames_executed": 0,
+  "r2_f0_frames_executed": 0,
+  "independent_replay_accepted": false,
+  "public_four_microphone_sdk_qualified": false,
+  "ssc305_hil_qualified": false,
+  "device_product_or_shipping_promotion": false,
+  "commercial_source_redistribution_authorized": false,
+  "original_r1_receipts_unchanged": true,
+  "source_quality_thresholds_relaxed": false
+}

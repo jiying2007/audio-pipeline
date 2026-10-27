@@ -1,0 +1,31 @@
+{
+  "baseline": "5187c5e59526d4047b3965b44c770ab21edbde9f",
+  "release": {
+    "attempt": 1,
+    "conclusion": "success",
+    "convergence_conclusion": "success",
+    "convergence_job_id": 120911401408,
+    "existing_release_identity": "EXISTING_RELEASE_IDENTITY_PASS",
+    "head_sha": "5187c5e59526d4047b3965b44c770ab21edbde9f",
+    "release_job_id": 120911351432,
+    "run_id": 40107235174,
+    "url": "https://github.com/jiying2007/audio-pipeline/actions/runs/40107235174/attempts/1"
+  },
+  "schema_version": 1,
+  "status": "INDEPENDENT_PREDECESSOR_VERIFIED_BEFORE_FIRST_RESOURCE_EXECUTION",
+  "toolchain_image": "ghcr.io/jiying2007/audio-pipeline-ci@sha256:69d38c66e09885b78eb3abba3f8b7dcc92363b71430dc39fc7f74978ffae2e57",
+  "verify": {
+    "attempt": 1,
+    "conclusion": "success",
+    "head_sha": "5187c5e59526d4047b3965b44c770ab21edbde9f",
+    "jobs": {
+      "skipped": 1,
+      "success": 80,
+      "total": 81
+    },
+    "run_id": 40104717635,
+    "summary_app_id": 15368,
+    "summary_id": 120911306166,
+    "url": "https://github.com/jiying2007/audio-pipeline/actions/runs/40104717635/attempts/1"
+  }
+}

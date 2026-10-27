@@ -1,0 +1,31 @@
+{
+  "identity": "FE09-F0-R2-T3-TIMING-DRIVER-IDENTITY-BRIDGE",
+  "authority": "SOURCE_ONLY_BEFORE_R2_F0_REEXECUTION",
+  "protected_predecessor_main": "6ed740697b0454a74054feb562637e2aee5129f0",
+  "original_f0_python_blob": "8ac87edbbd89289ec4b6fc2739af6460a6fd01d0",
+  "reviewed_f0_python_blob": "065cce6349842876b01ec3e410e2958bfa55eeab",
+  "original_probe_c_blob": "01e26892f18e5c64a7c74448817ed6c22e693bd7",
+  "original_r1_python_blob": "e22cc4f0eede6e844b985e0bece8e9dcbf2e02cd",
+  "original_t2_verifier_blob": "d0965732f7656dcc1c782e3813c6c32d5d9af2f5",
+  "original_t2_manifest_blob": "824e719aa30ce72130cf7f465eada1707280942f",
+  "observed_timing_driver_id": "FE09-T3S3-F0-ACTUAL-CALL-RESOURCE-V1",
+  "r2_collector_receipt_id": "FE09-T3S3-F0-ACTUAL-CALL-RESOURCE-FORWARD-SOURCE-R2",
+  "changed_function": "validate_timing",
+  "changed_statement": "driver ID comparison only; all other source bytes identical",
+  "runtime_dsp_source_changed": false,
+  "r1_source_or_evidence_changed": false,
+  "timing_budget_or_frame_count_relaxed": false,
+  "historical_failed_artifacts_retained": {
+    "850": {
+      "id": 12715125160,
+      "zip_sha256": "ca7161a1382739651c3a5968a25c9edbc690fca5121b4916320459e1d0618f27"
+    },
+    "851": {
+      "id": 12714824044,
+      "zip_sha256": "08d6a40f0c002ed8dbbb02d513bd73b8a6e8f9ae163252f5999925ac6a99c2d7"
+    }
+  },
+  "accepted_r2_f0_science_executions": 0,
+  "product_or_hardware_qualified": false,
+  "production_promotion_authorized": false
+}

@@ -850,35 +850,75 @@ jobs:
           path: fe-doa-a1/
           if-no-files-found: error
           retention-days: 30
-      - name: Qualify FE09 B3-F0 deadline R1 fixed C4 actual CALL Render absence and reentry
+      - name: Qualify exact-version FE09 B3-F0 functional CALL Render absence and reentry
         id: fe09_b3_f0
         shell: bash
         run: |
           set -euo pipefail
-          python3 tests/validation/frontend_evolution/fe09_b3_f0_deadline_r1_qualification.py --self-test
-          python3 tests/validation/frontend_evolution/fe09_b3_f0_deadline_r1_qualification.py \
-            --collect --output fe09-b3-f0 --execution-source "$GITHUB_SHA"
+          # The immutable 2.3.56 R1 science remains the only R1 executor.
+          # Registered 2.3.57/2.3.58 require a separately reviewed new R2
+          # source identity and a fresh full B3 run; unknown versions fail.
+          version=$(sed -nE 's/^project\(audio_pipeline VERSION ([0-9]+\.[0-9]+\.[0-9]+) LANGUAGES C\).*$/\1/p' CMakeLists.txt)
+          case "$version" in
+            2.3.56)
+              script=tests/validation/frontend_evolution/fe09_b3_f0_deadline_r1_qualification.py
+              source_kind=deadline-r1 ;;
+            2.3.57|2.3.58)
+              script=tests/validation/frontend_evolution/fe09_b3_f0_deadline_r2_qualification.py
+              source_kind=forward-r2 ;;
+            *) echo "UNREGISTERED_B3_SCIENCE_EXECUTION_VERSION:$version" >&2; exit 2 ;;
+          esac
+          echo "source_kind=$source_kind" >> "$GITHUB_OUTPUT"
+          python3 "$script" --self-test
+          python3 "$script" --collect --output fe09-b3-f0 --execution-source "$GITHUB_SHA"
       - name: Preserve FE09 B3-F0 deadline R1 exact-run composition evidence and failures
-        if: always() && (steps.fe09_b3_f0.outcome == 'success' || steps.fe09_b3_f0.outcome == 'failure')
+        if: always() && (steps.fe09_b3_f0.outcome == 'success' || steps.fe09_b3_f0.outcome == 'failure') && steps.fe09_b3_f0.outputs.source_kind == 'deadline-r1'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: frontend-fe09-b3-f0-deadline-r1-${{ github.run_id }}-attempt-${{ github.run_attempt }}
           path: fe09-b3-f0/
           if-no-files-found: error
           retention-days: 30
-      - name: Characterize finite FE09 actual CALL process resources and frame costs
+      - name: Preserve distinct FE09 B3-F0 R2 exact-run evidence and failures
+        if: always() && (steps.fe09_b3_f0.outcome == 'success' || steps.fe09_b3_f0.outcome == 'failure') && steps.fe09_b3_f0.outputs.source_kind == 'forward-r2'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: frontend-fe09-b3-f0-forward-r2-${{ github.run_id }}-attempt-${{ github.run_attempt }}
+          path: fe09-b3-f0/
+          if-no-files-found: error
+          retention-days: 30
+      - name: Characterize exact-version FE09 actual CALL process resources and frame costs
         id: fe09_t3s3_f0
         shell: bash
         run: |
           set -euo pipefail
-          python3 tests/validation/frontend_evolution/fe09_t3s3_f0_call_resource_qualification.py \
-            --collect --output fe09-t3s3-f0 --execution-source "$GITHUB_SHA" \
+          version=$(sed -nE 's/^project\(audio_pipeline VERSION ([0-9]+\.[0-9]+\.[0-9]+) LANGUAGES C\).*$/\1/p' CMakeLists.txt)
+          case "$version" in
+            2.3.56)
+              script=tests/validation/frontend_evolution/fe09_t3s3_f0_call_resource_qualification.py
+              source_kind=original-v1 ;;
+            2.3.57|2.3.58)
+              script=tests/validation/frontend_evolution/fe09_t3s3_f0_call_resource_r2_qualification.py
+              source_kind=forward-r2 ;;
+            *) echo "UNREGISTERED_F0_RESOURCE_EXECUTION_VERSION:$version" >&2; exit 2 ;;
+          esac
+          echo "source_kind=$source_kind" >> "$GITHUB_OUTPUT"
+          python3 "$script" --self-test
+          python3 "$script" --collect --output fe09-t3s3-f0 --execution-source "$GITHUB_SHA" \
             --toolchain-image ghcr.io/jiying2007/audio-pipeline-ci@sha256:69d38c66e09885b78eb3abba3f8b7dcc92363b71430dc39fc7f74978ffae2e57
       - name: Preserve FE09 actual CALL original resource evidence and failures
-        if: always() && (steps.fe09_t3s3_f0.outcome == 'success' || steps.fe09_t3s3_f0.outcome == 'failure')
+        if: always() && (steps.fe09_t3s3_f0.outcome == 'success' || steps.fe09_t3s3_f0.outcome == 'failure') && steps.fe09_t3s3_f0.outputs.source_kind == 'original-v1'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: frontend-fe09-t3s3-f0-${{ github.run_id }}-attempt-${{ github.run_attempt }}
+          path: fe09-t3s3-f0/
+          if-no-files-found: error
+          retention-days: 30
+      - name: Preserve distinct FE09 F0 R2 actual CALL process evidence and failures
+        if: always() && (steps.fe09_t3s3_f0.outcome == 'success' || steps.fe09_t3s3_f0.outcome == 'failure') && steps.fe09_t3s3_f0.outputs.source_kind == 'forward-r2'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: frontend-fe09-t3s3-f0-forward-r2-${{ github.run_id }}-attempt-${{ github.run_attempt }}
           path: fe09-t3s3-f0/
           if-no-files-found: error
           retention-days: 30

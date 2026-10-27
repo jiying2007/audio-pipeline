@@ -295,11 +295,22 @@ jobs:
         run: >-
           cmake -S . -B build-fuzz -DCMAKE_BUILD_TYPE=Debug
           -DAP_BUILD_FUZZ=ON -DAP_BUILD_TESTS=OFF -DAP_BUILD_BENCH=OFF
-          -DAP_BUILD_EXAMPLES=OFF -DAP_ENABLE_LINUX_RUNTIME=OFF
-      - name: Build and fuzz smoke
+          -DAP_BUILD_EXAMPLES=OFF -DAP_ENABLE_LINUX_RUNTIME=ON
+      - name: Build and fuzz instrumented core and runtime
         run: |
-          cmake --build build-fuzz --target ap_fuzz --parallel
-          ./build-fuzz/ap_fuzz -runs=2000 -max_len=4096
+          set -euo pipefail
+          cmake --build build-fuzz --target ap_fuzz ap_fuzz_runtime_commands ap_fuzz_flight_recorder --parallel
+          ./build-fuzz/ap_fuzz -runs=2000 -max_len=4096 2>&1 | tee /tmp/ap-fuzz-core.log
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          log = Path('/tmp/ap-fuzz-core.log').read_text()
+          counters = re.findall(r'Loaded\s+\d+\s+modules\s+\((\d+) inline 8-bit counters\)', log)
+          assert counters and int(counters[-1]) > 72, f'Fuzz core instrumentation missing: {counters}'
+          print(f'fuzz-core-counters={counters[-1]}')
+          PY
+          ./build-fuzz/ap_fuzz_runtime_commands -runs=1000 -max_len=256
+          ./build-fuzz/ap_fuzz_flight_recorder -runs=1000 -max_len=256
 
   alsa-compile:
     if: inputs.run_alsa

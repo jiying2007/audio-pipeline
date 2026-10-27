@@ -1,0 +1,72 @@
+name: dEchorate Governance Evidence V2
+
+on:
+  workflow_run:
+    workflows: [Research dEchorate Ground-Truth Diagnostic V1]
+    types: [completed]
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: dechorate-governance-v2-${{ github.event.workflow_run.id }}-${{ github.event.workflow_run.run_attempt }}
+  cancel-in-progress: false
+
+jobs:
+  observe:
+    if: >-
+      github.event_name == 'workflow_run' && github.ref == 'refs/heads/main' &&
+      github.event.workflow_run.head_repository.id == 1347377137 &&
+      (github.event.workflow_run.event == 'pull_request' || github.event.workflow_run.event == 'push')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - name: Check out only protected producer source
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Validate protected producer context
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir governance-v2-out
+          rc=0
+          python3 .github/program/dechorate_governance_v2.py preflight \
+            --event-file "$GITHUB_EVENT_PATH" --output governance-v2-out/context.json || rc=$?
+          if [ "$rc" -ne 0 ]; then
+            python3 - <<'PY'
+          import hashlib
+          from pathlib import Path
+          raw=Path('governance-v2-out/context.json').read_bytes()
+          target=Path('governance-v2-out/observation.json')
+          with target.open('xb') as stream:
+              stream.write(raw)
+          with target.with_name(target.name+'.sha256').open('x') as stream:
+              stream.write(hashlib.sha256(raw).hexdigest()+'  '+target.name+'\n')
+          PY
+            exit "$rc"
+          fi
+      - name: Collect authenticated governance observation
+        env:
+          GH_TOKEN: ${{ secrets.REPOSITORY_GOVERNANCE_TOKEN }}
+          REPOSITORY_METADATA_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 .github/program/dechorate_governance_v2.py acquire \
+            --context governance-v2-out/context.json --output governance-v2-out/observation.json
+      - name: Preserve authenticated observation
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: dechorate-governance-v2-${{ github.event.workflow_run.id }}-${{ github.event.workflow_run.run_attempt }}-${{ github.run_id }}
+          path: |
+            governance-v2-out/observation.json
+            governance-v2-out/observation.json.sha256
+          if-no-files-found: error
+          retention-days: 30

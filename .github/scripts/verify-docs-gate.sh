@@ -79,7 +79,9 @@ python3 tests/validation/frontend_evolution/fe09_b3_f0_r2_source_admission.py --
 python3 tests/validation/frontend_evolution/fe09_b3_f0_r2_source_admission.py --check
 # R2 T2 executor source audit only: both derivations retain byte-exact R1
 # scientific functions and immutable resource/error budgets; NO DSP is run.
-python3 tests/validation/frontend_evolution/fe09_b3_f0_r2_t2_derivation_contract.py --self-test
+# Source-only T3 verifier: runs original immutable T2 on frozen R2 and
+# admits exactly one independently registered C timing identity correction.
+python3 tests/validation/frontend_evolution/fe09_t3s3_f0_r2_t3_timing_identity_contract.py --self-test
 python3 tests/validation/frontend_evolution/fe09_b3_f0_deadline_r2_qualification.py --self-test
 python3 tests/validation/frontend_evolution/fe09_t3s3_f0_call_resource_r2_qualification.py --self-test
 python3 .github/program/workflow_pin_only_scope.py --self-test
@@ -87,6 +89,7 @@ python3 .github/program/workflow_pin_only_replay_t1.py --self-test
 python3 .github/program/workflow_pin_only_actual_tree_t1m1.py --self-test
 python3 .github/program/workflow_pin_pr_consumer.py --self-test
 python3 .github/program/test_dechorate_event_source_t1m3.py --self-test
+python3 .github/program/test_dechorate_governance_v2.py
 # Live GitHub bot Git-object probe only when this very qualifier is modified
 # in a PR. Avoid an external network dependency for unrelated Verify runs.
 if [ "${GITHUB_EVENT_NAME:-}" = pull_request ]; then

@@ -603,7 +603,7 @@ def statistics(values: list[int]) -> dict:
 
 
 def validate_timing(data: dict, case: str) -> dict:
-    need(data["schema_version"] == 1 and data["id"] == IDENTITY and data["case"] == case and
+    need(data["schema_version"] == 1 and data["id"] == "FE09-T3S3-F0-ACTUAL-CALL-RESOURCE-V1" and data["case"] == case and
          type(data["failed"]) is int and data["failed"] == 0 and data["completed_frames"] == 600,
          "TIMING_RUN_IDENTITY_OR_COMPLETENESS")
     need(data["clock_cpu"] == "CLOCK_THREAD_CPUTIME_ID" and data["clock_wall"] == "CLOCK_MONOTONIC",

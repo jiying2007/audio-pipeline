@@ -42,7 +42,7 @@ def need(ok: bool, why: str) -> None:
 
 
 def blob(raw: bytes) -> str:
-    return hashlib.sha1(b"blob " + str(len(raw)).encode() + b"\\0" + raw).hexdigest()
+    return hashlib.sha1(b"blob " + str(len(raw)).encode() + b"\0" + raw).hexdigest()
 
 
 def pinned(path: str, expected: str) -> bytes:

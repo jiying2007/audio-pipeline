@@ -45,6 +45,10 @@ target_link_libraries(app PRIVATE AudioPipeline::runtime)
 ```
 
 pkg-config consumer 也由 CI 从 clean install prefix 实际编译、链接和运行。
+`CMAKE_INSTALL_LIBDIR` / `CMAKE_INSTALL_INCLUDEDIR` 使用相对路径时，SDK 可以随
+安装前缀整体迁移，也支持 multiarch 库目录。绝对路径则作为固定安装位置原样写入
+pkg-config 文件；`cmake --install --prefix` 不会重定位这些绝对路径。两者混合配置
+也由实际 CMake 与 pkg-config consumer 验证。
 
 ## 3. Pipeline 同步处理
 

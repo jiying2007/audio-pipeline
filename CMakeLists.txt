@@ -601,6 +601,18 @@ else()
     set(_AP_PC_DIRECTORY "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/pkgconfig")
 endif()
 file(RELATIVE_PATH AP_PC_PREFIX_REL "${_AP_PC_DIRECTORY}" "${CMAKE_INSTALL_PREFIX}")
+# Absolute GNUInstallDirs paths describe fixed destinations; only relative
+# paths are rebased through the relocatable pkg-config prefix.
+if(IS_ABSOLUTE "${CMAKE_INSTALL_LIBDIR}")
+    set(AP_PC_LIBDIR "${CMAKE_INSTALL_LIBDIR}")
+else()
+    set(AP_PC_LIBDIR "\${prefix}/${CMAKE_INSTALL_LIBDIR}")
+endif()
+if(IS_ABSOLUTE "${CMAKE_INSTALL_INCLUDEDIR}")
+    set(AP_PC_INCLUDEDIR "${CMAKE_INSTALL_INCLUDEDIR}")
+else()
+    set(AP_PC_INCLUDEDIR "\${prefix}/${CMAKE_INSTALL_INCLUDEDIR}")
+endif()
 configure_file(cmake/audio-pipeline.pc.in
                ${CMAKE_CURRENT_BINARY_DIR}/audio-pipeline.pc @ONLY)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/audio-pipeline.pc

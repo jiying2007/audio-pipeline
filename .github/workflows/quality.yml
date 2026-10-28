@@ -90,6 +90,44 @@ jobs:
               $(pkg-config --cflags --libs "$package")
             "/tmp/${package}-multiarch"
           done
+      - name: Consume absolute and mixed GNUInstallDirs SDK layouts
+        run: |
+          set -euo pipefail
+          for layout in absolute absolute-lib absolute-include; do
+            root="$RUNNER_TEMP/sdk-$layout"
+            prefix="$root/prefix"
+            libdir=lib
+            includedir=include
+            libpath="$prefix/lib"
+            includepath="$prefix/include"
+            case "$layout" in
+              absolute|absolute-lib) libdir="$root/lib"; libpath="$libdir" ;;
+            esac
+            case "$layout" in
+              absolute|absolute-include) includedir="$root/include"; includepath="$includedir" ;;
+            esac
+            cmake -S . -B "build-sdk-$layout" -DCMAKE_BUILD_TYPE=Release \
+              -DCMAKE_INSTALL_PREFIX="$prefix" -DCMAKE_INSTALL_LIBDIR="$libdir" \
+              -DCMAKE_INSTALL_INCLUDEDIR="$includedir" \
+              -DAP_BUILD_TESTS=OFF -DAP_BUILD_BENCH=OFF -DAP_BUILD_EXAMPLES=OFF
+            cmake --build "build-sdk-$layout" --parallel
+            cmake --install "build-sdk-$layout"
+            export PKG_CONFIG_PATH="$libpath/pkgconfig"
+            for package in audio-pipeline audio-pipeline-runtime; do
+              test "$(realpath -m "$(pkg-config --variable=libdir "$package")")" = "$libpath"
+              test "$(realpath -m "$(pkg-config --variable=includedir "$package")")" = "$includepath"
+            done
+            cc tests/consumer/consumer.c -o "$root/core-consumer" \
+              $(pkg-config --cflags --libs audio-pipeline)
+            "$root/core-consumer"
+            cc tests/consumer/runtime_main.c -o "$root/runtime-consumer" \
+              $(pkg-config --cflags --libs audio-pipeline-runtime)
+            "$root/runtime-consumer"
+            cmake -S tests/consumer -B "build-consumer-$layout" \
+              -DAudioPipeline_DIR="$libpath/cmake/AudioPipeline"
+            cmake --build "build-consumer-$layout" --parallel
+            "./build-consumer-$layout/audio_pipeline_consumer"
+          done
 
   sku-memory-rom:
     if: inputs.run_extended

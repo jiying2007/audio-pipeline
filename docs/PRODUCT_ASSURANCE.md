@@ -13,6 +13,14 @@ A software release requires all of the following:
 - the active `v*` tag Ruleset blocks deletion/non-fast-forward updates and has no bypass actors;
 - repository Immutable Releases are enabled before publication.
 
+Before building a new native release SDK, `scripts/verify-release-source.sh`
+requires the checkout HEAD to equal the verified source SHA and rejects staged
+or unstaged changes to tracked source. Downloaded delivery evidence may be
+untracked; it must not change the embedded source identity. Release passes the
+verified SHA explicitly to CMake and compiles/runs an installed CMake consumer
+that compares the library's public `source_revision` against that SHA before
+packaging. Ordinary developer builds retain automatic dirty-tree detection.
+
 Routine workflow `GITHUB_TOKEN` is not proof of repository administration state. Governance read and bootstrap write credentials stay separate and minimum-scope.
 
 For both main and version-tag Rulesets, the audit requires a visible `bypass_actors`

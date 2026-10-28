@@ -28,20 +28,45 @@ static int configure_pcm(snd_pcm_t *pcm, unsigned channels, unsigned rate) {
     return rc;
 }
 
+/* Return one only when recovery resets the PCM queue; zero preserves samples. */
 static int recover_pcm(snd_pcm_t *pcm, int error, uint64_t *xruns) {
+    const int xrun = error == -EPIPE || error == -ESTRPIPE;
     int rc;
-    if (error == -EPIPE || error == -ESTRPIPE) (*xruns)++;
+    if (xrun) (*xruns)++;
+    if (error == -ESTRPIPE) {
+        /* snd_pcm_recover hides whether suspend recovery resumed the existing
+         * queue or prepared an empty one. Only the latter starts a new epoch. */
+        do {
+            rc = snd_pcm_resume(pcm);
+            if (rc == -EAGAIN) {
+                const struct timespec pause = {1, 0};
+                (void)nanosleep(&pause, NULL);
+            }
+        } while (rc == -EAGAIN);
+        if (rc >= 0) return 0;
+        rc = snd_pcm_prepare(pcm);
+        return rc < 0 ? -1 : 1;
+    }
     rc = snd_pcm_recover(pcm, error, 1);
-    return rc < 0 ? -1 : 0;
+    return rc < 0 ? -1 : xrun;
 }
 
 static int write_all(snd_pcm_t *pcm, const int16_t *data,
-                     snd_pcm_uframes_t frames, uint64_t *xruns) {
+                     snd_pcm_uframes_t frames, uint64_t *xruns,
+                     int *recovered_xrun) {
     snd_pcm_uframes_t done = 0u;
+    *recovered_xrun = 0;
     while (done < frames) {
         snd_pcm_sframes_t n = snd_pcm_writei(pcm, data + done, frames - done);
         if (n < 0) {
-            if (recover_pcm(pcm, (int)n, xruns) != 0) return -1;
+            const int recovered = recover_pcm(pcm, (int)n, xruns);
+            if (recovered < 0) return -1;
+            if (recovered) {
+                /* Supply one complete reference frame in the new playback
+                 * epoch rather than pairing capture with a split frame. */
+                done = 0u;
+                *recovered_xrun = 1;
+            }
             continue;
         }
         done += (snd_pcm_uframes_t)n;
@@ -50,13 +75,20 @@ static int write_all(snd_pcm_t *pcm, const int16_t *data,
 }
 
 static int read_all(snd_pcm_t *pcm, int16_t *data, snd_pcm_uframes_t frames,
-                    unsigned channels, uint64_t *xruns) {
+                    unsigned channels, uint64_t *xruns, int *recovered_xrun) {
     snd_pcm_uframes_t done = 0u;
+    *recovered_xrun = 0;
     while (done < frames) {
         snd_pcm_sframes_t n = snd_pcm_readi(pcm, data + (size_t)done * channels,
                                             frames - done);
         if (n < 0) {
-            if (recover_pcm(pcm, (int)n, xruns) != 0) return -1;
+            const int recovered = recover_pcm(pcm, (int)n, xruns);
+            if (recovered < 0) return -1;
+            if (recovered) {
+                /* Do not join pre-XRUN samples to post-recovery capture. */
+                done = 0u;
+                *recovered_xrun = 1;
+            }
             continue;
         }
         done += (snd_pcm_uframes_t)n;
@@ -97,6 +129,59 @@ static int fill_render(FILE *far, int silence, int repeat, int16_t *render,
 static void nap_100us(void) {
     const struct timespec t = {0, 100000};
     (void)nanosleep(&t, NULL);
+}
+
+enum {
+    DRAIN_OK = 0,
+    DRAIN_ERROR = -1,
+    DRAIN_TIMEOUT = -2
+};
+
+static int drain_runtime(ap_runtime_t *runtime, FILE *uplink, int16_t *clean,
+                          unsigned frame, unsigned produced, unsigned *received) {
+    struct timespec now;
+    uint64_t deadline;
+    ap_runtime_metrics_t metrics = {0};
+    metrics.struct_size = sizeof(metrics);
+    metrics.api_version = AP_RUNTIME_API_VERSION;
+    if (clock_gettime(CLOCK_MONOTONIC, &now) != 0) return DRAIN_ERROR;
+    /* This bounds host-side completion waiting, not DUT processing latency. */
+    deadline = (uint64_t)now.tv_sec * UINT64_C(1000000000) +
+               (uint64_t)now.tv_nsec + UINT64_C(2000000000);
+    while (*received < produced) {
+        const ap_status_t status = ap_runtime_receive(runtime, clean, NULL);
+        if (status == AP_OK) {
+            if (uplink && fwrite(clean, sizeof(clean[0]), frame, uplink) != frame)
+                return DRAIN_ERROR;
+            (*received)++;
+        } else if (status == AP_EEMPTY) {
+            if (ap_runtime_read_metrics(runtime, &metrics) != AP_OK)
+                return DRAIN_ERROR;
+            if (metrics.output_drop_events || metrics.failed_frames) {
+                fprintf(stderr, "runtime drain lost completion: produced=%u received=%u "
+                        "processed=%llu failed=%llu output_drop=%llu\n",
+                        produced, *received,
+                        (unsigned long long)metrics.processed_frames,
+                        (unsigned long long)metrics.failed_frames,
+                        (unsigned long long)metrics.output_drop_events);
+                return DRAIN_ERROR;
+            }
+            /* processed_frames precedes output publication, so it cannot by
+             * itself prove that an AP_EEMPTY receive is the final result. */
+            if (clock_gettime(CLOCK_MONOTONIC, &now) != 0) return DRAIN_ERROR;
+            if ((uint64_t)now.tv_sec * UINT64_C(1000000000) +
+                (uint64_t)now.tv_nsec >= deadline) {
+                fprintf(stderr, "runtime drain timeout: produced=%u received=%u\n",
+                        produced, *received);
+                return DRAIN_TIMEOUT;
+            }
+            nap_100us();
+        } else {
+            fprintf(stderr, "runtime completion failed: status=%d\n", (int)status);
+            return DRAIN_ERROR;
+        }
+    }
+    return DRAIN_OK;
 }
 
 static void nap_ms(unsigned ms) {
@@ -233,6 +318,8 @@ int main(int argc, char **argv) {
         const ap_frame_metadata_t *metadata_ptr = NULL;
         int ended = 0;
         int gap_started = 0;
+        int capture_xrun = 0;
+        int render_xrun = 0;
         memset(&metadata, 0, sizeof(metadata));
         metadata.struct_size = sizeof(metadata);
         metadata.api_version = AP_RUNTIME_API_VERSION;
@@ -275,14 +362,23 @@ int main(int argc, char **argv) {
                 metadata_ptr = &metadata;
             }
         }
-        if (playback && write_all(playback, render, frame, &xruns) != 0) {
+        if (playback && write_all(playback, render, frame, &xruns, &render_xrun) != 0) {
             fprintf(stderr, "ALSA playback XRUN recovery failed\n");
             goto done;
         }
-        if (read_all(capture, mic, frame, mic_channels, &xruns) != 0) {
+        if (read_all(capture, mic, frame, mic_channels, &xruns, &capture_xrun) != 0) {
             fprintf(stderr, "ALSA capture XRUN recovery failed\n");
             goto done;
         }
+        if (capture_xrun) {
+            metadata.flags |= AP_FRAME_CAPTURE_DISCONTINUITY | AP_FRAME_XRUN;
+            metadata.lost_capture_frames = 0u; /* Unknown loss after real recovery. */
+        }
+        if (render_xrun) {
+            metadata.flags |= AP_FRAME_RENDER_DISCONTINUITY | AP_FRAME_XRUN;
+            metadata.lost_render_frames = 0u;
+        }
+        if (capture_xrun || render_xrun) metadata_ptr = &metadata;
 
         if (fault_cpu_stall_every && fault_cpu_stall_ms && produced > 0u &&
             produced % fault_cpu_stall_every == 0u) {
@@ -310,17 +406,10 @@ int main(int argc, char **argv) {
         if (ended) break;
     }
 
-    while (received < produced) {
-        ap_status_t s = ap_runtime_receive(runtime, clean, NULL);
-        if (s == AP_OK) {
-            if (uplink && fwrite(clean, sizeof(clean[0]), frame, uplink) != frame) goto done;
-            received++;
-        } else if (s == AP_EEMPTY) {
-            nap_100us();
-        } else {
-            goto done;
-        }
-    }
+    if (drain_runtime(runtime, uplink, clean, frame, produced, &received) != DRAIN_OK)
+        goto done;
+    /* Final direct pipeline telemetry is read only after worker ownership ends. */
+    ap_runtime_stop(runtime);
 
     {
         ap_runtime_metrics_t rm;

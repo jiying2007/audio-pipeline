@@ -104,7 +104,7 @@ Pipeline 在 `ap_runtime_open()` 前由调用方拥有；worker started 后由�
 - stop/deinit；
 - 使用受控 control/event 通道。
 
-应用线程不能在 worker started 后直接读取或修改 Pipeline state。任何 ownership/counter/queue/lifecycle 改动必须通过 TSan。
+应用线程不能在 worker started 后直接读取或修改 Pipeline state。只有 `ap_runtime_stop()` 完成 worker join 并返回后，所有权才交回调用方；提出 stop 请求本身不代表 worker 已退出。单一 control producer 可在 stop 期间继续入队，tuning 只使用 producer projection，尚未消费的命令保留到下一次 start。stop 进行中再次 start 或挂接 Flight Recorder 返回 `AP_ESTATE`。生命周期调用应串行化，deinit 前须停止其他 API 使用方。任何 ownership/counter/queue/lifecycle 改动必须通过 TSan。
 
 ## Realtime 与 Control Plane 分离
 

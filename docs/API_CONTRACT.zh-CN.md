@@ -97,9 +97,15 @@ state_size
 
 Standalone API 复用 stage 实现，不复制算法分叉。
 
+当 `AP_BUILD_BF_DIRECTION_TRACKING == 0` 时，standalone BF 的非零 `track_direction` 请求返回 `AP_ESTATE`，module state 与 output 均不变；传零仍可执行固定 BF。高层 Pipeline 也遵守该编译能力，应用不能通过 standalone 参数重新开启已关闭的方向跟踪。
+
+Standalone resampler 固定转换完整 10 ms 帧：`input_s16()` 从受支持的 I/O 帧长（80/160/240/320/480）转到 internal 帧长（80/160），`output_s16()` 方向相反；帧长和 mic channel 数均须落在编译 envelope 内。任意半帧或超范围几何返回 `AP_EINVAL`，history 和 output 不变。滤波延时查询接受两个方向的精确受支持采样率对；不支持的组合或无 FIR 延时的路径返回零，具体规则以英文 canonical contract 为准。
+
 ## Metadata 与 route 事实
 
 时间戳/断流/XRUN/clock reset/codec reopen/lost frame 是系统事实，不应让 DSP 通过音频波形猜测。Route/path reset 会建立新的收敛 epoch；AEC/同步 telemetry 的解释必须尊重该 epoch。
+
+时间戳差保持按最近采样点舍入；非法或超范围观察返回 `AP_EINVAL`，不得因整数回绕被误接受。拒绝后原有对齐、观察计数和 AEC 收敛 epoch 不变。绝对时间戳很大但差值有效时仍可使用；standalone SYNC 使用同一验证规则。
 
 Metadata 的 capture/render 丢帧数独立计入对应计数；有断流 flag 而丢帧数为零的方向按 1 帧计入，未置 flag 的方向不计入。双向断流仍只对该边界重置一次。断流事件的单个 `arg1` 保持为已置 flag 方向丢帧数的最大值；显式断流 command 的共享 `lost_frames` 分别用于每个已置 flag 的方向。
 

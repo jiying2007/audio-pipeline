@@ -260,3 +260,11 @@ three exact-source local research adapters, full PCM boundaries, source/model
 admission and fixed disclosed-input evidence. Recovery and new execution status
 are explicit. These references do not change shipping defaults or complete C4,
 real-robot qualification or the frozen NS research program.
+
+## v2.3.59 审查修复的独立源码资格
+
+[B3/F0 R3 源码预登记](FE09_B3_F0_AUDIT_SOURCE_R3_20261028/README.md)
+固定审查候选涉及的 9 个历史编译成员及完整前像，保留原 R1/R2 源码、锁、负例与结果。
+资格 PR 只建立源码身份和派生执行器审查；2.3.59 的 B3/F0 测量必须在该资格经受保护合并、
+独立主线 Verify 和 Release 验证后，以新的 R3 身份实际执行原三目标覆盖与预算。
+源码检查通过不代表新测量通过，也不产生四麦公共 SDK、SSC305 HIL 或产品资格。

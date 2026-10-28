@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 #define _POSIX_C_SOURCE 200809L
 #include "audio_pipeline/audio_runtime.h"
 #include <assert.h>
@@ -82,6 +83,7 @@ static ap_metrics_t process_one(ap_runtime_t *runtime,
 
 typedef struct control_flood {
     ap_runtime_t *runtime;
+    unsigned alternate_tuning;
     atomic_uint finish;
     atomic_uint accepted;
     atomic_uint stopped;
@@ -93,12 +95,19 @@ static void *refill_controls(void *arg) {
     command.struct_size = sizeof(command);
     command.api_version = AP_RUNTIME_API_VERSION;
     command.kind = AP_RUNTIME_COMMAND_RESET;
+    command.data.tuning.struct_size = sizeof(command.data.tuning);
+    command.data.tuning.api_version = AP_PIPELINE_CONTROL_API_VERSION;
+    command.data.tuning.mask = AP_TUNING_LIMITER;
+    command.data.tuning.limiter_dbfs = -6.0f;
     while (!atomic_load_explicit(&flood->finish, memory_order_acquire)) {
         const ap_status_t status = ap_runtime_command(flood->runtime, &command);
         assert(status == AP_OK || status == AP_EFULL);
-        if (status == AP_OK)
+        if (status == AP_OK) {
             atomic_fetch_add_explicit(&flood->accepted, 1u, memory_order_relaxed);
-        else
+            if (flood->alternate_tuning)
+                command.kind = command.kind == AP_RUNTIME_COMMAND_RESET ?
+                    AP_RUNTIME_COMMAND_SET_TUNING : AP_RUNTIME_COMMAND_RESET;
+        } else
             sched_yield();
     }
     return NULL;
@@ -111,7 +120,7 @@ static void *stop_during_control_flood(void *arg) {
     return NULL;
 }
 
-static void test_control_flood_progress_and_stop(void) {
+static void test_control_flood_progress_and_stop(unsigned alternate_tuning) {
     ap_config_t pcfg = ap_config_default(AP_PROFILE_CALL);
     ap_runtime_config_t rcfg = ap_runtime_config_default();
     ap_pipeline_t *pipeline = NULL;
@@ -128,6 +137,7 @@ static void test_control_flood_progress_and_stop(void) {
     assert(ap_pipeline_init(pipeline_state, sizeof(pipeline_state), &pcfg, &pipeline) == AP_OK);
     runtime = open_default(pipeline, &rcfg);
     flood.runtime = runtime;
+    flood.alternate_tuning = alternate_tuning;
     atomic_init(&flood.finish, 0u);
     atomic_init(&flood.accepted, 0u);
     atomic_init(&flood.stopped, 0u);
@@ -1155,10 +1165,17 @@ static void test_reset_event_epoch_rebase(void) {
     int16_t render[AP_MAX_IO_FRAME_SAMPLES] = {0};
     int16_t output[AP_MAX_IO_FRAME_SAMPLES] = {0};
     unsigned i;
+    /* This test proves RESET epoch delivery through the real two-slot event
+     * queue, not migration notifications induced by a coverage-mode host.
+     * Use the executing thread's permitted CPU for the worker while keeping
+     * all original RESET event assertions and event-drop accounting strict. */
+    rcfg.dsp_cpu = sched_getcpu();
+    assert(rcfg.dsp_cpu >= 0);
     assert(ap_pipeline_init(pipeline_state, sizeof(pipeline_state), &pcfg, &pipeline) == AP_OK);
     runtime = open_default(pipeline, &rcfg);
     assert(ap_runtime_start(runtime) == AP_OK);
     wait_runtime_event_kind(runtime, AP_EVENT_RUNTIME_STARTED);
+    assert(metrics(runtime).scheduler_bind_failures == 0u);
     command.struct_size = sizeof(command);
     command.api_version = AP_RUNTIME_API_VERSION;
 
@@ -1181,6 +1198,7 @@ static void test_reset_event_epoch_rebase(void) {
     (void)process_one(runtime, mic, render, output);
     /* Without rebasing last_aec_resets, the 1st new epoch event is hidden. */
     assert(drain_aec_reset_events(runtime) == 1u);
+    assert(metrics(runtime).event_drop_events == 0u);
     ap_runtime_deinit(runtime);
 }
 
@@ -1231,7 +1249,8 @@ int main(int argc, char **argv) {
     test_command_validation_and_queue_pressure();
     test_reset_event_epoch_rebase();
     test_input_full_flood_preserves_notification();
-    test_control_flood_progress_and_stop();
+    test_control_flood_progress_and_stop(0u);
+    test_control_flood_progress_and_stop(1u);
     test_directional_gap_counts();
     test_metadata_event_drop_and_output_backpressure();
     test_automatic_quality_degrade_and_recovery();

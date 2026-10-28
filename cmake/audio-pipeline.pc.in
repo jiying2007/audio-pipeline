@@ -1,7 +1,7 @@
 prefix=${pcfiledir}/@AP_PC_PREFIX_REL@
 exec_prefix=${prefix}
-libdir=${prefix}/@CMAKE_INSTALL_LIBDIR@
-includedir=${prefix}/@CMAKE_INSTALL_INCLUDEDIR@
+libdir=@AP_PC_LIBDIR@
+includedir=@AP_PC_INCLUDEDIR@
 
 Name: audio-pipeline
 Description: Low-compute Arm speech DSP core/module SDK

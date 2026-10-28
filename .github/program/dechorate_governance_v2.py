@@ -60,7 +60,7 @@ FROZEN_PREVIOUS_DEPENDENCIES = {
     "scripts/github_governance.py": "c292105f27126e643f8984bd0ecb52faf7beac83ddeffff9413b97a68893c4fa"
 }
 CURRENT_REVIEWED_DEPENDENCIES = {
-    ".github/program/dechorate_event_source_t1m3.py": "dfa8fe7730590a8cd8ce97392e7fd072763fec59b3bae53581cfed93f34c7300",
+    ".github/program/dechorate_event_source_t1m3.py": "c8a2bfdade22d33fb40155b440d80d960524adccdef10cf9131340bbb84a81f6",
     ".github/program/dechorate_event_source_t1m3.json": "687f506a0c742aa600596a77781adffcc083524549cc04dee9808e6eb7bd165e",
     "scripts/github_governance.py": "c292105f27126e643f8984bd0ecb52faf7beac83ddeffff9413b97a68893c4fa",
     ".github/program/workflow_pin_pr_consumer.py": "be63c093dac9125ac7c2603b69ea1c8211705eea1a8d143b110a3f0c01d5dab7",
@@ -799,6 +799,8 @@ def main() -> int:
         result = dict(envelope("REJECTED", "ORIGINAL_RESEARCH_GUARDS_REQUIRED"),
                       reason=reason if re.fullmatch(r"[A-Z0-9_]{1,100}", reason) else "PROTOCOL_INPUT_OR_ACQUISITION_REJECTED",
                       source_range_qualified=False, governance_post_qualified=False)
+        if isinstance(exc, getattr(source, "PRIdentityDenied", ())):
+            result["pr_identity_observation"] = exc.observation
         if isinstance(exc, PrivateBypassRefused):
             result["refused_bypass_observations"] = exc.observations
         code = 1

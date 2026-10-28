@@ -1,3 +1,13 @@
+# 2.3.59
+
+- Keep Linux Runtime worker ownership through STOPPING until join completes, preventing control-plane tuning validation from reading a still-mutating pipeline without increasing runtime state or changing the public ABI.
+- Bound the ALSA example's final completion drain and fail explicitly on dropped or failed outputs; propagate real capture/playback recovery boundaries and preserve partial transfers when suspend recovery retains queued samples.
+- Reject overflowing timestamp observations before integer multiplication or rounding, without changing accepted synchronization observations or AEC policy.
+- Enforce standalone beamformer tracking build capability and supported resampler frame/rate/channel geometry, with rejection-before-mutation regressions across build envelopes.
+- Bind each new native release SDK to the independently verified clean tracked-source SHA and verify that identity through an installed consumer before packaging.
+- Preserve absolute GNUInstallDirs paths in pkg-config while retaining relative and multiarch relocation, with real CMake/core/runtime consumers for absolute and mixed layouts.
+- Add deterministic regression, sanitizer, boundary and installed-package checks; no acoustic threshold, shipping algorithm default, public ABI, research authority or physical qualification change.
+
 # 2.3.58
 
 - Compile dedicated instrumented libFuzzer core and Linux Runtime libraries, rather than instrumenting only driver entrypoints, without modifying the uninstrumented SDK.

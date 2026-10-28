@@ -279,6 +279,11 @@ int ap_sync_observe_timestamps(ap_sync_state_t *s,
         capture_timestamp_ns <= render_timestamp_ns)
         return 0;
     delta_ns = capture_timestamp_ns - render_timestamp_ns;
+    /* Public callers have validated the nonzero sample rate. Reject before
+     * multiplying so a huge invalid difference cannot wrap into the delay
+     * envelope. Keep the existing nearest-sample rounding for valid input. */
+    if (delta_ns > (UINT64_MAX - 500000000ull) / (uint64_t)sample_rate_hz)
+        return 0;
     samples64 = (delta_ns * (uint64_t)sample_rate_hz + 500000000ull) / 1000000000ull;
     if (samples64 > (uint64_t)max_delay_ms * sample_rate_hz / 1000u ||
         samples64 >= AP_RENDER_CAP)

@@ -40,6 +40,21 @@ jobs:
           grep -q 'unable to fetch required baseline tag' /tmp/missing-abi-baseline.log
       - name: Enforce public API/ABI contract
         run: sh scripts/check-abi-contract.sh
+      - name: Reject unsupported tracking in retained BF module
+        env:
+          CC: gcc
+        run: |
+          set -euo pipefail
+          cmake -S . -B build-bf-tracking-off -DCMAKE_BUILD_TYPE=Release \
+            -DAP_MODULES=RESAMPLER,HPF,BF,SYNC,ACTIVITY,AEC,RES,NS,AGC,VAD \
+            -DAP_ENABLE_BF_DIRECTION_TRACKING=OFF -DAP_BUILD_MAX_MIC_CHANNELS=2 \
+            -DAP_BUILD_TESTS=ON -DAP_ENABLE_LINUX_RUNTIME=OFF \
+            -DAP_BUILD_BENCH=OFF -DAP_BUILD_EXAMPLES=OFF -DAP_STRICT_WARNINGS=ON
+          header=build-bf-tracking-off/generated/audio_pipeline/audio_pipeline_build.h
+          grep -x '#define AP_HAVE_MODULE_BF 1' "$header"
+          grep -x '#define AP_BUILD_BF_DIRECTION_TRACKING 0' "$header"
+          cmake --build build-bf-tracking-off --target ap_module_tests --parallel
+          ctest --test-dir build-bf-tracking-off --output-on-failure --no-tests=error -R '^ap_module_tests$'
 
   sdk-consumer:
     runs-on: ubuntu-latest
@@ -50,14 +65,24 @@ jobs:
           namespace: quality-sdk
       - name: Build and install SDK
         run: |
-          cmake -S . -B build-sdk -DCMAKE_BUILD_TYPE=Release
+          set -euo pipefail
+          python3 tests/test_release_source.py
+          revision=$(git rev-parse HEAD)
+          mkdir -p verified-delivery
+          echo 'unit fixture, not delivery evidence' > verified-delivery/source-identity-fixture.txt
+          sh scripts/verify-release-source.sh "$revision"
+          cmake -S . -B build-sdk -DCMAKE_BUILD_TYPE=Release \
+            -DAP_BUILD_SOURCE_REVISION="$revision"
           cmake --build build-sdk --parallel
           cmake --install build-sdk --prefix "$PWD/stage"
       - name: Consume with find_package
         run: |
           cmake -S tests/consumer -B build-consumer -DCMAKE_PREFIX_PATH="$PWD/stage"
           cmake --build build-consumer --parallel
-          ./build-consumer/audio_pipeline_consumer
+          ./build-consumer/audio_pipeline_consumer "$(git rev-parse HEAD)"
+          rc=0
+          ./build-consumer/audio_pipeline_consumer 0000000000000000000000000000000000000000 || rc=$?
+          test "$rc" -eq 4
       - name: Consume with pkg-config
         run: |
           export PKG_CONFIG_PATH="$PWD/stage/lib/pkgconfig:$PWD/stage/lib64/pkgconfig"
@@ -79,6 +104,44 @@ jobs:
             cc tests/consumer/consumer.c -o "/tmp/${package}-multiarch" \
               $(pkg-config --cflags --libs "$package")
             "/tmp/${package}-multiarch"
+          done
+      - name: Consume absolute and mixed GNUInstallDirs SDK layouts
+        run: |
+          set -euo pipefail
+          for layout in absolute absolute-lib absolute-include; do
+            root="$RUNNER_TEMP/sdk-$layout"
+            prefix="$root/prefix"
+            libdir=lib
+            includedir=include
+            libpath="$prefix/lib"
+            includepath="$prefix/include"
+            case "$layout" in
+              absolute|absolute-lib) libdir="$root/lib"; libpath="$libdir" ;;
+            esac
+            case "$layout" in
+              absolute|absolute-include) includedir="$root/include"; includepath="$includedir" ;;
+            esac
+            cmake -S . -B "build-sdk-$layout" -DCMAKE_BUILD_TYPE=Release \
+              -DCMAKE_INSTALL_PREFIX="$prefix" -DCMAKE_INSTALL_LIBDIR="$libdir" \
+              -DCMAKE_INSTALL_INCLUDEDIR="$includedir" \
+              -DAP_BUILD_TESTS=OFF -DAP_BUILD_BENCH=OFF -DAP_BUILD_EXAMPLES=OFF
+            cmake --build "build-sdk-$layout" --parallel
+            cmake --install "build-sdk-$layout"
+            export PKG_CONFIG_PATH="$libpath/pkgconfig"
+            for package in audio-pipeline audio-pipeline-runtime; do
+              test "$(realpath -m "$(pkg-config --variable=libdir "$package")")" = "$libpath"
+              test "$(realpath -m "$(pkg-config --variable=includedir "$package")")" = "$includepath"
+            done
+            cc tests/consumer/consumer.c -o "$root/core-consumer" \
+              $(pkg-config --cflags --libs audio-pipeline)
+            "$root/core-consumer"
+            cc tests/consumer/runtime_main.c -o "$root/runtime-consumer" \
+              $(pkg-config --cflags --libs audio-pipeline-runtime)
+            "$root/runtime-consumer"
+            cmake -S tests/consumer -B "build-consumer-$layout" \
+              -DAudioPipeline_DIR="$libpath/cmake/AudioPipeline"
+            cmake --build "build-consumer-$layout" --parallel
+            "./build-consumer-$layout/audio_pipeline_consumer"
           done
 
   sku-memory-rom:
@@ -873,7 +936,7 @@ jobs:
         run: |
           set -euo pipefail
           # The immutable 2.3.56 R1 science remains the only R1 executor.
-          # Registered 2.3.57/2.3.58 require a separately reviewed new R2
+          # Each registered forward version requires its separately reviewed
           # source identity and a fresh full B3 run; unknown versions fail.
           version=$(sed -nE 's/^project\(audio_pipeline VERSION ([0-9]+\.[0-9]+\.[0-9]+) LANGUAGES C\).*$/\1/p' CMakeLists.txt)
           case "$version" in
@@ -883,6 +946,9 @@ jobs:
             2.3.57|2.3.58)
               script=tests/validation/frontend_evolution/fe09_b3_f0_deadline_r2_qualification.py
               source_kind=forward-r2 ;;
+            2.3.59)
+              script=tests/validation/frontend_evolution/fe09_b3_f0_deadline_r3_qualification.py
+              source_kind=forward-r3 ;;
             *) echo "UNREGISTERED_B3_SCIENCE_EXECUTION_VERSION:$version" >&2; exit 2 ;;
           esac
           echo "source_kind=$source_kind" >> "$GITHUB_OUTPUT"
@@ -904,6 +970,14 @@ jobs:
           path: fe09-b3-f0/
           if-no-files-found: error
           retention-days: 30
+      - name: Preserve distinct FE09 B3-F0 R3 exact-run evidence and failures
+        if: always() && (steps.fe09_b3_f0.outcome == 'success' || steps.fe09_b3_f0.outcome == 'failure') && steps.fe09_b3_f0.outputs.source_kind == 'forward-r3'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: frontend-fe09-b3-f0-forward-r3-${{ github.run_id }}-attempt-${{ github.run_attempt }}
+          path: fe09-b3-f0/
+          if-no-files-found: error
+          retention-days: 30
       - name: Characterize exact-version FE09 actual CALL process resources and frame costs
         id: fe09_t3s3_f0
         shell: bash
@@ -917,6 +991,9 @@ jobs:
             2.3.57|2.3.58)
               script=tests/validation/frontend_evolution/fe09_t3s3_f0_call_resource_r2_qualification.py
               source_kind=forward-r2 ;;
+            2.3.59)
+              script=tests/validation/frontend_evolution/fe09_t3s3_f0_call_resource_r3_qualification.py
+              source_kind=forward-r3 ;;
             *) echo "UNREGISTERED_F0_RESOURCE_EXECUTION_VERSION:$version" >&2; exit 2 ;;
           esac
           echo "source_kind=$source_kind" >> "$GITHUB_OUTPUT"
@@ -936,6 +1013,14 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: frontend-fe09-t3s3-f0-forward-r2-${{ github.run_id }}-attempt-${{ github.run_attempt }}
+          path: fe09-t3s3-f0/
+          if-no-files-found: error
+          retention-days: 30
+      - name: Preserve distinct FE09 F0 R3 actual CALL process evidence and failures
+        if: always() && (steps.fe09_t3s3_f0.outcome == 'success' || steps.fe09_t3s3_f0.outcome == 'failure') && steps.fe09_t3s3_f0.outputs.source_kind == 'forward-r3'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: frontend-fe09-t3s3-f0-forward-r3-${{ github.run_id }}-attempt-${{ github.run_attempt }}
           path: fe09-t3s3-f0/
           if-no-files-found: error
           retention-days: 30

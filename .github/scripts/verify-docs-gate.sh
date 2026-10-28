@@ -76,7 +76,7 @@ python3 tests/validation/frontend_evolution/test_fe09_b3_f0_deadline_r1.py
 # R2 T1 verifies the separately preregistered 2/4-file source identity, never
 # runs B3/F0 DSP nor inherits its historical R1 scientific verdict.
 python3 tests/validation/frontend_evolution/fe09_b3_f0_r2_source_admission.py --self-test
-python3 tests/validation/frontend_evolution/fe09_b3_f0_r2_source_admission.py --check
+python3 tests/validation/frontend_evolution/fe09_b3_f0_r3_source_admission.py --check-current
 # R2 T2 executor source audit only: both derivations retain byte-exact R1
 # scientific functions and immutable resource/error budgets; NO DSP is run.
 # Source-only T3 verifier: runs original immutable T2 on frozen R2 and
@@ -84,6 +84,12 @@ python3 tests/validation/frontend_evolution/fe09_b3_f0_r2_source_admission.py --
 python3 tests/validation/frontend_evolution/fe09_t3s3_f0_r2_t3_timing_identity_contract.py --self-test
 python3 tests/validation/frontend_evolution/fe09_b3_f0_deadline_r2_qualification.py --self-test
 python3 tests/validation/frontend_evolution/fe09_t3s3_f0_call_resource_r2_qualification.py --self-test
+# R3 admits only the exact reviewed 2.3.59 audit source. These checks prove
+# source identity and unchanged scientific code; they execute no B3/F0 DSP.
+python3 tests/validation/frontend_evolution/fe09_b3_f0_r3_source_admission.py --self-test
+python3 tests/validation/frontend_evolution/fe09_b3_f0_r3_derivation_contract.py --self-test
+python3 tests/validation/frontend_evolution/fe09_b3_f0_deadline_r3_qualification.py --self-test
+python3 tests/validation/frontend_evolution/fe09_t3s3_f0_call_resource_r3_qualification.py --self-test
 python3 .github/program/workflow_pin_only_scope.py --self-test
 python3 .github/program/workflow_pin_only_replay_t1.py --self-test
 python3 .github/program/workflow_pin_only_actual_tree_t1m1.py --self-test

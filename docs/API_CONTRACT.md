@@ -102,6 +102,17 @@ Activity/DTD is independently available for applications that compose SYNC + Act
 
 `AP_RESAMPLER_MODE=BANDLIMITED|FAST` is compile-time.
 
+Standalone resampler calls use the same supported 10 ms geometry as the pipeline:
+
+| API | Input frames | Output frames |
+|---|---|---|
+| `ap_module_resampler_input_s16()` | I/O: 80, 160, 240, 320 or 480 | Internal: 80 or 160 |
+| `ap_module_resampler_output_s16()` | Internal: 80 or 160 | I/O: 80, 160, 240, 320 or 480 |
+
+I/O and internal frame counts must also fit `AP_BUILD_MAX_IO_RATE_HZ` and `AP_BUILD_MAX_INTERNAL_RATE_HZ`, respectively. Input channel count must be in `1..AP_BUILD_MAX_MIC_CHANNELS`, and the selected channel must be in range. Unsupported geometry returns `AP_EINVAL` before changing resampler history or output. Arbitrary partial-frame conversion is not supported.
+
+`ap_module_resampler_filter_delay_samples()` accepts exact supported rate pairs in either direction and reports delay in input-rate samples. It returns zero for unsupported pairs or paths with no FIR delay.
+
 - `BANDLIMITED` is the default and applies fixed small FIR filters to supported downsampling ratios;
 - `FAST` is the explicit lower-cost interpolation/decimation option;
 - state preserves history across 10 ms frames;

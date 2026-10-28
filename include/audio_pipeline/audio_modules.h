@@ -23,6 +23,9 @@ size_t ap_module_resampler_state_size(void);
 ap_status_t ap_module_resampler_init(void *memory, size_t memory_size,
                                      ap_resampler_module_t **out);
 void ap_module_resampler_reset(ap_resampler_module_t *module);
+/* Each call converts a supported 10 ms I/O frame to an 8/16 kHz internal
+ * frame, within the compiled rate/channel envelope. Invalid geometry returns
+ * AP_EINVAL without changing module history or output. */
 ap_status_t ap_module_resampler_input_s16(ap_resampler_module_t *module,
                                           const int16_t *input,
                                           size_t input_frames,
@@ -30,11 +33,14 @@ ap_status_t ap_module_resampler_input_s16(ap_resampler_module_t *module,
                                           uint32_t channel,
                                           float *output,
                                           size_t output_frames);
+/* Reverse conversion: an 8/16 kHz internal frame to a supported I/O frame. */
 ap_status_t ap_module_resampler_output_s16(ap_resampler_module_t *module,
                                            const float *input,
                                            size_t input_frames,
                                            int16_t *output,
                                            size_t output_frames);
+/* Returns input-rate samples of filter delay, or zero for unsupported rate
+ * pairs and paths with no FIR delay. Accepts either conversion direction. */
 uint32_t ap_module_resampler_filter_delay_samples(uint32_t input_rate_hz,
                                                   uint32_t output_rate_hz);
 #endif

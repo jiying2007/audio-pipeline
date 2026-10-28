@@ -99,6 +99,8 @@ Standalone API 复用 stage 实现，不复制算法分叉。
 
 当 `AP_BUILD_BF_DIRECTION_TRACKING == 0` 时，standalone BF 的非零 `track_direction` 请求返回 `AP_ESTATE`，module state 与 output 均不变；传零仍可执行固定 BF。高层 Pipeline 也遵守该编译能力，应用不能通过 standalone 参数重新开启已关闭的方向跟踪。
 
+Standalone resampler 固定转换完整 10 ms 帧：`input_s16()` 从受支持的 I/O 帧长（80/160/240/320/480）转到 internal 帧长（80/160），`output_s16()` 方向相反；帧长和 mic channel 数均须落在编译 envelope 内。任意半帧或超范围几何返回 `AP_EINVAL`，history 和 output 不变。滤波延时查询接受两个方向的精确受支持采样率对；不支持的组合或无 FIR 延时的路径返回零，具体规则以英文 canonical contract 为准。
+
 ## Metadata 与 route 事实
 
 时间戳/断流/XRUN/clock reset/codec reopen/lost frame 是系统事实，不应让 DSP 通过音频波形猜测。Route/path reset 会建立新的收敛 epoch；AEC/同步 telemetry 的解释必须尊重该 epoch。

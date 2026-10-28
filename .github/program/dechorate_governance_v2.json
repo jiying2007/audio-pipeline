@@ -46,7 +46,7 @@
     ".github/program/workflow_pin_only_bot714_20261020.json"
   ],
   "existing_dependencies": {
-    ".github/program/dechorate_event_source_t1m3.py": "dfa8fe7730590a8cd8ce97392e7fd072763fec59b3bae53581cfed93f34c7300",
+    ".github/program/dechorate_event_source_t1m3.py": "c8a2bfdade22d33fb40155b440d80d960524adccdef10cf9131340bbb84a81f6",
     ".github/program/dechorate_event_source_t1m3.json": "687f506a0c742aa600596a77781adffcc083524549cc04dee9808e6eb7bd165e",
     "scripts/github_governance.py": "c292105f27126e643f8984bd0ecb52faf7beac83ddeffff9413b97a68893c4fa",
     ".github/program/workflow_pin_pr_consumer.py": "be63c093dac9125ac7c2603b69ea1c8211705eea1a8d143b110a3f0c01d5dab7",
@@ -79,5 +79,18 @@
     ".github/program/workflow_pin_pr_consumer.py": "be63c093dac9125ac7c2603b69ea1c8211705eea1a8d143b110a3f0c01d5dab7",
     "scripts/github_governance.py": "c292105f27126e643f8984bd0ecb52faf7beac83ddeffff9413b97a68893c4fa"
   },
-  "forward_review_scope": "source-only: exact 2026-10-25 protected-main program evolution, original historical M2 pins retained; offline fixtures updated; no measured PRE/POST or shipping promotion"
+  "forward_review_scope": "source-only: 2026-10-28 rejected PR identity diagnostics; original strict acceptance, prior source closures, failures and attempt budgets retained; no measured PRE/POST or shipping promotion",
+  "rejected_pr_identity_diagnostics": {
+    "base_sha": "fb5d77bed83a9ca7913bfeefac545f796fa6a141",
+    "original_consumer_run_id": 40524905415,
+    "original_consumer_attempt": 1,
+    "original_source_artifact_id": 12742578327,
+    "original_source_artifact_zip_sha256": "d663bd43a242a4ab9d8a2c65ff380b72a7f1ab3ebebc33a79bac4a889c5972f2",
+    "original_reason": "LIVE_PR_SOURCE_OR_EVENT_METADATA_DRIFT",
+    "historical_failed_predicate": "UNKNOWN_ORIGINAL_OBSERVATION_NOT_RETAINED",
+    "retained_fields": "fixed-key predicate booleans and validated public commit OIDs only",
+    "admission_predicates_changed": false,
+    "budgets_changed": false,
+    "historical_forward_review_scope": "source-only: exact 2026-10-25 protected-main program evolution, original historical M2 pins retained; offline fixtures updated; no measured PRE/POST or shipping promotion"
+  }
 }

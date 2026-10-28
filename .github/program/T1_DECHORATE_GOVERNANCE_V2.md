@@ -134,3 +134,39 @@ References:
 - https://github.com/jiying2007/audio-pipeline/pull/833
 - https://docs.github.com/en/rest/repos/rules#get-a-repository-ruleset
 - https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#workflow_run
+
+## Rejected PR identity diagnostics, source-only follow-up
+
+The retained canonical #833 attempt 1, run `40524905415`, source artifact
+`12742578327`, failed `LIVE_PR_SOURCE_OR_EVENT_METADATA_DRIFT` before producing
+a challenge. The protected producer `40525131218` consequently refused PRE.
+The original failure did not retain which of the exact PR predicates differed.
+Current API/ref agreement cannot reconstruct that event-time observation and
+must not be presented as proof of a unique historical root cause.
+
+This bounded follow-up retains the same rejection reason and every acceptance
+predicate. A rejected PR identity additionally records nine fixed-key comparison
+booleans and validated public commit OIDs under `pr_identity_observation`.
+Arbitrary API/event fields, author values, credentials and unvalidated strings
+are excluded. The observation is explicitly diagnostic-only; it has no top-level
+`scope`, is not a `CHALLENGE`, cannot authorize PRE or attempt 2, and cannot grant
+source, scientific, maintenance or shipping acceptance. The legacy source helper
+and V2 transport both preserve this bounded observation without overwriting any
+prior receipt. Existing timeouts, download/size limits and attempt budgets remain
+unchanged. Historical dependency maps and failed runs remain intact.
+
+Offline metadata negatives exercise each individual predicate, multiple
+simultaneous mismatches, absent/malformed merge identity, bounded disclosure and
+rejected-envelope propagation. They are engineering fixtures, not recovered
+historical payloads or hosted protocol qualification. The ordinary exact-source
+Git tests and full protected-main gates remain required before this source can
+be used by a new event. A legitimate updated #833 base/head creates a separately
+bound attempt 1; the failed original run must not be rerun as attempt 2 without
+its missing challenge and authenticated PRE.
+
+
+A deliberately mixed checkout with the old helper still fails the exact-source
+hash gate. The exception handler only guards optional diagnostic classification
+so that this source rejection retains its ordinary REJECTED receipt; it does not
+permit older helper bytes, supply missing source, or relax any admission check.
+A real local Git negative covers that source-drift rejection path.

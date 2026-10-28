@@ -152,6 +152,45 @@ class Denied(ValueError):
     pass
 
 
+class PRIdentityDenied(Denied):
+    """A retained rejection observation, never a source challenge or admission."""
+    def __init__(self, pr: dict, scope: dict, original: dict):
+        super().__init__("LIVE_PR_SOURCE_OR_EVENT_METADATA_DRIFT")
+        original_head = original.get("head")
+        original_head = original_head if type(original_head) is dict else {}
+        original_user = original.get("user")
+        original_user = original_user if type(original_user) is dict else {}
+        head, user = pr.get("head", {}), pr.get("user", {})
+        checks = {
+            "pr_number_matches": pr.get("number") == scope.get("pr_number"),
+            "pr_is_open": pr.get("state") == "open",
+            "pr_is_unmerged": pr.get("merged") is False,
+            "head_sha_matches": head.get("sha") == scope.get("head_sha"),
+            "event_merge_sha_matches": pr.get("merge_commit_sha") == scope.get("event_commit_sha"),
+            "head_ref_matches": head.get("ref") == original_head.get("ref"),
+            **{"author_" + key + "_matches": user.get(key) == original_user.get(key)
+               for key in ("login", "id", "type")},
+        }
+
+        def public_oid(value):
+            return value if (type(value) is str and SHA.fullmatch(value) is not None and
+                             value != "0" * 40) else None
+
+        # Only fixed-key booleans and validated public commit OIDs are retained.
+        # Do not serialize arbitrary event/API fields, actor data or credentials.
+        self.observation = {
+            "schema_version": 1,
+            "evidence_role": "REJECTED_PR_IDENTITY_DIAGNOSTIC_ONLY",
+            "checks": checks,
+            "failed_checks": sorted(key for key, passed in checks.items() if not passed),
+            "event_base_sha": public_oid(scope.get("base_sha")),
+            "event_head_sha": public_oid(scope.get("head_sha")),
+            "event_merge_sha": public_oid(scope.get("event_commit_sha")),
+            "observed_head_sha": public_oid(head.get("sha")),
+            "observed_merge_sha": public_oid(pr.get("merge_commit_sha")),
+        }
+
+
 def need(ok: bool, code: str) -> None:
     if not ok:
         raise Denied(code)
@@ -535,12 +574,13 @@ def pr_identity(pr: dict, scope: dict, event: dict, git: Git) -> dict:
     h = oid(head.get("sha"))
     if scope["event"] == "pull_request":
         original = event["pull_request"]
-        need(pr["number"] == scope["pr_number"] and pr.get("state") == "open" and
+        matches = (pr["number"] == scope["pr_number"] and pr.get("state") == "open" and
              pr.get("merged") is False and h == scope["head_sha"] and
              pr.get("merge_commit_sha") == scope["event_commit_sha"] and
              head.get("ref") == original["head"]["ref"] and
-             all(user.get(k) == original.get("user", {}).get(k) for k in ("login", "id", "type")),
-             "LIVE_PR_SOURCE_OR_EVENT_METADATA_DRIFT")
+             all(user.get(k) == original.get("user", {}).get(k) for k in ("login", "id", "type")))
+        if not matches:
+            raise PRIdentityDenied(pr, scope, original)
     else:
         need(pr.get("state") == "closed" and pr.get("merged") is True and
              type(pr.get("merged_at")) is str and bool(pr["merged_at"]) and
@@ -651,6 +691,8 @@ def evaluate(event: dict, env: dict, git: Git, api, *, live: bool = False) -> di
         reason = str(exc)
         result.update(decision=NEGATIVE, source_range_qualified=False,
                       reason=reason if re.fullmatch(r"[A-Z0-9_]{1,100}", reason) else "SOURCE_OR_EVENT_NOT_ADMITTED")
+        if isinstance(exc, PRIdentityDenied):
+            result["pr_identity_observation"] = exc.observation
     return result
 
 

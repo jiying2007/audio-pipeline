@@ -40,6 +40,21 @@ jobs:
           grep -q 'unable to fetch required baseline tag' /tmp/missing-abi-baseline.log
       - name: Enforce public API/ABI contract
         run: sh scripts/check-abi-contract.sh
+      - name: Reject unsupported tracking in retained BF module
+        env:
+          CC: gcc
+        run: |
+          set -euo pipefail
+          cmake -S . -B build-bf-tracking-off -DCMAKE_BUILD_TYPE=Release \
+            -DAP_MODULES=RESAMPLER,HPF,BF,SYNC,ACTIVITY,AEC,RES,NS,AGC,VAD \
+            -DAP_ENABLE_BF_DIRECTION_TRACKING=OFF -DAP_BUILD_MAX_MIC_CHANNELS=2 \
+            -DAP_BUILD_TESTS=ON -DAP_ENABLE_LINUX_RUNTIME=OFF \
+            -DAP_BUILD_BENCH=OFF -DAP_BUILD_EXAMPLES=OFF -DAP_STRICT_WARNINGS=ON
+          header=build-bf-tracking-off/generated/audio_pipeline/audio_pipeline_build.h
+          grep -x '#define AP_HAVE_MODULE_BF 1' "$header"
+          grep -x '#define AP_BUILD_BF_DIRECTION_TRACKING 0' "$header"
+          cmake --build build-bf-tracking-off --target ap_module_tests --parallel
+          ctest --test-dir build-bf-tracking-off --output-on-failure --no-tests=error -R '^ap_module_tests$'
 
   sdk-consumer:
     runs-on: ubuntu-latest

@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 #define _POSIX_C_SOURCE 200809L
 #include "audio_pipeline/audio_runtime.h"
 #include <assert.h>
@@ -1155,10 +1156,17 @@ static void test_reset_event_epoch_rebase(void) {
     int16_t render[AP_MAX_IO_FRAME_SAMPLES] = {0};
     int16_t output[AP_MAX_IO_FRAME_SAMPLES] = {0};
     unsigned i;
+    /* This test proves RESET epoch delivery through the real two-slot event
+     * queue, not migration notifications induced by a coverage-mode host.
+     * Use the executing thread's permitted CPU for the worker while keeping
+     * all original RESET event assertions and event-drop accounting strict. */
+    rcfg.dsp_cpu = sched_getcpu();
+    assert(rcfg.dsp_cpu >= 0);
     assert(ap_pipeline_init(pipeline_state, sizeof(pipeline_state), &pcfg, &pipeline) == AP_OK);
     runtime = open_default(pipeline, &rcfg);
     assert(ap_runtime_start(runtime) == AP_OK);
     wait_runtime_event_kind(runtime, AP_EVENT_RUNTIME_STARTED);
+    assert(metrics(runtime).scheduler_bind_failures == 0u);
     command.struct_size = sizeof(command);
     command.api_version = AP_RUNTIME_API_VERSION;
 
@@ -1181,6 +1189,7 @@ static void test_reset_event_epoch_rebase(void) {
     (void)process_one(runtime, mic, render, output);
     /* Without rebasing last_aec_resets, the 1st new epoch event is hidden. */
     assert(drain_aec_reset_events(runtime) == 1u);
+    assert(metrics(runtime).event_drop_events == 0u);
     ap_runtime_deinit(runtime);
 }
 

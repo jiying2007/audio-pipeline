@@ -95,6 +95,48 @@ static void test_sync(void) {
 #endif
 }
 
+static void test_sync_timestamp_bounds(void) {
+#if AP_HAVE_MODULE_SYNC
+    static const uint32_t rates[] = {8000u, 16000u};
+    const uint32_t max_delay = AP_BUILD_MAX_DELAY_MS;
+    size_t i;
+    for (i = 0u; i < sizeof(rates) / sizeof(rates[0]); ++i) {
+        const uint32_t rate = rates[i];
+        const uint64_t max_ns = (uint64_t)max_delay * 1000000ull;
+        const uint64_t half_sample_ns = 500000000ull / rate;
+        const uint64_t overflow_delta = UINT64_MAX / rate;
+        const uint64_t invalid_capture[] = {
+            0u, 1u, max_ns + half_sample_ns + 1u,
+            overflow_delta + 1u, overflow_delta + 2u, UINT64_MAX
+        };
+        ap_sync_module_t *m = NULL;
+        ap_module_sync_event_t event;
+        ap_module_sync_status_t before, after;
+        size_t j;
+        if (rate > AP_BUILD_MAX_INTERNAL_RATE_HZ) continue;
+        assert(ap_module_sync_init(memory, sizeof(memory), 0u, &m) == AP_OK);
+        /* Keep the existing nearest-sample boundary, including its sub-sample
+         * tolerance, while rejecting both multiply and round-add overflow. */
+        assert(ap_module_sync_observe_timestamps(m, max_ns + half_sample_ns,
+                                                 1u, rate, max_delay, &event) == AP_OK);
+        ap_module_sync_get_status(m, &before);
+        assert(before.delay_samples == max_delay * rate / 1000u);
+        for (j = 0u; j < sizeof(invalid_capture) / sizeof(invalid_capture[0]); ++j) {
+            assert(ap_module_sync_observe_timestamps(m, invalid_capture[j],
+                                                     1u, rate, max_delay, &event) == AP_EINVAL);
+            ap_module_sync_get_status(m, &after);
+            assert(after.delay_samples == before.delay_samples);
+            assert(after.estimated_drift_ppm == before.estimated_drift_ppm);
+        }
+        /* Large absolute timestamps remain valid when their difference is
+         * in range; system uptime itself must not be rejected. */
+        assert(ap_module_sync_observe_timestamps(m, UINT64_MAX,
+                                                 UINT64_MAX - max_ns,
+                                                 rate, max_delay, &event) == AP_OK);
+    }
+#endif
+}
+
 static void test_activity(void) {
 #if AP_HAVE_MODULE_ACTIVITY
     ap_activity_module_t *m = NULL;
@@ -207,6 +249,7 @@ int main(void) {
     test_hpf();
     test_beamformer();
     test_sync();
+    test_sync_timestamp_bounds();
     test_activity();
     test_aec();
     test_res();

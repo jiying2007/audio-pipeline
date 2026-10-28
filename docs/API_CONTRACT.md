@@ -129,6 +129,8 @@ Fixed geometry is not a generic replacement for adaptive alignment and must not 
 
 `ap_pipeline_observe_io_timestamps()` is optional. Capture and render timestamps must describe corresponding hardware positions in the same monotonic clock domain. Invalid or out-of-envelope observations return `AP_EINVAL`.
 
+Timestamp differences are rounded to the nearest sample and validated without integer wraparound. Rejected observations leave alignment, observation counters and the AEC convergence epoch unchanged. Large absolute timestamps remain valid when their difference is valid. The standalone SYNC timestamp API follows the same validation rule.
+
 Correlation-based delay updates are ambiguity-gated. Small delay/drift corrections require the winning peak to be separated from non-local competitors; a large correlation route-change candidate must remain consistent for three search epochs before it is committed and stale AEC convergence is reset. Trusted hardware timestamps and explicit application path-change notifications remain authoritative and are not delayed by the correlation confirmation policy.
 
 This timestamp authority is unchanged when callers select fixed geometry through the existing configuration flags: a valid hardware timestamp observation may update the active reference delay even though acoustic tracking and correlation-derived drift compensation are disabled. Subsequent acoustic correlation cannot chase that timestamp-calibrated result while `enable_delay_tracking` remains zero.

@@ -101,6 +101,8 @@ Standalone API 复用 stage 实现，不复制算法分叉。
 
 时间戳/断流/XRUN/clock reset/codec reopen/lost frame 是系统事实，不应让 DSP 通过音频波形猜测。Route/path reset 会建立新的收敛 epoch；AEC/同步 telemetry 的解释必须尊重该 epoch。
 
+时间戳差保持按最近采样点舍入；非法或超范围观察返回 `AP_EINVAL`，不得因整数回绕被误接受。拒绝后原有对齐、观察计数和 AEC 收敛 epoch 不变。绝对时间戳很大但差值有效时仍可使用；standalone SYNC 使用同一验证规则。
+
 Metadata 的 capture/render 丢帧数独立计入对应计数；有断流 flag 而丢帧数为零的方向按 1 帧计入，未置 flag 的方向不计入。双向断流仍只对该边界重置一次。断流事件的单个 `arg1` 保持为已置 flag 方向丢帧数的最大值；显式断流 command 的共享 `lost_frames` 分别用于每个已置 flag 的方向。
 
 ## Metrics

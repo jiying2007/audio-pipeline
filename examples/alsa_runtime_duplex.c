@@ -29,19 +29,29 @@ static int configure_pcm(snd_pcm_t *pcm, unsigned channels, unsigned rate) {
 }
 
 static int recover_pcm(snd_pcm_t *pcm, int error, uint64_t *xruns) {
+    const int xrun = error == -EPIPE || error == -ESTRPIPE;
     int rc;
-    if (error == -EPIPE || error == -ESTRPIPE) (*xruns)++;
+    if (xrun) (*xruns)++;
     rc = snd_pcm_recover(pcm, error, 1);
-    return rc < 0 ? -1 : 0;
+    return rc < 0 ? -1 : xrun;
 }
 
 static int write_all(snd_pcm_t *pcm, const int16_t *data,
-                     snd_pcm_uframes_t frames, uint64_t *xruns) {
+                     snd_pcm_uframes_t frames, uint64_t *xruns,
+                     int *recovered_xrun) {
     snd_pcm_uframes_t done = 0u;
+    *recovered_xrun = 0;
     while (done < frames) {
         snd_pcm_sframes_t n = snd_pcm_writei(pcm, data + done, frames - done);
         if (n < 0) {
-            if (recover_pcm(pcm, (int)n, xruns) != 0) return -1;
+            const int recovered = recover_pcm(pcm, (int)n, xruns);
+            if (recovered < 0) return -1;
+            if (recovered) {
+                /* Supply one complete reference frame in the new playback
+                 * epoch rather than pairing capture with a split frame. */
+                done = 0u;
+                *recovered_xrun = 1;
+            }
             continue;
         }
         done += (snd_pcm_uframes_t)n;
@@ -50,13 +60,20 @@ static int write_all(snd_pcm_t *pcm, const int16_t *data,
 }
 
 static int read_all(snd_pcm_t *pcm, int16_t *data, snd_pcm_uframes_t frames,
-                    unsigned channels, uint64_t *xruns) {
+                    unsigned channels, uint64_t *xruns, int *recovered_xrun) {
     snd_pcm_uframes_t done = 0u;
+    *recovered_xrun = 0;
     while (done < frames) {
         snd_pcm_sframes_t n = snd_pcm_readi(pcm, data + (size_t)done * channels,
                                             frames - done);
         if (n < 0) {
-            if (recover_pcm(pcm, (int)n, xruns) != 0) return -1;
+            const int recovered = recover_pcm(pcm, (int)n, xruns);
+            if (recovered < 0) return -1;
+            if (recovered) {
+                /* Do not join pre-XRUN samples to post-recovery capture. */
+                done = 0u;
+                *recovered_xrun = 1;
+            }
             continue;
         }
         done += (snd_pcm_uframes_t)n;
@@ -286,6 +303,8 @@ int main(int argc, char **argv) {
         const ap_frame_metadata_t *metadata_ptr = NULL;
         int ended = 0;
         int gap_started = 0;
+        int capture_xrun = 0;
+        int render_xrun = 0;
         memset(&metadata, 0, sizeof(metadata));
         metadata.struct_size = sizeof(metadata);
         metadata.api_version = AP_RUNTIME_API_VERSION;
@@ -328,14 +347,23 @@ int main(int argc, char **argv) {
                 metadata_ptr = &metadata;
             }
         }
-        if (playback && write_all(playback, render, frame, &xruns) != 0) {
+        if (playback && write_all(playback, render, frame, &xruns, &render_xrun) != 0) {
             fprintf(stderr, "ALSA playback XRUN recovery failed\n");
             goto done;
         }
-        if (read_all(capture, mic, frame, mic_channels, &xruns) != 0) {
+        if (read_all(capture, mic, frame, mic_channels, &xruns, &capture_xrun) != 0) {
             fprintf(stderr, "ALSA capture XRUN recovery failed\n");
             goto done;
         }
+        if (capture_xrun) {
+            metadata.flags |= AP_FRAME_CAPTURE_DISCONTINUITY | AP_FRAME_XRUN;
+            metadata.lost_capture_frames = 0u; /* Unknown loss after real recovery. */
+        }
+        if (render_xrun) {
+            metadata.flags |= AP_FRAME_RENDER_DISCONTINUITY | AP_FRAME_XRUN;
+            metadata.lost_render_frames = 0u;
+        }
+        if (capture_xrun || render_xrun) metadata_ptr = &metadata;
 
         if (fault_cpu_stall_every && fault_cpu_stall_ms && produced > 0u &&
             produced % fault_cpu_stall_every == 0u) {

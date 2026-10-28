@@ -112,6 +112,8 @@ ap_runtime_deinit(runtime);
 
 `ap_alsa_runtime_duplex` 示例在输入结束后最多等待 2 秒收取尚未完成的输出；发现输出丢弃、失败 completion 或等待超时会非零退出，不能把 `received == produced` 当成输出丢弃后仍能达到的条件。该超时只是应用收尾等待上限，不是真机 DSP 延迟资格指标。最终直接读取 Pipeline 统计前会先 stop/join。
 
+真实 ALSA XRUN/suspend 恢复后，示例会在下一帧设置 `AP_FRAME_XRUN` 和对应 capture/render discontinuity；无法测得的丢失长度使用 `lost_*_frames=0` 表示未知，不虚构精确帧数。跨 XRUN 的部分 capture frame 会丢弃并重新采满，playback frame 从头发送，使提交的当前参考对应恢复后的完整帧；普通 EINTR 恢复保留部分传输且不产生 gap。恢复失败非零退出。这些软件恢复契约的 unit transport 测试不能替代真机 XRUN/HIL 证据。
+
 ## 5. Build identity
 
 运行时可通过：

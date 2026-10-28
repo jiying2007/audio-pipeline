@@ -14,13 +14,25 @@
 static uint64_t clock_step_ns;
 static uint64_t clock_now_ns;
 static ap_status_t receive_error;
+enum io_scenario { IO_UNUSED, IO_CLEAN, IO_CAPTURE, IO_RENDER, IO_BOTH,
+                   IO_INTERRUPT, IO_RECOVERY_FAILURE };
+static enum io_scenario io_scenario;
+static unsigned io_submitted;
+static unsigned recovery_calls;
+static unsigned io_frame;
+static unsigned io_channels;
 static int example_clock_gettime(clockid_t clock_id, struct timespec *value);
 static ap_status_t example_receive(ap_runtime_t *runtime, int16_t *output,
                                    ap_metrics_t *metrics);
+static ap_status_t example_submit(ap_runtime_t *runtime, const int16_t *mic,
+                                  const int16_t *render,
+                                  const ap_frame_metadata_t *metadata);
 #define main alsa_example_main
 #define clock_gettime example_clock_gettime
 #define ap_runtime_receive example_receive
+#define ap_runtime_submit_frame example_submit
 #include "../examples/alsa_runtime_duplex.c"
+#undef ap_runtime_submit_frame
 #undef ap_runtime_receive
 #undef clock_gettime
 #undef main
@@ -40,28 +52,64 @@ static ap_status_t example_receive(ap_runtime_t *runtime, int16_t *output,
     return ap_runtime_receive(runtime, output, metrics);
 }
 
-/* These declarations resolve the real example's optional device entry point.
- * The completion tests below use the real SDK without opening a device. */
+/* A scripted transport drives the actual example recovery/submission path.
+ * Zero actions mean a full requested transfer; negative actions are ALSA
+ * errors. Each example invocation runs in its own CTest process. */
+struct snd_pcm {
+    unsigned channels;
+    unsigned action_count;
+    unsigned cursor;
+    snd_pcm_sframes_t actions[3];
+    snd_pcm_uframes_t requests[4];
+};
+static struct snd_pcm capture_pcm;
+static struct snd_pcm playback_pcm;
+
 int snd_pcm_open(snd_pcm_t **pcm, const char *name, int stream, int flags) {
-    (void)pcm; (void)name; (void)stream; (void)flags; return -ENODEV;
+    (void)name; (void)flags;
+    if (io_scenario == IO_UNUSED) return -ENODEV;
+    *pcm = stream == SND_PCM_STREAM_CAPTURE ? &capture_pcm : &playback_pcm;
+    return 0;
 }
 int snd_pcm_close(snd_pcm_t *pcm) { (void)pcm; return 0; }
 int snd_pcm_set_params(snd_pcm_t *pcm, int format, int access, unsigned channels,
                        unsigned rate, int resample, unsigned latency) {
-    (void)pcm; (void)format; (void)access; (void)channels; (void)rate;
-    (void)resample; (void)latency; return -ENODEV;
+    (void)format; (void)access; (void)rate; (void)resample; (void)latency;
+    pcm->channels = channels;
+    return 0;
 }
 const char *snd_strerror(int error) { (void)error; return "unit-test transport"; }
 int snd_pcm_recover(snd_pcm_t *pcm, int error, int silent) {
-    (void)pcm; (void)error; (void)silent; return -ENODEV;
+    (void)pcm; (void)error; (void)silent;
+    recovery_calls++;
+    return io_scenario == IO_RECOVERY_FAILURE ? -EIO : 0;
+}
+static snd_pcm_sframes_t scripted_transfer(snd_pcm_t *pcm,
+                                            snd_pcm_uframes_t frames) {
+    const unsigned cursor = pcm->cursor++;
+    const snd_pcm_sframes_t action = cursor < pcm->action_count ?
+                                     pcm->actions[cursor] : 0;
+    if (cursor < 4u) pcm->requests[cursor] = frames;
+    if (action < 0) return action;
+    assert((snd_pcm_uframes_t)action <= frames);
+    return action ? action : (snd_pcm_sframes_t)frames;
 }
 snd_pcm_sframes_t snd_pcm_writei(snd_pcm_t *pcm, const void *data,
                                  snd_pcm_uframes_t frames) {
-    (void)pcm; (void)data; (void)frames; return -ENODEV;
+    (void)data;
+    return scripted_transfer(pcm, frames);
 }
 snd_pcm_sframes_t snd_pcm_readi(snd_pcm_t *pcm, void *data,
                                 snd_pcm_uframes_t frames) {
-    (void)pcm; (void)data; (void)frames; return -ENODEV;
+    const unsigned cursor = pcm->cursor;
+    const snd_pcm_sframes_t count = scripted_transfer(pcm, frames);
+    if (count > 0) {
+        int16_t *samples = data;
+        const int16_t value = cursor == 0u && pcm->action_count ? 111 : 222;
+        for (size_t i = 0u; i < (size_t)count * pcm->channels; ++i)
+            samples[i] = value;
+    }
+    return count;
 }
 int snd_pcm_drop(snd_pcm_t *pcm) { (void)pcm; return 0; }
 int snd_pcm_prepare(snd_pcm_t *pcm) { (void)pcm; return 0; }
@@ -99,6 +147,84 @@ static ap_runtime_metrics_t wait_processed(ap_runtime_t *runtime, unsigned count
     }
     assert(!"runtime processing timeout");
     return metrics;
+}
+
+static ap_status_t example_submit(ap_runtime_t *runtime, const int16_t *input,
+                                  const int16_t *reference,
+                                  const ap_frame_metadata_t *metadata) {
+    const int capture_gap = io_scenario == IO_CAPTURE || io_scenario == IO_BOTH;
+    const int render_gap = io_scenario == IO_RENDER || io_scenario == IO_BOTH;
+    ap_runtime_metrics_t metrics;
+    if (io_submitted == 0u) {
+        uint32_t expected_flags = 0u;
+        if (capture_gap) expected_flags |= AP_FRAME_CAPTURE_DISCONTINUITY | AP_FRAME_XRUN;
+        if (render_gap) expected_flags |= AP_FRAME_RENDER_DISCONTINUITY | AP_FRAME_XRUN;
+        assert((metadata ? metadata->flags : 0u) == expected_flags);
+        if (expected_flags) {
+            assert(metadata != NULL);
+            assert(metadata->lost_capture_frames == 0u);
+            assert(metadata->lost_render_frames == 0u);
+        }
+        for (unsigned i = 0u; i < io_frame * io_channels; ++i) {
+            const int16_t expected = io_scenario == IO_INTERRUPT && i < 64u * io_channels ?
+                                     111 : 222;
+            assert(input[i] == expected);
+        }
+    } else {
+        assert(metadata == NULL);
+    }
+    assert(ap_runtime_submit_frame(runtime, input, reference, metadata) == AP_OK);
+    metrics = wait_processed(runtime, ++io_submitted);
+    assert(metrics.stream_discontinuities == (uint64_t)(capture_gap || render_gap));
+    assert(metrics.capture_gap_frames == (uint64_t)capture_gap);
+    assert(metrics.render_gap_frames == (uint64_t)render_gap);
+    return AP_OK;
+}
+
+static void test_io_recovery(const char *scenario) {
+    char rate_text[16];
+    char channels_text[16];
+    char *args[] = {"alsa-unit", "capture", "playback", "-", "-", "1",
+                    "-1", rate_text, channels_text, NULL};
+    int result;
+    const unsigned rate = AP_BUILD_MAX_IO_RATE_HZ < 16000u ?
+                           AP_BUILD_MAX_IO_RATE_HZ : 16000u;
+    io_frame = rate / 100u;
+    io_channels = AP_BUILD_MAX_MIC_CHANNELS;
+    (void)snprintf(rate_text, sizeof(rate_text), "%u", rate);
+    (void)snprintf(channels_text, sizeof(channels_text), "%u", io_channels);
+    if (strcmp(scenario, "clean") == 0) io_scenario = IO_CLEAN;
+    else if (strcmp(scenario, "capture") == 0) io_scenario = IO_CAPTURE;
+    else if (strcmp(scenario, "render") == 0) io_scenario = IO_RENDER;
+    else if (strcmp(scenario, "both") == 0) io_scenario = IO_BOTH;
+    else if (strcmp(scenario, "interrupt") == 0) io_scenario = IO_INTERRUPT;
+    else if (strcmp(scenario, "recovery-failure") == 0) io_scenario = IO_RECOVERY_FAILURE;
+    else assert(!"unknown unit I/O scenario");
+    if (io_scenario == IO_CAPTURE || io_scenario == IO_BOTH ||
+        io_scenario == IO_INTERRUPT || io_scenario == IO_RECOVERY_FAILURE) {
+        capture_pcm.action_count = 3u;
+        capture_pcm.actions[0] = 64;
+        capture_pcm.actions[1] = io_scenario == IO_INTERRUPT ? -EINTR : -EPIPE;
+    }
+    if (io_scenario == IO_RENDER || io_scenario == IO_BOTH) {
+        playback_pcm.action_count = 3u;
+        playback_pcm.actions[0] = 64;
+        playback_pcm.actions[1] = -ESTRPIPE;
+    }
+    result = alsa_example_main(9, args);
+    if (io_scenario == IO_RECOVERY_FAILURE) {
+        assert(result != 0 && io_submitted == 0u && recovery_calls == 1u);
+        return;
+    }
+    assert(result == 0 && io_submitted == 100u);
+    assert(recovery_calls == (io_scenario == IO_BOTH ? 2u :
+                              io_scenario == IO_CLEAN ? 0u : 1u));
+    if (io_scenario == IO_CAPTURE || io_scenario == IO_BOTH)
+        assert(capture_pcm.requests[2] == io_frame);
+    if (io_scenario == IO_RENDER || io_scenario == IO_BOTH)
+        assert(playback_pcm.requests[2] == io_frame);
+    if (io_scenario == IO_INTERRUPT)
+        assert(capture_pcm.requests[2] == io_frame - 64u);
 }
 
 static void test_complete_delivery(void) {
@@ -147,7 +273,13 @@ static void test_stalled_and_failed_completion(void) {
     ap_runtime_deinit(runtime);
 }
 
-int main(void) {
+int main(int argc, char **argv) {
+    if (argc == 3 && strcmp(argv[1], "--io") == 0) {
+        test_io_recovery(argv[2]);
+        puts("ALSA recovery unit contract: OK (no hardware authority)");
+        return 0;
+    }
+    assert(argc == 1);
     test_complete_delivery();
     test_output_drop_terminates_drain();
     test_stalled_and_failed_completion();

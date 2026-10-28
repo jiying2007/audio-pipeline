@@ -139,6 +139,8 @@ With the Linux runtime, applications must not mutate the owned pipeline concurre
 
 Capture and render gap metadata update their respective counters independently. A flagged direction with a zero lost-frame count contributes one unknown-length gap frame; a direction without its discontinuity flag contributes none. One metadata boundary resets time-dependent state once, even when both directions have gaps. The discontinuity event's single `arg1` loss summary remains the maximum of the flagged counts. The explicit discontinuity command's shared `lost_frames` applies to each flagged direction.
 
+The ALSA runtime example propagates recovered capture/playback XRUN or suspend boundaries through `AP_FRAME_XRUN` and the affected directional discontinuity flag. Loss is unknown, so the affected count is zero; it does not invent a measured loss length. After recovery it discards a partial capture frame or restarts the full playback frame, keeping the submitted 10 ms capture/reference frame within the new epoch. Recoverable interruption without an XRUN preserves the partial transfer and does not synthesize a gap. Failed recovery terminates the example.
+
 ## Linux runtime lifecycle
 
 The runtime has one lifecycle and one metric surface:

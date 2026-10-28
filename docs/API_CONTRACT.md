@@ -32,6 +32,8 @@ AP_MODULES=RESAMPLER,HPF,BF,SYNC,ACTIVITY,AEC,RES,NS,AGC,VAD
 
 The generated installed `audio_pipeline_build.h` is the compile-time capability source of truth. The single `ap_build_info()` API returns one complete immutable `ap_build_info_t` containing semantic version, module mask, geometry, selected AEC/NS/SIMD/resampler backends, fast-math state, the effective BF direction-tracking capability, source revision, compiler/target/build identity and configuration SHA-256. `AP_BUILD_BF_DIRECTION_TRACKING` and `ap_build_info_t.bf_direction_tracking` report the effective compiled capability rather than requiring a product to infer it from CMake arguments.
 
+When `AP_BUILD_BF_DIRECTION_TRACKING == 0`, the standalone beamformer rejects a nonzero `track_direction` with `AP_ESTATE` without changing module state or output. Calling it with `track_direction == 0` remains available. The high-level pipeline observes the same compiled capability when selecting its tracking policy.
+
 A module omitted from the build has no standalone implementation TU or embedded pipeline state.
 
 ## Build-time SKU envelope

@@ -58,15 +58,34 @@ static void test_beamformer(void) {
 #if AP_HAVE_MODULE_BF
     ap_beamformer_module_t *m = NULL;
     const size_t frame = test_frame();
+    const float invalid_spacing[] = {NAN, INFINITY, -INFINITY};
+    size_t i;
     fill_signal(a, frame);
     memcpy(b, a, frame * sizeof(float));
     assert(AP_BUILD_MAX_MIC_CHANNELS == 2u);
     assert(ap_module_beamformer_state_size() <= AP_MODULE_STATE_MAX_BYTES);
     assert(ap_module_beamformer_init(memory, sizeof(memory), test_rate(), 35.0f, &m) == AP_OK);
+#if AP_BUILD_BF_DIRECTION_TRACKING
     assert(ap_module_beamformer_process(m, 1, a, b, out, frame) == AP_OK);
+#else
+    {
+        unsigned char saved[AP_MODULE_STATE_MAX_BYTES];
+        const size_t bytes = ap_module_beamformer_state_size();
+        memcpy(saved, memory, bytes);
+        for (i = 0u; i < frame; ++i) out[i] = 0.75f;
+        assert(ap_module_beamformer_process(m, 1, a, b, out, frame) == AP_ESTATE);
+        assert(ap_module_beamformer_process(m, -1, a, b, out, frame) == AP_ESTATE);
+        assert(memcmp(saved, memory, bytes) == 0);
+        for (i = 0u; i < frame; ++i) assert(out[i] == 0.75f);
+    }
+#endif
+    assert(ap_module_beamformer_process(m, 0, a, b, out, frame) == AP_OK);
+    for (i = 0u; i < frame; ++i) assert(out[i] == a[i]);
     assert(ap_module_beamformer_process(m, 1, a, b, out, frame - 1u) == AP_EINVAL);
     ap_module_beamformer_reset(m);
-    assert(ap_module_beamformer_init(memory, sizeof(memory), test_rate(), NAN, &m) == AP_EINVAL);
+    for (i = 0u; i < sizeof(invalid_spacing) / sizeof(invalid_spacing[0]); ++i)
+        assert(ap_module_beamformer_init(memory, sizeof(memory), test_rate(),
+                                         invalid_spacing[i], &m) == AP_EINVAL);
 #endif
 }
 

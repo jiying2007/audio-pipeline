@@ -58,15 +58,34 @@ static void test_beamformer(void) {
 #if AP_HAVE_MODULE_BF
     ap_beamformer_module_t *m = NULL;
     const size_t frame = test_frame();
+    const float invalid_spacing[] = {NAN, INFINITY, -INFINITY};
+    size_t i;
     fill_signal(a, frame);
     memcpy(b, a, frame * sizeof(float));
     assert(AP_BUILD_MAX_MIC_CHANNELS == 2u);
     assert(ap_module_beamformer_state_size() <= AP_MODULE_STATE_MAX_BYTES);
     assert(ap_module_beamformer_init(memory, sizeof(memory), test_rate(), 35.0f, &m) == AP_OK);
+#if AP_BUILD_BF_DIRECTION_TRACKING
     assert(ap_module_beamformer_process(m, 1, a, b, out, frame) == AP_OK);
+#else
+    {
+        unsigned char saved[AP_MODULE_STATE_MAX_BYTES];
+        const size_t bytes = ap_module_beamformer_state_size();
+        memcpy(saved, memory, bytes);
+        for (i = 0u; i < frame; ++i) out[i] = 0.75f;
+        assert(ap_module_beamformer_process(m, 1, a, b, out, frame) == AP_ESTATE);
+        assert(ap_module_beamformer_process(m, -1, a, b, out, frame) == AP_ESTATE);
+        assert(memcmp(saved, memory, bytes) == 0);
+        for (i = 0u; i < frame; ++i) assert(out[i] == 0.75f);
+    }
+#endif
+    assert(ap_module_beamformer_process(m, 0, a, b, out, frame) == AP_OK);
+    for (i = 0u; i < frame; ++i) assert(out[i] == a[i]);
     assert(ap_module_beamformer_process(m, 1, a, b, out, frame - 1u) == AP_EINVAL);
     ap_module_beamformer_reset(m);
-    assert(ap_module_beamformer_init(memory, sizeof(memory), test_rate(), NAN, &m) == AP_EINVAL);
+    for (i = 0u; i < sizeof(invalid_spacing) / sizeof(invalid_spacing[0]); ++i)
+        assert(ap_module_beamformer_init(memory, sizeof(memory), test_rate(),
+                                         invalid_spacing[i], &m) == AP_EINVAL);
 #endif
 }
 
@@ -92,6 +111,48 @@ static void test_sync(void) {
     assert(ap_module_sync_track(m, a, frame - 1u, test_rate(), max_delay, 0, 0,
                                 &event) == AP_EINVAL);
     ap_module_sync_reset(m);
+#endif
+}
+
+static void test_sync_timestamp_bounds(void) {
+#if AP_HAVE_MODULE_SYNC
+    static const uint32_t rates[] = {8000u, 16000u};
+    const uint32_t max_delay = AP_BUILD_MAX_DELAY_MS;
+    size_t i;
+    for (i = 0u; i < sizeof(rates) / sizeof(rates[0]); ++i) {
+        const uint32_t rate = rates[i];
+        const uint64_t max_ns = (uint64_t)max_delay * 1000000ull;
+        const uint64_t half_sample_ns = 500000000ull / rate;
+        const uint64_t overflow_delta = UINT64_MAX / rate;
+        const uint64_t invalid_capture[] = {
+            0u, 1u, max_ns + half_sample_ns + 1u,
+            overflow_delta + 1u, overflow_delta + 2u, UINT64_MAX
+        };
+        ap_sync_module_t *m = NULL;
+        ap_module_sync_event_t event;
+        ap_module_sync_status_t before, after;
+        size_t j;
+        if (rate > AP_BUILD_MAX_INTERNAL_RATE_HZ) continue;
+        assert(ap_module_sync_init(memory, sizeof(memory), 0u, &m) == AP_OK);
+        /* Keep the existing nearest-sample boundary, including its sub-sample
+         * tolerance, while rejecting both multiply and round-add overflow. */
+        assert(ap_module_sync_observe_timestamps(m, max_ns + half_sample_ns,
+                                                 1u, rate, max_delay, &event) == AP_OK);
+        ap_module_sync_get_status(m, &before);
+        assert(before.delay_samples == max_delay * rate / 1000u);
+        for (j = 0u; j < sizeof(invalid_capture) / sizeof(invalid_capture[0]); ++j) {
+            assert(ap_module_sync_observe_timestamps(m, invalid_capture[j],
+                                                     1u, rate, max_delay, &event) == AP_EINVAL);
+            ap_module_sync_get_status(m, &after);
+            assert(after.delay_samples == before.delay_samples);
+            assert(after.estimated_drift_ppm == before.estimated_drift_ppm);
+        }
+        /* Large absolute timestamps remain valid when their difference is
+         * in range; system uptime itself must not be rejected. */
+        assert(ap_module_sync_observe_timestamps(m, UINT64_MAX,
+                                                 UINT64_MAX - max_ns,
+                                                 rate, max_delay, &event) == AP_OK);
+    }
 #endif
 }
 
@@ -207,6 +268,7 @@ int main(void) {
     test_hpf();
     test_beamformer();
     test_sync();
+    test_sync_timestamp_bounds();
     test_activity();
     test_aec();
     test_res();

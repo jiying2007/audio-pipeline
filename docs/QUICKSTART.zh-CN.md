@@ -45,6 +45,11 @@ target_link_libraries(app PRIVATE AudioPipeline::runtime)
 ```
 
 pkg-config consumer 也由 CI 从 clean install prefix 实际编译、链接和运行。
+`CMAKE_INSTALL_LIBDIR` / `CMAKE_INSTALL_INCLUDEDIR` 使用相对路径时，SDK 可以随
+安装前缀整体迁移，也支持 multiarch 库目录。绝对路径则作为固定安装位置原样写入
+pkg-config 文件；`cmake --install --prefix` 不会重定位这些绝对路径。两者混合配置
+也由实际 CMake 与 pkg-config consumer 验证。
+混合布局须在 configure 时指定最终安装前缀；固定目录及其与前缀的关系不属于可迁移契约。
 
 ## 3. Pipeline 同步处理
 
@@ -104,10 +109,15 @@ ap_runtime_deinit(runtime);
 重要所有权规则：
 
 1. `start` 前 Pipeline 由调用方拥有；
-2. worker 启动后，只有 DSP worker 可以访问/修改 live Pipeline；
+2. worker 启动后，直到 `stop` 完成 join 并返回，只有 DSP worker 可以访问/修改 live Pipeline；stop 期间仍可由单一 control producer 入队，tuning 不会读取 worker 持有的 Pipeline；
 3. 应用线程通过有界队列提交 frame，通过 Runtime API 读结果和 telemetry；
 4. output backpressure 允许丢弃“发布结果”，但不会跳过已经接受的 DSP frame；
-5. 任何 ownership、queue、counter 或 lifecycle 变更都应通过 TSan。
+5. 生命周期调用应串行化，deinit 前停止其他 API 使用方；stop 期间 start/Flight Recorder attach 返回 `AP_ESTATE`；
+6. 任何 ownership、queue、counter 或 lifecycle 变更都应通过 TSan。
+
+`ap_alsa_runtime_duplex` 示例在输入结束后最多等待 2 秒收取尚未完成的输出；发现输出丢弃、失败 completion 或等待超时会非零退出，不能把 `received == produced` 当成输出丢弃后仍能达到的条件。该超时只是应用收尾等待上限，不是真机 DSP 延迟资格指标。最终直接读取 Pipeline 统计前会先 stop/join。
+
+真实 ALSA 恢复若重置 PCM 队列，示例会在下一帧设置 `AP_FRAME_XRUN` 和对应 capture/render discontinuity；无法测得的丢失长度使用 `lost_*_frames=0` 表示未知，不虚构精确帧数。XRUN 恢复或 suspend 回退到 `snd_pcm_prepare()` 时，部分 capture frame 会丢弃并重新采满，playback frame 从头发送，使提交的当前参考对应恢复后的完整帧。`snd_pcm_resume()` 成功保证队列样本保留，因此继续完成部分传输且不产生 gap；普通 EINTR 同样保留部分传输。示例本地 XRUN 诊断计数仍记录 suspend 尝试，包括成功无损 resume。恢复失败非零退出。这些软件恢复契约的 unit transport 测试不能替代真机 XRUN/HIL 证据。
 
 ## 5. Build identity
 

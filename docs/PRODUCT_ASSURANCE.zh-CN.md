@@ -13,6 +13,12 @@
 - `v*` tag ruleset 禁止 delete/non-fast-forward、无 bypass；
 - GitHub Immutable Releases 已启用。
 
+新建 native Release SDK 前，`scripts/verify-release-source.sh` 必须确认 checkout
+HEAD 等于已验证 source SHA，并拒绝 tracked source 的 staged/unstaged 改动。
+下载的交付证据可以是 untracked 文件，但不能改变 SDK 内嵌源码身份。Release 显式向
+CMake 传入已验证 SHA，并在打包前实际编译、运行安装后的 CMake consumer，独立比较
+库的公开 `source_revision` 与该 SHA。普通开发构建继续保留自动 dirty-tree 检测。
+
 普通 workflow `GITHUB_TOKEN` 不能充当 repository administration state 的证明。
 
 main 与版本 tag Ruleset 的审计都要求实际可见的 `bypass_actors` 字段，且值必须恰为

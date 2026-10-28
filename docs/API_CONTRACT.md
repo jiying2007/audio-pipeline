@@ -32,6 +32,8 @@ AP_MODULES=RESAMPLER,HPF,BF,SYNC,ACTIVITY,AEC,RES,NS,AGC,VAD
 
 The generated installed `audio_pipeline_build.h` is the compile-time capability source of truth. The single `ap_build_info()` API returns one complete immutable `ap_build_info_t` containing semantic version, module mask, geometry, selected AEC/NS/SIMD/resampler backends, fast-math state, the effective BF direction-tracking capability, source revision, compiler/target/build identity and configuration SHA-256. `AP_BUILD_BF_DIRECTION_TRACKING` and `ap_build_info_t.bf_direction_tracking` report the effective compiled capability rather than requiring a product to infer it from CMake arguments.
 
+When `AP_BUILD_BF_DIRECTION_TRACKING == 0`, the standalone beamformer rejects a nonzero `track_direction` with `AP_ESTATE` without changing module state or output. Calling it with `track_direction == 0` remains available. The high-level pipeline observes the same compiled capability when selecting its tracking policy.
+
 A module omitted from the build has no standalone implementation TU or embedded pipeline state.
 
 ## Build-time SKU envelope
@@ -100,6 +102,17 @@ Activity/DTD is independently available for applications that compose SYNC + Act
 
 `AP_RESAMPLER_MODE=BANDLIMITED|FAST` is compile-time.
 
+Standalone resampler calls use the same supported 10 ms geometry as the pipeline:
+
+| API | Input frames | Output frames |
+|---|---|---|
+| `ap_module_resampler_input_s16()` | I/O: 80, 160, 240, 320 or 480 | Internal: 80 or 160 |
+| `ap_module_resampler_output_s16()` | Internal: 80 or 160 | I/O: 80, 160, 240, 320 or 480 |
+
+I/O and internal frame counts must also fit `AP_BUILD_MAX_IO_RATE_HZ` and `AP_BUILD_MAX_INTERNAL_RATE_HZ`, respectively. Input channel count must be in `1..AP_BUILD_MAX_MIC_CHANNELS`, and the selected channel must be in range. Unsupported geometry returns `AP_EINVAL` before changing resampler history or output. Arbitrary partial-frame conversion is not supported.
+
+`ap_module_resampler_filter_delay_samples()` accepts exact supported rate pairs in either direction and reports delay in input-rate samples. It returns zero for unsupported pairs or paths with no FIR delay.
+
 - `BANDLIMITED` is the default and applies fixed small FIR filters to supported downsampling ratios;
 - `FAST` is the explicit lower-cost interpolation/decimation option;
 - state preserves history across 10 ms frames;
@@ -129,6 +142,8 @@ Fixed geometry is not a generic replacement for adaptive alignment and must not 
 
 `ap_pipeline_observe_io_timestamps()` is optional. Capture and render timestamps must describe corresponding hardware positions in the same monotonic clock domain. Invalid or out-of-envelope observations return `AP_EINVAL`.
 
+Timestamp differences are rounded to the nearest sample and validated without integer wraparound. Rejected observations leave alignment, observation counters and the AEC convergence epoch unchanged. Large absolute timestamps remain valid when their difference is valid. The standalone SYNC timestamp API follows the same validation rule.
+
 Correlation-based delay updates are ambiguity-gated. Small delay/drift corrections require the winning peak to be separated from non-local competitors; a large correlation route-change candidate must remain consistent for three search epochs before it is committed and stale AEC convergence is reset. Trusted hardware timestamps and explicit application path-change notifications remain authoritative and are not delayed by the correlation confirmation policy.
 
 This timestamp authority is unchanged when callers select fixed geometry through the existing configuration flags: a valid hardware timestamp observation may update the active reference delay even though acoustic tracking and correlation-derived drift compensation are disabled. Subsequent acoustic correlation cannot chase that timestamp-calibrated result while `enable_delay_tracking` remains zero.
@@ -138,6 +153,8 @@ This timestamp authority is unchanged when callers select fixed geometry through
 With the Linux runtime, applications must not mutate the owned pipeline concurrently. Supply per-frame timestamps/discontinuities through `ap_frame_metadata_t` to `ap_runtime_submit_frame()`, or enqueue explicit controls through `ap_runtime_command()`.
 
 Capture and render gap metadata update their respective counters independently. A flagged direction with a zero lost-frame count contributes one unknown-length gap frame; a direction without its discontinuity flag contributes none. One metadata boundary resets time-dependent state once, even when both directions have gaps. The discontinuity event's single `arg1` loss summary remains the maximum of the flagged counts. The explicit discontinuity command's shared `lost_frames` applies to each flagged direction.
+
+The ALSA runtime example propagates capture/playback recovery that resets the PCM queue through `AP_FRAME_XRUN` and the affected directional discontinuity flag. Loss is unknown, so the affected count is zero; it does not invent a measured loss length. An XRUN recovery or a suspend recovery that falls back to `snd_pcm_prepare()` discards a partial capture frame or restarts the full playback frame, keeping the submitted 10 ms capture/reference frame within the new epoch. A successful `snd_pcm_resume()` preserves queued samples: the example retains the partial transfer and does not synthesize a gap. Recoverable interruption also preserves the partial transfer. The local XRUN diagnostic count includes suspend attempts, including successful lossless resumes. Failed recovery terminates the example.
 
 ## Linux runtime lifecycle
 
@@ -158,7 +175,9 @@ ap_runtime_deinit(runtime);
 
 `ap_runtime_open()` validates caller-owned state, basic scheduling/overload policy and extensible runtime options. `ap_runtime_submit_frame()` is the only frame producer API and always accepts optional metadata. `ap_runtime_read_metrics()` returns the complete long-running runtime metric structure.
 
-After `ap_runtime_start()`, the worker is the sole owner of the supplied pipeline until stop/deinit. If `ap_runtime_options_t.lock_memory` is enabled, the runtime performs best-effort bounded `mlock()` only on the caller-owned runtime and pipeline arenas and releases those locks on stop. The SDK never invokes process-global `mlockall()`; worker-stack prefaulting and process-wide realtime memory policy remain product responsibilities.
+After `ap_runtime_start()`, the worker is the sole owner of the supplied pipeline until `ap_runtime_stop()` has joined it and returned. A stop request alone does not release ownership. A concurrent single control producer may continue to queue commands while stop is in progress; tuning admission uses only its producer-side projection until the worker has joined. Commands not consumed before stop remain queued for a later start. Start and Flight Recorder attachment return `AP_ESTATE` while stop is in progress. Lifecycle calls must be serialized, and all API users must be quiescent before deinit destroys runtime resources.
+
+If `ap_runtime_options_t.lock_memory` is enabled, the runtime performs best-effort bounded `mlock()` only on the caller-owned runtime and pipeline arenas and releases those locks on stop. The SDK never invokes process-global `mlockall()`; worker-stack prefaulting and process-wide realtime memory policy remain product responsibilities.
 
 ## Runtime control ownership
 
@@ -174,13 +193,15 @@ After `ap_runtime_start()`, the worker is the sole owner of the supplied pipelin
 
 At each worker boundary, the runtime applies only the commands present when that boundary begins, at most `AP_RUNTIME_COMMAND_QUEUE_DEPTH`. Commands accepted while it drains are deferred to a later boundary. Continuous control submission therefore cannot extend one drain indefinitely and prevent the worker from returning to audio work or its stop check.
 
-Tuning admission is checked against the full AGC pair that will exist when the DSP worker applies the command, using a producer-side projection of the target/limiter pair advanced by accepted queued commands. While the worker is stopped, the caller owns the supplied pipeline and may change tuning through `ap_pipeline_apply_tuning()`; before the next tuning admission and before start, the runtime rebuilds its projection from the pipeline's current tuning and replays still-pending tuning commands in FIFO order. If a caller-owned direct change makes an already accepted pending sequence pair-invalid, the next tuning command and `ap_runtime_start()` fail with `AP_ESTATE` until the live pipeline is repaired. While the worker runs, the runtime never re-reads worker-owned pipeline state and continues from the producer projection only.
+Tuning admission is checked against the full AGC pair that will exist when the DSP worker applies the command, using a producer-side projection of the target/limiter pair advanced by accepted queued commands. Once stop has completed, the caller owns the supplied pipeline and may change tuning through `ap_pipeline_apply_tuning()`; before the next tuning admission and before start, the runtime rebuilds its projection from the pipeline's current tuning and replays still-pending tuning commands in FIFO order. If a caller-owned direct change makes an already accepted pending sequence pair-invalid, the next tuning command and `ap_runtime_start()` fail with `AP_ESTATE` until the live pipeline is repaired. While the worker runs or is stopping, the runtime never re-reads worker-owned pipeline state and continues from the producer projection only.
 
 ## Output backpressure contract
 
 Accepted capture frames advance DSP state even when the output consumer is late. If the output queue is full, runtime still processes the frame into bounded scratch, increments `output_drop_events`, emits a best-effort event and discards only output publication. AEC/SYNC/NS/AGC/VAD state and timeline continue to advance.
 
 Input queue overflow remains explicit `AP_EFULL`: a frame that was never accepted cannot be processed and should be represented by discontinuity/lost-frame metadata when appropriate.
+
+An application must not wait indefinitely for one output per accepted frame: dropped publication has no later completion. The ALSA runtime example bounds final completion waiting to two seconds and exits with failure on output loss, a failed completion or timeout. This application cleanup deadline is not target-device DSP latency qualification. It stops/joins the worker before reading final direct pipeline metrics.
 
 ## Telemetry semantics
 

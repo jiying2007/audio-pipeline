@@ -21,6 +21,12 @@
 #define AP_RT_MAX_CAPTURE (AP_BUILD_IO_FRAME_MAX * AP_BUILD_MAX_MIC_CHANNELS)
 #define AP_DUMP_ENDIAN_TAG 0x01020304u
 
+enum {
+    AP_RT_WORKER_STOPPED = 0u,
+    AP_RT_WORKER_RUNNING = 1u,
+    AP_RT_WORKER_STOPPING = 2u
+};
+
 _Static_assert(ATOMIC_INT_LOCK_FREE == 2,
                "Linux runtime requires lock-free 32-bit atomics");
 _Static_assert((AP_RT_DEPTH & (AP_RT_DEPTH - 1u)) == 0u,
@@ -152,7 +158,7 @@ struct ap_runtime {
     ap_rt_options_t options;
     pthread_t thread;
     sem_t wake;
-    atomic_uint running;
+    atomic_uint worker_state;
     atomic_uint in_head;
     atomic_uint in_tail;
     atomic_uint out_head;
@@ -612,7 +618,7 @@ size_t ap_runtime_state_alignment(void) {
 
 static void init_runtime_atomics(ap_runtime_t *runtime) {
     uint32_t i;
-    atomic_init(&runtime->running, 0u);
+    atomic_init(&runtime->worker_state, AP_RT_WORKER_STOPPED);
     atomic_init(&runtime->in_head, 0u);
     atomic_init(&runtime->in_tail, 0u);
     atomic_init(&runtime->out_head, 0u);
@@ -1213,7 +1219,8 @@ static void *worker(void *arg) {
         unsigned tail;
         unsigned head;
         if (wait_work(runtime) != 0) continue;
-        if (!atomic_load_explicit(&runtime->running, memory_order_acquire)) break;
+        if (atomic_load_explicit(&runtime->worker_state, memory_order_acquire) !=
+            AP_RT_WORKER_RUNNING) break;
         runtime_drain_commands(runtime);
         {
             const unsigned pending =
@@ -1342,7 +1349,11 @@ static ap_status_t runtime_resync_tuning_projection(ap_runtime_t *runtime) {
     float limiter;
     ap_tuning_t tuning;
 
-    if (atomic_load_explicit(&runtime->running, memory_order_acquire))
+    /* A stop request does not release ownership: the worker may still be
+     * applying a command until its join completes. Keep the producer-only
+     * projection during both RUNNING and STOPPING. */
+    if (atomic_load_explicit(&runtime->worker_state, memory_order_acquire) !=
+        AP_RT_WORKER_STOPPED)
         return AP_OK;
 
     memset(&tuning, 0, sizeof(tuning));
@@ -1374,16 +1385,22 @@ static ap_status_t runtime_resync_tuning_projection(ap_runtime_t *runtime) {
 
 ap_status_t ap_runtime_start(ap_runtime_t *runtime) {
     pthread_attr_t attr;
+    unsigned expected = AP_RT_WORKER_STOPPED;
     int use_attr = 0;
     int rc;
     if (!runtime) return AP_EINVAL;
-    if (atomic_load_explicit(&runtime->running, memory_order_acquire))
+    if (atomic_load_explicit(&runtime->worker_state, memory_order_acquire) !=
+        AP_RT_WORKER_STOPPED)
         return AP_ESTATE;
     /* Caller-owned until start: rebuild from current tuning plus queued work. */
     if (runtime_resync_tuning_projection(runtime) != AP_OK)
         return AP_ESTATE;
     runtime_resync_event_baselines(runtime);
-    if (atomic_exchange_explicit(&runtime->running, 1u, memory_order_acq_rel))
+    if (!atomic_compare_exchange_strong_explicit(&runtime->worker_state,
+                                                 &expected,
+                                                 AP_RT_WORKER_RUNNING,
+                                                 memory_order_acq_rel,
+                                                 memory_order_acquire))
         return AP_ESTATE;
     if (pthread_attr_init(&attr) == 0) {
         use_attr = 1;
@@ -1391,7 +1408,8 @@ ap_status_t ap_runtime_start(ap_runtime_t *runtime) {
             pthread_attr_setstacksize(&attr,
                                       runtime->options.dsp_stack_bytes) != 0) {
             pthread_attr_destroy(&attr);
-            atomic_store_explicit(&runtime->running, 0u, memory_order_release);
+            atomic_store_explicit(&runtime->worker_state, AP_RT_WORKER_STOPPED,
+                                  memory_order_release);
             return AP_EINVAL;
         }
     }
@@ -1401,18 +1419,26 @@ ap_status_t ap_runtime_start(ap_runtime_t *runtime) {
                         runtime);
     if (use_attr) pthread_attr_destroy(&attr);
     if (rc != 0) {
-        atomic_store_explicit(&runtime->running, 0u, memory_order_release);
+        atomic_store_explicit(&runtime->worker_state, AP_RT_WORKER_STOPPED,
+                              memory_order_release);
         return AP_ESTATE;
     }
     return AP_OK;
 }
 
 void ap_runtime_stop(ap_runtime_t *runtime) {
+    unsigned expected = AP_RT_WORKER_RUNNING;
     if (!runtime) return;
-    if (atomic_exchange_explicit(&runtime->running, 0u, memory_order_acq_rel)) {
+    if (atomic_compare_exchange_strong_explicit(&runtime->worker_state,
+                                                &expected,
+                                                AP_RT_WORKER_STOPPING,
+                                                memory_order_acq_rel,
+                                                memory_order_acquire)) {
         (void)sem_post(&runtime->wake);
         (void)pthread_join(runtime->thread, NULL);
         runtime_unlock_state_memory(runtime);
+        atomic_store_explicit(&runtime->worker_state, AP_RT_WORKER_STOPPED,
+                              memory_order_release);
     }
 }
 
@@ -1656,7 +1682,8 @@ ap_status_t ap_runtime_receive_event(ap_runtime_t *runtime, ap_event_t *event) {
 ap_status_t ap_runtime_attach_flight_recorder(ap_runtime_t *runtime,
                                               ap_flight_recorder_t *recorder) {
     if (!runtime) return AP_EINVAL;
-    if (atomic_load_explicit(&runtime->running, memory_order_acquire))
+    if (atomic_load_explicit(&runtime->worker_state, memory_order_acquire) !=
+        AP_RT_WORKER_STOPPED)
         return AP_ESTATE;
     if (recorder &&
         (recorder->cfg.frame_samples != runtime->io_frames ||

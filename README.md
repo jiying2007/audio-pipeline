@@ -157,6 +157,12 @@ target_link_libraries(app PRIVATE AudioPipeline::runtime)
 ```
 
 CMake and pkg-config consumers are built from a clean install prefix in CI.
+Relative `CMAKE_INSTALL_LIBDIR` and `CMAKE_INSTALL_INCLUDEDIR` paths preserve
+SDK relocation, including multiarch library directories. Absolute paths are
+also supported as fixed install destinations and are emitted verbatim in the
+pkg-config files; changing `cmake --install --prefix` does not relocate them.
+For mixed absolute/relative layouts, set the final prefix at configure time;
+the fixed destinations and their relation to that prefix are not relocatable.
 
 ## Repository gates
 

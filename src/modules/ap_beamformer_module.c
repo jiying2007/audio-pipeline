@@ -41,6 +41,9 @@ ap_status_t ap_module_beamformer_process(ap_beamformer_module_t *module,
     ap_beamformer_module_impl_t *m = (ap_beamformer_module_impl_t *)module;
     if (!m || !mic0 || !mic1 || !output || frame_samples != m->rate / 100u)
         return AP_EINVAL;
+#if !AP_BUILD_BF_DIRECTION_TRACKING
+    if (track) return AP_ESTATE;
+#endif
     ap_beamformer_process(&m->state, track, mic0, mic1, output,
                           (uint32_t)frame_samples);
     return AP_OK;

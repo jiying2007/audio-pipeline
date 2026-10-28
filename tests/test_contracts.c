@@ -329,6 +329,17 @@ static void test_timestamp_and_route_contract(void) {
         ap_pipeline_get_metrics(p, &before);
         assert(before.timestamp_observations == 1u);
         assert(ap_pipeline_observe_io_timestamps(p, 1000000000ull, 1100000000ull) == AP_EINVAL);
+        {
+            const uint64_t overflow_delta = UINT64_MAX / c.internal_sample_rate_hz;
+            assert(ap_pipeline_observe_io_timestamps(p, overflow_delta + 1u, 1u) == AP_EINVAL);
+            assert(ap_pipeline_observe_io_timestamps(p, overflow_delta + 2u, 1u) == AP_EINVAL);
+            ap_pipeline_get_metrics(p, &after);
+            assert(after.timestamp_observations == before.timestamp_observations);
+            assert(after.estimated_delay_ms == before.estimated_delay_ms);
+            assert(after.aec_resets == before.aec_resets);
+            assert(after.delay_jumps == before.delay_jumps);
+            assert(after.aec_convergence_frames == before.aec_convergence_frames);
+        }
         assert(ap_pipeline_notify_echo_path_change(p) == AP_OK);
         ap_pipeline_get_metrics(p, &after);
         if (c.stages & AP_STAGE_AEC) {

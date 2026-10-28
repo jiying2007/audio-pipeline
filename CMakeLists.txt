@@ -459,6 +459,14 @@ if(AP_BUILD_TESTS)
         target_include_directories(ap_runtime_interleaving_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
         target_link_libraries(ap_runtime_interleaving_tests PRIVATE audio_pipeline Threads::Threads)
         add_test(NAME ap_runtime_interleaving_tests COMMAND ap_runtime_interleaving_tests)
+        # Exercise the real example without requiring a host ALSA device or
+        # treating a scripted unit transport as HIL evidence.
+        add_executable(ap_alsa_runtime_example_tests tests/test_alsa_runtime_example.c)
+        target_include_directories(ap_alsa_runtime_example_tests PRIVATE
+                                   ${CMAKE_CURRENT_SOURCE_DIR}/tests/alsa_stub)
+        target_link_libraries(ap_alsa_runtime_example_tests PRIVATE audio_pipeline_runtime)
+        add_test(NAME ap_alsa_runtime_example_tests COMMAND ap_alsa_runtime_example_tests)
+        set_tests_properties(ap_alsa_runtime_example_tests PROPERTIES TIMEOUT 10)
         add_executable(ap_runtime_state_size tests/print_runtime_state.c)
         target_link_libraries(ap_runtime_state_size PRIVATE audio_pipeline_runtime)
     endif()

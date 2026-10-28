@@ -110,6 +110,8 @@ ap_runtime_deinit(runtime);
 5. 生命周期调用应串行化，deinit 前停止其他 API 使用方；stop 期间 start/Flight Recorder attach 返回 `AP_ESTATE`；
 6. 任何 ownership、queue、counter 或 lifecycle 变更都应通过 TSan。
 
+`ap_alsa_runtime_duplex` 示例在输入结束后最多等待 2 秒收取尚未完成的输出；发现输出丢弃、失败 completion 或等待超时会非零退出，不能把 `received == produced` 当成输出丢弃后仍能达到的条件。该超时只是应用收尾等待上限，不是真机 DSP 延迟资格指标。最终直接读取 Pipeline 统计前会先 stop/join。
+
 ## 5. Build identity
 
 运行时可通过：

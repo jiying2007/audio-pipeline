@@ -99,6 +99,59 @@ static void nap_100us(void) {
     (void)nanosleep(&t, NULL);
 }
 
+enum {
+    DRAIN_OK = 0,
+    DRAIN_ERROR = -1,
+    DRAIN_TIMEOUT = -2
+};
+
+static int drain_runtime(ap_runtime_t *runtime, FILE *uplink, int16_t *clean,
+                          unsigned frame, unsigned produced, unsigned *received) {
+    struct timespec now;
+    uint64_t deadline;
+    ap_runtime_metrics_t metrics = {0};
+    metrics.struct_size = sizeof(metrics);
+    metrics.api_version = AP_RUNTIME_API_VERSION;
+    if (clock_gettime(CLOCK_MONOTONIC, &now) != 0) return DRAIN_ERROR;
+    /* This bounds host-side completion waiting, not DUT processing latency. */
+    deadline = (uint64_t)now.tv_sec * UINT64_C(1000000000) +
+               (uint64_t)now.tv_nsec + UINT64_C(2000000000);
+    while (*received < produced) {
+        const ap_status_t status = ap_runtime_receive(runtime, clean, NULL);
+        if (status == AP_OK) {
+            if (uplink && fwrite(clean, sizeof(clean[0]), frame, uplink) != frame)
+                return DRAIN_ERROR;
+            (*received)++;
+        } else if (status == AP_EEMPTY) {
+            if (ap_runtime_read_metrics(runtime, &metrics) != AP_OK)
+                return DRAIN_ERROR;
+            if (metrics.output_drop_events || metrics.failed_frames) {
+                fprintf(stderr, "runtime drain lost completion: produced=%u received=%u "
+                        "processed=%llu failed=%llu output_drop=%llu\n",
+                        produced, *received,
+                        (unsigned long long)metrics.processed_frames,
+                        (unsigned long long)metrics.failed_frames,
+                        (unsigned long long)metrics.output_drop_events);
+                return DRAIN_ERROR;
+            }
+            /* processed_frames precedes output publication, so it cannot by
+             * itself prove that an AP_EEMPTY receive is the final result. */
+            if (clock_gettime(CLOCK_MONOTONIC, &now) != 0) return DRAIN_ERROR;
+            if ((uint64_t)now.tv_sec * UINT64_C(1000000000) +
+                (uint64_t)now.tv_nsec >= deadline) {
+                fprintf(stderr, "runtime drain timeout: produced=%u received=%u\n",
+                        produced, *received);
+                return DRAIN_TIMEOUT;
+            }
+            nap_100us();
+        } else {
+            fprintf(stderr, "runtime completion failed: status=%d\n", (int)status);
+            return DRAIN_ERROR;
+        }
+    }
+    return DRAIN_OK;
+}
+
 static void nap_ms(unsigned ms) {
     struct timespec t;
     t.tv_sec = (time_t)(ms / 1000u);
@@ -310,17 +363,10 @@ int main(int argc, char **argv) {
         if (ended) break;
     }
 
-    while (received < produced) {
-        ap_status_t s = ap_runtime_receive(runtime, clean, NULL);
-        if (s == AP_OK) {
-            if (uplink && fwrite(clean, sizeof(clean[0]), frame, uplink) != frame) goto done;
-            received++;
-        } else if (s == AP_EEMPTY) {
-            nap_100us();
-        } else {
-            goto done;
-        }
-    }
+    if (drain_runtime(runtime, uplink, clean, frame, produced, &received) != DRAIN_OK)
+        goto done;
+    /* Final direct pipeline telemetry is read only after worker ownership ends. */
+    ap_runtime_stop(runtime);
 
     {
         ap_runtime_metrics_t rm;

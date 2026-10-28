@@ -184,6 +184,8 @@ Accepted capture frames advance DSP state even when the output consumer is late.
 
 Input queue overflow remains explicit `AP_EFULL`: a frame that was never accepted cannot be processed and should be represented by discontinuity/lost-frame metadata when appropriate.
 
+An application must not wait indefinitely for one output per accepted frame: dropped publication has no later completion. The ALSA runtime example bounds final completion waiting to two seconds and exits with failure on output loss, a failed completion or timeout. This application cleanup deadline is not target-device DSP latency qualification. It stops/joins the worker before reading final direct pipeline metrics.
+
 ## Telemetry semantics
 
 `ap_metrics_t.erle_valid` is true only for valid AEC far-end-only, non-double-talk observations. `aec_convergence_frames` and `aec_converged` describe the current convergence epoch. Route/path/discontinuity reset begins a new epoch.

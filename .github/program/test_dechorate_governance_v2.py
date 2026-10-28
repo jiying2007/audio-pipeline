@@ -562,5 +562,156 @@ class Protocol(unittest.TestCase):
         self.assertEqual(path.read_bytes(),raw)
 
 
+class PRIdentityDiagnosticsTests(unittest.TestCase):
+    """Finite metadata fixtures; no live event, Git proof or protocol admission."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.M = imported(ROOT / REL, "v2_pr_identity_diagnostics")
+
+    def fixture(self):
+        M = self.M
+        repo = {"id": M.REPO_ID, "full_name": M.REPO}
+        pr = {"number": 833, "draft": False, "state": "open", "merged": False,
+              "merge_commit_sha": "c" * 40,
+              "base": {"repo": repo, "ref": "main", "sha": "a" * 40},
+              "head": {"repo": repo, "ref": "offline-diagnostic", "sha": "b" * 40},
+              "user": {"login": "offline-fixture", "id": 99900001, "type": "User"}}
+        scope = {"event": "pull_request", "base_sha": "a" * 40,
+                 "head_sha": "b" * 40, "event_commit_sha": "c" * 40,
+                 "pr_number": 833, "github_run_id": "7001", "github_run_attempt": "1"}
+        return pr, scope, {"pull_request": copy.deepcopy(pr)}
+
+    def denied(self, pr, scope, event):
+        with self.assertRaises(self.M.source.PRIdentityDenied) as caught:
+            self.M.source.pr_identity(pr, scope, event, None)
+        self.assertEqual(str(caught.exception), "LIVE_PR_SOURCE_OR_EVENT_METADATA_DRIFT")
+        self.assertEqual(caught.exception.observation["evidence_role"],
+                         "REJECTED_PR_IDENTITY_DIAGNOSTIC_ONLY")
+        return caught.exception
+
+    def test_each_original_predicate_still_denies_and_identifies_mismatch(self):
+        pr, scope, event = self.fixture()
+        self.assertEqual(self.M.source.pr_identity(pr, scope, event, None)["number"], 833)
+        mutations = (
+            ("pr_number_matches", lambda p: p.__setitem__("number", 834)),
+            ("pr_is_open", lambda p: p.__setitem__("state", "closed")),
+            ("pr_is_unmerged", lambda p: p.__setitem__("merged", True)),
+            ("head_sha_matches", lambda p: p["head"].__setitem__("sha", "d" * 40)),
+            ("event_merge_sha_matches", lambda p: p.__setitem__("merge_commit_sha", "d" * 40)),
+            ("head_ref_matches", lambda p: p["head"].__setitem__("ref", "different-fixture")),
+            ("author_login_matches", lambda p: p["user"].__setitem__("login", "different-fixture")),
+            ("author_id_matches", lambda p: p["user"].__setitem__("id", 99900002)),
+            ("author_type_matches", lambda p: p["user"].__setitem__("type", "Bot")),
+        )
+        for field, mutate in mutations:
+            changed = copy.deepcopy(pr)
+            mutate(changed)
+            with self.subTest(field=field):
+                observation = self.denied(changed, scope, event).observation
+                self.assertEqual(observation["failed_checks"], [field])
+                self.assertEqual(len(observation["checks"]), 9)
+                self.assertTrue(all(type(value) is bool for value in observation["checks"].values()))
+        self.assertEqual(self.M.source.pr_identity(pr, scope, event, None)["number"], 833)
+
+    def test_multiple_mismatches_and_unvalidated_values_remain_bounded(self):
+        pr, scope, event = self.fixture()
+        pr["head"]["ref"] = "UNVALIDATED_EVENT_TEXT_MUST_NOT_APPEAR"
+        pr["body"] = "UNVALIDATED_API_TEXT_MUST_NOT_APPEAR"
+        for value in (None, "0" * 40, "UNVALIDATED_MERGE_TEXT_MUST_NOT_APPEAR", {"nested": "untrusted"}):
+            pr["merge_commit_sha"] = value
+            with self.subTest(value_type=type(value).__name__):
+                observation = self.denied(pr, scope, event).observation
+                self.assertEqual(observation["failed_checks"],
+                                 ["event_merge_sha_matches", "head_ref_matches"])
+                self.assertIsNone(observation["observed_merge_sha"])
+                raw = self.M.encoded(observation)
+                self.assertLess(len(raw), 4096)
+                self.assertNotIn(b"UNVALIDATED", raw)
+                self.assertNotIn(b"nested", raw)
+
+    def test_both_denial_envelopes_preserve_observation_without_admission(self):
+        M, source = self.M, self.M.source
+        pr, scope, event = self.fixture()
+        pr["merge_commit_sha"] = "d" * 40
+        error = self.denied(pr, scope, event)
+        with mock.patch.object(source, "repository_context"), \
+                mock.patch.object(source, "event_range", return_value=scope), \
+                mock.patch.object(source, "verify_policy_source", return_value=({}, {})), \
+                mock.patch.object(source, "snapshot", side_effect=error):
+            legacy = source.evaluate(event, {}, None, None)
+        self.assertEqual(legacy["pr_identity_observation"], error.observation)
+        self.assertFalse(legacy["source_range_qualified"])
+        self.assertFalse(legacy["scientific_experiment_executed"])
+        self.assertNotIn("event", legacy)
+        with tempfile.TemporaryDirectory(prefix="rejected-pr-identity-") as temp:
+            area = Path(temp)
+            event_path, output = area / "event.json", area / "rejected.json"
+            event_path.write_text("{}\n")
+            argv = [str(ROOT / REL), "consumer", "--event-file", str(event_path), "--output", str(output)]
+            with mock.patch.object(sys, "argv", argv), mock.patch.dict(os.environ, {}, clear=True), \
+                    mock.patch.object(M, "consume", side_effect=error), \
+                    mock.patch("sys.stdout", new_callable=io.StringIO):
+                self.assertEqual(M.main(), 1)
+            rejected = json.loads(output.read_bytes())
+            self.assertEqual(rejected["phase"], "REJECTED")
+            self.assertEqual(rejected["reason"], "LIVE_PR_SOURCE_OR_EVENT_METADATA_DRIFT")
+            self.assertEqual(rejected["pr_identity_observation"], error.observation)
+            self.assertNotIn("scope", rejected)
+            self.assertFalse(rejected["source_range_qualified"])
+            self.assertFalse(rejected["governance_post_qualified"])
+            self.assertTrue(all(rejected[key] is False for key in M.FALSE_FLAGS))
+            with self.assertRaisesRegex(M.Denied, "PROTOCOL_ENVELOPE_OR_AUTHORITY_DRIFT"):
+                M.validate_challenge(rejected, None)
+            previous = output.read_bytes()
+            with self.assertRaises(M.Denied):
+                M.write_new(output, rejected)
+            self.assertEqual(output.read_bytes(), previous)
+
+
+    def test_old_helper_source_drift_keeps_hash_rejection_receipt(self):
+        # A deliberately malformed checkout, never an accepted source closure.
+        # Preserve the actual old helper bytes; no source/hash validator is mocked.
+        with tempfile.TemporaryDirectory(prefix="rejected-mixed-source-") as temp:
+            area = Path(temp) / "repo"
+            git(Path(temp), "clone", "--quiet", "--shared", "--no-checkout", str(ROOT), str(area))
+            revision = git(ROOT, "rev-parse", "HEAD")
+            git(area, "checkout", "--quiet", "--detach", revision)
+            old = subprocess.check_output(
+                ["git", "show", "fb5d77bed83a9ca7913bfeefac545f796fa6a141:" + self.M.LEGACY],
+                cwd=area, timeout=45)
+            (area / self.M.LEGACY).write_bytes(old)
+            mixed = imported(area / REL, "v2_malformed_old_helper_fixture")
+            self.assertFalse(hasattr(mixed.source, "PRIdentityDenied"))
+            with self.assertRaisesRegex(mixed.Denied, "^UNPROTECTED_EXECUTION_SOURCE$"):
+                mixed.local_source(mixed.source.Git(area), revision)
+            event_path, output = area / "event.json", area / "rejected.json"
+            event_path.write_text("{}\n")
+            env = {"PATH": os.environ.get("PATH", os.defpath),
+                   "GITHUB_EVENT_NAME": "workflow_run", "GITHUB_REPOSITORY": mixed.REPO,
+                   "GITHUB_REF": "refs/heads/main",
+                   "GITHUB_WORKFLOW_REF": mixed.REPO + "/" + mixed.PRODUCER + "@refs/heads/main",
+                   "GITHUB_SHA": revision, "GITHUB_WORKFLOW_SHA": revision,
+                   "GITHUB_RUN_ATTEMPT": "1", "GITHUB_RUN_ID": "8001"}
+            argv = [str(area / REL), "preflight", "--event-file", str(event_path),
+                    "--output", str(output)]
+            with mock.patch.object(sys, "argv", argv), mock.patch.dict(os.environ, env, clear=True), \
+                    mock.patch.object(mixed.API, "get", side_effect=AssertionError("unexpected network")), \
+                    mock.patch("sys.stdout", new_callable=io.StringIO):
+                self.assertEqual(mixed.main(), 1)
+            rejected = json.loads(output.read_bytes())
+            self.assertEqual(rejected["phase"], "REJECTED")
+            self.assertEqual(rejected["reason"], "UNPROTECTED_EXECUTION_SOURCE")
+            self.assertNotIn("scope", rejected)
+            self.assertNotIn("pr_identity_observation", rejected)
+            self.assertFalse(rejected["source_range_qualified"])
+            self.assertFalse(rejected["governance_post_qualified"])
+            self.assertTrue(all(rejected[key] is False for key in mixed.FALSE_FLAGS))
+            with self.assertRaisesRegex(mixed.Denied, "PROTOCOL_ENVELOPE_OR_AUTHORITY_DRIFT"):
+                mixed.validate_challenge(rejected, None)
+            self.assertEqual(output.with_name(output.name + ".sha256").read_text(),
+                             mixed.sha(output.read_bytes()) + "  " + output.name + "\n")
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

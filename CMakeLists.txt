@@ -467,7 +467,8 @@ if(AP_BUILD_TESTS)
         target_link_libraries(ap_alsa_runtime_example_tests PRIVATE audio_pipeline_runtime)
         add_test(NAME ap_alsa_runtime_example_tests COMMAND ap_alsa_runtime_example_tests)
         set_tests_properties(ap_alsa_runtime_example_tests PROPERTIES TIMEOUT 10)
-        foreach(_io_case clean capture render both interrupt recovery-failure)
+        foreach(_io_case clean capture render both interrupt recovery-failure
+                         capture-resume render-resume render-resume-retry prepare-failure)
             add_test(NAME ap_alsa_runtime_${_io_case}_tests
                      COMMAND ap_alsa_runtime_example_tests --io ${_io_case})
             set_tests_properties(ap_alsa_runtime_${_io_case}_tests PROPERTIES TIMEOUT 10)

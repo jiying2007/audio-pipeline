@@ -16,6 +16,7 @@ int snd_pcm_set_params(snd_pcm_t *pcm, int format, int access, unsigned channels
                        unsigned rate, int resample, unsigned latency);
 const char *snd_strerror(int error);
 int snd_pcm_recover(snd_pcm_t *pcm, int error, int silent);
+int snd_pcm_resume(snd_pcm_t *pcm);
 snd_pcm_sframes_t snd_pcm_writei(snd_pcm_t *pcm, const void *data,
                                  snd_pcm_uframes_t frames);
 snd_pcm_sframes_t snd_pcm_readi(snd_pcm_t *pcm, void *data,

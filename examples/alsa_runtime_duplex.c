@@ -28,10 +28,25 @@ static int configure_pcm(snd_pcm_t *pcm, unsigned channels, unsigned rate) {
     return rc;
 }
 
+/* Return one only when recovery resets the PCM queue; zero preserves samples. */
 static int recover_pcm(snd_pcm_t *pcm, int error, uint64_t *xruns) {
     const int xrun = error == -EPIPE || error == -ESTRPIPE;
     int rc;
     if (xrun) (*xruns)++;
+    if (error == -ESTRPIPE) {
+        /* snd_pcm_recover hides whether suspend recovery resumed the existing
+         * queue or prepared an empty one. Only the latter starts a new epoch. */
+        do {
+            rc = snd_pcm_resume(pcm);
+            if (rc == -EAGAIN) {
+                const struct timespec pause = {1, 0};
+                (void)nanosleep(&pause, NULL);
+            }
+        } while (rc == -EAGAIN);
+        if (rc >= 0) return 0;
+        rc = snd_pcm_prepare(pcm);
+        return rc < 0 ? -1 : 1;
+    }
     rc = snd_pcm_recover(pcm, error, 1);
     return rc < 0 ? -1 : xrun;
 }

@@ -14,7 +14,7 @@ test "$(git rev-parse --verify HEAD)" = "$revision" || {
     echo "release checkout does not match verified source revision" >&2
     exit 1
 }
-git diff --quiet HEAD -- || {
+if ! git diff --quiet -- || ! git diff --cached --quiet HEAD --; then
     echo "release tracked source has local changes" >&2
     exit 1
-}
+fi

@@ -49,6 +49,7 @@ pkg-config consumer 也由 CI 从 clean install prefix 实际编译、链接和�
 安装前缀整体迁移，也支持 multiarch 库目录。绝对路径则作为固定安装位置原样写入
 pkg-config 文件；`cmake --install --prefix` 不会重定位这些绝对路径。两者混合配置
 也由实际 CMake 与 pkg-config consumer 验证。
+混合布局须在 configure 时指定最终安装前缀；固定目录及其与前缀的关系不属于可迁移契约。
 
 ## 3. Pipeline 同步处理
 

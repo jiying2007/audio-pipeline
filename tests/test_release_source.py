@@ -51,6 +51,12 @@ class ReleaseSourceTest(unittest.TestCase):
         self.git("add", "source.c")
         self.assertNotEqual(self.preflight().returncode, 0)
 
+    def test_staged_edit_cancelled_in_worktree_still_rejected(self):
+        (self.root / "source.c").write_text("/* staged modification */\n")
+        self.git("add", "source.c")
+        (self.root / "source.c").write_text("/* tracked fixture */\n")
+        self.assertNotEqual(self.preflight().returncode, 0)
+
     def test_wrong_revision_rejected(self):
         self.assertNotEqual(self.preflight("0" * 40).returncode, 0)
 

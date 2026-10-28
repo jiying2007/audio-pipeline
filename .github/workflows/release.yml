@@ -150,11 +150,19 @@ jobs:
             -C verified-endurance -cf - . | gzip -n > "audio-pipeline-${TAG}-engineering-endurance.tar.gz"
       - name: Build, test and install SDK
         if: steps.existing.outputs.release != 'true'
+        env:
+          VERIFIED_SHA: ${{ github.event.workflow_run.head_sha }}
         run: |
-          cmake -S . -B build-release -DCMAKE_BUILD_TYPE=Release
+          set -euo pipefail
+          sh scripts/verify-release-source.sh "$VERIFIED_SHA"
+          cmake -S . -B build-release -DCMAKE_BUILD_TYPE=Release \
+            -DAP_BUILD_SOURCE_REVISION="$VERIFIED_SHA"
           cmake --build build-release --parallel
           ctest --test-dir build-release --output-on-failure
           cmake --install build-release --prefix "$PWD/stage"
+          cmake -S tests/consumer -B build-release-consumer -DCMAKE_PREFIX_PATH="$PWD/stage"
+          cmake --build build-release-consumer --parallel
+          ./build-release-consumer/audio_pipeline_consumer "$VERIFIED_SHA"
       - name: Run deterministic release validation smoke
         if: steps.existing.outputs.release != 'true'
         env:

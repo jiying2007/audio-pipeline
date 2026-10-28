@@ -50,14 +50,24 @@ jobs:
           namespace: quality-sdk
       - name: Build and install SDK
         run: |
-          cmake -S . -B build-sdk -DCMAKE_BUILD_TYPE=Release
+          set -euo pipefail
+          python3 tests/test_release_source.py
+          revision=$(git rev-parse HEAD)
+          mkdir -p verified-delivery
+          echo 'unit fixture, not delivery evidence' > verified-delivery/source-identity-fixture.txt
+          sh scripts/verify-release-source.sh "$revision"
+          cmake -S . -B build-sdk -DCMAKE_BUILD_TYPE=Release \
+            -DAP_BUILD_SOURCE_REVISION="$revision"
           cmake --build build-sdk --parallel
           cmake --install build-sdk --prefix "$PWD/stage"
       - name: Consume with find_package
         run: |
           cmake -S tests/consumer -B build-consumer -DCMAKE_PREFIX_PATH="$PWD/stage"
           cmake --build build-consumer --parallel
-          ./build-consumer/audio_pipeline_consumer
+          ./build-consumer/audio_pipeline_consumer "$(git rev-parse HEAD)"
+          rc=0
+          ./build-consumer/audio_pipeline_consumer 0000000000000000000000000000000000000000 || rc=$?
+          test "$rc" -eq 4
       - name: Consume with pkg-config
         run: |
           export PKG_CONFIG_PATH="$PWD/stage/lib/pkgconfig:$PWD/stage/lib64/pkgconfig"

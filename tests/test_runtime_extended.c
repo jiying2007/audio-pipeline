@@ -83,6 +83,7 @@ static ap_metrics_t process_one(ap_runtime_t *runtime,
 
 typedef struct control_flood {
     ap_runtime_t *runtime;
+    unsigned alternate_tuning;
     atomic_uint finish;
     atomic_uint accepted;
     atomic_uint stopped;
@@ -94,12 +95,19 @@ static void *refill_controls(void *arg) {
     command.struct_size = sizeof(command);
     command.api_version = AP_RUNTIME_API_VERSION;
     command.kind = AP_RUNTIME_COMMAND_RESET;
+    command.data.tuning.struct_size = sizeof(command.data.tuning);
+    command.data.tuning.api_version = AP_PIPELINE_CONTROL_API_VERSION;
+    command.data.tuning.mask = AP_TUNING_LIMITER;
+    command.data.tuning.limiter_dbfs = -6.0f;
     while (!atomic_load_explicit(&flood->finish, memory_order_acquire)) {
         const ap_status_t status = ap_runtime_command(flood->runtime, &command);
         assert(status == AP_OK || status == AP_EFULL);
-        if (status == AP_OK)
+        if (status == AP_OK) {
             atomic_fetch_add_explicit(&flood->accepted, 1u, memory_order_relaxed);
-        else
+            if (flood->alternate_tuning)
+                command.kind = command.kind == AP_RUNTIME_COMMAND_RESET ?
+                    AP_RUNTIME_COMMAND_SET_TUNING : AP_RUNTIME_COMMAND_RESET;
+        } else
             sched_yield();
     }
     return NULL;
@@ -112,7 +120,7 @@ static void *stop_during_control_flood(void *arg) {
     return NULL;
 }
 
-static void test_control_flood_progress_and_stop(void) {
+static void test_control_flood_progress_and_stop(unsigned alternate_tuning) {
     ap_config_t pcfg = ap_config_default(AP_PROFILE_CALL);
     ap_runtime_config_t rcfg = ap_runtime_config_default();
     ap_pipeline_t *pipeline = NULL;
@@ -129,6 +137,7 @@ static void test_control_flood_progress_and_stop(void) {
     assert(ap_pipeline_init(pipeline_state, sizeof(pipeline_state), &pcfg, &pipeline) == AP_OK);
     runtime = open_default(pipeline, &rcfg);
     flood.runtime = runtime;
+    flood.alternate_tuning = alternate_tuning;
     atomic_init(&flood.finish, 0u);
     atomic_init(&flood.accepted, 0u);
     atomic_init(&flood.stopped, 0u);
@@ -1240,7 +1249,8 @@ int main(int argc, char **argv) {
     test_command_validation_and_queue_pressure();
     test_reset_event_epoch_rebase();
     test_input_full_flood_preserves_notification();
-    test_control_flood_progress_and_stop();
+    test_control_flood_progress_and_stop(0u);
+    test_control_flood_progress_and_stop(1u);
     test_directional_gap_counts();
     test_metadata_event_drop_and_output_backpressure();
     test_automatic_quality_degrade_and_recovery();

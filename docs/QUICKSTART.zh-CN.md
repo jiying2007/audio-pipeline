@@ -104,10 +104,11 @@ ap_runtime_deinit(runtime);
 重要所有权规则：
 
 1. `start` 前 Pipeline 由调用方拥有；
-2. worker 启动后，只有 DSP worker 可以访问/修改 live Pipeline；
+2. worker 启动后，直到 `stop` 完成 join 并返回，只有 DSP worker 可以访问/修改 live Pipeline；stop 期间仍可由单一 control producer 入队，tuning 不会读取 worker 持有的 Pipeline；
 3. 应用线程通过有界队列提交 frame，通过 Runtime API 读结果和 telemetry；
 4. output backpressure 允许丢弃“发布结果”，但不会跳过已经接受的 DSP frame；
-5. 任何 ownership、queue、counter 或 lifecycle 变更都应通过 TSan。
+5. 生命周期调用应串行化，deinit 前停止其他 API 使用方；stop 期间 start/Flight Recorder attach 返回 `AP_ESTATE`；
+6. 任何 ownership、queue、counter 或 lifecycle 变更都应通过 TSan。
 
 ## 5. Build identity
 

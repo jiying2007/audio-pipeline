@@ -158,7 +158,9 @@ ap_runtime_deinit(runtime);
 
 `ap_runtime_open()` validates caller-owned state, basic scheduling/overload policy and extensible runtime options. `ap_runtime_submit_frame()` is the only frame producer API and always accepts optional metadata. `ap_runtime_read_metrics()` returns the complete long-running runtime metric structure.
 
-After `ap_runtime_start()`, the worker is the sole owner of the supplied pipeline until stop/deinit. If `ap_runtime_options_t.lock_memory` is enabled, the runtime performs best-effort bounded `mlock()` only on the caller-owned runtime and pipeline arenas and releases those locks on stop. The SDK never invokes process-global `mlockall()`; worker-stack prefaulting and process-wide realtime memory policy remain product responsibilities.
+After `ap_runtime_start()`, the worker is the sole owner of the supplied pipeline until `ap_runtime_stop()` has joined it and returned. A stop request alone does not release ownership. A concurrent single control producer may continue to queue commands while stop is in progress; tuning admission uses only its producer-side projection until the worker has joined. Commands not consumed before stop remain queued for a later start. Start and Flight Recorder attachment return `AP_ESTATE` while stop is in progress. Lifecycle calls must be serialized, and all API users must be quiescent before deinit destroys runtime resources.
+
+If `ap_runtime_options_t.lock_memory` is enabled, the runtime performs best-effort bounded `mlock()` only on the caller-owned runtime and pipeline arenas and releases those locks on stop. The SDK never invokes process-global `mlockall()`; worker-stack prefaulting and process-wide realtime memory policy remain product responsibilities.
 
 ## Runtime control ownership
 
@@ -174,7 +176,7 @@ After `ap_runtime_start()`, the worker is the sole owner of the supplied pipelin
 
 At each worker boundary, the runtime applies only the commands present when that boundary begins, at most `AP_RUNTIME_COMMAND_QUEUE_DEPTH`. Commands accepted while it drains are deferred to a later boundary. Continuous control submission therefore cannot extend one drain indefinitely and prevent the worker from returning to audio work or its stop check.
 
-Tuning admission is checked against the full AGC pair that will exist when the DSP worker applies the command, using a producer-side projection of the target/limiter pair advanced by accepted queued commands. While the worker is stopped, the caller owns the supplied pipeline and may change tuning through `ap_pipeline_apply_tuning()`; before the next tuning admission and before start, the runtime rebuilds its projection from the pipeline's current tuning and replays still-pending tuning commands in FIFO order. If a caller-owned direct change makes an already accepted pending sequence pair-invalid, the next tuning command and `ap_runtime_start()` fail with `AP_ESTATE` until the live pipeline is repaired. While the worker runs, the runtime never re-reads worker-owned pipeline state and continues from the producer projection only.
+Tuning admission is checked against the full AGC pair that will exist when the DSP worker applies the command, using a producer-side projection of the target/limiter pair advanced by accepted queued commands. Once stop has completed, the caller owns the supplied pipeline and may change tuning through `ap_pipeline_apply_tuning()`; before the next tuning admission and before start, the runtime rebuilds its projection from the pipeline's current tuning and replays still-pending tuning commands in FIFO order. If a caller-owned direct change makes an already accepted pending sequence pair-invalid, the next tuning command and `ap_runtime_start()` fail with `AP_ESTATE` until the live pipeline is repaired. While the worker runs or is stopping, the runtime never re-reads worker-owned pipeline state and continues from the producer projection only.
 
 ## Output backpressure contract
 

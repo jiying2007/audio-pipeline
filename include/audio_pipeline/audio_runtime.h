@@ -152,6 +152,10 @@ ap_status_t ap_runtime_open(void *memory,
  * pipeline plus pending commands. AP_ESTATE means that sequence is no longer
  * valid and the caller must repair the live tuning before retrying. */
 ap_status_t ap_runtime_start(ap_runtime_t *runtime);
+/* Ownership returns only after stop has joined the worker. A concurrent single
+ * control producer may queue commands during stop using its tuning projection;
+ * it must not access the pipeline directly. Start/recorder attach reject a stop
+ * still in progress. Serialize lifecycle calls and quiesce users before deinit. */
 void ap_runtime_stop(ap_runtime_t *runtime);
 void ap_runtime_deinit(ap_runtime_t *runtime);
 

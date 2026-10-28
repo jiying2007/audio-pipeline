@@ -4,7 +4,9 @@
  * the original C11 operation and its memory order before yielding to a peer.
  */
 #define _GNU_SOURCE
+#include "audio_pipeline/audio_runtime.h"
 #include <assert.h>
+#include <pthread.h>
 #include <stdatomic.h>
 #include <stdio.h>
 
@@ -56,7 +58,14 @@ static int test_load_int(const volatile atomic_int *object, memory_order order) 
              volatile atomic_int *: test_load_int, \
              const volatile atomic_int *: test_load_int)((object), (order))
 
+static int test_pthread_join(pthread_t thread, void **result);
+static ap_status_t test_pipeline_get_tuning(const ap_pipeline_t *pipeline,
+                                           ap_tuning_t *tuning);
+#define pthread_join test_pthread_join
+#define ap_pipeline_get_tuning test_pipeline_get_tuning
 #include "../src/platform/linux/ap_runtime.c"
+#undef ap_pipeline_get_tuning
+#undef pthread_join
 
 static _Alignas(AP_RUNTIME_STATE_ALIGNMENT) ap_runtime_t runtime;
 static _Alignas(AP_PIPELINE_STATE_ALIGNMENT)
@@ -67,6 +76,21 @@ static void (*load_peer)(const volatile void *object);
 static unsigned peer_calls;
 static ap_status_t replacement_status;
 static unsigned refill_remaining;
+static void (*join_peer)(void);
+static unsigned tuning_snapshot_calls;
+
+static int test_pthread_join(pthread_t thread, void **result) {
+    /* The peer runs after stop has requested exit but before join confirms
+     * that the worker has released the pipeline. The real join still runs. */
+    if (join_peer) join_peer();
+    return pthread_join(thread, result);
+}
+
+static ap_status_t test_pipeline_get_tuning(const ap_pipeline_t *pipeline,
+                                           ap_tuning_t *tuning) {
+    tuning_snapshot_calls++;
+    return ap_pipeline_get_tuning(pipeline, tuning);
+}
 
 static void after_atomic_store(const volatile void *object) {
     if (object == store_watch && store_peer) store_peer();
@@ -167,6 +191,64 @@ static void test_command_boundary_budget(unsigned initial_tail) {
            AP_RUNTIME_COMMAND_QUEUE_DEPTH);
     runtime_drain_commands(&runtime);
     assert(atomic_load(&runtime.command_head) == atomic_load(&runtime.command_tail));
+    ap_runtime_deinit(&runtime);
+}
+
+static void submit_tuning_before_join(void) {
+    const unsigned snapshots = tuning_snapshot_calls;
+    ap_runtime_command_t command = {0};
+    command.struct_size = sizeof(command);
+    command.api_version = AP_RUNTIME_API_VERSION;
+    command.kind = AP_RUNTIME_COMMAND_SET_TUNING;
+    command.data.tuning.struct_size = sizeof(command.data.tuning);
+    command.data.tuning.api_version = AP_PIPELINE_CONTROL_API_VERSION;
+    command.data.tuning.mask = AP_TUNING_LIMITER;
+    command.data.tuning.limiter_dbfs = -6.0f;
+    assert(ap_runtime_command(&runtime, &command) == AP_OK);
+    /* Admission must not inspect a pipeline whose owner has not joined. */
+    assert(tuning_snapshot_calls == snapshots);
+    assert(ap_runtime_start(&runtime) == AP_ESTATE);
+    assert(ap_runtime_attach_flight_recorder(&runtime, NULL) == AP_ESTATE);
+    peer_calls++;
+}
+
+static void test_stop_keeps_worker_ownership_until_join(void) {
+    ap_config_t pipeline_config = ap_config_default(AP_PROFILE_CALL);
+    ap_runtime_config_t config = ap_runtime_config_default();
+    ap_runtime_options_t options = ap_runtime_options_default();
+    ap_pipeline_t *pipeline = NULL;
+    ap_runtime_t *opened = NULL;
+    ap_tuning_t direct = {0};
+    ap_runtime_command_t command = {0};
+    unsigned snapshots;
+    assert(ap_pipeline_init(pipeline_memory, sizeof(pipeline_memory),
+                            &pipeline_config, &pipeline) == AP_OK);
+    assert(ap_runtime_open(&runtime, sizeof(runtime), pipeline, &config,
+                           &options, &opened) == AP_OK);
+    assert(ap_runtime_start(&runtime) == AP_OK);
+    peer_calls = 0u;
+    join_peer = submit_tuning_before_join;
+    ap_runtime_stop(&runtime);
+    join_peer = NULL;
+    assert(peer_calls == 1u);
+
+    /* A completed stop does hand ownership back: a direct caller change must
+     * still be included when the next queued tuning is admitted. */
+    direct.struct_size = sizeof(direct);
+    direct.api_version = AP_PIPELINE_CONTROL_API_VERSION;
+    direct.mask = AP_TUNING_AGC_TARGET;
+    direct.agc_target_dbfs = -24.0f;
+    assert(ap_pipeline_apply_tuning(pipeline, &direct) == AP_OK);
+    snapshots = tuning_snapshot_calls;
+    command.struct_size = sizeof(command);
+    command.api_version = AP_RUNTIME_API_VERSION;
+    command.kind = AP_RUNTIME_COMMAND_SET_TUNING;
+    command.data.tuning.struct_size = sizeof(command.data.tuning);
+    command.data.tuning.api_version = AP_PIPELINE_CONTROL_API_VERSION;
+    command.data.tuning.mask = AP_TUNING_LIMITER;
+    command.data.tuning.limiter_dbfs = -20.0f;
+    assert(ap_runtime_command(&runtime, &command) == AP_OK);
+    assert(tuning_snapshot_calls == snapshots + 1u);
     ap_runtime_deinit(&runtime);
 }
 
@@ -321,6 +403,7 @@ int main(void) {
     test_output_status_ownership(AP_EINVAL, AP_OK);
     test_command_boundary_budget(0u);
     test_command_boundary_budget(UINT_MAX - 1u);
+    test_stop_keeps_worker_ownership_until_join();
     test_critical_snapshot(2u, 0u);
     test_critical_snapshot(2u, 1u);
     test_critical_snapshot(UINT_MAX - 1u, 0u);

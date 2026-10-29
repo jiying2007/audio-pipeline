@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(audio_pipeline VERSION 2.3.59 LANGUAGES C)
+project(audio_pipeline VERSION 2.3.60 LANGUAGES C)
 
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
@@ -472,6 +472,18 @@ if(AP_BUILD_TESTS)
             add_test(NAME ap_alsa_runtime_${_io_case}_tests
                      COMMAND ap_alsa_runtime_example_tests --io ${_io_case})
             set_tests_properties(ap_alsa_runtime_${_io_case}_tests PROPERTIES TIMEOUT 10)
+        endforeach()
+        foreach(_file_case close-ok close-error write-error)
+            add_test(NAME ap_alsa_output_${_file_case}_tests
+                     COMMAND ap_alsa_runtime_example_tests --output-file ${_file_case})
+            set_tests_properties(ap_alsa_output_${_file_case}_tests PROPERTIES TIMEOUT 10)
+        endforeach()
+        foreach(_file_case empty-repeat one-byte-repeat one-byte-once
+                           odd-tail-repeat odd-tail-once single-sample-repeat
+                           short-repeat short-once whole-repeat whole-once)
+            add_test(NAME ap_alsa_input_${_file_case}_tests
+                     COMMAND ap_alsa_runtime_example_tests --input-file ${_file_case})
+            set_tests_properties(ap_alsa_input_${_file_case}_tests PROPERTIES TIMEOUT 10)
         endforeach()
         add_executable(ap_runtime_state_size tests/print_runtime_state.c)
         target_link_libraries(ap_runtime_state_size PRIVATE audio_pipeline_runtime)

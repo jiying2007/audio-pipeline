@@ -436,7 +436,7 @@ jobs:
             --output fe-speex-source --negative-evidence
       - name: Preserve SpeexDSP source-preflight bytes and failures
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: frontend-speex-source-${{ github.run_id }}
           path: fe-speex-source/
@@ -474,7 +474,7 @@ jobs:
             --output fe-array --execution-source "$GITHUB_SHA" --negative-evidence
       - name: Preserve native-array engineering evidence and failures
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: frontend-array-${{ github.run_id }}
           path: fe-array/
@@ -492,7 +492,7 @@ jobs:
             --output fe-mic-fault --execution-source "$GITHUB_SHA" --verify --require-arm --replay
       - name: Preserve FE06 non-shipping engineering evidence and failures
         if: always() && (steps.fe06.outcome == 'success' || steps.fe06.outcome == 'failure')
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: frontend-mic-fault-${{ github.run_id }}
           path: fe-mic-fault/
@@ -510,7 +510,7 @@ jobs:
             --output fe-array-resource --execution-source "$GITHUB_SHA" --verify
       - name: Preserve FE08 hosted resource characterizations and failures
         if: always() && (steps.fe08.outcome == 'success' || steps.fe08.outcome == 'failure')
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: frontend-array-resource-${{ github.run_id }}
           path: fe-array-resource/
@@ -528,7 +528,7 @@ jobs:
             --verify --output fe09-bridge --execution-source "$GITHUB_SHA"
       - name: Retain FE09 C2/C4 to mono SDK research-only metadata
         if: always() && (steps.fe09_r0.outcome == 'success' || steps.fe09_r0.outcome == 'failure')
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: frontend-fe09-sdk-bridge-${{ github.run_id }}
           path: fe09-bridge/
@@ -546,7 +546,7 @@ jobs:
             --verify --output fe09-r2a --execution-source "$GITHUB_SHA"
       - name: Retain FE09 R2A research-only ABI prototype evidence and failures
         if: always() && (steps.fe09_r2a.outcome == 'success' || steps.fe09_r2a.outcome == 'failure')
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: frontend-fe09-r2a-abi-${{ github.run_id }}
           path: fe09-r2a/
@@ -564,7 +564,7 @@ jobs:
             --verify --output fe09-b1a --execution-source "$GITHUB_SHA"
       - name: Retain FE09 B1A identity-ingress research evidence and failures
         if: always() && (steps.fe09_b1a.outcome == 'success' || steps.fe09_b1a.outcome == 'failure')
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: frontend-fe09-b1a-ingress-${{ github.run_id }}
           path: fe09-b1a/
@@ -582,7 +582,7 @@ jobs:
             --verify --output fe09-b1b0 --execution-source "$GITHUB_SHA"
       - name: Retain FE09 B1B-S0 SRC ownership research evidence and failures
         if: always() && (steps.fe09_b1b0.outcome == 'success' || steps.fe09_b1b0.outcome == 'failure')
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: frontend-fe09-b1b0-src-${{ github.run_id }}
           path: fe09-b1b0/
@@ -600,7 +600,7 @@ jobs:
             --verify --output fe09-b1b1 --execution-source "$GITHUB_SHA"
       - name: Retain FE09 B1B-S1 nonshipping single-array BF evidence and failures
         if: always() && (steps.fe09_b1b1.outcome == 'success' || steps.fe09_b1b1.outcome == 'failure')
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: frontend-fe09-b1b1-single-bf-${{ github.run_id }}
           path: fe09-b1b1/
@@ -619,7 +619,7 @@ jobs:
             --verify --output fe09-b2s1 --execution-source "$GITHUB_SHA"
       - name: Retain FE09 R2B2-S1 private queue+first-party BF evidence and failures
         if: always() && (steps.fe09_b2s1.outcome == 'success' || steps.fe09_b2s1.outcome == 'failure')
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: frontend-fe09-b2s1-private-queue-${{ github.run_id }}
           path: fe09-b2s1/
@@ -709,7 +709,7 @@ jobs:
             --verify --output fe09-b2s2 --execution-source "$GITHUB_SHA"
       - name: Retain FE09 B2-S2 private APX3 evidence including failure records
         if: always() && (steps.fe09_b2s2.outcome == 'success' || steps.fe09_b2s2.outcome == 'failure')
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: frontend-fe09-b2s2-private-apd-${{ github.run_id }}
           path: fe09-b2s2/
@@ -806,7 +806,7 @@ jobs:
             --verify --output fe09-b2s3 --execution-source "$GITHUB_SHA"
       - name: Retain FE09 B2-S3 actual concurrent and negative-source evidence
         if: always() && (steps.fe09_b2s3.outcome == 'success' || steps.fe09_b2s3.outcome == 'failure')
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: frontend-fe09-b2s3-threaded-${{ github.run_id }}
           path: fe09-b2s3/
@@ -924,7 +924,7 @@ jobs:
           )
       - name: Preserve FE03 A1 result, logs and failed evidence
         if: always() && (steps.fe03_a1.outcome == 'success' || steps.fe03_a1.outcome == 'failure')
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: frontend-doa-a1-${{ github.run_id }}
           path: fe-doa-a1/
@@ -959,7 +959,7 @@ jobs:
           python3 "$script" --collect --output fe09-b3-f0 --execution-source "$GITHUB_SHA"
       - name: Preserve FE09 B3-F0 deadline R1 exact-run composition evidence and failures
         if: always() && (steps.fe09_b3_f0.outcome == 'success' || steps.fe09_b3_f0.outcome == 'failure') && steps.fe09_b3_f0.outputs.source_kind == 'deadline-r1'
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: frontend-fe09-b3-f0-deadline-r1-${{ github.run_id }}-attempt-${{ github.run_attempt }}
           path: fe09-b3-f0/
@@ -967,7 +967,7 @@ jobs:
           retention-days: 30
       - name: Preserve distinct FE09 B3-F0 R2 exact-run evidence and failures
         if: always() && (steps.fe09_b3_f0.outcome == 'success' || steps.fe09_b3_f0.outcome == 'failure') && steps.fe09_b3_f0.outputs.source_kind == 'forward-r2'
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: frontend-fe09-b3-f0-forward-r2-${{ github.run_id }}-attempt-${{ github.run_attempt }}
           path: fe09-b3-f0/
@@ -975,7 +975,7 @@ jobs:
           retention-days: 30
       - name: Preserve distinct FE09 B3-F0 R3 exact-run evidence and failures
         if: always() && (steps.fe09_b3_f0.outcome == 'success' || steps.fe09_b3_f0.outcome == 'failure') && steps.fe09_b3_f0.outputs.source_kind == 'forward-r3'
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: frontend-fe09-b3-f0-forward-r3-${{ github.run_id }}-attempt-${{ github.run_attempt }}
           path: fe09-b3-f0/
@@ -983,7 +983,7 @@ jobs:
           retention-days: 30
       - name: Preserve distinct FE09 B3-F0 R4 exact-run evidence and failures
         if: always() && (steps.fe09_b3_f0.outcome == 'success' || steps.fe09_b3_f0.outcome == 'failure') && steps.fe09_b3_f0.outputs.source_kind == 'forward-r4'
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: frontend-fe09-b3-f0-forward-r4-${{ github.run_id }}-attempt-${{ github.run_attempt }}
           path: fe09-b3-f0/
@@ -1016,7 +1016,7 @@ jobs:
             --toolchain-image ghcr.io/jiying2007/audio-pipeline-ci@sha256:69d38c66e09885b78eb3abba3f8b7dcc92363b71430dc39fc7f74978ffae2e57
       - name: Preserve FE09 actual CALL original resource evidence and failures
         if: always() && (steps.fe09_t3s3_f0.outcome == 'success' || steps.fe09_t3s3_f0.outcome == 'failure') && steps.fe09_t3s3_f0.outputs.source_kind == 'original-v1'
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: frontend-fe09-t3s3-f0-${{ github.run_id }}-attempt-${{ github.run_attempt }}
           path: fe09-t3s3-f0/
@@ -1024,7 +1024,7 @@ jobs:
           retention-days: 30
       - name: Preserve distinct FE09 F0 R2 actual CALL process evidence and failures
         if: always() && (steps.fe09_t3s3_f0.outcome == 'success' || steps.fe09_t3s3_f0.outcome == 'failure') && steps.fe09_t3s3_f0.outputs.source_kind == 'forward-r2'
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: frontend-fe09-t3s3-f0-forward-r2-${{ github.run_id }}-attempt-${{ github.run_attempt }}
           path: fe09-t3s3-f0/
@@ -1032,7 +1032,7 @@ jobs:
           retention-days: 30
       - name: Preserve distinct FE09 F0 R3 actual CALL process evidence and failures
         if: always() && (steps.fe09_t3s3_f0.outcome == 'success' || steps.fe09_t3s3_f0.outcome == 'failure') && steps.fe09_t3s3_f0.outputs.source_kind == 'forward-r3'
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: frontend-fe09-t3s3-f0-forward-r3-${{ github.run_id }}-attempt-${{ github.run_attempt }}
           path: fe09-t3s3-f0/
@@ -1040,7 +1040,7 @@ jobs:
           retention-days: 30
       - name: Preserve distinct FE09 F0 R4 actual CALL process evidence and failures
         if: always() && (steps.fe09_t3s3_f0.outcome == 'success' || steps.fe09_t3s3_f0.outcome == 'failure') && steps.fe09_t3s3_f0.outputs.source_kind == 'forward-r4'
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: frontend-fe09-t3s3-f0-forward-r4-${{ github.run_id }}-attempt-${{ github.run_attempt }}
           path: fe09-t3s3-f0/
@@ -1048,7 +1048,7 @@ jobs:
           retention-days: 30
       - name: Preserve reference evidence and failures
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: frontend-reference-${{ github.run_id }}
           path: fe-reference/
@@ -1081,7 +1081,7 @@ jobs:
             --verify --output fe09-b2s3-t1 --execution-source "$GITHUB_SHA"
       - name: Retain exact-run T1 source PCM and wrap witness or failed qualification
         if: always() && (steps.fe09_t1.outcome == 'success' || steps.fe09_t1.outcome == 'failure')
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: frontend-fe09-s3-t1-source-wrap-${{ github.run_id }}
           path: fe09-b2s3-t1/
@@ -1194,7 +1194,7 @@ jobs:
             --verify --output fe09-t2-f0 --execution-source "$GITHUB_SHA"
       - name: Retain T2 F0 exact-run negative feasibility and failure evidence
         if: always() && (steps.fe09_t2_f0.outcome == 'success' || steps.fe09_t2_f0.outcome == 'failure')
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: frontend-fe09-s3-t2-f0-render-feasibility-${{ github.run_id }}
           path: fe09-t2-f0/
@@ -1304,7 +1304,7 @@ jobs:
             --verify --output fe09-t2a --execution-source "$GITHUB_SHA"
       - name: Retain T2A exact-run quiescent restart and fail-closed evidence
         if: always() && (steps.fe09_t2a.outcome == 'success' || steps.fe09_t2a.outcome == 'failure')
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: frontend-fe09-s3-t2a-controlled-restart-${{ github.run_id }}
           path: fe09-t2a/
@@ -1414,7 +1414,7 @@ jobs:
             --verify --output fe09-t2b-b0 --execution-source "$GITHUB_SHA"
       - name: Retain T2B_B0 exact-run capture BF provenance and failure evidence
         if: always() && (steps.fe09_t2b_b0.outcome == 'success' || steps.fe09_t2b_b0.outcome == 'failure')
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: frontend-fe09-s3-t2b-b0-capture-only-bf-${{ github.run_id }}
           path: fe09-t2b-b0/
@@ -1527,7 +1527,7 @@ jobs:
       - name: Retain T2B_B1S0 real owner SPSC source identity and failure evidence
         id: fe09_b1s0_upload
         if: always() && (steps.fe09_b1s0.outcome == 'success' || steps.fe09_b1s0.outcome == 'failure')
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: frontend-fe09-t2b-b1s0-owner-spsc-${{ github.run_id }}
           path: fe09-b1s0/
@@ -1652,7 +1652,7 @@ jobs:
       - name: Retain B1-S1 exact-run original APX3 and negative failure evidence
         id: fe09_b1s1_upload
         if: always() && (steps.fe09_b1s1.outcome == 'success' || steps.fe09_b1s1.outcome == 'failure')
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: frontend-fe09-t2b-b1s1-source-apx3-${{ github.run_id }}
           path: fe09-b1s1/
@@ -1741,7 +1741,7 @@ jobs:
             --verify --output fe09-t2c0 --execution-source "$GITHUB_SHA"
       - name: Retain exact-run T2-C0 logical owner ACK positives and negatives
         if: always() && (steps.fe09_t2c0.outcome == 'success' || steps.fe09_t2c0.outcome == 'failure')
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: frontend-fe09-s3-t2c0-owner-fallback-${{ github.run_id }}
           path: fe09-t2c0/
@@ -1817,7 +1817,7 @@ jobs:
             --verify --output fe09-t3s0 --execution-source "$GITHUB_SHA"
       - name: Retain exact-run T3-S0 source/negative memory receipt
         if: always() && (steps.fe09_t3s0.outcome == 'success' || steps.fe09_t3s0.outcome == 'failure')
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: frontend-fe09-t3s0-compiled-resource-${{ github.run_id }}
           path: fe09-t3s0/
@@ -1897,7 +1897,7 @@ jobs:
       - name: Retain exact-run T3-S1 source/negative handoff receipt
         id: fe09_t3s1_upload
         if: always() && (steps.fe09_t3s1.outcome == 'success' || steps.fe09_t3s1.outcome == 'failure')
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: frontend-fe09-t3s1-compact-handoff-${{ github.run_id }}
           path: fe09-t3s1/
@@ -1989,7 +1989,7 @@ jobs:
             --verify --output fe09-t3s2a --execution-source "$GITHUB_SHA"
       - name: Retain original S2-A POSIX-hosted fault-negative evidence
         if: always() && (steps.fe09_t3s2a.outcome == 'success' || steps.fe09_t3s2a.outcome == 'failure')
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: frontend-fe09-t3s2a-posix-spool-${{ github.run_id }}
           path: fe09-t3s2a/
@@ -2064,7 +2064,7 @@ jobs:
             --verify --output fe09-t3s2b0 --execution-source "$GITHUB_SHA"
       - name: Retain source-attested original FBS1 index-contract evidence
         if: always() && (steps.fe09_t3s2b0.outcome == 'success' || steps.fe09_t3s2b0.outcome == 'failure')
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: frontend-fe09-t3s2b0-fbs1-index-${{ github.run_id }}
           path: fe09-t3s2b0/
@@ -2140,7 +2140,7 @@ jobs:
             --verify --output fe09-t3s2b1a --execution-source "$GITHUB_SHA"
       - name: Retain exact-run immutable FRM1 root original source and negative evidence
         if: always() && (steps.fe09_t3s2b1a.outcome == 'success' || steps.fe09_t3s2b1a.outcome == 'failure')
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: frontend-fe09-t3s2b1a-immutable-root-${{ github.run_id }}
           path: fe09-t3s2b1a/
@@ -2217,7 +2217,7 @@ jobs:
             --verify --output fe09-t3s2b1bf0 --execution-source "$GITHUB_SHA"
       - name: Retain original 17th-frame negative first-party source evidence
         if: always() && (steps.fe09_t3s2b1bf0.outcome == 'success' || steps.fe09_t3s2b1bf0.outcome == 'failure')
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: frontend-fe09-t3s2b1bf0-seq17-${{ github.run_id }}
           path: fe09-t3s2b1bf0/
@@ -2296,7 +2296,7 @@ jobs:
             --verify --output fe09-t3s2b1ba0 --execution-source "$GITHUB_SHA"
       - name: Retain first-party finite outboard original source or failure receipt
         if: always() && (steps.fe09_t3s2b1ba0.outcome == 'success' || steps.fe09_t3s2b1ba0.outcome == 'failure')
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: frontend-fe09-t3s2b1ba0-finite-${{ github.run_id }}
           path: fe09-t3s2b1ba0/
@@ -2374,7 +2374,7 @@ jobs:
       - name: Retain original A1 four-member evidence including partial target failures
         id: fe09_a1_upload
         if: always() && (steps.fe09_t3s2b1ba1.outcome == 'success' || steps.fe09_t3s2b1ba1.outcome == 'failure')
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: frontend-fe09-t3s2b1ba1-anchor-${{ github.run_id }}
           path: fe09-t3s2b1ba1/
@@ -2463,7 +2463,7 @@ jobs:
       - name: Retain A2 original four-member evidence and bounded partial failures
         id: fe09_a2f0_upload
         if: always() && (steps.fe09_a2f0.outcome == 'success' || steps.fe09_a2f0.outcome == 'failure')
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: frontend-fe09-t3s2b1ba2-retirement-${{ github.run_id }}
           path: fe09-t3s2b1ba2/
@@ -2583,7 +2583,7 @@ jobs:
             --base-evidence fe-speech/effects --output fe-speech/fir --execution-source "$GITHUB_SHA" --negative-evidence
       - name: Preserve recorded speech provenance and failures
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: frontend-speech-${{ github.run_id }}
           path: |
@@ -2671,7 +2671,7 @@ jobs:
             --failure-file fe-spatial/transport-failure.json
       - name: Preserve spatial-effect predecessor and failures
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: frontend-spatial-effects-${{ github.run_id }}
           path: ${{ steps.transport.outcome == 'success' && 'fe-spatial-transport/' || 'fe-spatial/' }}
@@ -2756,7 +2756,7 @@ jobs:
             --output fe-speex-aec --execution-source "$GITHUB_SHA" --negative-evidence
       - name: Preserve SpeexDSP AEC comparison and failures
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: frontend-speex-aec-${{ github.run_id }}
           path: fe-speex-aec/
@@ -2801,7 +2801,7 @@ jobs:
           cat fe-correlation/native-test.json
       - name: Preserve candidate-only evidence and failures
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: frontend-correlation-${{ github.run_id }}
           path: fe-correlation/
@@ -2852,7 +2852,7 @@ jobs:
             --output fe-sync-faults --execution-source "$GITHUB_SHA" --negative-evidence
       - name: Preserve synchronization effects and failures
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: frontend-sync-faults-${{ github.run_id }}
           path: fe-sync-faults/
@@ -2891,7 +2891,7 @@ jobs:
             --predecessor fe-sync-faults --output fe-sync-route-reset --execution-source "$GITHUB_SHA" --negative-evidence
       - name: Preserve route-reset effects and failures
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: frontend-sync-route-reset-${{ github.run_id }}
           path: fe-sync-route-reset/
@@ -2937,7 +2937,7 @@ jobs:
             --output fe-sync-timestamp --execution-source "$GITHUB_SHA" --negative-evidence
       - name: Preserve timestamp-authority effects and failures
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: frontend-sync-timestamp-${{ github.run_id }}
           path: fe-sync-timestamp/
@@ -2990,7 +2990,7 @@ jobs:
             --output fe-sync-timestamp-robustness --execution-source "$GITHUB_SHA" --negative-evidence
       - name: Preserve timestamp-robustness effects and failures
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: frontend-sync-timestamp-robustness-${{ github.run_id }}
           path: fe-sync-timestamp-robustness/
@@ -3043,7 +3043,7 @@ jobs:
             --output fe-aec-res --execution-source "$GITHUB_SHA" --negative-evidence
       - name: Preserve AEC/RES collaboration effects and failures
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: frontend-aec-res-${{ github.run_id }}
           path: fe-aec-res/
@@ -3100,7 +3100,7 @@ jobs:
             --output fe-res-immediate-dt --execution-source "$GITHUB_SHA" --negative-evidence
       - name: Preserve immediate-DT RES effects and failures
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: frontend-res-immediate-dt-${{ github.run_id }}
           path: fe-res-immediate-dt/
@@ -3146,7 +3146,7 @@ jobs:
             --output fe-res-oracle-near --execution-source "$GITHUB_SHA" --negative-evidence
       - name: Preserve oracle-near bound and failures
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: frontend-res-oracle-near-${{ github.run_id }}
           path: fe-res-oracle-near/
@@ -3203,7 +3203,7 @@ jobs:
             --output fe-ns-frequency-res --execution-source "$GITHUB_SHA" --negative-evidence
       - name: Preserve NS frequency-RES effects and failures
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: frontend-ns-frequency-res-${{ github.run_id }}
           path: fe-ns-frequency-res/
@@ -3249,7 +3249,7 @@ jobs:
             --output fe-ns-agc-vad --execution-source "$GITHUB_SHA" --negative-evidence
       - name: Preserve NS/AGC/VAD downstream effects and failures
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: frontend-ns-agc-vad-${{ github.run_id }}
           path: fe-ns-agc-vad/

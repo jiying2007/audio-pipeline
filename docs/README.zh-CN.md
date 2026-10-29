@@ -16,6 +16,7 @@
 | DSP/算法开发 | [开发规范](DEVELOPMENT.zh-CN.md) | [DSP_DESIGN.md](DSP_DESIGN.md)、[TUNING.md](TUNING.md) |
 | Runtime/系统开发 | [架构](ARCHITECTURE.zh-CN.md) | [API_CONTRACT.md](API_CONTRACT.md)、[DIAGNOSTICS.md](DIAGNOSTICS.md) |
 | CI/Release 维护 | [流程图](FLOWS.zh-CN.md) | [PRODUCT_ASSURANCE 中文版](PRODUCT_ASSURANCE.zh-CN.md)、[REPOSITORY_GOVERNANCE.md](REPOSITORY_GOVERNANCE.md) |
+| #714 元数据故障定位 | [只读 HTTP/网络诊断](BOT714_METADATA_DIAGNOSTICS.zh-CN.md) | 保留原维护拒绝、独立记录当前请求和三个 SHA |
 | 数据集自测/迭代 | [TESTING 中文版](TESTING.zh-CN.md) | [EXTENDED_REAL_VALIDATION 中文版](EXTENDED_REAL_VALIDATION.zh-CN.md)、[validation/README.md](../validation/README.md) |
 | 实验室/真机 | [PCR02 真机采集](PCR02_REAL_CAPTURE.md) | [可信 Runner 中文版](TRUSTED_RUNNERS.zh-CN.md)、[lab/README.md](../lab/README.md)、[hil/README.md](../hil/README.md) |
 | Product Certification | [PRODUCT_ASSURANCE 中文版](PRODUCT_ASSURANCE.zh-CN.md) | [certification/README.md](../certification/README.md) |

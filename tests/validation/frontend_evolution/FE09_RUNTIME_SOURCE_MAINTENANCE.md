@@ -71,3 +71,11 @@ python3 tests/validation/frontend_evolution/fe09_runtime_source_boundary.py s3 \
 并发回归、公开 ABI、Release 与精确 HEAD CI 仍由维护变更自己的门禁验证。
 历史预检结果不充当当前 Runtime 的执行证据；hosted/QEMU 结果不增加 HIL 或
 物理产品资格。
+
+## v2.3.60 文件 I/O 维护登记
+
+[R4 独立登记](../../../docs/research/frontend-evolution-v1/FE09_B3_F0_IO_SOURCE_R4_20261029/README.md)
+绑定 #864 的精确候选。Runtime 维护边界保留原四文件闭包，新增完整正逆补丁和
+12 个负向控制；既有版本的源码身份与拒绝规则保留。B3/F0 使用新的 R4 回执和
+入口，原 R1/R2/R3 计划、源码、阈值、完整矩阵与失败不改写。登记自身不执行新
+DSP，也不批准发布；须先独立保护合并并核验新主线，再运行 2.3.60 的完整门禁。

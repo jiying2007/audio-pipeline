@@ -76,7 +76,7 @@ python3 tests/validation/frontend_evolution/test_fe09_b3_f0_deadline_r1.py
 # R2 T1 verifies the separately preregistered 2/4-file source identity, never
 # runs B3/F0 DSP nor inherits its historical R1 scientific verdict.
 python3 tests/validation/frontend_evolution/fe09_b3_f0_r2_source_admission.py --self-test
-python3 tests/validation/frontend_evolution/fe09_b3_f0_r3_source_admission.py --check-current
+python3 tests/validation/frontend_evolution/fe09_b3_f0_r4_source_admission.py --check-current
 # R2 T2 executor source audit only: both derivations retain byte-exact R1
 # scientific functions and immutable resource/error budgets; NO DSP is run.
 # Source-only T3 verifier: runs original immutable T2 on frozen R2 and
@@ -90,9 +90,16 @@ python3 tests/validation/frontend_evolution/fe09_b3_f0_r3_source_admission.py --
 python3 tests/validation/frontend_evolution/fe09_b3_f0_r3_derivation_contract.py --self-test
 python3 tests/validation/frontend_evolution/fe09_b3_f0_deadline_r3_qualification.py --self-test
 python3 tests/validation/frontend_evolution/fe09_t3s3_f0_call_resource_r3_qualification.py --self-test
+# R4 registers only the exact 2.3.60 file-I/O source. R1/R2/R3 checks above
+# remain unchanged, including R3's rejection of 2.3.60. No DSP runs here.
+python3 tests/validation/frontend_evolution/fe09_b3_f0_r4_source_admission.py --self-test
+python3 tests/validation/frontend_evolution/fe09_b3_f0_r4_derivation_contract.py --self-test
+python3 tests/validation/frontend_evolution/fe09_b3_f0_deadline_r4_qualification.py --self-test
+python3 tests/validation/frontend_evolution/fe09_t3s3_f0_call_resource_r4_qualification.py --self-test
 python3 .github/program/workflow_pin_only_scope.py --self-test
 python3 .github/program/workflow_pin_only_replay_t1.py --self-test
 python3 .github/program/workflow_pin_only_actual_tree_t1m1.py --self-test
+python3 .github/program/bot714_metadata_observation_d1.py --self-test
 python3 .github/program/workflow_pin_pr_consumer.py --self-test
 python3 .github/program/test_dechorate_event_source_t1m3.py --self-test
 python3 .github/program/test_dechorate_governance_v2.py

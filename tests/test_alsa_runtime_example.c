@@ -1,7 +1,7 @@
 /* Test the real example and real SDK with a unit-only ALSA transport and
  * controlled clock/error boundaries. This is not DUT, acoustic or HIL evidence.
  */
-#define _POSIX_C_SOURCE 200809L
+#define _GNU_SOURCE
 #include "audio_pipeline/audio_runtime.h"
 #include <alsa/asoundlib.h>
 #include <assert.h>
@@ -26,6 +26,19 @@ static unsigned prepare_calls;
 static unsigned suspend_waits;
 static unsigned io_frame;
 static unsigned io_channels;
+enum file_output_mode { FILE_OUTPUT_UNUSED, FILE_OUTPUT_OK,
+                        FILE_OUTPUT_CLOSE_ERROR, FILE_OUTPUT_WRITE_ERROR };
+static enum file_output_mode file_output_mode;
+static FILE *file_output;
+static unsigned file_write_calls;
+static size_t file_written_bytes;
+static unsigned file_close_calls;
+static int file_close_result;
+static int file_close_errno;
+static int file_error_before_close;
+static char file_buffer[4096];
+static FILE *example_fopen(const char *path, const char *mode);
+static int example_fclose(FILE *stream);
 static int example_clock_gettime(clockid_t clock_id, struct timespec *value);
 static int example_nanosleep(const struct timespec *request, struct timespec *remaining);
 static ap_status_t example_receive(ap_runtime_t *runtime, int16_t *output,
@@ -38,12 +51,55 @@ static ap_status_t example_submit(ap_runtime_t *runtime, const int16_t *mic,
 #define nanosleep example_nanosleep
 #define ap_runtime_receive example_receive
 #define ap_runtime_submit_frame example_submit
+#define fopen example_fopen
+#define fclose example_fclose
 #include "../examples/alsa_runtime_duplex.c"
+#undef fclose
+#undef fopen
 #undef ap_runtime_submit_frame
 #undef ap_runtime_receive
 #undef clock_gettime
 #undef nanosleep
 #undef main
+
+static ssize_t output_write(void *cookie, const char *data, size_t bytes) {
+    (void)cookie; (void)data;
+    file_write_calls++;
+    if (file_output_mode != FILE_OUTPUT_OK) {
+        errno = ENOSPC;
+        return 0;
+    }
+    file_written_bytes += bytes;
+    return (ssize_t)bytes;
+}
+
+static FILE *example_fopen(const char *path, const char *mode) {
+    if (strcmp(path, "unit-output") != 0) return fopen(path, mode);
+    {
+        cookie_io_functions_t functions = {0};
+        functions.write = output_write;
+        file_output = fopencookie(NULL, mode, functions);
+    }
+    assert(file_output != NULL);
+    assert(setvbuf(file_output, file_buffer,
+                   file_output_mode == FILE_OUTPUT_WRITE_ERROR ? _IONBF : _IOFBF,
+                   sizeof(file_buffer)) == 0);
+    return file_output;
+}
+
+static int example_fclose(FILE *stream) {
+    const int is_output = stream == file_output;
+    int result;
+    if (is_output) file_error_before_close = ferror(stream);
+    result = fclose(stream);
+    if (is_output) {
+        file_close_errno = errno;
+        file_close_result = result;
+        file_close_calls++;
+        file_output = NULL;
+    }
+    return result;
+}
 
 static int example_clock_gettime(clockid_t clock_id, struct timespec *value) {
     if (!clock_step_ns) return clock_gettime(clock_id, value);
@@ -329,6 +385,89 @@ static void test_complete_delivery(void) {
     ap_runtime_deinit(runtime);
 }
 
+static void test_output_file(const char *scenario) {
+    char rate_text[16], channels_text[16];
+    char stimulus_path[] = "ap-alsa-file-XXXXXX";
+    int16_t stimulus[AP_MAX_IO_FRAME_SAMPLES];
+    char *args[] = {"alsa-unit", "capture", "playback", stimulus_path,
+                    "unit-output", "0", "-1", rate_text, channels_text, NULL};
+    const unsigned rate = AP_BUILD_MAX_IO_RATE_HZ < 16000u ?
+                           AP_BUILD_MAX_IO_RATE_HZ : 16000u;
+    int descriptor, result;
+    FILE *stimulus_file;
+    io_scenario = IO_CLEAN;
+    io_frame = rate / 100u;
+    io_channels = AP_BUILD_MAX_MIC_CHANNELS;
+    (void)snprintf(rate_text, sizeof(rate_text), "%u", rate);
+    (void)snprintf(channels_text, sizeof(channels_text), "%u", io_channels);
+    if (strcmp(scenario, "close-ok") == 0) file_output_mode = FILE_OUTPUT_OK;
+    else if (strcmp(scenario, "close-error") == 0) file_output_mode = FILE_OUTPUT_CLOSE_ERROR;
+    else if (strcmp(scenario, "write-error") == 0) file_output_mode = FILE_OUTPUT_WRITE_ERROR;
+    else assert(!"unknown output-file scenario");
+    for (unsigned i = 0u; i < io_frame; ++i) stimulus[i] = (int16_t)(1000u + 7u * i);
+    descriptor = mkstemp(stimulus_path);
+    assert(descriptor >= 0);
+    stimulus_file = fdopen(descriptor, "wb");
+    assert(stimulus_file != NULL);
+    assert(fwrite(stimulus, sizeof(stimulus[0]), io_frame, stimulus_file) == io_frame);
+    assert(fclose(stimulus_file) == 0);
+    result = alsa_example_main(9, args);
+    assert(unlink(stimulus_path) == 0);
+    assert(file_close_calls == 1u && file_output == NULL && file_write_calls > 0u);
+    if (file_output_mode == FILE_OUTPUT_OK) {
+        assert(result == 0 && file_close_result == 0 && !file_error_before_close);
+        assert(io_submitted == 2u && file_written_bytes == 2u * io_frame * sizeof(int16_t));
+    } else if (file_output_mode == FILE_OUTPUT_CLOSE_ERROR) {
+        /* Both frames were accepted by stdio; only its final flush failed. */
+        assert(io_submitted == 2u && !file_error_before_close);
+        assert(file_close_result == EOF && file_close_errno == ENOSPC);
+        assert(result != 0);
+    } else {
+        assert(file_error_before_close && result != 0);
+        assert(io_submitted == 1u);
+    }
+}
+
+static void test_input_file(const char *scenario) {
+    const int16_t samples[3] = {101, -202, 303};
+    int16_t actual[160];
+    const unsigned char tail = 0x12;
+    FILE *stream = tmpfile();
+    size_t count = 3u;
+    int odd = 0, repeat = 1, expected = 0, ended = -1;
+    assert(stream != NULL);
+    if (strcmp(scenario, "empty-repeat") == 0) { count = 0u; expected = -1; }
+    else if (strcmp(scenario, "one-byte-repeat") == 0) { count = 0u; odd = 1; expected = -1; }
+    else if (strcmp(scenario, "one-byte-once") == 0) { count = 0u; odd = 1; repeat = 0; expected = -1; }
+    else if (strcmp(scenario, "odd-tail-repeat") == 0) { odd = 1; expected = -1; }
+    else if (strcmp(scenario, "odd-tail-once") == 0) { odd = 1; repeat = 0; expected = -1; }
+    else if (strcmp(scenario, "single-sample-repeat") == 0) count = 1u;
+    else if (strcmp(scenario, "short-repeat") == 0) { /* defaults */ }
+    else if (strcmp(scenario, "short-once") == 0) repeat = 0;
+    else if (strcmp(scenario, "whole-repeat") == 0) count = 160u;
+    else if (strcmp(scenario, "whole-once") == 0) { count = 160u; repeat = 0; }
+    else assert(!"unknown input-file scenario");
+    for (size_t i = 0u; i < count; ++i)
+        assert(fwrite(&samples[i % 3u], sizeof(samples[0]), 1u, stream) == 1u);
+    if (odd) assert(fwrite(&tail, 1u, 1u, stream) == 1u);
+    rewind(stream);
+    assert(fill_render(stream, 0, repeat, actual, 160u, &ended) == expected);
+    if (expected == 0) {
+        for (size_t i = 0u; i < 160u; ++i)
+            assert(actual[i] == (repeat ? samples[(i % count) % 3u] :
+                                 i < count ? samples[i % 3u] : 0));
+        assert(ended == (!repeat && count < 160u));
+        if (count == 160u) {
+            /* The first call filled exactly one frame without setting EOF. */
+            assert(fill_render(stream, 0, repeat, actual, 160u, &ended) == 0);
+            assert(ended == !repeat);
+            for (size_t i = 0u; i < 160u; ++i)
+                assert(actual[i] == (repeat ? samples[i % 3u] : 0));
+        }
+    }
+    assert(fclose(stream) == 0);
+}
+
 static void test_output_drop_terminates_drain(void) {
     ap_runtime_t *runtime = open_runtime();
     unsigned received = 0u;
@@ -364,6 +503,16 @@ static void test_stalled_and_failed_completion(void) {
 }
 
 int main(int argc, char **argv) {
+    if (argc == 3 && strcmp(argv[1], "--output-file") == 0) {
+        test_output_file(argv[2]);
+        puts("ALSA output-file contract: OK (no hardware authority)");
+        return 0;
+    }
+    if (argc == 3 && strcmp(argv[1], "--input-file") == 0) {
+        test_input_file(argv[2]);
+        puts("ALSA input-file contract: OK (no hardware authority)");
+        return 0;
+    }
     if (argc == 3 && strcmp(argv[1], "--io") == 0) {
         test_io_recovery(argv[2]);
         puts("ALSA recovery unit contract: OK (no hardware authority)");

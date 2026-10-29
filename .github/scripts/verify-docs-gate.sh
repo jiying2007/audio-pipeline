@@ -99,6 +99,7 @@ python3 tests/validation/frontend_evolution/fe09_t3s3_f0_call_resource_r4_qualif
 python3 .github/program/workflow_pin_only_scope.py --self-test
 python3 .github/program/workflow_pin_only_replay_t1.py --self-test
 python3 .github/program/workflow_pin_only_actual_tree_t1m1.py --self-test
+python3 .github/program/bot714_metadata_observation_d1.py --self-test
 python3 .github/program/workflow_pin_pr_consumer.py --self-test
 python3 .github/program/test_dechorate_event_source_t1m3.py --self-test
 python3 .github/program/test_dechorate_governance_v2.py

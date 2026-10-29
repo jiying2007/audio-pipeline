@@ -1,3 +1,9 @@
+# 2.3.60
+
+- Fail the ALSA runtime example when final buffered uplink output cannot be closed successfully, preserving the nonzero exit through cleanup.
+- Reject incomplete s16 PCM input samples and bound no-progress file rewinds while preserving valid short-file repetition and nonrepeating EOF padding.
+- Add real-stdio positive and negative file-I/O regressions alongside the existing recovery/completion tests; no DSP default, public API/ABI, research threshold or physical qualification change.
+
 # 2.3.59
 
 - Keep Linux Runtime worker ownership through STOPPING until join completes, preventing control-plane tuning validation from reading a still-mutating pipeline without increasing runtime state or changing the public ABI.

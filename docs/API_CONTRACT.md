@@ -203,6 +203,8 @@ Input queue overflow remains explicit `AP_EFULL`: a frame that was never accepte
 
 An application must not wait indefinitely for one output per accepted frame: dropped publication has no later completion. The ALSA runtime example bounds final completion waiting to two seconds and exits with failure on output loss, a failed completion or timeout. This application cleanup deadline is not target-device DSP latency qualification. It stops/joins the worker before reading final direct pipeline metrics.
 
+The example also treats uplink write or final buffered-close failure as a nonzero exit. Its far-end raw s16 input must contain complete two-byte samples; an incomplete sample is rejected. Repeating input must make sample progress after a rewind, so empty or truncated files cannot loop indefinitely. Valid short files still repeat to fill a frame; nonrepeating input keeps zero-padding its final partial frame and marks EOF. These file-I/O checks are application integration behavior, not acoustic or hardware qualification.
+
 ## Telemetry semantics
 
 `ap_metrics_t.erle_valid` is true only for valid AEC far-end-only, non-double-talk observations. `aec_convergence_frames` and `aec_converged` describe the current convergence epoch. Route/path/discontinuity reset begins a new epoch.

@@ -205,8 +205,12 @@ python3 tools/apreplay.py failure.apd \
 
 ## 离线 PCM 工具的文件完整性
 
-`ap_process_pcm` 的 capture 输入须由所选采样率和麦克风数对应的完整 10 ms
-S16 交织帧组成；空 capture 是零帧输入，非空尾部不足一帧、半个样本或读取失败均非零退出。
+`ap_process_pcm` 的 capture 输入须包含完整 S16 样本及完整交织通道组；
+空 capture 是零帧输入，半个样本、通道组缺失或读取失败均非零退出。
+
+默认按既有规则处理完整 10 ms 帧，正常 EOF 处不足一帧的尾段不处理、不补零，
+并在 stderr 明确报告每通道未处理的样本数及通道数。这样保留任意时长录音的既有输出字节和帧数。
+需要严格检查录音完整性时，添加 `--strict-capture-frames`；该模式对任何非空尾部不足一帧均非零退出。
 render 合法短文件或空文件仍按原规则补零；render 读取返回半个 S16 样本或读取失败时，不能当作正常 EOF。
 capture 结束时处理停止，未使用的 render 尾部不作完整性验证。
 

@@ -15,7 +15,7 @@ static void usage(const char *argv0) {
     fprintf(stderr,
             "usage: %s [--sample-rate HZ] [--mic-channels 1|2] "
             "[--capture-only] [--capture-profile default|ns-isolated|vad-isolated|agc-isolated|bf-isolated] [--metrics-jsonl FILE] "
-            "[--print-default-tuning] "
+            "[--print-default-tuning] [--strict-capture-frames] "
             "[--aec-mu VALUE] [--ns-floor VALUE] [--agc-target-dbfs VALUE] [--limiter-dbfs VALUE] "
             "[--echo-path-change-frame N] "
             "[--discontinuity-frame N --discontinuity-flags MASK "
@@ -83,6 +83,7 @@ int main(int argc, char **argv) {
     uint32_t frame_index = 0u;
     uint32_t algorithmic_latency_ms = 0u;
     int capture_only = 0;
+    int strict_capture_frames = 0;
     int print_default_tuning = 0;
     const char *capture_profile = "default";
     int arg = 1;
@@ -110,6 +111,8 @@ int main(int argc, char **argv) {
             }
         } else if (strcmp(argv[arg], "--capture-only") == 0) {
             capture_only = 1;
+        } else if (strcmp(argv[arg], "--strict-capture-frames") == 0) {
+            strict_capture_frames = 1;
         } else if (strcmp(argv[arg], "--capture-profile") == 0) {
             if (++arg >= argc || !valid_capture_profile(argv[arg])) {
                 usage(argv[0]);
@@ -258,10 +261,22 @@ int main(int argc, char **argv) {
             goto done;
         }
         if (captured == 0u) break;
-        if (captured != frame * channels) {
-            fprintf(stderr, "incomplete capture frame\n");
+        if (captured % channels != 0u) {
+            fprintf(stderr, "incomplete capture channel group\n");
             result = 2;
             goto done;
+        }
+        if (captured != frame * channels) {
+            if (strict_capture_frames) {
+                fprintf(stderr, "incomplete capture frame\n");
+                result = 2;
+                goto done;
+            }
+            /* Preserve full-frame output for ordinary arbitrary-duration PCM. */
+            fprintf(stderr, "capture tail ignored: %zu samples per channel "
+                    "(%u channels); use --strict-capture-frames to reject\n",
+                    captured / channels, (unsigned)channels);
+            break;
         }
         if (frame_index == echo_path_change_frame &&
             ap_pipeline_notify_echo_path_change(pipeline) != AP_OK) {

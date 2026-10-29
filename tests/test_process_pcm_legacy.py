@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Reproduce frozen v2.3.60 processor false-success paths using stdio unit inputs.
+"""Reproduce frozen v2.3.60 error and silent-tail behavior using stdio inputs.
 
 The historical processor bytes link to the current unchanged core. This is an
 I/O regression control, not a reconstruction of the historical release binary.
@@ -28,10 +28,15 @@ def main() -> None:
     parser.add_argument("--cc", default="cc")
     args = parser.parse_args()
     build = args.build_dir.resolve()
-    source = subprocess.run(
-        ["git", "show", BASE + ":examples/process_pcm.c"],
-        cwd=ROOT, check=True, capture_output=True, timeout=20,
-    ).stdout
+    historical = subprocess.run(
+        ["git", "-c", "safe.directory=" + str(ROOT),
+         "show", BASE + ":examples/process_pcm.c"],
+        cwd=ROOT, check=False, capture_output=True, timeout=20,
+    )
+    if historical.returncode != 0:
+        raise RuntimeError("frozen processor Git read failed: " +
+                           historical.stderr.decode(errors="replace")[:2048])
+    source = historical.stdout
     if hashlib.sha256(source).hexdigest() != SOURCE_SHA256:
         raise ValueError("frozen predecessor processor identity changed")
     with tempfile.TemporaryDirectory(prefix="pcm-legacy-control-") as directory:
@@ -50,7 +55,7 @@ def main() -> None:
         for case in CASES:
             subprocess.run([str(executable), "--legacy-detection", case],
                            cwd=work, check=True, timeout=10)
-    print("PCM_LEGACY_FALSE_SUCCESS_CONTROLS_REPRODUCED count=9 source=" + BASE)
+    print("PCM_LEGACY_CONTROLS_REPRODUCED errors=8 silent_tail=1 source=" + BASE)
 
 
 if __name__ == "__main__":

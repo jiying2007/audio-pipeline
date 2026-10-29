@@ -1,8 +1,9 @@
 # 2.3.61
 
-- Make offline PCM processing fail visibly on truncated capture frames, incomplete S16 samples and capture/render read errors, while preserving legitimate render EOF zero-padding.
+- Make offline PCM processing fail visibly on incomplete S16 samples/channel groups and capture/render read errors, while preserving legitimate render EOF zero-padding.
+- Report omitted whole-channel EOF tails without changing default full-frame PCM/metrics output; add `--strict-capture-frames` to reject every partial capture block.
 - Propagate immediate and buffered PCM/metrics output failures, close every opened stream on error paths, and validate tuning before opening outputs.
-- Add deterministic tests of the real processor, with byte-exact valid-input controls and frozen predecessor false-success reproduction. DSP algorithms/defaults, public API/ABI and physical qualification authority are unchanged.
+- Test the real processor's 21 I/O scenarios in default and strict modes, with byte-exact nonzero valid-input/tail controls and frozen predecessor error/tail reproduction. DSP algorithms/defaults, public API/ABI and physical qualification authority are unchanged.
 
 # 2.3.60
 

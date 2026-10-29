@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 enum { CAPTURE_FILE, RENDER_FILE, OUTPUT_FILE, METRICS_FILE, FILE_COUNT };
 enum { VALID_CONTROL_FRAMES = 12 };
@@ -171,29 +172,47 @@ static void verify_valid_output(const ap_config_t *configuration,
     }
 }
 
-int main(int argc, char **argv) {
+static int invoke_processor(int argc, char **argv, char *diagnostics, size_t capacity) {
+    FILE *record = tmpfile();
+    const int saved_stderr = dup(STDERR_FILENO);
+    int status;
+    size_t count;
+    assert(record != NULL && saved_stderr >= 0 && capacity > 1u);
+    assert(fflush(stderr) == 0);
+    assert(dup2(fileno(record), STDERR_FILENO) >= 0);
+    status = process_pcm_example_main(argc, argv);
+    assert(fflush(stderr) == 0);
+    assert(dup2(saved_stderr, STDERR_FILENO) >= 0);
+    assert(close(saved_stderr) == 0);
+    rewind(record);
+    count = fread(diagnostics, 1u, capacity - 1u, record);
+    assert(!ferror(record) && feof(record));
+    diagnostics[count] = '\0';
+    assert(fclose(record) == 0);
+    return status;
+}
+
+static int run_scenario(const char *scenario, int legacy, int strict_frames) {
     ap_config_t config = ap_config_default(AP_PROFILE_CALL);
     const size_t frame = ap_pipeline_io_frame_samples(&config);
     const size_t capture_frame_bytes = frame * config.mic_channels * sizeof(int16_t);
-    int16_t capture[AP_MAX_IO_FRAME_SAMPLES * AP_MAX_MIC_CHANNELS * VALID_CONTROL_FRAMES];
+    int16_t capture[AP_MAX_IO_FRAME_SAMPLES * AP_MAX_MIC_CHANNELS * (VALID_CONTROL_FRAMES + 1)];
     int16_t reference[AP_MAX_IO_FRAME_SAMPLES * VALID_CONTROL_FRAMES];
     char *arguments[16];
     int argument_count = 0;
     int capture_only = 1;
     int expect_success = 0;
     int invalid_tuning = 0;
-    int legacy = 0;
     int legacy_failure_control = 0;
-    const char *scenario;
+    int compatibility_tail = 0;
+    char diagnostics[1024];
     size_t valid_frames = 2u;
     int status;
-    if (argc == 3 && strcmp(argv[1], "--legacy-detection") == 0) {
-        legacy = 1;
-        scenario = argv[2];
-    } else {
-        assert(argc == 2);
-        scenario = argv[1];
-    }
+    for (unsigned index = 0u; index < FILE_COUNT; ++index)
+        assert(opened[index] == NULL);
+    memset(cookies, 0, sizeof(cookies));
+    open_calls = 0u;
+    open_error = -1;
     for (size_t index = 0u; index < sizeof(capture) / sizeof(capture[0]); ++index)
         capture[index] = (int16_t)(((int)(index % 89u) - 44) * 173);
     for (size_t index = 0u; index < sizeof(reference) / sizeof(reference[0]); ++index)
@@ -260,8 +279,12 @@ int main(int argc, char **argv) {
     else if (strcmp(scenario, "invalid-tuning") == 0) invalid_tuning = 1;
     else { fprintf(stderr, "unknown scenario: %s\n", scenario); return 2; }
 
+    compatibility_tail = !legacy && !strict_frames &&
+                         strcmp(scenario, "capture-partial-frame") == 0;
+    if (compatibility_tail) expect_success = 1;
+
     /* Reach beyond the default 40 ms SYNC reference delay and NS startup.
-     * Keep all failure/predecessor controls at their original two frames. */
+     * Keep failure/predecessor controls at their original lengths. */
     if (expect_success && valid_frames != 0u) {
         valid_frames = VALID_CONTROL_FRAMES;
         cookies[CAPTURE_FILE].input_size = capture_frame_bytes * valid_frames;
@@ -269,8 +292,12 @@ int main(int argc, char **argv) {
             cookies[RENDER_FILE].input_size = frame * sizeof(int16_t) * valid_frames;
     }
 
+    if (compatibility_tail)
+        cookies[CAPTURE_FILE].input_size += capture_frame_bytes / 2u;
+
     arguments[argument_count++] = "process-pcm-stdio-unit";
     if (capture_only) arguments[argument_count++] = "--capture-only";
+    if (strict_frames) arguments[argument_count++] = "--strict-capture-frames";
     if (invalid_tuning) {
         arguments[argument_count++] = "--ns-floor";
         arguments[argument_count++] = "2";
@@ -281,18 +308,31 @@ int main(int argc, char **argv) {
     if (!capture_only) arguments[argument_count++] = "unit-render";
     arguments[argument_count++] = "unit-output";
     arguments[argument_count] = NULL;
-    status = process_pcm_example_main(argument_count, arguments);
+    status = invoke_processor(argument_count, arguments, diagnostics, sizeof(diagnostics));
 
     if (legacy) {
         assert(legacy_failure_control);
-        /* The frozen predecessor actually reports success on these failures. */
+        /* Eight errors and one silent whole-channel EOF tail in v2.3.60. */
         assert(status == 0);
         for (unsigned index = 0u; index < FILE_COUNT; ++index)
             if (opened[index]) (void)test_fclose(opened[index]);
-        printf("LEGACY_FALSE_SUCCESS_REPRODUCED %s\n", scenario);
+        printf("%s %s\n", strcmp(scenario, "capture-partial-frame") == 0 ?
+               "LEGACY_CAPTURE_TAIL_DISCARD_REPRODUCED" :
+               "LEGACY_FALSE_SUCCESS_REPRODUCED", scenario);
         return 0;
     }
     assert(expect_success ? status == 0 : status != 0);
+    if (compatibility_tail) {
+        char expected[256];
+        const int length = snprintf(expected, sizeof(expected),
+            "capture tail ignored: %zu samples per channel "
+            "(%u channels); use --strict-capture-frames to reject\n",
+            frame / 2u, (unsigned)config.mic_channels);
+        assert(length > 0 && (size_t)length < sizeof(expected));
+        assert(strcmp(diagnostics, expected) == 0);
+    } else {
+        assert(strstr(diagnostics, "capture tail ignored:") == NULL);
+    }
     for (unsigned index = 0u; index < FILE_COUNT; ++index) {
         assert(opened[index] == NULL);
         assert(cookies[index].closes <= 1u);
@@ -306,6 +346,16 @@ int main(int argc, char **argv) {
         verify_valid_output(&config, capture, reference,
                             cookies[RENDER_FILE].input_size / sizeof(int16_t),
                             valid_frames, capture_only);
-    printf("PCM_IO_CONTRACT_PASS %s status=%d opens=%u\n", scenario, status, open_calls);
+    printf("PCM_IO_CONTRACT_PASS %s mode=%s status=%d opens=%u\n",
+           scenario, strict_frames ? "strict" : "default", status, open_calls);
+    return 0;
+}
+
+int main(int argc, char **argv) {
+    if (argc == 3 && strcmp(argv[1], "--legacy-detection") == 0)
+        return run_scenario(argv[2], 1, 0);
+    assert(argc == 2);
+    assert(run_scenario(argv[1], 0, 0) == 0);
+    assert(run_scenario(argv[1], 0, 1) == 0);
     return 0;
 }

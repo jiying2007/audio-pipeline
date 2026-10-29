@@ -10,6 +10,7 @@
 #include <string.h>
 
 enum { CAPTURE_FILE, RENDER_FILE, OUTPUT_FILE, METRICS_FILE, FILE_COUNT };
+enum { VALID_CONTROL_FRAMES = 12 };
 typedef struct io_cookie {
     const unsigned char *input;
     size_t input_size;
@@ -124,7 +125,7 @@ static void verify_valid_output(const ap_config_t *configuration,
     static unsigned char storage[AP_PIPELINE_STATE_MAX_BYTES];
     ap_config_t config = *configuration;
     ap_pipeline_t *pipeline = NULL;
-    int16_t expected[AP_MAX_IO_FRAME_SAMPLES * 2u];
+    int16_t expected[AP_MAX_IO_FRAME_SAMPLES * VALID_CONTROL_FRAMES];
     int16_t padded[AP_MAX_IO_FRAME_SAMPLES];
     const size_t frame = ap_pipeline_io_frame_samples(&config);
     if (capture_only) {
@@ -132,7 +133,7 @@ static void verify_valid_output(const ap_config_t *configuration,
         config.enable_delay_tracking = 0u;
         config.enable_clock_drift_compensation = 0u;
     }
-    assert(frames <= 2u);
+    assert(frames <= VALID_CONTROL_FRAMES);
     assert(ap_pipeline_init(storage, sizeof(storage), &config, &pipeline) == AP_OK);
     for (size_t index = 0u; index < frames; ++index) {
         if (!capture_only) {
@@ -151,6 +152,12 @@ static void verify_valid_output(const ap_config_t *configuration,
     assert(cookies[OUTPUT_FILE].output_size == frames * frame * sizeof(int16_t));
     assert(memcmp(cookies[OUTPUT_FILE].output, expected,
                   cookies[OUTPUT_FILE].output_size) == 0);
+    if (frames != 0u) {
+        int nonzero = 0;
+        for (size_t index = 0u; index < frames * frame; ++index)
+            if (expected[index] != 0) { nonzero = 1; break; }
+        assert(nonzero);
+    }
     {
         size_t lines = 0u;
         for (size_t index = 0u; index < cookies[METRICS_FILE].output_size; ++index)
@@ -168,8 +175,8 @@ int main(int argc, char **argv) {
     ap_config_t config = ap_config_default(AP_PROFILE_CALL);
     const size_t frame = ap_pipeline_io_frame_samples(&config);
     const size_t capture_frame_bytes = frame * config.mic_channels * sizeof(int16_t);
-    int16_t capture[AP_MAX_IO_FRAME_SAMPLES * AP_MAX_MIC_CHANNELS * 2u];
-    int16_t reference[AP_MAX_IO_FRAME_SAMPLES * 2u];
+    int16_t capture[AP_MAX_IO_FRAME_SAMPLES * AP_MAX_MIC_CHANNELS * VALID_CONTROL_FRAMES];
+    int16_t reference[AP_MAX_IO_FRAME_SAMPLES * VALID_CONTROL_FRAMES];
     char *arguments[16];
     int argument_count = 0;
     int capture_only = 1;
@@ -252,6 +259,15 @@ int main(int argc, char **argv) {
     else if (strcmp(scenario, "metrics-open-error") == 0) open_error = METRICS_FILE;
     else if (strcmp(scenario, "invalid-tuning") == 0) invalid_tuning = 1;
     else { fprintf(stderr, "unknown scenario: %s\n", scenario); return 2; }
+
+    /* Reach beyond the default 40 ms SYNC reference delay and NS startup.
+     * Keep all failure/predecessor controls at their original two frames. */
+    if (expect_success && valid_frames != 0u) {
+        valid_frames = VALID_CONTROL_FRAMES;
+        cookies[CAPTURE_FILE].input_size = capture_frame_bytes * valid_frames;
+        if (strcmp(scenario, "clean-duplex") == 0)
+            cookies[RENDER_FILE].input_size = frame * sizeof(int16_t) * valid_frames;
+    }
 
     arguments[argument_count++] = "process-pcm-stdio-unit";
     if (capture_only) arguments[argument_count++] = "--capture-only";

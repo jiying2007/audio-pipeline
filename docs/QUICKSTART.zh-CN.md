@@ -207,7 +207,8 @@ python3 tools/apreplay.py failure.apd \
 
 `ap_process_pcm` 的 capture 输入须由所选采样率和麦克风数对应的完整 10 ms
 S16 交织帧组成；空 capture 是零帧输入，非空尾部不足一帧、半个样本或读取失败均非零退出。
-render 合法短文件或空文件仍按原规则补零，半个 S16 样本和读取失败不能当作正常 EOF。
+render 合法短文件或空文件仍按原规则补零；render 读取返回半个 S16 样本或读取失败时，不能当作正常 EOF。
+capture 结束时处理停止，未使用的 render 尾部不作完整性验证。
 
 PCM 与 JSONL metrics 的立即写入失败、最终缓冲关闭失败均非零退出，错误路径关闭已打开的文件。
 配置和 tuning 在创建输出前校验。输出可能已经产生有效前缀，调用方应在退出码为零后才发布结果，

@@ -78,6 +78,16 @@ FORWARD_MAINTENANCE = {
         "patch": "fe09_maintenance_forward_2_3_60.patch.b64",
         "patch_blob": "08a59fa92edf52a42765adf8d2fca1450ba7b740",
     },
+    "2.3.61": {
+        "blobs": {
+            "CMakeLists.txt": "754a5233998a79d4c1f9e86ae4628f6c5d046550",
+            "docs/API_CONTRACT.md": "ad000f9828fb4e379491daab474a9d49e57f7bb0",
+            "include/audio_pipeline/audio_runtime.h": "ad72e40b5b343aee4589ee50dfd07fe1a85e0ea9",
+            "src/platform/linux/ap_runtime.c": "b6c36e195c1ac967e450a1e32506e0b6859a581b",
+        },
+        "patch": "fe09_maintenance_forward_2_3_61.patch.b64",
+        "patch_blob": "b063382b54016048bd0157ec87a5baf013fc9f39",
+    },
 }
 
 
@@ -115,7 +125,7 @@ def read_sources(root: Path, item: dict) -> dict[str, str]:
 
 
 def current_registered_paths(version: str) -> frozenset[str]:
-    return AUDIT_2_3_59_PATHS if version in ("2.3.59", "2.3.60") else frozenset(CHANGED)
+    return AUDIT_2_3_59_PATHS if version in ("2.3.59", "2.3.60", "2.3.61") else frozenset(CHANGED)
 
 
 def frozen_maintenance_blob(path: str, item: dict) -> str:
@@ -146,7 +156,7 @@ def registered_forward_patch(version: str) -> bytes:
 
 def check_forward_patch_scope(version: str, patch: bytes, destination: Path) -> None:
     need(version in FORWARD_MAINTENANCE, "UNREGISTERED_FORWARD_MAINTENANCE_VERSION")
-    expected = (AUDIT_2_3_59_PATHS if version in ("2.3.59", "2.3.60") else
+    expected = (AUDIT_2_3_59_PATHS if version in ("2.3.59", "2.3.60", "2.3.61") else
                 frozenset({"CMakeLists.txt", "src/platform/linux/ap_runtime.c"}))
     inventory = subprocess.run(["git", "apply", "--numstat", "-"],
                                input=patch, cwd=destination, capture_output=True,
@@ -290,7 +300,7 @@ def self_test() -> None:
     item = policy(raw, patch)
     src = read_sources(ROOT, item)
     rejected = 0
-    audit_rejected = {"2.3.59": 0, "2.3.60": 0}
+    audit_rejected = {"2.3.59": 0, "2.3.60": 0, "2.3.61": 0}
 
     def reject(fn, reason: str | None = None, *, audit: str | None = None) -> None:
         nonlocal rejected, audit_rejected
@@ -433,8 +443,9 @@ def self_test() -> None:
     need(rejected == 16, "MAINTENANCE_NEGATIVES_INCOMPLETE")
     need(audit_rejected["2.3.59"] == 12, "AUDIT_2_3_59_NEGATIVES_INCOMPLETE")
     need(audit_rejected["2.3.60"] == 12, "IO_2_3_60_NEGATIVES_INCOMPLETE")
+    need(audit_rejected["2.3.61"] == 12, "PCM_IO_2_3_61_NEGATIVES_INCOMPLETE")
     print("FE09_EXACT_MAINTENANCE_REBIND_SELF_TEST_PASS negatives=16 "
-          "audit2359_negatives=12 io2360_negatives=12 preregistered=4")
+          "audit2359_negatives=12 io2360_negatives=12 pcm2361_negatives=12 preregistered=5")
 
 
 def main() -> None:

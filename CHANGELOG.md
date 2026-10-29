@@ -1,3 +1,9 @@
+# 2.3.61
+
+- Make offline PCM processing fail visibly on truncated capture frames, incomplete S16 samples and capture/render read errors, while preserving legitimate render EOF zero-padding.
+- Propagate immediate and buffered PCM/metrics output failures, close every opened stream on error paths, and validate tuning before opening outputs.
+- Add deterministic tests of the real processor, with byte-exact valid-input controls and frozen predecessor false-success reproduction. DSP algorithms/defaults, public API/ABI and physical qualification authority are unchanged.
+
 # 2.3.60
 
 - Fail the ALSA runtime example when final buffered uplink output cannot be closed successfully, preserving the nonzero exit through cleanup.

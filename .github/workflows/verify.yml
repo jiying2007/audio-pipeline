@@ -177,6 +177,7 @@ jobs:
           cmake -S . -B build-fast-gate -DCMAKE_BUILD_TYPE=Release -DAP_STRICT_WARNINGS=ON
           cmake --build build-fast-gate --parallel
           ctest --test-dir build-fast-gate --output-on-failure
+          python3 tests/test_process_pcm_legacy.py --build-dir build-fast-gate --cc clang
           ccache --show-stats
       - name: Public API/ABI contract gate when impacted
         if: needs.impact.outputs.run_abi == 'true'

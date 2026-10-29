@@ -99,14 +99,19 @@ static int read_all(snd_pcm_t *pcm, int16_t *data, snd_pcm_uframes_t frames,
 static int fill_render(FILE *far, int silence, int repeat, int16_t *render,
                        size_t frame, int *ended) {
     size_t done = 0u;
+    int rewound_without_sample = 0;
     *ended = 0;
     if (silence) {
         memset(render, 0, frame * sizeof(render[0]));
         return 0;
     }
     while (done < frame) {
-        size_t got = fread(render + done, sizeof(render[0]), frame - done, far);
-        done += got;
+        const size_t got = fread(render + done, 1u,
+                                  (frame - done) * sizeof(render[0]), far);
+        /* Read bytes so a truncated s16 sample cannot disappear at EOF. */
+        if (got % sizeof(render[0]) != 0u) return -1;
+        if (got != 0u) rewound_without_sample = 0;
+        done += got / sizeof(render[0]);
         if (done == frame) return 0;
         if (ferror(far)) return -1;
         if (!feof(far)) continue;
@@ -115,13 +120,12 @@ static int fill_render(FILE *far, int silence, int repeat, int16_t *render,
             *ended = 1;
             return 0;
         }
+        /* EOF may follow a complete previous frame. Permit one rewind, but
+         * require a full sample before another to bound empty-file loops. */
+        if (rewound_without_sample) return -1;
         clearerr(far);
         if (fseek(far, 0L, SEEK_SET) != 0) return -1;
-        if (got == 0u) {
-            int probe = fgetc(far);
-            if (probe == EOF) return -1;
-            if (ungetc(probe, far) == EOF) return -1;
-        }
+        rewound_without_sample = 1;
     }
     return 0;
 }
@@ -459,6 +463,9 @@ done:
     if (capture) snd_pcm_close(capture);
     if (playback) snd_pcm_close(playback);
     if (far) fclose(far);
-    if (uplink) fclose(uplink);
+    if (uplink && fclose(uplink) != 0) {
+        fprintf(stderr, "close uplink %s: %s\n", argv[4], strerror(errno));
+        rc = 1;
+    }
     return rc;
 }

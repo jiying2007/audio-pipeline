@@ -949,6 +949,9 @@ jobs:
             2.3.59)
               script=tests/validation/frontend_evolution/fe09_b3_f0_deadline_r3_qualification.py
               source_kind=forward-r3 ;;
+            2.3.60)
+              script=tests/validation/frontend_evolution/fe09_b3_f0_deadline_r4_qualification.py
+              source_kind=forward-r4 ;;
             *) echo "UNREGISTERED_B3_SCIENCE_EXECUTION_VERSION:$version" >&2; exit 2 ;;
           esac
           echo "source_kind=$source_kind" >> "$GITHUB_OUTPUT"
@@ -978,6 +981,14 @@ jobs:
           path: fe09-b3-f0/
           if-no-files-found: error
           retention-days: 30
+      - name: Preserve distinct FE09 B3-F0 R4 exact-run evidence and failures
+        if: always() && (steps.fe09_b3_f0.outcome == 'success' || steps.fe09_b3_f0.outcome == 'failure') && steps.fe09_b3_f0.outputs.source_kind == 'forward-r4'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: frontend-fe09-b3-f0-forward-r4-${{ github.run_id }}-attempt-${{ github.run_attempt }}
+          path: fe09-b3-f0/
+          if-no-files-found: error
+          retention-days: 30
       - name: Characterize exact-version FE09 actual CALL process resources and frame costs
         id: fe09_t3s3_f0
         shell: bash
@@ -994,6 +1005,9 @@ jobs:
             2.3.59)
               script=tests/validation/frontend_evolution/fe09_t3s3_f0_call_resource_r3_qualification.py
               source_kind=forward-r3 ;;
+            2.3.60)
+              script=tests/validation/frontend_evolution/fe09_t3s3_f0_call_resource_r4_qualification.py
+              source_kind=forward-r4 ;;
             *) echo "UNREGISTERED_F0_RESOURCE_EXECUTION_VERSION:$version" >&2; exit 2 ;;
           esac
           echo "source_kind=$source_kind" >> "$GITHUB_OUTPUT"
@@ -1021,6 +1035,14 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: frontend-fe09-t3s3-f0-forward-r3-${{ github.run_id }}-attempt-${{ github.run_attempt }}
+          path: fe09-t3s3-f0/
+          if-no-files-found: error
+          retention-days: 30
+      - name: Preserve distinct FE09 F0 R4 actual CALL process evidence and failures
+        if: always() && (steps.fe09_t3s3_f0.outcome == 'success' || steps.fe09_t3s3_f0.outcome == 'failure') && steps.fe09_t3s3_f0.outputs.source_kind == 'forward-r4'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: frontend-fe09-t3s3-f0-forward-r4-${{ github.run_id }}-attempt-${{ github.run_attempt }}
           path: fe09-t3s3-f0/
           if-no-files-found: error
           retention-days: 30

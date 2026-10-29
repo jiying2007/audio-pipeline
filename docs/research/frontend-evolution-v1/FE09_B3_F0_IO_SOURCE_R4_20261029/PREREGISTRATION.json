@@ -1,0 +1,272 @@
+{
+  "schema_version": 1,
+  "identity": "FE09-B3-F0-IO-SOURCE-R4-PREREGISTRATION",
+  "status": "EXACT_2360_SOURCE_IDENTITY_PREREGISTERED_NO_EXECUTION",
+  "source_authority": "FIRST_PARTY_EXACT_SOURCE_ONLY_INDEPENDENT_PROTECTED_MAIN_REQUIRED",
+  "proposal_provenance": {
+    "source_pr": 864,
+    "candidate_version": "2.3.60",
+    "candidate_head": "ebd2690e02e805b6f003ce507aaca7ad5d9344b3",
+    "candidate_tree": "61c90ba67a8757241120bbbbcd336691c9cfaae0",
+    "head_is_proposal_provenance_not_required_ancestor": true
+  },
+  "observed_base_main": {
+    "sha": "9b3982d55c06d82689db9d7ccf9f46d9eecdd35d",
+    "tree": "a1c0fde50300c12840e5147840b7cc225fab474c",
+    "verify_run": 40683048912,
+    "existing_release": "v2.3.59",
+    "r4_source_qualifier_protected_merged": false
+  },
+  "frozen_b3": {
+    "lock_path": "docs/research/frontend-evolution-v1/FE09_B3_F0_PREREGISTRATION_20261024/source-lock.json",
+    "lock_sha256": "32bd625ee640bf60310bcdc9980a5f8a41711300aee66f029fbf65c98a9bb49d",
+    "base": "81ee559848e1e30e3dd2eb4d03b0b479b9bd971e",
+    "members": 77,
+    "live_members": 66,
+    "historical_reference_members": 11,
+    "unchanged_live_members": 57,
+    "reviewed_exceptions": 9
+  },
+  "frozen_f0": {
+    "lock_path": "docs/research/frontend-evolution-v1/FE09_T3S3_F0_RESOURCE_PREREGISTRATION_20261024/source-lock.json",
+    "lock_sha256": "16cd84381647bef1015fc8ef338bb9b10dd09ce4669248355ac4f48745d8a4ff",
+    "base": "5187c5e59526d4047b3965b44c770ab21edbde9f",
+    "members": 88,
+    "shared_live_members": 66,
+    "additional_members": 22,
+    "unchanged_current_members": 79,
+    "reviewed_exceptions": 9,
+    "additional_member_exceptions": 0
+  },
+  "legacy_source_pins": {
+    "tests/validation/frontend_evolution/fe09_b3_f0_r2_source_admission.py": "6b9e9e5e3e044aa586420be3b3aadd229a90b67f",
+    "tests/validation/frontend_evolution/fe09_b3_f0_r2_t2_derivation_contract.py": "d0965732f7656dcc1c782e3813c6c32d5d9af2f5",
+    "tests/validation/frontend_evolution/fe09_t3s3_f0_r2_t3_timing_identity_contract.py": "e07ba55b9e2836aea2beb55d7dec855d9d7667f8",
+    "tests/validation/frontend_evolution/fe09_b3_f0_deadline_r2_qualification.py": "d94fa5ffc568945a5ee2a92d2f8761ec7df0c91c",
+    "tests/validation/frontend_evolution/fe09_t3s3_f0_call_resource_r2_qualification.py": "065cce6349842876b01ec3e410e2958bfa55eeab",
+    "docs/research/frontend-evolution-v1/FE09_B3_F0_FORWARD_SOURCE_R2_20261025/PREREGISTRATION.json": "7ed23487462d0a011a06255d1886eccfec385a63",
+    "docs/research/frontend-evolution-v1/FE09_B3_F0_FORWARD_SOURCE_R2_20261025/T2_EXECUTOR_SOURCE_REVIEW.json": "824e719aa30ce72130cf7f465eada1707280942f",
+    "docs/research/frontend-evolution-v1/FE09_B3_F0_FORWARD_SOURCE_R2_20261025/T3_TIMING_IDENTITY_SOURCE_REVIEW.json": "cb8c172e50db4928e4053102218783f51e42b702",
+    "tests/validation/frontend_evolution/fe09_b3_f0_r3_source_admission.py": "be1825f360bbf20836bfe0be9a77fb5aa3445e03",
+    "tests/validation/frontend_evolution/fe09_b3_f0_r3_derivation_contract.py": "36e9705821a82a931348e431dad04540ad8083a1",
+    "tests/validation/frontend_evolution/fe09_b3_f0_deadline_r3_qualification.py": "3f40d89e823d9c6fc115688ff3fb8612b08b9d58",
+    "tests/validation/frontend_evolution/fe09_t3s3_f0_call_resource_r3_qualification.py": "f9b904852f465ef3b7d1a77517b1cf27db1371ce",
+    "tests/validation/frontend_evolution/fe09_b3_f0_r3_source_delta_2_3_59.patch.b64": "250193e6d48e00a7a5e1c497fcddbe6915a7a929",
+    "docs/research/frontend-evolution-v1/FE09_B3_F0_AUDIT_SOURCE_R3_20261028/PREREGISTRATION.json": "1b6ebb5ed180e8a7f7338d9785fa8e85d330a63f",
+    "docs/research/frontend-evolution-v1/FE09_B3_F0_AUDIT_SOURCE_R3_20261028/README.md": "31e09735002a6c29006ef60a4ef4f33ee12c54a9"
+  },
+  "reviewed_source": {
+    "CMakeLists.txt": {
+      "before": {
+        "git_blob_sha1": "3659b13659baaac99fd6e7e56fcb45cba243955c",
+        "bytes": 25151,
+        "sha256": "65874f30013dfa0599db8e3699bf86212b9aa8017011ea4f9b944c19ca48da8f"
+      },
+      "after": {
+        "git_blob_sha1": "18697f24fb1cf896b114b3e4cd34ecc9a35ccd7d",
+        "bytes": 29951,
+        "sha256": "7f3ce2460895db3e9516b5125e8d2fdd0c6076bf621d951c6b7cdf4426c96172"
+      },
+      "historical_role": "unchanged_public_build_snapshot_superset",
+      "reviewed_change": "Retain the reviewed v2.3.59 build and packaging changes; register version 2.3.60 and thirteen deterministic ALSA file-I/O CTest cases. Private C4 study build recipes remain unchanged."
+    },
+    "cmake/audio-pipeline-runtime.pc.in": {
+      "before": {
+        "git_blob_sha1": "802d2bcb7e81418072fbd510f4889fdcc051915e",
+        "bytes": 348,
+        "sha256": "70cd66819a1cf8bf1d76cc6c148f750d2f76fbc1d37d4a86811938fe1454b4a6"
+      },
+      "after": {
+        "git_blob_sha1": "079ee9edf1fb9e13bfa0936355556b48ca408155",
+        "bytes": 325,
+        "sha256": "016ba80e037c426beb2772acbc7b516a8581bcd22ccc9f3d212c5dc3434fced0"
+      },
+      "historical_role": "unchanged_public_build_snapshot_superset",
+      "reviewed_change": "Preserve absolute GNUInstallDirs pkg-config paths."
+    },
+    "cmake/audio-pipeline.pc.in": {
+      "before": {
+        "git_blob_sha1": "b59e0a0d22c2ace435a0d9a87495e22afefac0e7",
+        "bytes": 304,
+        "sha256": "57ca3b1c7821f0ba686a81c406d05901b44e8ff19544dd339aa030f1d757925d"
+      },
+      "after": {
+        "git_blob_sha1": "29fbd3746b65e54c438e375815a44f076f3b255c",
+        "bytes": 281,
+        "sha256": "dd6c29948ab7d0cc48541b453d4c82ca1e9062d5a9e6e60f6ee2a3539bacaa54"
+      },
+      "historical_role": "unchanged_public_build_snapshot_superset",
+      "reviewed_change": "Preserve absolute GNUInstallDirs pkg-config paths."
+    },
+    "include/audio_pipeline/audio_modules.h": {
+      "before": {
+        "git_blob_sha1": "c4456808d281ac51424a113ae2e9bac27492a55d",
+        "bytes": 10817,
+        "sha256": "10370d2f45fbb5e4f4809f3d46d7c69916b924399213af998d0a08a50116ef9f"
+      },
+      "after": {
+        "git_blob_sha1": "98f0dc8309d1be1f2b964bc165406fd555de3a7d",
+        "bytes": 11412,
+        "sha256": "2742329a426295d05a478b69d7dd6f572355fa3171053fa4efb8acb8057b97b7"
+      },
+      "historical_role": "unchanged_public_build_snapshot_superset",
+      "reviewed_change": "Comments specify validated resampler geometry and unavailable beamformer direction tracking; public layout/symbols unchanged."
+    },
+    "include/audio_pipeline/audio_runtime.h": {
+      "before": {
+        "git_blob_sha1": "57488eb20164cbe78a7b030e33b2fb3b4ef94103",
+        "bytes": 7475,
+        "sha256": "f8be7881af7d23c85fd55a1df7c226b84a1507f85673c01272ca92762a4a6816"
+      },
+      "after": {
+        "git_blob_sha1": "ad72e40b5b343aee4589ee50dfd07fe1a85e0ea9",
+        "bytes": 7800,
+        "sha256": "4d300b4e94691cd1a4a63544867724e1c77e9b4a2824d380e884f5739e358680"
+      },
+      "historical_role": "unchanged_public_build_snapshot_superset",
+      "reviewed_change": "Comments specify serialized lifecycle and worker ownership through completed stop; public layout/symbols unchanged."
+    },
+    "src/modules/ap_beamformer_module.c": {
+      "before": {
+        "git_blob_sha1": "ad73964ba7b0e96eaf844fba47302227d5f17349",
+        "bytes": 1968,
+        "sha256": "f41aeb34b60749388a414f791f49788ef96ff822f472349a20c72ef039568921"
+      },
+      "after": {
+        "git_blob_sha1": "c55cca0d5352b6d27066ea4a447ccaa583109411",
+        "bytes": 2044,
+        "sha256": "62e7a2a363c40cf191f5a7ae7369f7ca1962a078f9d8279d8410dbd630030d41"
+      },
+      "historical_role": "unchanged_public_build_snapshot_superset",
+      "reviewed_change": "Reject tracking requests when direction tracking is not compiled before state/output mutation."
+    },
+    "src/modules/ap_resampler_module.c": {
+      "before": {
+        "git_blob_sha1": "935e083c958049f585646d7e62a9783408e72fa0",
+        "bytes": 2206,
+        "sha256": "70103dc4c26fa71c8263bef0cc8d4344e52d621174006337c975ea4ab1de70eb"
+      },
+      "after": {
+        "git_blob_sha1": "3edc2730f7641ff7242e2666492c993e6b068439",
+        "bytes": 3206,
+        "sha256": "554c5bb3f5baefb0859cc66a6b0dc8eb4b0a73f59f36660cc9f22b2929b615be"
+      },
+      "historical_role": "unchanged_public_build_snapshot_superset",
+      "reviewed_change": "Validate explicit IO/internal direction and channel geometry before narrowing; default valid DSP path unchanged."
+    },
+    "src/platform/linux/ap_runtime.c": {
+      "before": {
+        "git_blob_sha1": "7124a9c04d46f4d907c3d9831b3d4aa35ab8414e",
+        "bytes": 72890,
+        "sha256": "f8df13799c78701befec7d12f3ea555ef681c6b70155828cbaf32c88b4d71c35"
+      },
+      "after": {
+        "git_blob_sha1": "b6c36e195c1ac967e450a1e32506e0b6859a581b",
+        "bytes": 76046,
+        "sha256": "85a226890998dda75fddb1fe2ad92cfbe8770166767eba398a9ff9fa6c6a4452"
+      },
+      "historical_role": "unchanged_public_build_snapshot_superset",
+      "reviewed_change": "Retain worker ownership through pthread_join and prevent SET_TUNING live-pipeline reads while stopping."
+    },
+    "src/sync/ap_sync.c": {
+      "before": {
+        "git_blob_sha1": "c5974e566a22e3bed2a96672bafc58620dd6a4ee",
+        "bytes": 12616,
+        "sha256": "0395ccd85959ddd09ced3f1627e017e91ad1cb827a8daaaf305355d2a238178b"
+      },
+      "after": {
+        "git_blob_sha1": "83b79caf78f03e9689416c8afbb1e04f444314e8",
+        "bytes": 12939,
+        "sha256": "eecb8adec6fc1bdfd3ac32bb79833d4f20bea3dc60a14e8dcaa79a5e985830d8"
+      },
+      "historical_role": "unchanged_public_build_snapshot_superset",
+      "reviewed_change": "Reject timestamp sample conversion overflow before multiply and rounding add; valid bounded observations unchanged."
+    }
+  },
+  "source_delta": {
+    "path": "tests/validation/frontend_evolution/fe09_b3_f0_r4_source_delta_2_3_60.patch.b64",
+    "git_blob_sha1": "a51bc4a45af47daca537a7efc527bcdf0cd16a36",
+    "bytes": 19101,
+    "sha256": "2b22061d232e8ef9347c0628ea114e92007b9cf4c74c088710903ce8c58adf56",
+    "members": 9,
+    "encoding": "one-canonical-base64-line-with-final-newline",
+    "direction": "frozen-2.3.56-to-exact-reviewed-2.3.60",
+    "reverse_must_recover_original_bytes": true
+  },
+  "scientific_contract": {
+    "dataset_role": "D0_FIRST_PARTY_DISCLOSED_SYNTHETIC_ENGINEERING",
+    "targets": [
+      "native",
+      "sanitized",
+      "arm"
+    ],
+    "frozen_trajectories_per_target": 11,
+    "frames_per_trajectory": 600,
+    "expected_b3_frames": 19800,
+    "expected_api_rejections": 48,
+    "expected_semantic_negative_controls": 8,
+    "f0_expected_processes": 36,
+    "f0_frames_per_process": 600,
+    "f0_expected_distinct_frames": 21600,
+    "f0_expected_stat_groups": 144,
+    "clock": "monotonic unscaled, float source duration preserved; strict budget predicates, no epsilon",
+    "outer_time_budget_seconds": 300,
+    "target_seconds": {
+      "native": 120,
+      "sanitized": 180,
+      "arm": 300
+    },
+    "job_timeout_seconds": 900,
+    "archive_reserve_seconds": 60,
+    "max_retained_evidence_bytes": 33554432,
+    "build_configuration": "same original private C4 16k render PAP composition with current exact public CMake/runtime source version; no silent compatibility patch",
+    "artifacts": "new per-run exact-head independent manifest and SHA256SUMS, failed/partial results preserved; never inherit R1 PASS"
+  },
+  "execution_boundary": {
+    "dsp_runs_performed_by_source_gate": 0,
+    "new_b3_execution_performed": false,
+    "new_f0_execution_performed": false,
+    "r1_or_r2_result_inherited": false,
+    "old_locks_plans_negative_controls_or_results_rewritten": false,
+    "quality_thresholds_or_budgets_relaxed": false,
+    "new_r4_receipt_namespace_required": true,
+    "fresh_all_target_execution_required": true,
+    "source_gate_success_is_science_result": false,
+    "source_qualifier_protected_merge_and_independent_main_gates_required_before_r4_dsp": true,
+    "r3_result_inherited": false
+  },
+  "promotion": {
+    "shipping": false,
+    "public_sdk": false,
+    "four_mic_public_sdk": false,
+    "ssc305_hil": false,
+    "real_array_benefit": false,
+    "commercial_redistribution": false,
+    "audio_quality_superiority": false,
+    "private_data_publish": false
+  },
+  "source_only_controls": {
+    "new_negative_cases": 27,
+    "preserved_original_r2_negative_cases": 13,
+    "dsp_processes": 0,
+    "source_delta_members": 9,
+    "historical_locks_rewritten": false,
+    "preserved_original_r3_negative_cases": 27
+  },
+  "triggering_failure": {
+    "source_pr": 864,
+    "verify_run": 40806782836,
+    "attempt": 1,
+    "job": 123227606541,
+    "reason": "UNREGISTERED_FORWARD_MAINTENANCE_VERSION",
+    "original_failure_retained": true,
+    "full_matrix_started": false
+  },
+  "delta_from_r3": {
+    "changed_locked_members": [
+      "CMakeLists.txt"
+    ],
+    "all_other_eight_reviewed_members_byte_identical": true,
+    "original_r3_plans_collectors_gates_results_unchanged": true
+  }
+}

@@ -48,7 +48,10 @@ and require nonzero PCM, covering the default reference delay and startup latenc
 Each of the 21 scenarios runs in default and strict modes. The default tail
 compatibility control includes 12 complete frames plus a half frame and checks
 the diagnostic, byte-exact nonzero output and complete-frame metrics count.
-Frozen predecessor controls reproduce eight false-success error paths and the
+Mono-only builds also verify a one-sample EOF tail as a complete channel group;
+the corresponding two-microphone input remains a missing-channel error.
+Frozen predecessor controls use the default two-microphone build and reproduce
+eight false-success error paths and the
 silent whole-channel tail discard using exact v2.3.60 processor bytes linked to
 the unchanged current core; they do not rebuild or certify a historical release
 binary. The rejected first candidate and its hosted-real compatibility failure

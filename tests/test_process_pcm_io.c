@@ -205,6 +205,7 @@ static int run_scenario(const char *scenario, int legacy, int strict_frames) {
     int invalid_tuning = 0;
     int legacy_failure_control = 0;
     int compatibility_tail = 0;
+    size_t compatibility_samples = 0u;
     char diagnostics[1024];
     size_t valid_frames = 2u;
     int status;
@@ -279,8 +280,14 @@ static int run_scenario(const char *scenario, int legacy, int strict_frames) {
     else if (strcmp(scenario, "invalid-tuning") == 0) invalid_tuning = 1;
     else { fprintf(stderr, "unknown scenario: %s\n", scenario); return 2; }
 
-    compatibility_tail = !legacy && !strict_frames &&
-                         strcmp(scenario, "capture-partial-frame") == 0;
+    if (!legacy && !strict_frames) {
+        if (strcmp(scenario, "capture-partial-frame") == 0)
+            compatibility_samples = frame / 2u;
+        else if (config.mic_channels == 1u &&
+                 strcmp(scenario, "capture-partial-channel") == 0)
+            compatibility_samples = 1u;
+    }
+    compatibility_tail = compatibility_samples != 0u;
     if (compatibility_tail) expect_success = 1;
 
     /* Reach beyond the default 40 ms SYNC reference delay and NS startup.
@@ -293,7 +300,8 @@ static int run_scenario(const char *scenario, int legacy, int strict_frames) {
     }
 
     if (compatibility_tail)
-        cookies[CAPTURE_FILE].input_size += capture_frame_bytes / 2u;
+        cookies[CAPTURE_FILE].input_size +=
+            compatibility_samples * config.mic_channels * sizeof(int16_t);
 
     arguments[argument_count++] = "process-pcm-stdio-unit";
     if (capture_only) arguments[argument_count++] = "--capture-only";
@@ -311,6 +319,8 @@ static int run_scenario(const char *scenario, int legacy, int strict_frames) {
     status = invoke_processor(argument_count, arguments, diagnostics, sizeof(diagnostics));
 
     if (legacy) {
+        /* The frozen error-control contract uses the default two-mic build. */
+        assert(config.mic_channels == 2u);
         assert(legacy_failure_control);
         /* Eight errors and one silent whole-channel EOF tail in v2.3.60. */
         assert(status == 0);
@@ -327,7 +337,7 @@ static int run_scenario(const char *scenario, int legacy, int strict_frames) {
         const int length = snprintf(expected, sizeof(expected),
             "capture tail ignored: %zu samples per channel "
             "(%u channels); use --strict-capture-frames to reject\n",
-            frame / 2u, (unsigned)config.mic_channels);
+            compatibility_samples, (unsigned)config.mic_channels);
         assert(length > 0 && (size_t)length < sizeof(expected));
         assert(strcmp(diagnostics, expected) == 0);
     } else {

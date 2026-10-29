@@ -28,7 +28,7 @@ POLICY = HERE / "fe09_runtime_maintenance_2_3_56.json"
 PATCH = HERE / "fe09_runtime_maintenance_2_3_56.patch"
 POLICY_SHA256 = "7de30e6b288f76fdc3f7df5680a40ffb6a1134c43354a6b3e2f6556cb4a35f6c"
 CHANGED = {"CMakeLists.txt", "docs/API_CONTRACT.md", "src/platform/linux/ap_runtime.c"}
-# Only the reviewed 2.3.59 audit candidate adds this one historical header.
+# The exact 2.3.60 file-I/O candidate retains the reviewed 2.3.59 header.
 # The original policy and the 2.3.57/2.3.58 three-source registrations stay exact.
 AUDIT_2_3_59_PATHS = frozenset({
     "CMakeLists.txt", "docs/API_CONTRACT.md",
@@ -68,6 +68,16 @@ FORWARD_MAINTENANCE = {
         "patch": "fe09_maintenance_forward_2_3_59.patch.b64",
         "patch_blob": "07f10884864da801750b43e876732896df436f79",
     },
+    "2.3.60": {
+        "blobs": {
+            "CMakeLists.txt": "18697f24fb1cf896b114b3e4cd34ecc9a35ccd7d",
+            "docs/API_CONTRACT.md": "ad000f9828fb4e379491daab474a9d49e57f7bb0",
+            "include/audio_pipeline/audio_runtime.h": "ad72e40b5b343aee4589ee50dfd07fe1a85e0ea9",
+            "src/platform/linux/ap_runtime.c": "b6c36e195c1ac967e450a1e32506e0b6859a581b",
+        },
+        "patch": "fe09_maintenance_forward_2_3_60.patch.b64",
+        "patch_blob": "08a59fa92edf52a42765adf8d2fca1450ba7b740",
+    },
 }
 
 
@@ -105,7 +115,7 @@ def read_sources(root: Path, item: dict) -> dict[str, str]:
 
 
 def current_registered_paths(version: str) -> frozenset[str]:
-    return AUDIT_2_3_59_PATHS if version == "2.3.59" else frozenset(CHANGED)
+    return AUDIT_2_3_59_PATHS if version in ("2.3.59", "2.3.60") else frozenset(CHANGED)
 
 
 def frozen_maintenance_blob(path: str, item: dict) -> str:
@@ -136,7 +146,7 @@ def registered_forward_patch(version: str) -> bytes:
 
 def check_forward_patch_scope(version: str, patch: bytes, destination: Path) -> None:
     need(version in FORWARD_MAINTENANCE, "UNREGISTERED_FORWARD_MAINTENANCE_VERSION")
-    expected = (AUDIT_2_3_59_PATHS if version == "2.3.59" else
+    expected = (AUDIT_2_3_59_PATHS if version in ("2.3.59", "2.3.60") else
                 frozenset({"CMakeLists.txt", "src/platform/linux/ap_runtime.c"}))
     inventory = subprocess.run(["git", "apply", "--numstat", "-"],
                                input=patch, cwd=destination, capture_output=True,
@@ -280,16 +290,16 @@ def self_test() -> None:
     item = policy(raw, patch)
     src = read_sources(ROOT, item)
     rejected = 0
-    audit_rejected = 0
+    audit_rejected = {"2.3.59": 0, "2.3.60": 0}
 
-    def reject(fn, reason: str | None = None, *, audit: bool = False) -> None:
+    def reject(fn, reason: str | None = None, *, audit: str | None = None) -> None:
         nonlocal rejected, audit_rejected
         try:
             fn()
         except (RebindError, major.GateFailure, recorder.GateError) as error:
             need(reason is None or str(error) == reason, "WRONG_MAINTENANCE_REJECTION")
             if audit:
-                audit_rejected += 1
+                audit_rejected[audit] += 1
             else:
                 rejected += 1
         else:
@@ -384,42 +394,47 @@ def self_test() -> None:
                        candidate["src/platform/linux/ap_runtime.c"] + "\n"}
             reject(lambda bad=changed: check_current(bad, item),
                    "CURRENT_MAINTENANCE_SOURCE_DRIFT_src/platform/linux/ap_runtime.c",
-                   audit=candidate_version == "2.3.59")
-            if candidate_version == "2.3.59":
+                   audit=candidate_version if candidate_version in audit_rejected else None)
+            if candidate_version in audit_rejected:
                 for path in sorted(AUDIT_2_3_59_PATHS - {"src/platform/linux/ap_runtime.c"}):
                     changed = {**candidate, path: candidate[path] + "\n"}
                     reject(lambda bad=changed: check_current(bad, item),
-                           "CURRENT_MAINTENANCE_SOURCE_DRIFT_" + path, audit=True)
+                           "CURRENT_MAINTENANCE_SOURCE_DRIFT_" + path, audit=candidate_version)
+                next_version = "2.3." + str(int(candidate_version.rsplit(".", 1)[1]) + 1)
                 changed = {**candidate, "CMakeLists.txt": candidate["CMakeLists.txt"].replace(
-                    "VERSION 2.3.59", "VERSION 2.3.60", 1)}
-                reject(lambda: check_current(changed, item),
-                       "UNREGISTERED_FORWARD_MAINTENANCE_VERSION", audit=True)
+                    "VERSION " + candidate_version, "VERSION " + next_version, 1)}
+                # A version-only edit never borrows another registered full source.
+                reason = ("CURRENT_MAINTENANCE_SOURCE_DRIFT_CMakeLists.txt"
+                          if next_version in FORWARD_MAINTENANCE else
+                          "UNREGISTERED_FORWARD_MAINTENANCE_VERSION")
+                reject(lambda: check_current(changed, item), reason, audit=candidate_version)
                 encoded = raw_file(HERE / FORWARD_MAINTENANCE[candidate_version]["patch"])
-                reject(lambda: decode_registered_forward_patch("2.3.59", encoded + b"\n"),
-                       "REGISTERED_FORWARD_ENCODING_INVALID_2.3.59", audit=True)
-                reject(lambda: decode_registered_forward_patch("2.3.59", b"!" + encoded[1:]),
-                       "REGISTERED_FORWARD_ENCODING_INVALID_2.3.59", audit=True)
+                reject(lambda: decode_registered_forward_patch(candidate_version, encoded + b"\n"),
+                       "REGISTERED_FORWARD_ENCODING_INVALID_" + candidate_version, audit=candidate_version)
+                reject(lambda: decode_registered_forward_patch(candidate_version, b"!" + encoded[1:]),
+                       "REGISTERED_FORWARD_ENCODING_INVALID_" + candidate_version, audit=candidate_version)
                 corrupt = base64.b64encode(delta + b"\n") + b"\n"
-                reject(lambda: decode_registered_forward_patch("2.3.59", corrupt),
-                       "REGISTERED_FORWARD_PATCH_DRIFT_2.3.59", audit=True)
+                reject(lambda: decode_registered_forward_patch(candidate_version, corrupt),
+                       "REGISTERED_FORWARD_PATCH_DRIFT_" + candidate_version, audit=candidate_version)
                 wrong_path = delta.replace(b"include/audio_pipeline/audio_runtime.h",
                                            b"include/audio_pipeline/unregistered.h")
-                reject(lambda: check_forward_patch_scope("2.3.59", wrong_path, case_root),
-                       "REGISTERED_FORWARD_PATCH_SCOPE_DRIFT", audit=True)
+                reject(lambda: check_forward_patch_scope(candidate_version, wrong_path, case_root),
+                       "REGISTERED_FORWARD_PATCH_SCOPE_DRIFT", audit=candidate_version)
                 blocks = delta.split(b"diff --git ")[1:]
                 missing_path = b"".join(b"diff --git " + block for block in blocks
                                         if not block.startswith(
                                             b"a/include/audio_pipeline/audio_runtime.h "))
-                reject(lambda: check_forward_patch_scope("2.3.59", missing_path, case_root),
-                       "REGISTERED_FORWARD_PATCH_SCOPE_DRIFT", audit=True)
-                reject(lambda: check_forward_patch_scope("2.3.59", delta + delta, case_root),
-                       "REGISTERED_FORWARD_PATCH_SCOPE_DRIFT", audit=True)
-                reject(lambda: check_forward_patch_scope("2.3.59", b"invalid patch\n", case_root),
-                       "REGISTERED_FORWARD_INVENTORY_INVALID", audit=True)
+                reject(lambda: check_forward_patch_scope(candidate_version, missing_path, case_root),
+                       "REGISTERED_FORWARD_PATCH_SCOPE_DRIFT", audit=candidate_version)
+                reject(lambda: check_forward_patch_scope(candidate_version, delta + delta, case_root),
+                       "REGISTERED_FORWARD_PATCH_SCOPE_DRIFT", audit=candidate_version)
+                reject(lambda: check_forward_patch_scope(candidate_version, b"invalid patch\n", case_root),
+                       "REGISTERED_FORWARD_INVENTORY_INVALID", audit=candidate_version)
     need(rejected == 16, "MAINTENANCE_NEGATIVES_INCOMPLETE")
-    need(audit_rejected == 12, "AUDIT_2_3_59_NEGATIVES_INCOMPLETE")
+    need(audit_rejected["2.3.59"] == 12, "AUDIT_2_3_59_NEGATIVES_INCOMPLETE")
+    need(audit_rejected["2.3.60"] == 12, "IO_2_3_60_NEGATIVES_INCOMPLETE")
     print("FE09_EXACT_MAINTENANCE_REBIND_SELF_TEST_PASS negatives=16 "
-          "audit2359_negatives=12 preregistered=3")
+          "audit2359_negatives=12 io2360_negatives=12 preregistered=4")
 
 
 def main() -> None:

@@ -101,6 +101,10 @@ python3 tests/validation/frontend_evolution/fe09_b3_f0_r5_source_admission.py --
 python3 tests/validation/frontend_evolution/fe09_b3_f0_r5_derivation_contract.py --self-test
 python3 tests/validation/frontend_evolution/fe09_b3_f0_deadline_r5_qualification.py --self-test
 python3 tests/validation/frontend_evolution/fe09_t3s3_f0_call_resource_r5_qualification.py --self-test
+# Independently reviewed provenance-path correction; historical R5 remains immutable.
+python3 tests/validation/frontend_evolution/fe09_b3_f0_r5_path_r1_contract.py --self-test
+python3 tests/validation/frontend_evolution/fe09_b3_f0_deadline_r5_path_r1_qualification.py --self-test
+python3 tests/validation/frontend_evolution/fe09_t3s3_f0_call_resource_r5_path_r1_qualification.py --self-test
 python3 .github/program/workflow_pin_only_scope.py --self-test
 python3 .github/program/workflow_pin_only_replay_t1.py --self-test
 python3 .github/program/workflow_pin_only_actual_tree_t1m1.py --self-test

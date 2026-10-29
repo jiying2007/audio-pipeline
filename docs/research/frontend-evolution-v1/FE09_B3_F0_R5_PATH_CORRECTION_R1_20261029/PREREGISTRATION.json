@@ -1,0 +1,269 @@
+{
+  "schema_version": 1,
+  "identity": "FE09-B3-F0-R5-PROVENANCE-PATH-R1",
+  "status": "SOURCE_CORRECTION_FROZEN_BEFORE_CORRECTED_EXECUTION",
+  "issue": 866,
+  "observed_main": "3f2a334adceba66f60163e80405c256e5c10a051",
+  "observed_version": "2.3.60",
+  "candidate_version": "2.3.61",
+  "candidate_cmake_blob": "754a5233998a79d4c1f9e86ae4628f6c5d046550",
+  "failure": {
+    "head": "34e5d8d91be662b1685424a228715155da6ac47f",
+    "execution_source": "acd6f789aa29d3501eba149506bff77699d5ecc7",
+    "run_id": 40871685101,
+    "run_attempt": 1,
+    "job_id": 123441104210,
+    "accepted_frames": 0,
+    "artifact_id": 12897300987,
+    "artifact_bytes": 4415,
+    "artifact_sha256": "7f51554cf280ae84ef366909d5fd7a9df2961d68c66f8de12a0e080158a35b7a",
+    "original_outcome_preserved": true
+  },
+  "historical_review": {
+    "path": "tests/validation/frontend_evolution/fe09_b3_f0_r5_derivation_contract.py",
+    "git_blob_sha1": "8dfdfcb80afdec2aec5f988001432a30d08f59b4",
+    "bytes": 25283,
+    "sha256": "39fe54fdad7328fc73b74211757870c097e3d366d5806788d9ffe92305e05083"
+  },
+  "provenance": [
+    {
+      "path": "docs/research/frontend-evolution-v1/FE09_B3_F0_PCM_IO_SOURCE_R5_20261029/PREREGISTRATION.json",
+      "git_blob_sha1": "937205cb50b0ea929b4caae68c1a0e418e36212b",
+      "bytes": 13857,
+      "sha256": "258a661b255208ad76df2eb72ac59ed93ed2fd48a8e666e37fd4e32ba380995a"
+    },
+    {
+      "path": "docs/research/frontend-evolution-v1/FE09_B3_F0_PCM_IO_SOURCE_R5_20261029/README.md",
+      "git_blob_sha1": "a2fd2b325e579531e8859bb877bb11b05cf698e8",
+      "bytes": 3346,
+      "sha256": "7bbf713b26999f619995690ced84105c3cdca29366b63a3252b7da5e2ef5b816"
+    },
+    {
+      "path": "docs/research/frontend-evolution-v1/FE09_B3_F0_R5_PATH_CORRECTION_R1_20261029/README.md",
+      "git_blob_sha1": "1230c856d500f3b82af38925d457a7af0c16dd38",
+      "bytes": 3080,
+      "sha256": "f209b00a5b18b629fa992459a29bfb8d5481b1df599da7dc36ec598d8df7513b"
+    }
+  ],
+  "collectors": [
+    {
+      "kind": "b3",
+      "parent_path": "tests/validation/frontend_evolution/fe09_b3_f0_deadline_r5_qualification.py",
+      "parent_identity": {
+        "git_blob_sha1": "43e69899c83e59bb8e3c7f9336664128795e0e9c",
+        "bytes": 70607,
+        "sha256": "ce880a6964bd803afe5dbf7daa9e0d9762b215325e9870b49a8647e99171cee9"
+      },
+      "corrected_path": "tests/validation/frontend_evolution/fe09_b3_f0_deadline_r5_path_r1_qualification.py",
+      "corrected_identity": {
+        "git_blob_sha1": "6a74aadfbdcb65d6070959cb5858d082335eadd8",
+        "bytes": 71119,
+        "sha256": "6924c9992d5a1bb3ff0c0b16aec2e4c4e0b150ae172a5df52ae99aad8a5e4888"
+      },
+      "source_function": "source_preflight",
+      "unchanged_scientific_functions": 39,
+      "unchanged_classes": 3,
+      "namespace_names": [
+        "COLLECTOR_IDENTITY",
+        "QUALIFIED",
+        "LOCAL",
+        "INCONCLUSIVE",
+        "FAILED",
+        "BLOCKED"
+      ],
+      "replacements": [
+        {
+          "before": "\"\"\"R5 exact 2.3.61 audit-source execution derived from protected R2, no promotion.",
+          "after": "\"\"\"R5 path-R1 exact 2.3.61 audit-source execution derived from protected R2, no promotion.",
+          "occurrences": 1
+        },
+        {
+          "before": "COLLECTOR_IDENTITY = \"FE09-B3-F0-C4-16K-RENDER-PAP-FORWARD-SOURCE-R5\"",
+          "after": "COLLECTOR_IDENTITY = \"FE09-B3-F0-C4-16K-RENDER-PAP-FORWARD-SOURCE-R5-PATH-R1\"",
+          "occurrences": 1
+        },
+        {
+          "before": "QUALIFIED = \"FE09_B3_F0_FORWARD_SOURCE_R5_C4_16K_RENDER_PAP_FINITE_RESEARCH_NO_PROMOTION\"",
+          "after": "QUALIFIED = \"FE09_B3_F0_FORWARD_SOURCE_R5_PATH_R1_C4_16K_RENDER_PAP_FINITE_RESEARCH_NO_PROMOTION\"",
+          "occurrences": 1
+        },
+        {
+          "before": "LOCAL = \"FE09_B3_F0_FORWARD_SOURCE_R5_LOCAL_PARTIAL_TARGETS_NO_FULL_QUALIFICATION\"",
+          "after": "LOCAL = \"FE09_B3_F0_FORWARD_SOURCE_R5_PATH_R1_LOCAL_PARTIAL_TARGETS_NO_FULL_QUALIFICATION\"",
+          "occurrences": 1
+        },
+        {
+          "before": "INCONCLUSIVE = \"FE09_B3_F0_FORWARD_SOURCE_R5_FIXED_COVERAGE_INCONCLUSIVE\"",
+          "after": "INCONCLUSIVE = \"FE09_B3_F0_FORWARD_SOURCE_R5_PATH_R1_FIXED_COVERAGE_INCONCLUSIVE\"",
+          "occurrences": 1
+        },
+        {
+          "before": "FAILED = \"FE09_B3_F0_FORWARD_SOURCE_R5_COMPOSITION_REJECTED_WITH_EVIDENCE\"",
+          "after": "FAILED = \"FE09_B3_F0_FORWARD_SOURCE_R5_PATH_R1_COMPOSITION_REJECTED_WITH_EVIDENCE\"",
+          "occurrences": 1
+        },
+        {
+          "before": "BLOCKED = \"FE09_B3_F0_FORWARD_SOURCE_R5_EXECUTION_BLOCKED\"",
+          "after": "BLOCKED = \"FE09_B3_F0_FORWARD_SOURCE_R5_PATH_R1_EXECUTION_BLOCKED\"",
+          "occurrences": 1
+        },
+        {
+          "before": "    import fe09_b3_f0_r5_derivation_contract as source_review",
+          "after": "    import fe09_b3_f0_r5_path_r1_contract as source_review",
+          "occurrences": 1
+        },
+        {
+          "before": "ROOT / \"docs/research/frontend-evolution-v1/FE09_B3_F0_IO_SOURCE_R5_20261029/PREREGISTRATION.json\"",
+          "after": "ROOT / \"docs/research/frontend-evolution-v1/FE09_B3_F0_PCM_IO_SOURCE_R5_20261029/PREREGISTRATION.json\"",
+          "occurrences": 1
+        },
+        {
+          "before": "ROOT / \"docs/research/frontend-evolution-v1/FE09_B3_F0_IO_SOURCE_R5_20261029/README.md\"",
+          "after": "ROOT / \"docs/research/frontend-evolution-v1/FE09_B3_F0_PCM_IO_SOURCE_R5_20261029/README.md\"",
+          "occurrences": 1
+        },
+        {
+          "before": "    \"fe09_b3_f0_r5_source_delta_2_3_61.patch.b64\")]",
+          "after": "    \"fe09_b3_f0_r5_source_delta_2_3_61.patch.b64\")] + [\n        HERE / \"fe09_b3_f0_deadline_r5_path_r1_qualification.py\",\n        HERE / \"fe09_b3_f0_r5_path_r1_contract.py\",\n        ROOT / \"docs/research/frontend-evolution-v1/FE09_B3_F0_R5_PATH_CORRECTION_R1_20261029/PREREGISTRATION.json\",\n        ROOT / \"docs/research/frontend-evolution-v1/FE09_B3_F0_R5_PATH_CORRECTION_R1_20261029/README.md\"]",
+          "occurrences": 1
+        },
+        {
+          "before": "    forward_source.self_test()\n",
+          "after": "    forward_source.self_test()\n    import fe09_b3_f0_r5_path_r1_contract as path_review\n    path_review.verify_sources()\n",
+          "occurrences": 1
+        },
+        {
+          "before": "FE09_B3_F0_FORWARD_SOURCE_R5_PARSER_AND_FROZEN_SCHEDULE_SELF_TEST_NO_DSP",
+          "after": "FE09_B3_F0_FORWARD_SOURCE_R5_PATH_R1_PARSER_AND_FROZEN_SCHEDULE_SELF_TEST_NO_DSP",
+          "occurrences": 1
+        },
+        {
+          "before": "FE09_B3_F0_R5_RETAINED_SOURCE_SEMANTICS_VERIFIED",
+          "after": "FE09_B3_F0_R5_PATH_R1_RETAINED_SOURCE_SEMANTICS_VERIFIED",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "kind": "f0",
+      "parent_path": "tests/validation/frontend_evolution/fe09_t3s3_f0_call_resource_r5_qualification.py",
+      "parent_identity": {
+        "git_blob_sha1": "2d8c9c62cb7586f5c534c08a0ea7341b782c8528",
+        "bytes": 65018,
+        "sha256": "3c5323fa0bc9e7adfae98c308b0db22c51e523bfdbf09506b520b1a44748a74d"
+      },
+      "corrected_path": "tests/validation/frontend_evolution/fe09_t3s3_f0_call_resource_r5_path_r1_qualification.py",
+      "corrected_identity": {
+        "git_blob_sha1": "b294a35de6d9dede88555744eb627b6c09db915c",
+        "bytes": 65521,
+        "sha256": "dd199c89ddfbdf0e0e6ff2d6e01ff4235607252c77253cdd878a5bb08bbf4e45"
+      },
+      "source_function": "source_record",
+      "unchanged_scientific_functions": 33,
+      "unchanged_classes": 1,
+      "namespace_names": [
+        "IDENTITY",
+        "DECISION",
+        "PARTIAL",
+        "FAILED"
+      ],
+      "replacements": [
+        {
+          "before": "\"\"\"Independent R5 exact 2.3.61 CALL resource measurements. No device qualification.\"\"\"",
+          "after": "\"\"\"Independent R5 path-R1 exact 2.3.61 CALL resource measurements. No device qualification.\"\"\"",
+          "occurrences": 1
+        },
+        {
+          "before": "IDENTITY = \"FE09-T3S3-F0-ACTUAL-CALL-RESOURCE-FORWARD-SOURCE-R5\"",
+          "after": "IDENTITY = \"FE09-T3S3-F0-ACTUAL-CALL-RESOURCE-FORWARD-SOURCE-R5-PATH-R1\"",
+          "occurrences": 1
+        },
+        {
+          "before": "DECISION = \"FE09_T3S3_F0_FORWARD_SOURCE_R5_ACTUAL_CALL_RESOURCE_NO_DEVICE_PROMOTION\"",
+          "after": "DECISION = \"FE09_T3S3_F0_FORWARD_SOURCE_R5_PATH_R1_ACTUAL_CALL_RESOURCE_NO_DEVICE_PROMOTION\"",
+          "occurrences": 1
+        },
+        {
+          "before": "PARTIAL = \"FE09_T3S3_F0_FORWARD_SOURCE_R5_LOCAL_PARTIAL_NO_PROMOTION\"",
+          "after": "PARTIAL = \"FE09_T3S3_F0_FORWARD_SOURCE_R5_PATH_R1_LOCAL_PARTIAL_NO_PROMOTION\"",
+          "occurrences": 1
+        },
+        {
+          "before": "FAILED = \"FE09_T3S3_F0_FORWARD_SOURCE_R5_RESOURCE_REJECTED_WITH_EVIDENCE\"",
+          "after": "FAILED = \"FE09_T3S3_F0_FORWARD_SOURCE_R5_PATH_R1_RESOURCE_REJECTED_WITH_EVIDENCE\"",
+          "occurrences": 1
+        },
+        {
+          "before": "    import fe09_b3_f0_r5_derivation_contract as source_review",
+          "after": "    import fe09_b3_f0_r5_path_r1_contract as source_review",
+          "occurrences": 1
+        },
+        {
+          "before": "ROOT / \"docs/research/frontend-evolution-v1/FE09_B3_F0_IO_SOURCE_R5_20261029/PREREGISTRATION.json\"",
+          "after": "ROOT / \"docs/research/frontend-evolution-v1/FE09_B3_F0_PCM_IO_SOURCE_R5_20261029/PREREGISTRATION.json\"",
+          "occurrences": 1
+        },
+        {
+          "before": "ROOT / \"docs/research/frontend-evolution-v1/FE09_B3_F0_IO_SOURCE_R5_20261029/README.md\"",
+          "after": "ROOT / \"docs/research/frontend-evolution-v1/FE09_B3_F0_PCM_IO_SOURCE_R5_20261029/README.md\"",
+          "occurrences": 1
+        },
+        {
+          "before": "    \"fe09_b3_f0_r5_source_delta_2_3_61.patch.b64\")]",
+          "after": "    \"fe09_b3_f0_r5_source_delta_2_3_61.patch.b64\")] + [\n        HERE / \"fe09_t3s3_f0_call_resource_r5_path_r1_qualification.py\",\n        HERE / \"fe09_b3_f0_r5_path_r1_contract.py\",\n        ROOT / \"docs/research/frontend-evolution-v1/FE09_B3_F0_R5_PATH_CORRECTION_R1_20261029/PREREGISTRATION.json\",\n        ROOT / \"docs/research/frontend-evolution-v1/FE09_B3_F0_R5_PATH_CORRECTION_R1_20261029/README.md\"]",
+          "occurrences": 1
+        },
+        {
+          "before": "    forward_source.self_test()\n",
+          "after": "    forward_source.self_test()\n    import fe09_b3_f0_r5_path_r1_contract as path_review\n    path_review.verify_sources()\n",
+          "occurrences": 1
+        },
+        {
+          "before": "FE09_T3S3_F0_FORWARD_SOURCE_R5_METADATA_SELF_TEST_PASS_NO_DSP",
+          "after": "FE09_T3S3_F0_FORWARD_SOURCE_R5_PATH_R1_METADATA_SELF_TEST_PASS_NO_DSP",
+          "occurrences": 1
+        },
+        {
+          "before": "FE09_T3S3_F0_R5_ARTIFACT_VERIFIED",
+          "after": "FE09_T3S3_F0_R5_PATH_R1_ARTIFACT_VERIFIED",
+          "occurrences": 1
+        }
+      ]
+    }
+  ],
+  "controls": {
+    "new_source_mutation_negatives": 12,
+    "new_literal_missing_target_negatives": 4,
+    "preserved_r5_derivation_negatives": 45,
+    "metadata_dsp_frames": 0
+  },
+  "scientific_contract": {
+    "unchanged_from_r5": true,
+    "b3_targets": [
+      "native",
+      "sanitized",
+      "arm"
+    ],
+    "b3_frames": 19800,
+    "f0_processes": 36,
+    "f0_distinct_frames": 21600,
+    "f0_stat_groups": 144,
+    "b3_outer_seconds": 300,
+    "f0_stage_seconds": 180,
+    "original_job_seconds": 900,
+    "archive_reserve_seconds": 60,
+    "thresholds_or_timeouts_relaxed": false
+  },
+  "admission": {
+    "protected_prerequisite_main_verify_required": true,
+    "existing_release_identity_guard_required": true,
+    "corrected_dsp_execution_before_prerequisite_admission": false,
+    "original_r1_r2_r3_r4_r5_files_unchanged": true
+  },
+  "promotion": {
+    "shipping": false,
+    "ssc305_hil": false,
+    "public_four_mic_sdk": false,
+    "acoustic_superiority": false
+  }
+}

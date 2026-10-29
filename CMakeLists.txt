@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(audio_pipeline VERSION 2.3.60 LANGUAGES C)
+project(audio_pipeline VERSION 2.3.61 LANGUAGES C)
 
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
@@ -412,6 +412,27 @@ if(AP_BUILD_TESTS)
             add_executable(ap_metamorphic_tests tests/test_metamorphic.c)
             target_link_libraries(ap_metamorphic_tests PRIVATE audio_pipeline)
             add_test(NAME ap_metamorphic_tests COMMAND ap_metamorphic_tests)
+        endif()
+        if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND AP_HAVE_SYNC AND AP_HAVE_AEC
+           AND AP_HAVE_NS AND AP_HAVE_VAD)
+            add_executable(ap_process_pcm_io_tests tests/test_process_pcm_io.c)
+            target_link_libraries(ap_process_pcm_io_tests PRIVATE audio_pipeline)
+            target_compile_options(ap_process_pcm_io_tests PRIVATE -Wall -Wextra -Wpedantic)
+            if(AP_STRICT_WARNINGS)
+                target_compile_options(ap_process_pcm_io_tests PRIVATE -Werror)
+            endif()
+            foreach(_pcm_io_case clean-capture clean-duplex render-short render-empty
+                                 capture-empty capture-odd capture-partial-frame
+                                 capture-partial-channel render-odd capture-read-error
+                                 render-read-error output-write-error output-close-error
+                                 metrics-write-error metrics-close-error input-close-error
+                                 capture-open-error render-open-error output-open-error
+                                 metrics-open-error invalid-tuning)
+                add_test(NAME ap_process_pcm_${_pcm_io_case}_tests
+                         COMMAND ap_process_pcm_io_tests ${_pcm_io_case})
+                set_tests_properties(ap_process_pcm_${_pcm_io_case}_tests
+                                     PROPERTIES TIMEOUT 10)
+            endforeach()
         endif()
         add_executable(ap_state_size tests/print_pipeline_state.c)
         target_link_libraries(ap_state_size PRIVATE audio_pipeline)

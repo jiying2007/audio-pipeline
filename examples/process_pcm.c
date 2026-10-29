@@ -15,7 +15,7 @@ static void usage(const char *argv0) {
     fprintf(stderr,
             "usage: %s [--sample-rate HZ] [--mic-channels 1|2] "
             "[--capture-only] [--capture-profile default|ns-isolated|vad-isolated|agc-isolated|bf-isolated] [--metrics-jsonl FILE] "
-            "[--print-default-tuning] "
+            "[--print-default-tuning] [--strict-capture-frames] "
             "[--aec-mu VALUE] [--ns-floor VALUE] [--agc-target-dbfs VALUE] [--limiter-dbfs VALUE] "
             "[--echo-path-change-frame N] "
             "[--discontinuity-frame N --discontinuity-flags MASK "
@@ -41,6 +41,16 @@ static int parse_float(const char *text, float *value) {
     parsed = strtof(text, &end);
     if (errno || !end || *end != '\0' || !isfinite(parsed)) return 0;
     *value = parsed;
+    return 1;
+}
+
+/* Read bytes so an incomplete S16 sample cannot disappear inside fread(). */
+static int read_pcm(FILE *stream, int16_t *samples, size_t capacity, size_t *count) {
+    const size_t bytes = fread(samples, 1u, capacity * sizeof(samples[0]), stream);
+    if (ferror(stream) || bytes % sizeof(samples[0]) != 0u ||
+        (bytes < capacity * sizeof(samples[0]) && !feof(stream)))
+        return 0;
+    *count = bytes / sizeof(samples[0]);
     return 1;
 }
 
@@ -73,6 +83,7 @@ int main(int argc, char **argv) {
     uint32_t frame_index = 0u;
     uint32_t algorithmic_latency_ms = 0u;
     int capture_only = 0;
+    int strict_capture_frames = 0;
     int print_default_tuning = 0;
     const char *capture_profile = "default";
     int arg = 1;
@@ -81,6 +92,7 @@ int main(int argc, char **argv) {
     const char *render_path = NULL;
     const char *out_path;
     size_t frame;
+    int result = 0;
 
     memset(&tuning, 0, sizeof(tuning));
     tuning.struct_size = sizeof(tuning);
@@ -99,6 +111,8 @@ int main(int argc, char **argv) {
             }
         } else if (strcmp(argv[arg], "--capture-only") == 0) {
             capture_only = 1;
+        } else if (strcmp(argv[arg], "--strict-capture-frames") == 0) {
+            strict_capture_frames = 1;
         } else if (strcmp(argv[arg], "--capture-profile") == 0) {
             if (++arg >= argc || !valid_capture_profile(argv[arg])) {
                 usage(argv[0]);
@@ -215,18 +229,7 @@ int main(int argc, char **argv) {
     frame = ap_pipeline_io_frame_samples(&cfg);
     if (!frame || frame > AP_MAX_IO_FRAME_SAMPLES) return 2;
 
-    fm = fopen(mic_path, "rb");
-    if (!capture_only) fr = fopen(render_path, "rb");
-    fo = fopen(out_path, "wb");
-    if (metrics_path) fmetrics = fopen(metrics_path, "wb");
-    if (!fm || (!capture_only && !fr) || !fo || (metrics_path && !fmetrics)) {
-        perror("fopen");
-        if (fm) fclose(fm);
-        if (fr) fclose(fr);
-        if (fo) fclose(fo);
-        if (fmetrics) fclose(fmetrics);
-        return 2;
-    }
+    /* Reject configuration/tuning before creating or truncating outputs. */
     if (ap_pipeline_state_size() > sizeof(state) ||
         ap_pipeline_init(state, sizeof(state), &cfg, &pipeline) != AP_OK)
         return 3;
@@ -236,24 +239,80 @@ int main(int argc, char **argv) {
     }
     algorithmic_latency_ms = ap_pipeline_algorithmic_latency_ms(pipeline);
 
-    while (fread(mic, sizeof(int16_t) * channels, frame, fm) == frame) {
+    fm = fopen(mic_path, "rb");
+    if (!fm) { perror("open capture"); result = 2; goto done; }
+    if (!capture_only) {
+        fr = fopen(render_path, "rb");
+        if (!fr) { perror("open render"); result = 2; goto done; }
+    }
+    fo = fopen(out_path, "wb");
+    if (!fo) { perror("open output"); result = 2; goto done; }
+    if (metrics_path) {
+        fmetrics = fopen(metrics_path, "wb");
+        if (!fmetrics) { perror("open metrics"); result = 2; goto done; }
+    }
+
+    for (;;) {
+        size_t captured = 0u;
         ap_metrics_t metrics;
+        if (!read_pcm(fm, mic, frame * channels, &captured)) {
+            fprintf(stderr, "capture read failed or truncated S16 sample\n");
+            result = 2;
+            goto done;
+        }
+        if (captured == 0u) break;
+        if (captured % channels != 0u) {
+            fprintf(stderr, "incomplete capture channel group\n");
+            result = 2;
+            goto done;
+        }
+        if (captured != frame * channels) {
+            if (strict_capture_frames) {
+                fprintf(stderr, "incomplete capture frame\n");
+                result = 2;
+                goto done;
+            }
+            /* Preserve full-frame output for ordinary arbitrary-duration PCM. */
+            fprintf(stderr, "capture tail ignored: %zu samples per channel "
+                    "(%u channels); use --strict-capture-frames to reject\n",
+                    captured / channels, (unsigned)channels);
+            break;
+        }
         if (frame_index == echo_path_change_frame &&
-            ap_pipeline_notify_echo_path_change(pipeline) != AP_OK)
-            return 4;
+            ap_pipeline_notify_echo_path_change(pipeline) != AP_OK) {
+            result = 4;
+            goto done;
+        }
         if (frame_index == discontinuity_frame &&
             ap_pipeline_notify_stream_discontinuity(pipeline,
                                                     (ap_discontinuity_flags_t)discontinuity_flags,
-                                                    discontinuity_lost_frames) != AP_OK)
-            return 4;
+                                                    discontinuity_lost_frames) != AP_OK) {
+            result = 4;
+            goto done;
+        }
         if (!capture_only) {
-            const size_t got = fread(render, sizeof(int16_t), frame, fr);
+            size_t got = 0u;
+            if (!read_pcm(fr, render, frame, &got)) {
+                fprintf(stderr, "render read failed or truncated S16 sample\n");
+                result = 2;
+                goto done;
+            }
             if (got < frame)
                 memset(render + got, 0, (frame - got) * sizeof(int16_t));
-            if (ap_pipeline_push_render(pipeline, render, frame) != AP_OK) return 4;
+            if (ap_pipeline_push_render(pipeline, render, frame) != AP_OK) {
+                result = 4;
+                goto done;
+            }
         }
-        if (ap_pipeline_process_capture(pipeline, mic, frame, out) != AP_OK) return 4;
-        if (fwrite(out, sizeof(int16_t), frame, fo) != frame) return 5;
+        if (ap_pipeline_process_capture(pipeline, mic, frame, out) != AP_OK) {
+            result = 4;
+            goto done;
+        }
+        if (fwrite(out, sizeof(int16_t), frame, fo) != frame || ferror(fo)) {
+            fprintf(stderr, "write output failed\n");
+            result = 5;
+            goto done;
+        }
         if (fmetrics) {
             ap_pipeline_get_metrics(pipeline, &metrics);
             if (fprintf(fmetrics,
@@ -272,15 +331,31 @@ int main(int argc, char **argv) {
                         (unsigned)metrics.erle_valid,
                         (unsigned)metrics.aec_converged,
                         metrics.estimated_delay_ms,
-                        metrics.delay_error_samples) < 0)
-                return 5;
+                        metrics.delay_error_samples) < 0 || ferror(fmetrics)) {
+                fprintf(stderr, "write metrics failed\n");
+                result = 5;
+                goto done;
+            }
         }
         frame_index++;
     }
 
-    fclose(fm);
-    if (fr) fclose(fr);
-    fclose(fo);
-    if (fmetrics) fclose(fmetrics);
-    return 0;
+done:
+    if (fm && fclose(fm) != 0) {
+        perror("close capture");
+        if (result == 0) result = 2;
+    }
+    if (fr && fclose(fr) != 0) {
+        perror("close render");
+        if (result == 0) result = 2;
+    }
+    if (fo && fclose(fo) != 0) {
+        perror("close output");
+        if (result == 0) result = 5;
+    }
+    if (fmetrics && fclose(fmetrics) != 0) {
+        perror("close metrics");
+        if (result == 0) result = 5;
+    }
+    return result;
 }

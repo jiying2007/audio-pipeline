@@ -202,3 +202,21 @@ python3 tools/apreplay.py failure.apd \
 4. 使用 `apreplay` 做可重复复现；
 5. 判断问题属于 API/ownership、route/sync、具体 DSP stage、资源/性能或真实硬件；
 6. 用最小 targeted test 固定根因，再跑 full Verify。
+
+## 离线 PCM 工具的文件完整性
+
+`ap_process_pcm` 的 capture 输入须包含完整 S16 样本及完整交织通道组；
+空 capture 是零帧输入，半个样本、通道组缺失或读取失败均非零退出。
+
+默认按既有规则处理完整 10 ms 帧，正常 EOF 处不足一帧的尾段不处理、不补零，
+并在 stderr 明确报告每通道未处理的样本数及通道数。这样保留任意时长录音的既有输出字节和帧数。
+需要严格检查录音完整性时，添加 `--strict-capture-frames`；该模式对任何非空尾部不足一帧均非零退出。
+render 合法短文件或空文件仍按原规则补零；render 读取返回半个 S16 样本或读取失败时，不能当作正常 EOF。
+capture 结束时处理停止，未使用的 render 尾部不作完整性验证。
+
+PCM 与 JSONL metrics 的立即写入失败、最终缓冲关闭失败均非零退出，错误路径关闭已打开的文件。
+配置和 tuning 在创建输出前校验。输出可能已经产生有效前缀，调用方应在退出码为零后才发布结果，
+失败时丢弃不完整结果；输入与输出须使用不同路径，不支持原地覆盖。
+
+完整契约见 [OFFLINE_PCM_IO](OFFLINE_PCM_IO.md)。这些回归测试验证软件文件 I/O，
+不产生新的声学、SSC305、HIL 或产品认证结论。

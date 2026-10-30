@@ -463,8 +463,14 @@ def consumer_receipt(api, run_id: int, attempt: int) -> tuple[dict, dict, dict]:
     record = run_record(api, run_id, attempt)
     name = f"dechorate-event-source-range-{run_id}-{attempt}"
     receipt, evidence = artifact(api, record, name, "source-range.json")
-    need(receipt.get("scope", {}).get("github_run_id") == str(run_id) and
-         receipt["scope"].get("github_run_attempt") == str(attempt), "CONSUMER_ARTIFACT_ATTEMPT_DRIFT")
+    # A rejected consumer has no challenge scope. Do not report its original
+    # source refusal as evidence that an Actions run/attempt actually changed.
+    need(type(receipt) is dict, "CONSUMER_ARTIFACT_SCHEMA_DRIFT")
+    need(receipt.get("phase") != "REJECTED", "CONSUMER_SOURCE_REJECTED")
+    scope = receipt.get("scope")
+    need(type(scope) is dict, "CONSUMER_ARTIFACT_SCOPE_MISSING_OR_INVALID")
+    need(scope.get("github_run_id") == str(run_id) and
+         scope.get("github_run_attempt") == str(attempt), "CONSUMER_ARTIFACT_ATTEMPT_DRIFT")
     return receipt, evidence, record
 
 

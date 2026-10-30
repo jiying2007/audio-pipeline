@@ -176,6 +176,20 @@ class ObservationTests(unittest.TestCase):
             self.assertEqual(report["outcome"], "METADATA_INVALID")
             self.assertEqual(raw, saved)
 
+    def test_exponent_overflow_is_rejected_and_raw_bytes_retained(self):
+        prefix = json.dumps(fixture()).encode()[:-1]
+        for number in (b"1e999", b"-1e999", b"1e309", b"-1.8e308"):
+            for suffix in (number, b'{"nested":[' + number + b']}'):
+                raw = prefix + b',"unexpected":' + suffix + b'}'
+                report, saved = self.request(raw=raw)
+                self.assertEqual(report["outcome"], "METADATA_INVALID")
+                self.assertEqual(saved, raw)
+        for number in (b"1.7e308", b"-1.7e308", b"1e-300", b"0.125"):
+            raw = prefix + b',"unexpected":' + number + b'}'
+            report, saved = self.request(raw=raw)
+            self.assertEqual(report["outcome"], "OBSERVED_MATCH")
+            self.assertEqual(saved, raw)
+
     def test_exact_byte_cap_is_accepted(self):
         raw = json.dumps(fixture()).encode()
         raw += b" " * (M.MAX_BYTES - len(raw))

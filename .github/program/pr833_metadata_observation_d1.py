@@ -11,6 +11,7 @@ from datetime import datetime, timezone
 import hashlib
 import http.client
 import json
+import math
 import os
 from pathlib import Path
 import re
@@ -65,9 +66,15 @@ def no_constant(_value: str):
     raise ValueError("NONFINITE_JSON")
 
 
+def finite_float(value: str) -> float:
+    number = float(value)
+    require(math.isfinite(number), "NONFINITE_JSON_NUMBER")
+    return number
+
+
 def load_json(raw: bytes):
     return json.loads(raw.decode("utf-8"), object_pairs_hook=strict_pairs,
-                      parse_constant=no_constant)
+                      parse_constant=no_constant, parse_float=finite_float)
 
 
 def oid_field(data: dict, key: str) -> dict:

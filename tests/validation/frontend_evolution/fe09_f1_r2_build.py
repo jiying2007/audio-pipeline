@@ -101,13 +101,53 @@ def environment():
     return {"PATH": "/usr/bin:/bin", "HOME": "/tmp", "LC_ALL": "C", "TZ": "UTC"}
 
 
+def owned_waitable(process):
+    """Observe only; do not release the leader's PID/process-group identity."""
+    need(process.returncode is None, "BUILD_CHILD_OWNERSHIP_LOST")
+    try:
+        result = os.waitid(os.P_PID, process.pid, os.WEXITED | os.WNOHANG | os.WNOWAIT)
+    except ChildProcessError as exc:
+        # Another waiter/handler consumed our child. Do not signal a possibly
+        # reused numeric PID; this sentinel is a rejection, not an exit result.
+        process.returncode = 255
+        raise Rejected("BUILD_CHILD_OWNERSHIP_LOST") from exc
+    need(result is None or result.si_pid == process.pid, "BUILD_CHILD_IDENTITY")
+    return result
+
+
+def finish_tool(process, deadline):
+    """Signal while the exact leader is still ours, then reap only that leader."""
+    owned_waitable(process)
+    cleanup_error = None
+    try:
+        need(os.getpgid(process.pid) == process.pid, "BUILD_PROCESS_GROUP_IDENTITY")
+        os.killpg(process.pid, signal.SIGKILL)
+    except ProcessLookupError as exc:
+        cleanup_error = exc
+    except (OSError, Rejected) as exc:
+        cleanup_error = exc
+        # Do not signal an unrelated group. The unreaped direct child is still
+        # ours; attempt to terminate/reap it even when group cleanup failed.
+        try:
+            os.kill(process.pid, signal.SIGKILL)
+        except OSError as direct_error:
+            cleanup_error = direct_error
+    # No new cleanup window, no wait-any, and no signal after this wait.
+    code = process.wait(timeout=max(0, deadline - time.monotonic()))
+    need(time.monotonic() <= deadline, "BUILD_CLEANUP_DEADLINE")
+    if cleanup_error is not None:
+        raise Rejected("BUILD_PROCESS_GROUP_CLEANUP_FAILED") from cleanup_error
+    return code
+
+
 def run_tool(argv, cwd, log, deadline):
     """Bounded merged output; one owned process group, no retries."""
     end = min(deadline, time.monotonic() + 60)
     need(end - time.monotonic() > .5, "BUILD_STAGE_DEADLINE")
-    data, reaped = bytearray(), False
+    data = bytearray()
     process = None
     error = None
+    code = None
     try:
         process = subprocess.Popen(argv, cwd=cwd, env=environment(), stdin=subprocess.DEVNULL,
                                    stdout=subprocess.PIPE, stderr=subprocess.STDOUT, start_new_session=True)
@@ -127,24 +167,20 @@ def run_tool(argv, cwd, log, deadline):
                         data.extend(chunk)
                     else:
                         selector.unregister(key.fd)
+        while True:
             remaining = end - .5 - time.monotonic()
             need(remaining > 0, "BUILD_TOOL_TIMEOUT")
-            code = process.wait(timeout=remaining)
-            reaped = True
-            need(code == 0, "BUILD_TOOL_FAILED")
+            if owned_waitable(process) is not None:
+                break
+            time.sleep(min(.005, remaining))
     except (OSError, ValueError, subprocess.SubprocessError) as exc:
         error = exc
     finally:
         try:
-            if process is not None and not reaped:
-                try:
-                    os.killpg(process.pid, signal.SIGKILL)
-                except ProcessLookupError:
-                    pass
-                remaining = end - time.monotonic()
-                need(remaining > 0, "BUILD_CLEANUP_DEADLINE")
-                process.wait(timeout=remaining)
-                reaped = True
+            if process is not None:
+                # Also clean on exit0/nonzero with closed pipes. Observing a
+                # waitable leader is not proof that its descendants exited.
+                code = finish_tool(process, end)
         finally:
             if process is not None:
                 process.stdout.close()
@@ -152,6 +188,7 @@ def run_tool(argv, cwd, log, deadline):
     need(time.monotonic() <= end, "BUILD_TOOL_DEADLINE_EXCEEDED")
     if error is not None:
         raise error
+    need(code == 0, "BUILD_TOOL_FAILED")
     return bytes(data)
 
 

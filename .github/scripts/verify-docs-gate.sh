@@ -110,6 +110,14 @@ python3 tests/validation/frontend_evolution/test_fe09_f1_r2_source_bridge.py
 python3 -O tests/validation/frontend_evolution/test_fe09_f1_r2_source_bridge.py
 python3 -OO tests/validation/frontend_evolution/test_fe09_f1_r2_source_bridge.py
 python3 tests/validation/frontend_evolution/fe09_f1_r2_source_bridge.py --check
+# F1-R2-T1 compiles original private images only; never runs them.
+python3 tests/validation/frontend_evolution/test_fe09_f1_r2_build.py
+python3 -O tests/validation/frontend_evolution/test_fe09_f1_r2_build.py
+python3 -OO tests/validation/frontend_evolution/test_fe09_f1_r2_build.py
+if [ "${GITHUB_JOB:-}" = fast-code ]; then
+  python3 tests/validation/frontend_evolution/fe09_f1_r2_build.py \
+    --output "${RUNNER_TEMP:?}/f1-r2-t1-${GITHUB_RUN_ID:?}-${GITHUB_RUN_ATTEMPT:?}"
+fi
 python3 .github/program/workflow_pin_only_scope.py --self-test
 python3 .github/program/workflow_pin_only_replay_t1.py --self-test
 python3 .github/program/workflow_pin_only_actual_tree_t1m1.py --self-test

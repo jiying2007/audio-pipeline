@@ -105,6 +105,11 @@ python3 tests/validation/frontend_evolution/fe09_t3s3_f0_call_resource_r5_qualif
 python3 tests/validation/frontend_evolution/fe09_b3_f0_r5_path_r1_contract.py --self-test
 python3 tests/validation/frontend_evolution/fe09_b3_f0_deadline_r5_path_r1_qualification.py --self-test
 python3 tests/validation/frontend_evolution/fe09_t3s3_f0_call_resource_r5_path_r1_qualification.py --self-test
+# F1-R2-T0 reconciles source identities only; no F1 cohort or provider request.
+python3 tests/validation/frontend_evolution/test_fe09_f1_r2_source_bridge.py
+python3 -O tests/validation/frontend_evolution/test_fe09_f1_r2_source_bridge.py
+python3 -OO tests/validation/frontend_evolution/test_fe09_f1_r2_source_bridge.py
+python3 tests/validation/frontend_evolution/fe09_f1_r2_source_bridge.py --check
 python3 .github/program/workflow_pin_only_scope.py --self-test
 python3 .github/program/workflow_pin_only_replay_t1.py --self-test
 python3 .github/program/workflow_pin_only_actual_tree_t1m1.py --self-test

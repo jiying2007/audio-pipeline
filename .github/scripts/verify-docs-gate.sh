@@ -118,6 +118,12 @@ if [ "${GITHUB_JOB:-}" = fast-code ]; then
   python3 tests/validation/frontend_evolution/fe09_f1_r2_build.py \
     --output "${RUNNER_TEMP:?}/f1-r2-t1-${GITHUB_RUN_ID:?}-${GITHUB_RUN_ATTEMPT:?}"
 fi
+# A3-R2-T0: pinned original 88 source bytes and current-tree differences only.
+# No archived A3 source imports, C/DSP build, workflow or provider request.
+python3 tests/validation/frontend_evolution/test_fe09_a3_r2_source_audit.py
+python3 -O tests/validation/frontend_evolution/test_fe09_a3_r2_source_audit.py
+python3 -OO tests/validation/frontend_evolution/test_fe09_a3_r2_source_audit.py
+python3 tests/validation/frontend_evolution/fe09_a3_r2_source_audit.py --check
 python3 .github/program/workflow_pin_only_scope.py --self-test
 python3 .github/program/workflow_pin_only_replay_t1.py --self-test
 python3 .github/program/workflow_pin_only_actual_tree_t1m1.py --self-test

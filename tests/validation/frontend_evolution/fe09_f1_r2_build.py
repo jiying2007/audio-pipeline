@@ -162,9 +162,13 @@ def run_tool(argv, cwd, log, deadline):
                         chunk = os.read(key.fd, min(65536, MAX_LOG - len(data) + 1))
                     except BlockingIOError:
                         continue
-                    need(len(data) + len(chunk) <= MAX_LOG, "BUILD_LOG_BOUND")
+                    # Fail visibly, but retain exactly the permitted raw prefix.
+                    # A first read can already exceed the remaining budget.
+                    available = MAX_LOG - len(data)
+                    need(available >= 0, "BUILD_LOG_BOUND")
                     if chunk:
-                        data.extend(chunk)
+                        data.extend(chunk[:available])
+                        need(len(chunk) <= available, "BUILD_LOG_BOUND")
                     else:
                         selector.unregister(key.fd)
         while True:

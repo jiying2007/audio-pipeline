@@ -53,7 +53,7 @@ class SourceAuditTests(unittest.TestCase):
     def test_positive_three_original_bytes_current_unchanged(self):
         records, blobs = rows()
         a, b, current = trees(records)
-        report = M.inspect_originals(records, a, b, current, blobs.__getitem__)
+        report = M.inspect_originals(records, a, b, current, lambda oid, cap: blobs[oid])
         self.assertEqual(report["original_88_checked"], 3)
         self.assertEqual(report["current_same"], 3)
         self.assertEqual(report["current_changed"], 0)
@@ -65,7 +65,7 @@ class SourceAuditTests(unittest.TestCase):
         a, b, current = trees(records)
         current[records[0]["path"]] = ("100644", "f" * 40)
         current.pop(records[1]["path"])
-        report = M.inspect_originals(records, a, b, current, blobs.__getitem__)
+        report = M.inspect_originals(records, a, b, current, lambda oid, cap: blobs[oid])
         self.assertEqual((report["current_same"], report["current_changed"],
                           report["current_missing"]), (1, 1, 1))
         self.assertFalse(report["current_tree_is_original_tree"])
@@ -80,7 +80,7 @@ class SourceAuditTests(unittest.TestCase):
             selected = a if tree_index == 0 else b
             selected[records[1]["path"]] = ("100644", "f" * 40)
             with self.assertRaisesRegex(M.Rejected, "A3_ORIGINAL_BASELINE_OR_COMPARISON_DRIFT"):
-                M.inspect_originals(records, a, b, current, blobs.__getitem__)
+                M.inspect_originals(records, a, b, current, lambda oid, cap: blobs[oid])
 
     def test_original_missing_or_symlink_rejects(self):
         records, blobs = rows()
@@ -94,7 +94,7 @@ class SourceAuditTests(unittest.TestCase):
             else:
                 b[path] = ("100755", records[0]["git_blob_sha1"])
             with self.assertRaises(M.Rejected):
-                M.inspect_originals(records, a, b, current, blobs.__getitem__)
+                M.inspect_originals(records, a, b, current, lambda oid, cap: blobs[oid])
 
     def test_wrong_bytes_length_digest_or_git_blob_rejected(self):
         records, blobs = rows()
@@ -106,7 +106,7 @@ class SourceAuditTests(unittest.TestCase):
         mutated = copy.deepcopy(records)
         mutated[0]["sha256"] = "f" * 64
         with self.assertRaisesRegex(M.Rejected, "A3_ORIGINAL_BYTE_DIGEST_DRIFT"):
-            M.inspect_originals(mutated, a, b, current, blobs.__getitem__)
+            M.inspect_originals(mutated, a, b, current, lambda oid, cap: blobs[oid])
 
     def test_duplicate_row_and_path_traversal_rejected(self):
         data, _ = rows()

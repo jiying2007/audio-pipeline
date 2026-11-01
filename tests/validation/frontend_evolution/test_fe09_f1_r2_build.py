@@ -15,7 +15,8 @@ import time
 import unittest
 from unittest import mock
 
-SPEC = importlib.util.spec_from_file_location("f1_r2_build", Path(__file__).with_name("fe09_f1_r2_build.py"))
+MODULE_PATH = Path(__file__).with_name("fe09_f1_r2_build.py")
+SPEC = importlib.util.spec_from_file_location("f1_r2_build", MODULE_PATH)
 M = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(M)
 
@@ -313,6 +314,152 @@ class FileAndToolTests(unittest.TestCase):
         report = json.loads(output.getvalue())
         self.assertEqual(report["generated_target_executions"], 0)
         self.assertFalse(any(report[k] for k in M.DENIALS))
+
+
+class GroupLifetimeTests(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory(); self.addCleanup(self.tmp.cleanup)
+        self.root = Path(self.tmp.name)
+
+    def descendant_result(self, exit_code):
+        # Subreaper state is confined to this separate test-driver process.
+        # The generic child waits for a file released AFTER run_tool returns,
+        # so the regression does not depend on winning a short sleep race.
+        driver = r"""
+import ctypes, importlib.util, json, os, pathlib, sys, time
+spec = importlib.util.spec_from_file_location('tested_build', sys.argv[1])
+m = importlib.util.module_from_spec(spec); spec.loader.exec_module(m)
+libc = ctypes.CDLL(None, use_errno=True)
+if libc.prctl(36, 1, 0, 0, 0) != 0:
+    raise OSError(ctypes.get_errno(), 'test-only child-subreaper unavailable')
+root = pathlib.Path(sys.argv[2]); status = int(sys.argv[3])
+child = __CHILD_SCRIPT__
+reason = None
+try:
+    m.run_tool([sys.executable, '-I', '-S', '-c', child, str(root), str(status)],
+               root, root / 'tool.log', time.monotonic() + 3)
+except m.Rejected as exc:
+    reason = str(exc)
+pid = int((root / 'tool.log').read_bytes().splitlines()[-1])
+(root / 'release-child').write_text('owner returned')
+waited, raw_status = os.waitpid(pid, 0)
+print(json.dumps({'reason': reason, 'child_reaped': waited == pid,
+                  'child_exit': os.waitstatus_to_exitcode(raw_status),
+                  'late_marker': (root / 'late-marker').exists()}))
+"""
+        child = "\n".join([
+            "import os,pathlib,sys,time", "root=pathlib.Path(sys.argv[1])", "pid=os.fork()",
+            "if pid:", " print(pid,flush=True)", " os._exit(int(sys.argv[2]))",
+            "fd=os.open('/dev/null',os.O_WRONLY)",
+            "os.dup2(fd,1);os.dup2(fd,2);os.close(fd)",
+            "limit=time.monotonic()+2", "flag=root/'release-child'",
+            "while not flag.exists() and time.monotonic()<limit: time.sleep(.001)",
+            "if flag.exists(): (root/'late-marker').write_text('descendant survived')",
+            "os._exit(0)"])
+        driver = driver.replace("__CHILD_SCRIPT__", repr(child))
+        result = subprocess.run([sys.executable, '-I', '-S', '-c', driver, str(MODULE_PATH),
+                                 str(self.root), str(exit_code)],
+                                stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                env=M.environment(), timeout=5, check=True)
+        return json.loads(result.stdout)
+
+    def test_successful_leader_cannot_leave_active_descendant(self):
+        result = self.descendant_result(0)
+        self.assertEqual(result, {'reason': None, 'child_reaped': True,
+                                  'child_exit': -9, 'late_marker': False})
+
+    def test_nonzero_leader_cannot_leave_active_descendant(self):
+        result = self.descendant_result(7)
+        self.assertEqual(result, {'reason': 'BUILD_TOOL_FAILED', 'child_reaped': True,
+                                  'child_exit': -9, 'late_marker': False})
+
+    def test_closed_pipes_with_running_leader_still_time_out(self):
+        with self.assertRaisesRegex(M.Rejected, 'BUILD_TOOL_TIMEOUT'):
+            M.run_tool([sys.executable, '-I', '-S', '-c',
+                        'import os,time;os.close(1);os.close(2);time.sleep(60)'],
+                       self.root, self.root / 'tool.log', time.monotonic() + .8)
+
+    def test_nonconsuming_observation_precedes_group_signal_and_reap(self):
+        process = mock.Mock(pid=123, returncode=None)
+        events = []
+        def observe(*args):
+            self.assertEqual(args, (M.os.P_PID, 123, M.os.WEXITED | M.os.WNOHANG | M.os.WNOWAIT))
+            events.append('observe'); return mock.Mock(si_pid=123)
+        def group(pid, sig):
+            self.assertEqual((pid, sig), (123, M.signal.SIGKILL))
+            self.assertIsNone(process.returncode); events.append('group-signal')
+        def wait(*, timeout):
+            events.append('reap'); process.returncode = 0; return 0
+        process.wait.side_effect = wait
+        with mock.patch.object(M.os, 'waitid', side_effect=observe), mock.patch.object(
+                M.os, 'getpgid', return_value=123), mock.patch.object(M.os, 'killpg', side_effect=group):
+            self.assertEqual(M.finish_tool(process, time.monotonic() + 5), 0)
+        self.assertEqual(events, ['observe', 'group-signal', 'reap'])
+
+    def test_previously_consumed_leader_is_not_signaled(self):
+        for consumed in (0, 7, -9):
+            process = mock.Mock(pid=123, returncode=consumed)
+            with mock.patch.object(M.os, 'killpg') as group, mock.patch.object(M.os, 'kill') as direct:
+                with self.assertRaisesRegex(M.Rejected, 'BUILD_CHILD_OWNERSHIP_LOST'):
+                    M.finish_tool(process, time.monotonic() + 5)
+                group.assert_not_called(); direct.assert_not_called(); process.wait.assert_not_called()
+
+    def test_externally_reaped_leader_is_not_signaled(self):
+        process = mock.Mock(pid=123, returncode=None)
+        with mock.patch.object(M.os, 'waitid', side_effect=ChildProcessError), mock.patch.object(
+                M.os, 'killpg') as group, mock.patch.object(M.os, 'kill') as direct:
+            with self.assertRaisesRegex(M.Rejected, 'BUILD_CHILD_OWNERSHIP_LOST'):
+                M.finish_tool(process, time.monotonic() + 5)
+        group.assert_not_called(); direct.assert_not_called(); process.wait.assert_not_called()
+        self.assertEqual(process.returncode, 255)
+
+    def test_wrong_observed_child_identity_is_rejected(self):
+        process = mock.Mock(pid=123, returncode=None)
+        with mock.patch.object(M.os, 'waitid', return_value=mock.Mock(si_pid=456)), mock.patch.object(
+                M.os, 'killpg') as group:
+            with self.assertRaisesRegex(M.Rejected, 'BUILD_CHILD_IDENTITY'):
+                M.finish_tool(process, time.monotonic() + 5)
+        group.assert_not_called(); process.wait.assert_not_called()
+
+    def test_wrong_group_cannot_signal_other_processes(self):
+        process = mock.Mock(pid=123, returncode=None)
+        process.wait.return_value = -9
+        with mock.patch.object(M.os, 'waitid', return_value=None), mock.patch.object(
+                M.os, 'getpgid', return_value=456), mock.patch.object(M.os, 'killpg') as group, mock.patch.object(
+                M.os, 'kill') as direct:
+            with self.assertRaisesRegex(M.Rejected, 'BUILD_PROCESS_GROUP_CLEANUP_FAILED'):
+                M.finish_tool(process, time.monotonic() + 5)
+        group.assert_not_called(); direct.assert_called_once_with(123, M.signal.SIGKILL)
+        process.wait.assert_called_once()
+
+    def test_missing_group_is_not_silent_success(self):
+        process = mock.Mock(pid=123, returncode=None)
+        process.wait.return_value = 0
+        with mock.patch.object(M.os, 'waitid', return_value=mock.Mock(si_pid=123)), mock.patch.object(
+                M.os, 'getpgid', side_effect=ProcessLookupError), mock.patch.object(M.os, 'killpg') as group:
+            with self.assertRaisesRegex(M.Rejected, 'BUILD_PROCESS_GROUP_CLEANUP_FAILED'):
+                M.finish_tool(process, time.monotonic() + 5)
+        group.assert_not_called(); process.wait.assert_called_once()
+
+    def test_group_signal_error_attempts_direct_reap_but_never_passes(self):
+        process = mock.Mock(pid=123, returncode=None)
+        process.wait.return_value = -9
+        with mock.patch.object(M.os, 'waitid', return_value=None), mock.patch.object(
+                M.os, 'getpgid', return_value=123), mock.patch.object(M.os, 'killpg', side_effect=PermissionError), mock.patch.object(
+                M.os, 'kill') as direct:
+            with self.assertRaisesRegex(M.Rejected, 'BUILD_PROCESS_GROUP_CLEANUP_FAILED'):
+                M.finish_tool(process, time.monotonic() + 5)
+        direct.assert_called_once_with(123, M.signal.SIGKILL); process.wait.assert_called_once()
+
+    def test_cleanup_does_not_reset_expired_deadline(self):
+        process = mock.Mock(pid=123, returncode=None)
+        process.wait.return_value = 0
+        with mock.patch.object(M.os, 'waitid', return_value=mock.Mock(si_pid=123)), mock.patch.object(
+                M.os, 'getpgid', return_value=123), mock.patch.object(M.os, 'killpg'), mock.patch.object(
+                M.time, 'monotonic', return_value=10):
+            with self.assertRaisesRegex(M.Rejected, 'BUILD_CLEANUP_DEADLINE'):
+                M.finish_tool(process, 9)
+        process.wait.assert_called_once_with(timeout=0)
 
 
 if __name__ == "__main__":

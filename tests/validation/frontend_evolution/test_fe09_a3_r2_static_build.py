@@ -134,6 +134,7 @@ class StaticBuildTests(unittest.TestCase):
                                        raw for path, raw in contents.items()
                                        if source_ids[path] == oid))
         proof = {"status": "offline-t0", "source_only": True,
+                 "a3_target_executed": False,
                  "execution_commit": "a" * 40, "execution_tree": "b" * 40,
                  "source_comparison": {"original_88_checked": 88,
                      "registered_88_equal_current": True,

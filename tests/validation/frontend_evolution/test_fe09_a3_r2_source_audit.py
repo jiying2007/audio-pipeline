@@ -58,6 +58,7 @@ class SourceAuditTests(unittest.TestCase):
         self.assertEqual(report["current_same"], 3)
         self.assertEqual(report["current_changed"], 0)
         self.assertEqual(report["current_missing"], 0)
+        self.assertTrue(report["registered_88_equal_current"])
         self.assertTrue(report["current_tree_is_original_tree"])
 
     def test_current_source_differences_are_reported_not_promoted(self):
@@ -72,6 +73,17 @@ class SourceAuditTests(unittest.TestCase):
         self.assertEqual(report["changed_current_paths"], [records[0]["path"]])
         self.assertEqual(report["missing_current_paths"], [records[1]["path"]])
         self.assertTrue(all(v is False for v in M.DENIALS.values()))
+
+    def test_unregistered_change_is_not_misreported_as_identical_full_tree(self):
+        records, blobs = rows()
+        original, comparison, current = trees(records)
+        current["unregistered-new-file.txt"] = ("100644", "f" * 40)
+        report = M.inspect_originals(records, original, comparison, current,
+                                     lambda oid, cap: blobs[oid])
+        self.assertEqual((report["current_same"], report["current_changed"],
+                          report["current_missing"]), (3, 0, 0))
+        self.assertTrue(report["registered_88_equal_current"])
+        self.assertFalse(report["current_tree_is_original_tree"])
 
     def test_original_baseline_or_comparison_drift_rejects(self):
         records, blobs = rows()

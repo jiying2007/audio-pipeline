@@ -30,6 +30,14 @@ python3 tests/validation/frontend_evolution/fe09_a3_r2_source_audit.py --check
 
 后续需另立 T1，复核已归档 A3 C 代码的完整源依赖，按当前主线接入非安装的静态构建，然后独立处理缺少的驱动与采集器；不得把旧 workflow 片段直接覆盖当前 Quality/Verify。#847、#657 保持开放。此次不修改 SDK API/ABI、V2.3.61、F1 原始锁与其他科学门禁。
 
+## 同一性结论的精确范围
+
+回执 `registered_88_equal_current` 仅表示登记的 88 份源码和当前树逐项相同。
+`current_tree_is_original_tree` 则**独立比较完整 Git tree 所有路径与 mode/blob**，
+不能用 88/88 自动推导整个仓库 SHA/树等同于历史版本。若另增未登记文件，即使
+88 项全部一致，完整树也须为 `false`；本次测试包含此负例。
+完整树与历史版本不同是预期的维护演化，不是需要回滚的错误。
+
 ## English contract
 
 A3-R2-T0 reads pinned original Git objects, verifies all 88 source bytes against

@@ -228,7 +228,9 @@ def inspect_originals(rows: list[dict], base: dict, comparison: dict,
     return {"original_88_checked": len(rows), "current_same": len(same),
             "current_changed": len(changed), "current_missing": len(missing),
             "changed_current_paths": sorted(changed), "missing_current_paths": sorted(missing),
-            "current_tree_is_original_tree": len(same) == len(rows)}
+            "registered_88_equal_current": len(same) == len(rows),
+            "current_tree_is_original_tree": (len(base) == len(current) and
+                all(current.get(path) == identity for path, identity in base.items()))}
 
 
 def execute(root: Path) -> dict:

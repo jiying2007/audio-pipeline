@@ -379,6 +379,35 @@ print(json.dumps({'reason': reason, 'child_reaped': waited == pid,
                         'import os,time;os.close(1);os.close(2);time.sleep(60)'],
                        self.root, self.root / 'tool.log', time.monotonic() + .8)
 
+    def test_overflow_retains_exact_allowed_log_prefix(self):
+        with mock.patch.object(M, "MAX_LOG", 8), self.assertRaisesRegex(M.Rejected, "BUILD_LOG_BOUND"):
+            M.run_tool([sys.executable, "-I", "-S", "-c",
+                        "import os;os.write(1,b'ABCDEFGHIJKLM')"],
+                       self.root, self.root / "overflow.log", time.monotonic() + 3)
+        self.assertEqual((self.root / "overflow.log").read_bytes(), b"ABCDEFGH")
+
+    def test_exact_log_limit_remains_valid(self):
+        with mock.patch.object(M, "MAX_LOG", 8):
+            value = M.run_tool([sys.executable, "-I", "-S", "-c",
+                                "import os;os.write(1,b'ABCDEFGH')"],
+                               self.root, self.root / "exact.log", time.monotonic() + 3)
+        self.assertEqual(value, b"ABCDEFGH")
+        self.assertEqual((self.root / "exact.log").read_bytes(), value)
+
+    def test_zero_log_limit_rejects_without_retaining_bytes(self):
+        with mock.patch.object(M, "MAX_LOG", 0), self.assertRaisesRegex(M.Rejected, "BUILD_LOG_BOUND"):
+            M.run_tool([sys.executable, "-I", "-S", "-c",
+                        "import os;os.write(1,b'ABC')"],
+                       self.root, self.root / "zero.log", time.monotonic() + 3)
+        self.assertEqual((self.root / "zero.log").read_bytes(), b"")
+
+    def test_binary_log_overflow_preserves_bytes_without_decoding(self):
+        with mock.patch.object(M, "MAX_LOG", 8), self.assertRaisesRegex(M.Rejected, "BUILD_LOG_BOUND"):
+            M.run_tool([sys.executable, "-I", "-S", "-c",
+                        "import os;os.write(1,bytes(range(16)))"],
+                       self.root, self.root / "binary.log", time.monotonic() + 3)
+        self.assertEqual((self.root / "binary.log").read_bytes(), bytes(range(8)))
+
     def test_nonconsuming_observation_precedes_group_signal_and_reap(self):
         process = mock.Mock(pid=123, returncode=None)
         events = []

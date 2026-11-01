@@ -103,3 +103,25 @@ flags, ELF and static-symbol checks. None of those generated images is executed.
 This is not the formal F1 cohort, RSS evidence, runtime correctness, full future
 source closure, SDK publication or device qualification. Missing tools/objects,
 source drift, compile/link failure and incomplete evidence reject visibly.
+
+## T1-R2 日志上限的独立修复（2026-11-01）
+
+#876 已解决进程组清理；它没有改变原有日志首次超限时可能丢失允许前缀的行为。
+本次补丁只调整当前构建检查器日志读入顺序，保留 #876 的原有进程身份
+waitid(WNOWAIT) → owned group cleanup → exact child reap 控制。
+
+首次或后续读取超过剩余额度时，先保存最多 `MAX_LOG` 字节的**精确原始
+二进制前缀**，然后仍以 `BUILD_LOG_BOUND` 失败退出；不提升上限，不截取末尾
+作为“完整日志”，不重新运行工具。日志在 `finally` 中写入、不可覆盖。
+完全等于上限、没有输出和原来的非零退出语义均保持。
+
+新回归覆盖单次读取超限、等于上限、零上限和含 NUL/非 UTF-8 字节。
+这些只使用通用 Python 工具子进程，不执行任何 F1 launcher/fixture/DSP。
+本次修复不改变四份归档 C/CMake、T0 源码锁、正式 F1/RSS/SSC305 资格、
+实验预算、发布版本或既有工作流。正式 CI 和独立主线检查仍单独验收。
+
+### English note
+
+On log overflow retain exactly the allowed raw byte prefix and still return
+`BUILD_LOG_BOUND`. The existing #876 owned-process cleanup remains unchanged.
+No F1 generated image executes and no resource/product qualification is granted.

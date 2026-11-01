@@ -127,8 +127,10 @@ def validate_rows(rows: list[dict]) -> None:
              0 < row["bytes"] <= MAX_FILE and
              type(row.get("git_blob_sha1")) is str and
              OID.fullmatch(row["git_blob_sha1"]) is not None and
+             row["git_blob_sha1"] != "0" * 40 and
              type(row.get("sha256")) is str and
-             SHA256.fullmatch(row["sha256"]) is not None,
+             SHA256.fullmatch(row["sha256"]) is not None and
+             row["sha256"] != "0" * 64,
              "A3_ORIGINAL_ROW_IDENTITY_INVALID")
 
 
@@ -145,7 +147,7 @@ def parse_tree(raw: bytes) -> dict:
         except (ValueError, UnicodeError) as exc:
             raise Rejected("A3_GIT_TREE_INVALID") from exc
         need(mode in ("100644", "100755", "120000") and kind == "blob" and
-             OID.fullmatch(oid) is not None and path not in result,
+             OID.fullmatch(oid) is not None and oid != "0" * 40 and path not in result,
              "A3_GIT_TREE_INVALID")
         result[path] = (mode, oid)
     return result
@@ -180,11 +182,11 @@ class GitReader:
         return proc.stdout
 
     def tree(self, rev: str) -> dict:
-        need(OID.fullmatch(rev) is not None, "A3_GIT_REF_INVALID")
+        need(OID.fullmatch(rev) is not None and rev != "0" * 40, "A3_GIT_REF_INVALID")
         return parse_tree(self.run(["ls-tree", "-rz", "--full-tree", rev]))
 
     def blob(self, oid: str, cap: int) -> bytes:
-        need(OID.fullmatch(oid) is not None and 0 < cap <= MAX_FILE,
+        need(OID.fullmatch(oid) is not None and oid != "0" * 40 and 0 < cap <= MAX_FILE,
              "A3_GIT_BLOB_BOUND_INVALID")
         raw = self.run(["cat-file", "blob", oid], cap)
         need(len(raw) <= cap and git_blob(raw) == oid, "A3_GIT_BLOB_DRIFT")

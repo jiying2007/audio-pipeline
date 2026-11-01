@@ -121,7 +121,7 @@ class SourceAuditTests(unittest.TestCase):
     def test_wrong_row_types_and_untrusted_identity_rejected(self):
         data, _ = rows()
         mutations = (("bytes", True), ("bytes", 0), ("bytes", M.MAX_FILE+1),
-                     ("sha256", "A"*64), ("git_blob_sha1", "0"*40),
+                     ("sha256", "A"*64), ("sha256", "0"*64), ("git_blob_sha1", "0"*40),
                      ("equals_5187_original_bytes", False), ("baseline", "f"*40))
         for key, value in mutations:
             bad = copy.deepcopy(data)
@@ -146,7 +146,8 @@ class SourceAuditTests(unittest.TestCase):
                "100755 blob "+blob+"\tscripts/runner.sh\0").encode()
         self.assertEqual(M.parse_tree(raw),
                          {"foo.c": ("100644", blob), "scripts/runner.sh": ("100755", blob)})
-        for malformed in (b"x\0", raw + raw, b"100644 commit " + blob.encode() + b"\tfoo\0"):
+        for malformed in (b"x\0", raw + raw, b"100644 commit " + blob.encode() + b"\tfoo\0",
+                          b"100644 blob " + (b"0" * 40) + b"\tzero\0"):
             with self.assertRaises(M.Rejected):
                 M.parse_tree(malformed)
 
@@ -200,7 +201,7 @@ class SourceAuditTests(unittest.TestCase):
 
     def test_invalid_ref_and_blob_id_reject(self):
         reader = M.GitReader(M.ROOT)
-        for invalid in ("f"*39, "0"*40+"X", "../HEAD", "", "F"*40):
+        for invalid in ("f"*39, "0"*40, "0"*40+"X", "../HEAD", "", "F"*40):
             with self.assertRaises(M.Rejected):
                 reader.tree(invalid)
             with self.assertRaises(M.Rejected):

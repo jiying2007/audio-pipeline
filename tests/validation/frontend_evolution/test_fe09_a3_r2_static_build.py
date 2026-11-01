@@ -13,6 +13,11 @@ from types import SimpleNamespace
 import unittest
 from unittest import mock
 
+SYNTH_HEADER = (b'#define AP_VERSION_STRING "2.3.61"\n'
+                b'#define AP_BUILD_MAX_MIC_CHANNELS 2\n'
+                b'#define AP_HAVE_PIPELINE 1\n'
+                b'#define AP_BUILD_FAST_MATH 0\n')
+
 MODULE = Path(__file__).with_name("fe09_a3_r2_static_build.py")
 SPEC = importlib.util.spec_from_file_location("a3_r2_static", MODULE)
 M = importlib.util.module_from_spec(SPEC)
@@ -52,12 +57,32 @@ class StaticBuildTests(unittest.TestCase):
             self.assertIn("-o", cmd)
             self.assertEqual(cmd[cmd.index("-I") + 1], str(M.ROOT / "src"))
             self.assertIn(str(M.ROOT / "include"), cmd)
+            self.assertIn(str(self.root / "sdk_config" / "generated"), cmd)
             self.assertNotIn("-shared", cmd)
             self.assertNotIn("-run", cmd)
             self.assertNotIn("-flto", cmd)
             for flag in ("-std=c11", "-O2", "-fno-lto", "-fstack-usage",
                          "-fno-fast-math", "-ffp-contract=off", "-Wall", "-Werror"):
                 self.assertIn(flag, cmd)
+
+    def test_real_cmake_configuration_never_runs_generated_targets(self):
+        for mode in M.MODES:
+            cmd = M.cmake_configuration("/usr/bin/cmake", "/usr/bin/gcc",
+                                        mode, M.ROOT, self.root / "sdk_config")
+            self.assertIn("-DCMAKE_TRY_COMPILE_TARGET_TYPE=STATIC_LIBRARY", cmd)
+            self.assertIn("-DAP_BUILD_MAX_MIC_CHANNELS=2", cmd)
+            self.assertIn("-DAP_BUILD_TESTS=OFF", cmd)
+            self.assertNotIn("--build", cmd)
+            self.assertNotIn("ctest", " ".join(cmd))
+            self.assertEqual("-DCMAKE_SYSTEM_NAME=Linux" in cmd, mode == "arm32")
+
+    def test_real_generated_header_required_not_synthetic_promotion(self):
+        self.assertEqual(M.generated_config(SYNTH_HEADER)["bytes"], len(SYNTH_HEADER))
+        for invalid in (b"", SYNTH_HEADER.replace(b"MIC_CHANNELS 2", b"MIC_CHANNELS 4"),
+                        SYNTH_HEADER.replace(b"FAST_MATH 0", b"FAST_MATH 1"),
+                        SYNTH_HEADER + b"@PROJECT_VERSION@"):
+            with self.assertRaisesRegex(M.Rejected, "A3_REAL_CMAKE_BUILD_HEADER_REQUIRED"):
+                M.generated_config(invalid)
 
     def test_modes_distinguish_sanitizers_and_arm32(self):
         for mode in M.MODES:
@@ -213,12 +238,17 @@ class StaticBuildTests(unittest.TestCase):
         dummy.environment = lambda: {"PATH": "/usr/bin:/bin"}
         dummy.reserve_output = lambda root, out: (out.mkdir() or out)
         dummy.read_file = lambda path, cap=None: (
-            path.read_bytes() if path.suffix == ".o" else b"synthetic-compiler")
+            path.read_bytes() if path.suffix in (".o", ".h") else b"synthetic-compiler")
         dummy.run_tool = lambda argv, root, logfile, deadline: fake_tool(argv, logfile)
         dummy.save = lambda path, raw: path.write_bytes(raw)
         dummy.encoded = lambda x: (json.dumps(x, sort_keys=True) + "\n").encode()
         def fake_tool(argv, logfile):
-            if "-c" in argv:
+            if "-S" in argv and "-B" in argv:
+                config = Path(argv[argv.index("-B") + 1])
+                header = config / "generated" / "audio_pipeline" / "audio_pipeline_build.h"
+                header.parent.mkdir(parents=True)
+                header.write_bytes(SYNTH_HEADER)
+            elif "-c" in argv:
                 out = Path(argv[-1])
                 out.write_bytes(elf(out.parent.name))
                 modes.setdefault(out.parent.name, []).append(out.name)
@@ -234,7 +264,8 @@ class StaticBuildTests(unittest.TestCase):
         self.assertEqual(set(modes), set(M.MODES))
         self.assertEqual(report["a3_generated_executions"], 0)
         self.assertFalse(any(report[k] for k in M.DENIALS))
-        self.assertEqual(len(report["compilers"]), 3)
+        self.assertEqual(len(report["compilers"]), 4)
+        self.assertEqual(len(report["configured_headers"]), 4)
         self.assertEqual(len(report["modes"]), 4)
         self.assertTrue((self.out / "receipt.json.sha256").is_file())
 

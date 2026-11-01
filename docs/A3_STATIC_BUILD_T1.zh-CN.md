@@ -39,6 +39,16 @@ ARM32 Cortex-A32 hard-float，共 **8 个 ET_REL 对象文件**。
 `-c -std=c11 -O2 -fno-fast-math -ffp-contract=off -fno-lto
 -fstack-usage -fno-common -Wall -Wextra -Wpedantic -Werror`，
 固定包含当前 checkout 的 `src`、`include` 搜索路径，与原 B3-F0 非安装私有构建一致；不从外部参数接受头文件路径。
+实际编译依赖的 `audio_pipeline/audio_pipeline_build.h` 是主仓 CMake `configure_file`
+在构建目录 `generated/audio_pipeline/` 中生成的，不能手写伪造。每一种模式先
+在新的临时 SDK 配置目录调用原始 `cmake -S root -B ...`，关闭测试／benchmark／
+examples／Linux runtime，并用 `CMAKE_TRY_COMPILE_TARGET_TYPE=STATIC_LIBRARY`
+避免在编译器资格探测时运行生成程序。按照当前主仓 CMake 原规则保留
+`AP_BUILD_MAX_MIC_CHANNELS=2`、fast-math OFF；这只约束公共 SDK 的配置头，
+**并不声称原始私有 A3 四麦来源获得公开 SDK 资格**。验证真实生成头中的
+`v2.3.61`、编译配置、fast-math 与模式字段，记录 SHA-256，随后把该目录加入
+`-I` 编译选项。CMake 配置本身可能运行 CMake/编译器及编译静态探测对象，
+不会运行或链接 A3 目标。
 无链接、无运行输出文件、无 `ctest` / QEMU / A3 worker / 原始 DSP 程序。
 ARM 编译仅证明交叉编译接受源码，不证明实际 SSC305 的资源占用或设备运行。
 

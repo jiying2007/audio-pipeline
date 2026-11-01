@@ -104,12 +104,44 @@ def command(cc: str, mode: str, source: Path, destination: Path) -> list[str]:
          "A3_COMPILE_SCOPE_REJECT")
     # Same repository include roots as the original noninstalled B3-F0 recipe.
     # These are fixed to this checkout, never caller-controlled compiler flags.
-    args = [cc, *COMMON, "-I", str(ROOT / "src"), "-I", str(ROOT / "include")]
+    args = [cc, *COMMON, "-I", str(ROOT / "src"), "-I", str(ROOT / "include"),
+            "-I", str(destination.parent / "sdk_config" / "generated")]
     if mode == "sanitized":
         args += ["-fsanitize=address,undefined", "-fno-omit-frame-pointer"]
     if mode == "arm32":
         args += ["-mcpu=cortex-a32", "-mfpu=neon-vfpv4", "-mfloat-abi=hard"]
     return [*args, "-c", str(source), "-o", str(destination)]
+
+
+def cmake_configuration(cmake: str, cc: str, mode: str, root: Path,
+                        config_dir: Path) -> list[str]:
+    need(mode in MODES, "A3_CONFIG_MODE_REJECT")
+    cmd = [cmake, "-S", str(root), "-B", str(config_dir),
+           "-G", "Unix Makefiles", "-DCMAKE_BUILD_TYPE=Release",
+           "-DCMAKE_TRY_COMPILE_TARGET_TYPE=STATIC_LIBRARY",
+           "-DCMAKE_C_COMPILER=" + cc, "-DAP_BUILD_PIPELINE=ON",
+           "-DAP_BUILD_TESTS=OFF", "-DAP_BUILD_BENCH=OFF",
+           "-DAP_BUILD_EXAMPLES=OFF", "-DAP_ENABLE_LINUX_RUNTIME=OFF",
+           "-DAP_BUILD_MAX_MIC_CHANNELS=2", "-DAP_ENABLE_FAST_MATH=OFF",
+           "-DAP_SIMD_BACKEND=SCALAR", "-DAP_AEC_BACKEND=MDF",
+           "-DAP_NS_ESTIMATOR=EMA", "-DAP_RESAMPLER_MODE=BANDLIMITED"]
+    if mode == "arm32":
+        cmd += ["-DCMAKE_SYSTEM_NAME=Linux", "-DCMAKE_SYSTEM_PROCESSOR=arm",
+                "-DCMAKE_C_FLAGS=-mcpu=cortex-a32 -mfpu=neon-vfpv4 -mfloat-abi=hard"]
+    return cmd
+
+
+def generated_config(raw: bytes) -> dict:
+    need(0 < len(raw) <= 131072 and
+         b'#define AP_VERSION_STRING "2.3.61"' in raw and
+         b'#define AP_BUILD_MAX_MIC_CHANNELS 2' in raw and
+         b'#define AP_HAVE_PIPELINE 1' in raw and
+         b'#define AP_BUILD_FAST_MATH 0' in raw and
+         b"@PROJECT_VERSION" not in raw and
+         b"@AP_HAVE_" not in raw,
+         "A3_REAL_CMAKE_BUILD_HEADER_REQUIRED")
+    return {"sha256": sha256(raw), "bytes": len(raw),
+            "identity": "V2.3.61_2MIC_PUBLIC_HEADER_FOR_NONINSTALLED_A3_OBJECTS"}
 
 
 def object_info(raw: bytes, mode: str) -> dict:
@@ -131,10 +163,10 @@ def build_only(root: Path, output: Path) -> dict:
     out = runner.reserve_output(root, output)
     receipt = {"schema_version": 1, "status": "A3_R2_T1_STATIC_BUILD_REJECTED",
                "source": source, "a3_generated_executions": 0, **DENIALS,
-               "modes": {}, "compilers": {}}
+               "modes": {}, "compilers": {}, "configured_headers": {}}
     deadline = time.monotonic() + 420
     try:
-        names = ("gcc", "clang", "arm-linux-gnueabihf-gcc")
+        names = ("cmake", "gcc", "clang", "arm-linux-gnueabihf-gcc")
         tools = {}
         for name in names:
             path = shutil.which(name, path=runner.environment()["PATH"])
@@ -151,6 +183,14 @@ def build_only(root: Path, output: Path) -> dict:
             directory.mkdir(mode=0o700)
             name = ("clang" if mode == "native-clang" else
                     "arm-linux-gnueabihf-gcc" if mode == "arm32" else "gcc")
+            config_dir = directory / "sdk_config"
+            configured = runner.run_tool(
+                cmake_configuration(tools["cmake"], tools[name], mode, root, config_dir),
+                root, out / (mode + ".configure.log"), deadline)
+            config_header = config_dir / "generated" / "audio_pipeline" / "audio_pipeline_build.h"
+            header = generated_config(runner.read_file(config_header, 131072))
+            header["configure_log_sha256"] = sha256(configured)
+            receipt["configured_headers"][mode] = header
             observations = {}
             for unit in C_UNITS:
                 src = root / unit
@@ -168,6 +208,7 @@ def build_only(root: Path, output: Path) -> dict:
             need(len(observations) == 2, "A3_OBJECT_COUNT_DRIFT")
             receipt["modes"][mode] = observations
         need(len(receipt["modes"]) == 4 and
+             len(receipt["configured_headers"]) == 4 and
              source_proof(root, t0, runner) == source, "A3_SOURCE_CHANGED_DURING_COMPILE")
         need(time.monotonic() <= deadline, "A3_STATIC_COMPILE_DEADLINE")
         receipt["status"] = STATUS

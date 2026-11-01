@@ -38,6 +38,7 @@ ARM32 Cortex-A32 hard-float，共 **8 个 ET_REL 对象文件**。
 避免重复制同一翻译单元。所有命令都使用
 `-c -std=c11 -O2 -fno-fast-math -ffp-contract=off -fno-lto
 -fstack-usage -fno-common -Wall -Wextra -Wpedantic -Werror`，
+固定包含当前 checkout 的 `src`、`include` 搜索路径，与原 B3-F0 非安装私有构建一致；不从外部参数接受头文件路径。
 无链接、无运行输出文件、无 `ctest` / QEMU / A3 worker / 原始 DSP 程序。
 ARM 编译仅证明交叉编译接受源码，不证明实际 SSC305 的资源占用或设备运行。
 

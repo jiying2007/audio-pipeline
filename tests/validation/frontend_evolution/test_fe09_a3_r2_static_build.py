@@ -50,6 +50,8 @@ class StaticBuildTests(unittest.TestCase):
                             self.root / "unit.o")
             self.assertIn("-c", cmd)
             self.assertIn("-o", cmd)
+            self.assertEqual(cmd[cmd.index("-I") + 1], str(M.ROOT / "src"))
+            self.assertIn(str(M.ROOT / "include"), cmd)
             self.assertNotIn("-shared", cmd)
             self.assertNotIn("-run", cmd)
             self.assertNotIn("-flto", cmd)

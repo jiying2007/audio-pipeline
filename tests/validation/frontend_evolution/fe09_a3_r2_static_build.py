@@ -102,7 +102,9 @@ def command(cc: str, mode: str, source: Path, destination: Path) -> list[str]:
          ("fe09_a3_f0_live_roll.c", "fe09_a3_f0_original_validator.c") and
          source.suffix == ".c" and destination.suffix == ".o",
          "A3_COMPILE_SCOPE_REJECT")
-    args = [cc, *COMMON]
+    # Same repository include roots as the original noninstalled B3-F0 recipe.
+    # These are fixed to this checkout, never caller-controlled compiler flags.
+    args = [cc, *COMMON, "-I", str(ROOT / "src"), "-I", str(ROOT / "include")]
     if mode == "sanitized":
         args += ["-fsanitize=address,undefined", "-fno-omit-frame-pointer"]
     if mode == "arm32":

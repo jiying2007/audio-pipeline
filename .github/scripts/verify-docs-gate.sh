@@ -132,6 +132,10 @@ if [ "${GITHUB_JOB:-}" = fast-code ]; then
   python3 tests/validation/frontend_evolution/fe09_a3_r2_static_build.py \
     --output "${RUNNER_TEMP:?}/a3-r2-t1-${GITHUB_RUN_ID:?}-${GITHUB_RUN_ATTEMPT:?}"
 fi
+# A3-R2-T2-S0: pure metadata syntax checks, no archived A3 guard/provider/target execution.
+python3 tests/validation/frontend_evolution/test_fe09_a3_r2_metadata_json.py
+python3 -O tests/validation/frontend_evolution/test_fe09_a3_r2_metadata_json.py
+python3 -OO tests/validation/frontend_evolution/test_fe09_a3_r2_metadata_json.py
 python3 .github/program/workflow_pin_only_scope.py --self-test
 python3 .github/program/workflow_pin_only_replay_t1.py --self-test
 python3 .github/program/workflow_pin_only_actual_tree_t1m1.py --self-test

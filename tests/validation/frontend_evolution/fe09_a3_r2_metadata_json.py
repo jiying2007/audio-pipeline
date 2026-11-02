@@ -13,6 +13,7 @@ from typing import Any
 DEFAULT_CAP = 131072
 MAX_CAP = 1048576
 NUMBER_TOKEN_CAP = 128
+MAX_NESTING = 64
 STATUS = "A3_R2_T2_S0_STRICT_METADATA_SYNTAX_ONLY_NO_ADMISSION"
 DENIALS = (
     "provider_metadata_observed",
@@ -70,20 +71,22 @@ def _finite_float(token: str) -> float:
 
 
 def _check_unicode_scalars(value: Any) -> None:
-    # Iterative, not recursive; json.loads has already enforced the input cap.
-    pending = [value]
+    # Iterative and independent of the runner's Python recursion limit.
+    pending = [(value, 0)]
     while pending:
-        item = pending.pop()
+        item, depth = pending.pop()
         if type(item) is str:
             need(not any(0xD800 <= ord(c) <= 0xDFFF for c in item),
                  "A3_METADATA_UNPAIRED_SURROGATE")
         elif type(item) is dict:
+            need(depth < MAX_NESTING, "A3_METADATA_NESTING_BOUND")
             for key, nested in item.items():
                 need(type(key) is str, "A3_METADATA_KEY_NOT_STRING")
-                pending.append(key)
-                pending.append(nested)
+                pending.append((key, depth + 1))
+                pending.append((nested, depth + 1))
         elif type(item) is list:
-            pending.extend(item)
+            need(depth < MAX_NESTING, "A3_METADATA_NESTING_BOUND")
+            pending.extend((nested, depth + 1) for nested in item)
         else:
             need(item is None or type(item) in (bool, int, float),
                  "A3_METADATA_UNKNOWN_VALUE")

@@ -112,9 +112,22 @@ class StrictMetadataTests(unittest.TestCase):
         self.assertEqual(M.parse_metadata_json(b'{"emoji":"\\ud83d\\ude00"}'),
                          {"emoji": "😀"})
 
+    def test_nesting_depth_exact_boundary(self):
+        for n in (1, M.MAX_NESTING):
+            raw = b'[' * n + b'0' + b']' * n
+            self.assertIsInstance(M.parse_metadata_json(raw), list)
+        self.denied(b'[' * (M.MAX_NESTING + 1) + b'0' +
+                    b']' * (M.MAX_NESTING + 1), "A3_METADATA_NESTING_BOUND")
+
     def test_excessive_nesting_fails_boundedly(self):
         raw = b'[' * 1400 + b'0' + b']' * 1400
-        self.denied(raw, "A3_METADATA_INVALID_JSON")
+        try:
+            M.parse_metadata_json(raw)
+        except M.MetadataRejected as exc:
+            self.assertIn(exc.reason, ("A3_METADATA_NESTING_BOUND",
+                                       "A3_METADATA_INVALID_JSON"))
+        else:
+            self.fail("deep JSON must never be accepted")
 
     def test_authority_descriptor_is_defensive(self):
         report = M.authority_boundary()

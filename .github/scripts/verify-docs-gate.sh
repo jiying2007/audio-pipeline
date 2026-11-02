@@ -124,6 +124,14 @@ python3 tests/validation/frontend_evolution/test_fe09_a3_r2_source_audit.py
 python3 -O tests/validation/frontend_evolution/test_fe09_a3_r2_source_audit.py
 python3 -OO tests/validation/frontend_evolution/test_fe09_a3_r2_source_audit.py
 python3 tests/validation/frontend_evolution/fe09_a3_r2_source_audit.py --check
+# A3-R2-T1: static ET_REL C objects only; never link/run original A3 targets.
+python3 tests/validation/frontend_evolution/test_fe09_a3_r2_static_build.py
+python3 -O tests/validation/frontend_evolution/test_fe09_a3_r2_static_build.py
+python3 -OO tests/validation/frontend_evolution/test_fe09_a3_r2_static_build.py
+if [ "${GITHUB_JOB:-}" = fast-code ]; then
+  python3 tests/validation/frontend_evolution/fe09_a3_r2_static_build.py \
+    --output "${RUNNER_TEMP:?}/a3-r2-t1-${GITHUB_RUN_ID:?}-${GITHUB_RUN_ATTEMPT:?}"
+fi
 python3 .github/program/workflow_pin_only_scope.py --self-test
 python3 .github/program/workflow_pin_only_replay_t1.py --self-test
 python3 .github/program/workflow_pin_only_actual_tree_t1m1.py --self-test

@@ -1,5 +1,7 @@
 # Product Assurance Closure
 
+> **Historical product/release assurance record — not an active research gate.** The automatic Release, post-release convergence and product-certification Actions have been retired from active workflows. This document preserves prior publication policies, provenance and safety limitations for audit only. Current technical research follows [RESEARCH_ONLY_EXECUTION.md](RESEARCH_ONLY_EXECUTION.md), independent sources and measured evidence; no commercial license or 72-hour product certification is required for legitimate source-only DSP experiments.
+
 This document defines the current repository/product assurance boundary. It does not expand DSP architecture and never treats hosted CI as product evidence.
 
 ## Software release gate

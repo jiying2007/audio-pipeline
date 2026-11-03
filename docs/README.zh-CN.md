@@ -1,8 +1,8 @@
 # 中文文档导航
 
-本页是 `audio-pipeline` 面向中文研发、集成、测试、实验室与发布人员的统一入口。
+本页是 `audio-pipeline` 面向技术研究、嵌入式集成、测试与实验室复核的中文入口。当前研究执行真相源为 [`RESEARCH_ONLY_EXECUTION.md`](RESEARCH_ONLY_EXECUTION.md)。
 
-> **当前状态边界**：仓库已经达到 `software-commercial-ready`（软件商用集成就绪）。这表示 API/ABI、Runtime、安装 SDK、SSC305 命名产品构建契约、资源/性能回归、数据验证权限、诊断、发布供应链和认证控制面均可由仓库重复验证；**不表示** SSC305 真机 CPU/热/功耗/声学、HIL 历史或 72 小时 Product Certification 已完成。真实物理证据以 live open issue / external-evidence tracker 和实际 workflow evidence 为准。
+> **当前定位：纯技术研究**。默认 CI 验证 API/ABI、Runtime、ARM/QEMU、DSP、声学回归及资源合同；它不要求产品 Release、商用就绪或物理认证。历史商业发布/产品认证结论保留在对应档案，**不是当前研究准入权限**。真实 SSC305 CPU/温度/功耗、实际声学及长时运行仍只接受独立实测证据，未测时保持 NOT_RUN。
 
 ## 双/四麦研究接续
 
@@ -15,11 +15,11 @@
 | 产品/应用集成 | [快速使用](QUICKSTART.zh-CN.md) | [架构](ARCHITECTURE.zh-CN.md)、[平台支持](PLATFORM_SUPPORT.md) |
 | DSP/算法开发 | [开发规范](DEVELOPMENT.zh-CN.md) | [DSP_DESIGN.md](DSP_DESIGN.md)、[TUNING.md](TUNING.md) |
 | Runtime/系统开发 | [架构](ARCHITECTURE.zh-CN.md) | [API_CONTRACT.md](API_CONTRACT.md)、[DIAGNOSTICS.md](DIAGNOSTICS.md) |
-| CI/Release 维护 | [流程图](FLOWS.zh-CN.md) | [PRODUCT_ASSURANCE 中文版](PRODUCT_ASSURANCE.zh-CN.md)、[REPOSITORY_GOVERNANCE.md](REPOSITORY_GOVERNANCE.md) |
+| CI/研究验证维护 | [流程图](FLOWS.zh-CN.md) | [研究执行边界](RESEARCH_ONLY_EXECUTION.md)、[REPOSITORY_GOVERNANCE.md](REPOSITORY_GOVERNANCE.md) |
 | #714 元数据故障定位 | [只读 HTTP/网络诊断](BOT714_METADATA_DIAGNOSTICS.zh-CN.md) | 保留原维护拒绝、独立记录当前请求和三个 SHA |
 | 数据集自测/迭代 | [TESTING 中文版](TESTING.zh-CN.md) | [EXTENDED_REAL_VALIDATION 中文版](EXTENDED_REAL_VALIDATION.zh-CN.md)、[validation/README.md](../validation/README.md) |
 | 实验室/真机 | [PCR02 真机采集](PCR02_REAL_CAPTURE.md) | [可信 Runner 中文版](TRUSTED_RUNNERS.zh-CN.md)、[lab/README.md](../lab/README.md)、[hil/README.md](../hil/README.md) |
-| Product Certification | [PRODUCT_ASSURANCE 中文版](PRODUCT_ASSURANCE.zh-CN.md) | [certification/README.md](../certification/README.md) |
+| 历史产品认证记录（只读） | [PRODUCT_ASSURANCE 中文版](PRODUCT_ASSURANCE.zh-CN.md) | [certification/README.md](../certification/README.md) |
 | 贡献者 | [CONTRIBUTING.zh-CN.md](../CONTRIBUTING.zh-CN.md) | [开发规范](DEVELOPMENT.zh-CN.md) |
 | AI/Codex/自动化助手 | [AGENTS.zh-CN.md](../AGENTS.zh-CN.md) | [AGENTS.md](../AGENTS.md) |
 
@@ -39,7 +39,7 @@
 
 ## 英文 canonical 文档与中文层的关系
 
-中文文档负责**商用集成、操作、维护和边界说明**；以下低层协议/机器契约继续以英文原文为 canonical truth，避免双语全文复制形成两个可能漂移的规范源：
+中文文档负责**研究复现、嵌入式集成、操作与证据边界说明**；以下低层协议/机器契约继续以英文原文为 canonical truth，避免双语全文复制形成两个可能漂移的规范源：
 
 - `docs/API_CONTRACT.md`：公开 C API、状态码、生命周期、线程契约；
 - `docs/DSP_DESIGN.md`：算法公式、状态与实现细节；
@@ -57,4 +57,4 @@
 2. 中文文档不得把 hosted/QEMU/public-data 结果写成真机性能或 Product Qualification PASS。
 3. 流程图必须只表达现有机器流程，不发明新的 authority。
 4. 历史事实写入 `CHANGELOG.md` 或对应 evidence/archive；当前文档只描述当前行为。
-5. 只要 Product Certification 所需真实 DUT/HIL/72 h 物理证据尚未完成，中文材料就必须继续明确 `software-commercial-ready != product-certified`；不得把该规则绑定到某个固定 issue 编号。
+5. 中文材料不得将 Hosted CI、QEMU 或合成音频解释为真实人声、真实 AFE、DUT 或 SSC305 物理性能；历史产品认证条款只在历史文档中呈现，不再限制当前科研推进。

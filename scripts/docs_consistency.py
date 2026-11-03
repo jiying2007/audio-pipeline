@@ -123,7 +123,6 @@ LIFECYCLE_REQUIRED = (
     ".github/research/qualification-policy.json",
     ".github/workflows/research-branch-gc.yml",
     ".github/workflows/validation-authority-qualification.yml",
-    ".github/workflows/post-release-qualification-summary.yml",
     "docs/REPOSITORY_LIFECYCLE.md",
     "docs/REPOSITORY_LIFECYCLE.zh-CN.md",
 )
@@ -499,8 +498,6 @@ def validate_lifecycle(root: Path, errors: list[str]) -> None:
     qualification = read(root, '.github/research/qualification-policy.json')
     gc = read(root, '.github/workflows/research-branch-gc.yml')
     qualifier = read(root, '.github/workflows/validation-authority-qualification.yml')
-    post = read(root, '.github/workflows/post-release-qualification-summary.yml')
-    release = read(root, '.github/workflows/release.yml')
     hosted_aec = read(root, '.github/workflows/hosted-aec-real-validation.yml')
     for payload, name in ((registry, 'research registry'), (qualification, 'qualification policy')):
         try:
@@ -515,11 +512,10 @@ def validate_lifecycle(root: Path, errors: list[str]) -> None:
             errors.append(f'Hosted Real AEC reusable qualification missing token: {token}')
     if 'uses: ./.github/workflows/hosted-aec-real-validation.yml' not in qualifier:
         errors.append('qualification workflow must reuse canonical Hosted Real AEC workflow')
-    if 'release-manifest.json' not in release:
-        errors.append('Release workflow must publish machine-readable release manifest')
-    for token in ('BLOCKED_RUNNER', 'BLOCKED_CONFIG'):
-        if token not in post:
-            errors.append(f'post-release summary missing explicit blocked state: {token}')
+    for legacy in ('.github/workflows/release.yml',
+                   '.github/workflows/post-release-qualification-summary.yml'):
+        if (root / legacy).exists():
+            errors.append(f'legacy commercial publication workflow remains active: {legacy}')
     for tool in ('research_registry.py', 'prepare_release.py', 'release_manifest.py', 'post_release_status.py', 'qualification_fingerprint.py'):
         completed = subprocess.run(
             [sys.executable, str(root / 'scripts' / tool), '--self-test'],

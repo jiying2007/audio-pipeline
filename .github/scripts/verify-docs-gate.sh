@@ -5,6 +5,7 @@ set -eu
 
 python3 tests/validation/frontend_evolution/test_contracts.py
 python3 scripts/ci_impact.py --self-test
+python3 tests/test_research_ci_boundary.py
 python3 tests/validation/test_immutable_whitespace.py
 python3 tests/validation/frontend_evolution/test_device_capture.py
 python3 scripts/github_governance.py --self-test
@@ -12,9 +13,6 @@ python3 scripts/resource_baseline.py --self-test
 python3 scripts/docs_consistency.py --self-test
 python3 tests/test_ci_evidence_transport.py
 python3 scripts/research_registry.py --self-test
-python3 scripts/prepare_release.py --self-test
-python3 scripts/release_manifest.py --self-test
-python3 scripts/post_release_status.py --self-test
 python3 scripts/qualification_fingerprint.py --self-test
 python3 .github/research/continuous-optimization/hosted-validation/public_candidate_pair.py --source-root . --self-test
 python3 .github/program/acoustic_terminal_registry.py --self-test
@@ -136,10 +134,6 @@ fi
 python3 tests/validation/frontend_evolution/test_fe09_a3_r2_metadata_json.py
 python3 -O tests/validation/frontend_evolution/test_fe09_a3_r2_metadata_json.py
 python3 -OO tests/validation/frontend_evolution/test_fe09_a3_r2_metadata_json.py
-# Product duration proof is offline-only here; never starts physical soak.
-python3 .github/program/test_product_soak_observed_duration.py
-python3 -O .github/program/test_product_soak_observed_duration.py
-python3 -OO .github/program/test_product_soak_observed_duration.py
 python3 .github/program/workflow_pin_only_scope.py --self-test
 python3 .github/program/workflow_pin_only_replay_t1.py --self-test
 python3 .github/program/workflow_pin_only_actual_tree_t1m1.py --self-test

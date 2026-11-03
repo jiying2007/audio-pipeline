@@ -93,7 +93,6 @@ LAB_REQUIRED = (
     ".github/workflows/extended-real-automation.yml",
     ".github/workflows/validation-extended-real.yml",
     ".github/workflows/hil-soak.yml",
-    ".github/workflows/product-certification.yml",
     ".github/workflows/lab-user-mode.yml",
 )
 
@@ -405,7 +404,8 @@ def validate_lab(root: Path, errors: list[str]) -> None:
         if token not in hil:
             errors.append(f"HIL workflow missing runner-local user-mode token: {token}")
     readiness = read(root, ".github/workflows/trusted-runner-readiness.yml")
-    certification = read(root, ".github/workflows/product-certification.yml")
+    if (root / ".github/workflows/product-certification.yml").exists():
+        errors.append("obsolete product certification workflow returned to active research Actions")
     lab_user_mode = read(root, ".github/workflows/lab-user-mode.yml")
     verify_workflow = read(root, ".github/workflows/verify.yml")
     if "      base_sha: ${{ needs.impact.outputs.base_sha }}" not in verify_workflow:
@@ -437,29 +437,6 @@ def validate_lab(root: Path, errors: list[str]) -> None:
     ):
         if forbidden in hil:
             errors.append(f"HIL reintroduced duplicate board-authority input: {forbidden.strip()}")
-    if "default: /etc/audio-pipeline/board.json" in certification:
-        errors.append("Product Certification reintroduced a system-mode /etc board default")
-    for forbidden in (
-        "      capture_device:\n", "      playback_device:\n", "      farend_pcm:\n",
-        "      sample_rate:\n", "      mic_channels:\n", "      dsp_cpu:\n",
-        "      power_input:\n", "      power_scale:\n",
-    ):
-        if forbidden in certification:
-            errors.append(f"Product Certification reintroduced duplicate board-authority input: {forbidden.strip()}")
-    if "default: v2." in certification:
-        errors.append("Product Certification release_tag must be explicit, not a stale/default release")
-    for token in (
-        "AUDIO_PIPELINE_LAB_BOARD",
-        "XDG_CONFIG_HOME",
-        "$HOME/.config",
-        "AP_BOARD_MANIFEST",
-        '--board-manifest "$AP_BOARD_MANIFEST"',
-        "runs-on: [self-hosted, linux, audio-builder]",
-        "runs-on: [self-hosted, linux, certification-archive]",
-        "/usr/local/bin/audio-pipeline-cert-archive",
-    ):
-        if token not in certification:
-            errors.append(f"Product Certification missing runner-local/certification topology token: {token}")
     for token in (
         "audio_builder",
         "builderuser",

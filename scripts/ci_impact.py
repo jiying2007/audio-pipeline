@@ -93,6 +93,7 @@ RELEASE_NEUTRAL_FILES = {
     "scripts/ci_impact.py", "scripts/docs_consistency.py",
     "scripts/github_governance.py",
     "scripts/public_surface_contract.py", "scripts/check-abi-contract.sh",
+    "scripts/check-architecture.sh",
     "scripts/research_registry.py", "scripts/prepare_release.py",
     "scripts/release_manifest.py", "scripts/post_release_status.py",
     "scripts/qualification_fingerprint.py", "scripts/program.py",
@@ -816,6 +817,7 @@ def self_test() -> None:
     assert is_release_neutral("scripts/github_governance.py")
     assert is_release_neutral("scripts/public_surface_contract.py")
     assert is_release_neutral("scripts/check-abi-contract.sh")
+    assert is_release_neutral("scripts/check-architecture.sh")
     assert is_release_neutral("scripts/program.py")
     assert is_release_neutral("scripts/test_history.py")
     assert is_release_neutral("scripts/compare-runtime-perf.sh")

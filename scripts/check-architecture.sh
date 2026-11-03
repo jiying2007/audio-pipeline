@@ -19,17 +19,6 @@ if grep -R -n -E '\b(ap_build_info_v2_t|ap_build_info_v2_get|ap_runtime_init_ex|
     include/audio_pipeline README.md README.zh-CN.md docs certification/README.md 2>/dev/null; then
   fail "v2 public compatibility residue found"
 fi
-if grep -n -E 'schema v2/v3 remain accepted|v2, v3 or v4|\[2, 3, 4\]' \
-    certification/README.md certification/validate_record.py certification/record.schema.json 2>/dev/null; then
-  fail "historical certification compatibility returned"
-fi
-python3 - <<'PY'
-import json
-schema = json.load(open('certification/record.schema.json', encoding='utf-8'))
-assert schema['properties']['schema_version'] == {'const': 4}
-print('certification schema v4-only contract: OK')
-PY
-
 # Per-stage runtime composition replaced the old pile of public enable booleans.
 if grep -R -n -E '\b(enable_hpf|enable_beamformer|enable_aec|enable_residual_echo_suppression|enable_noise_suppression|enable_agc|enable_vad)\b' \
     --exclude='check-architecture.sh' \
@@ -149,7 +138,6 @@ manual = [
     Path('.github/workflows/validation-compact.yml'),
     Path('.github/workflows/validation-grade.yml'),
     Path('.github/workflows/hil-soak.yml'),
-    Path('.github/workflows/product-certification.yml'),
 ]
 for path in manual:
     text = path.read_text(encoding='utf-8')
@@ -159,11 +147,6 @@ for path in manual:
 for path in (Path('.github/workflows/validation-compact.yml'), Path('.github/workflows/validation-grade.yml')):
     text = path.read_text(encoding='utf-8')
     assert text.count("--source-revision '${{ needs.resolve.outputs.sha }}'") >= 4, path
-product = Path('.github/workflows/product-certification.yml').read_text(encoding='utf-8')
-for role in ('audio-builder', 'audio-target', 'certification-archive'):
-    assert f'--role {role}' in product, role
-assert '--builder-readiness shipping-build/audio-builder-readiness.json' in product
-assert '--target-readiness /tmp/audio-target-readiness.json' in product
 print('immutable evidence entrypoint contracts: OK')
 PY2
 

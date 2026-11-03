@@ -2,7 +2,7 @@
 
 [简体中文](AGENTS.zh-CN.md)
 
-The published SDK remains in a **software-commercial-ready maintenance state** as the reference baseline. The historical software/public-data program has no READY task; E001 remains external/deferred and the remaining Product Qualification work is real-lab/physical evidence tracked by the live external-evidence issue/tracker.
+**Current execution authority: technical research only.** Research data preparation, algorithm experiments, acoustic and ARM/SSC305-class resource evaluations must be governed by reproducible scientific evidence and legal source rights, not by shipping approval, a commercial SDK release or product certification. Historical commercial-ready/E001/HIL/product-qualification documents and workflows remain archival/migration scope, **not gates for research execution**. Follow [docs/RESEARCH_ONLY_EXECUTION.md](docs/RESEARCH_ONLY_EXECUTION.md) and [issue #882](https://github.com/jiying2007/audio-pipeline/issues/882); never rewrite historical evidence or fake target measurements.
 
 A separate, explicitly user-authorized **frontend-evolution-v1** research/integration stage is active. Read `docs/research/frontend-evolution-v1/README.md` and its immutable approved plan, then the live implementation tracker #657. It permits bounded structural algorithm experiments, training/finetuning, 1/2/4-mic prototypes and resource/numerical optimization under new FE experiment identities. The archived proposal is not execution evidence. Do not apply the historical candidate-zero restriction to this newly authorized stage, or rewrite I025-I040 and other historical outcomes. Third-party rights, independent data roles, shipping-default/API qualification and E001 identity remain separate boundaries.
 

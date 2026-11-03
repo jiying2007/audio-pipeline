@@ -4,7 +4,7 @@
 
 `audio-pipeline` 是面向**低算力 Arm Linux 产品**的轻依赖、无动态分配实时语音前端与可组合 DSP SDK，覆盖 ARMv7-A/Cortex-A7、Cortex-A32 类 AArch32 和 AArch64 产品。CPU/SOC 型号只属于构建、测试和认证配置，不进入通用 DSP 算法依赖。
 
-> **软件商用就绪边界：**当前仓库可标记为 `software-commercial-ready`：公开 API/ABI、Runtime 所有权、安装后 SDK、Arm/QEMU、命名的 `ssc305-cortex-a32-low` 产品构建契约、资源/性能回归、数据验证权限、Release provenance/SBOM/attestation、诊断/回放和认证控制面均由仓库 fail-closed 地验证。它可用于商业产品集成和预生产软件交付，但**不等于**板级验证或 Product Qualification。SSC305 真机 CPU/热/功耗、实际机壳/route 声学、HIL 历史和至少 72 h `product-certified` 记录仍必须由真实 DUT 证据完成。
+> **纯技术研究定位（清理中）**：本仓库用于可复现的 DSP/音频前端算法、多麦克风、声学验证、ARM/SSC305 类资源与嵌入式运行时研究。数据、训练、实验和评测不依赖商用导入批准、Shipping SKU、GitHub 产品发布或 72 小时产品认证；下文涉及的商用认证/交付路径属于**待迁移的历史流程**，不得用于阻塞正常科研。参见[研究执行边界](docs/RESEARCH_ONLY_EXECUTION.md)和[清理跟踪 #882](https://github.com/jiying2007/audio-pipeline/issues/882)。仍应保留来源/许可、数据独立性、实验复现和真实性能证据。
 
 ## 中文用户从这里开始
 
@@ -15,12 +15,12 @@
 - **开发与代码规范**：[`docs/DEVELOPMENT.zh-CN.md`](docs/DEVELOPMENT.zh-CN.md)
 - **贡献规范**：[`CONTRIBUTING.zh-CN.md`](CONTRIBUTING.zh-CN.md)
 - **AI/Codex/助手规范**：[`AGENTS.zh-CN.md`](AGENTS.zh-CN.md)
-- **产品保障/认证边界**：[`docs/PRODUCT_ASSURANCE.zh-CN.md`](docs/PRODUCT_ASSURANCE.zh-CN.md)
+- **历史产品保障/认证资料（非研究准入）**：[`docs/PRODUCT_ASSURANCE.zh-CN.md`](docs/PRODUCT_ASSURANCE.zh-CN.md)
 - **可信 Runner 操作**：[`docs/TRUSTED_RUNNERS.zh-CN.md`](docs/TRUSTED_RUNNERS.zh-CN.md)
 - **测试/数据集自测**：[`docs/TESTING.zh-CN.md`](docs/TESTING.zh-CN.md)
 - **Extended Real**：[`docs/EXTENDED_REAL_VALIDATION.zh-CN.md`](docs/EXTENDED_REAL_VALIDATION.zh-CN.md)
 
-低层 API、schema 与机器配置仍保持一个 canonical truth；中文层用于商用集成、操作和维护，不复制出第二套独立协议。
+低层 API、schema 与机器配置仍保持一个 canonical truth；中文层用于技术研究复现、操作和维护，不复制出第二套独立协议。
 
 ## 默认音频链路
 

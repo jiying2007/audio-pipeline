@@ -6,7 +6,7 @@
 
 ## 当前仓库状态
 
-已发布 SDK 保持 **software-commercial-ready 稳定维护基线**：历史软件/public-data program 已无 READY task；E001 仍为 external/deferred。真实产品资格由 live open issue / external-evidence tracker 跟踪，而不是由本文件硬编码某个 issue 编号。
+**当前唯一执行定位：纯技术研究**。数据准备、算法实验、声学评测与 ARM/SSC305 类资源研究依赖可复现的科研证据和实际数据使用权，不要求 Shipping 审批、商业 SDK 发布或产品认证。既有商用就绪/E001/HIL/产品资格内容是待迁移的历史流程，**不作为研究准入门槛**；参见 [`docs/RESEARCH_ONLY_EXECUTION.md`](docs/RESEARCH_ONLY_EXECUTION.md) 和 [#882](https://github.com/jiying2007/audio-pipeline/issues/882)。历史证据保留真实原貌，不伪造真机结果。
 
 另有用户明确授权的 **frontend-evolution-v1 开放研究与集成阶段**正在推进。先读 `docs/research/frontend-evolution-v1/README.md`、原始归档方案和 live #657。该新阶段允许有限结构实验、训练/微调、原生单/双/四麦原型以及资源/数值优化；使用新的 FE 实验身份。原方案不等于执行证明，旧阶段 candidate-zero 限制不扩展为新研究禁令。I025-I040 等历史结论、失败和归档保持不变；第三方许可、独立数据角色、shipping 默认/API 资格和 E001 物理身份仍分别验收。
 

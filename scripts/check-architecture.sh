@@ -234,11 +234,14 @@ require(len(lock['clips']) >= 4 and all(len(item['sha256']) == 64 for item in lo
 policy = json.loads(Path('validation/policies/validation-hosted-real-smoke.json').read_text())
 require(policy['minimum_cases'] >= 4 and float(policy['aggregate']['min_pass_rate']) == 1.0, 'policy')
 auto = Path('.github/workflows/extended-real-automation.yml').read_text()
-release = Path('.github/workflows/release.yml').read_text()
 verify = Path('.github/workflows/verify.yml').read_text()
-require('repository_dispatch:' in auto and 'types: [extended-real-post-release]' in auto, 'dispatch listener')
-require('types: [published]' not in auto, 'unreliable release trigger residue')
-require('event_type=extended-real-post-release' in release, 'release dispatch sender')
-require('hosted-real-smoke:' in verify and 'HOSTED_REAL_RESULT' in verify, 'required hosted real gate')
-print('hosted real and post-release automation contracts: OK')
+require(not Path('.github/workflows/release.yml').exists(), 'automatic commercial release was reintroduced')
+require(not Path('.github/workflows/post-release-qualification-summary.yml').exists(),
+        'post-release commercial certification scheduler was reintroduced')
+require('repository_dispatch:' in auto and 'types: [extended-real-post-release]' in auto,
+        'existing extended-real research input listener drift')
+require('types: [published]' not in auto, 'implicit published release trigger residue')
+require('hosted-real-smoke:' in verify and 'HOSTED_REAL_RESULT' in verify,
+        'required hosted real science gate')
+print('hosted real research verification and no auto-release: OK')
 PY_HOSTED

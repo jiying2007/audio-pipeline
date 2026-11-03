@@ -2,7 +2,7 @@
 """Fail closed on current-documentation, validation-framework and lab-assurance drift.
 
 Historical CHANGELOG entries are intentionally excluded: released historical facts must not be
-rewritten just because current product policy changes.
+rewritten just because current research policy changes.
 """
 
 from __future__ import annotations
@@ -20,6 +20,7 @@ CURRENT_DOCS = (
     "README.zh-CN.md",
     "AGENTS.md",
     "AGENTS.zh-CN.md",
+    "docs/RESEARCH_ONLY_EXECUTION.md",
     "CONTRIBUTING.md",
     "CONTRIBUTING.zh-CN.md",
     "docs/README.zh-CN.md",
@@ -122,7 +123,6 @@ LIFECYCLE_REQUIRED = (
     ".github/research/qualification-policy.json",
     ".github/workflows/research-branch-gc.yml",
     ".github/workflows/validation-authority-qualification.yml",
-    ".github/workflows/post-release-qualification-summary.yml",
     "docs/REPOSITORY_LIFECYCLE.md",
     "docs/REPOSITORY_LIFECYCLE.zh-CN.md",
 )
@@ -498,8 +498,6 @@ def validate_lifecycle(root: Path, errors: list[str]) -> None:
     qualification = read(root, '.github/research/qualification-policy.json')
     gc = read(root, '.github/workflows/research-branch-gc.yml')
     qualifier = read(root, '.github/workflows/validation-authority-qualification.yml')
-    post = read(root, '.github/workflows/post-release-qualification-summary.yml')
-    release = read(root, '.github/workflows/release.yml')
     hosted_aec = read(root, '.github/workflows/hosted-aec-real-validation.yml')
     for payload, name in ((registry, 'research registry'), (qualification, 'qualification policy')):
         try:
@@ -514,11 +512,10 @@ def validate_lifecycle(root: Path, errors: list[str]) -> None:
             errors.append(f'Hosted Real AEC reusable qualification missing token: {token}')
     if 'uses: ./.github/workflows/hosted-aec-real-validation.yml' not in qualifier:
         errors.append('qualification workflow must reuse canonical Hosted Real AEC workflow')
-    if 'release-manifest.json' not in release:
-        errors.append('Release workflow must publish machine-readable release manifest')
-    for token in ('BLOCKED_RUNNER', 'BLOCKED_CONFIG'):
-        if token not in post:
-            errors.append(f'post-release summary missing explicit blocked state: {token}')
+    for legacy in ('.github/workflows/release.yml',
+                   '.github/workflows/post-release-qualification-summary.yml'):
+        if (root / legacy).exists():
+            errors.append(f'legacy commercial publication workflow remains active: {legacy}')
     for tool in ('research_registry.py', 'prepare_release.py', 'release_manifest.py', 'post_release_status.py', 'qualification_fingerprint.py'):
         completed = subprocess.run(
             [sys.executable, str(root / 'scripts' / tool), '--self-test'],
@@ -575,7 +572,11 @@ def validate(root: Path, *, require_lab: bool = True,
             errors.append(f"{rel}: missing laboratory deployment link lab/README.md")
 
     critical_tokens = {
+        "README.md": (
+            "Technical research only", "docs/RESEARCH_ONLY_EXECUTION.md",
+        ),
         "README.zh-CN.md": (
+            "纯技术研究定位", "docs/RESEARCH_ONLY_EXECUTION.md",
             "docs/README.zh-CN.md", "docs/QUICKSTART.zh-CN.md",
             "AGENTS.zh-CN.md", "CONTRIBUTING.zh-CN.md",
         ),
@@ -584,12 +585,12 @@ def validate(root: Path, *, require_lab: bool = True,
             "PRODUCT_ASSURANCE.zh-CN.md", "TRUSTED_RUNNERS.zh-CN.md",
         ),
         "AGENTS.md": (
-            "software-commercial-ready maintenance state",
-            "E001 remains external/deferred",
+            "technical research only",
+            "docs/RESEARCH_ONLY_EXECUTION.md",
             "stop generating software changes",
         ),
         "AGENTS.zh-CN.md": (
-            "software-commercial-ready", "E001", "停止制造软件改动",
+            "纯技术研究", "docs/RESEARCH_ONLY_EXECUTION.md", "E001", "停止制造软件改动",
         ),
         "docs/FLOWS.zh-CN.md": ("```mermaid", "Product Certification", "branch lifecycle"),
     }
@@ -597,7 +598,7 @@ def validate(root: Path, *, require_lab: bool = True,
         text = docs.get(rel, "")
         for token in tokens:
             if token not in text:
-                errors.append(f"{rel}: missing critical commercial-documentation token {token!r}")
+                errors.append(f"{rel}: missing critical research-documentation token {token!r}")
 
     hil_docs = ("README.md", "README.zh-CN.md", "docs/TESTING.md", "docs/TESTING.zh-CN.md", "hil/README.md")
     for rel in hil_docs:
@@ -633,8 +634,8 @@ def self_test() -> None:
             "validation/authority.json research-validation product-certified certification/ "
             "docs/README.zh-CN.md docs/QUICKSTART.zh-CN.md AGENTS.zh-CN.md CONTRIBUTING.zh-CN.md "
             "QUICKSTART.zh-CN.md FLOWS.zh-CN.md DEVELOPMENT.zh-CN.md PRODUCT_ASSURANCE.zh-CN.md "
-            "TRUSTED_RUNNERS.zh-CN.md software-commercial-ready maintenance state "
-            "E001 remains external/deferred stop generating software changes 停止制造软件改动 "
+            "TRUSTED_RUNNERS.zh-CN.md Technical research only technical research only 纯技术研究定位 纯技术研究 docs/RESEARCH_ONLY_EXECUTION.md "
+            "E001 stop generating software changes 停止制造软件改动 "
             "```mermaid Product Certification branch lifecycle\n"
         )
         for rel in CURRENT_DOCS:

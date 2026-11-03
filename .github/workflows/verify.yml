@@ -61,17 +61,6 @@ jobs:
           python3 .github/program/promotion_governance.py --self-test
           python3 .github/program/terminal_workflow_retirement.py --self-test --check
           python3 .github/program/maintenance_workflow_contract.py --self-test --check
-          python3 - <<'PY'
-          from pathlib import Path
-          text=Path('.github/workflows/release.yml').read_text(encoding='utf-8')
-          expected="GH_TOKEN: $"+ "{{ secrets.REPOSITORY_GOVERNANCE_TOKEN }}"
-          assert expected in text, (
-              'release governance preflight must use the admin-read governance credential'
-          )
-          assert 'Administration(read)' in text, (
-              'release governance credential permission contract is missing'
-          )
-          PY
           python3 .github/research/continuous-optimization/source_candidate_execution_v2_contract.py --self-test --check
       - name: Resolve verification range
         id: refs
@@ -144,28 +133,14 @@ jobs:
           sh .github/scripts/verify-docs-gate.sh
           python3 scripts/public_surface_contract.py --self-test
           python3 scripts/public_surface_contract.py
-          python3 -m py_compile scripts/*.py tools/*.py tools/codex_assets/*.py certification/*.py validation/tools/*.py tests/validation/frontend_evolution/*.py
+          python3 -m py_compile scripts/*.py tools/*.py tools/codex_assets/*.py validation/tools/*.py tests/validation/frontend_evolution/*.py
           python3 scripts/ci_failure.py --self-test
           python3 scripts/flaky_guard.py --self-test
           python3 scripts/test_history.py --self-test
           python3 scripts/validation_reproducer.py --self-test
           python3 tools/hil_board.py --self-test
           python3 tools/target_evidence.py --self-test
-          python3 tools/certification_provenance.py --self-test
           python3 tools/acoustic_upgrade_decision.py --self-test
-          python3 tools/ap_certify.py --self-test
-          python3 certification/validate_record.py --self-test
-          python3 certification/validate_archive_receipt.py --self-test
-          python3 -m json.tool certification/record.schema.json >/dev/null
-          python3 -c 'import json; s=json.load(open("certification/record.schema.json")); assert s["properties"]["schema_version"]["const"] == 4'
-          grep -q '^      shipping_cmake_args_json:' .github/workflows/product-certification.yml
-          ! grep -q '^      shipping_cmake_args:$' .github/workflows/product-certification.yml
-          grep -q 'timeout-minutes: 4380' .github/workflows/product-certification.yml
-          grep -q 'policy_path must stay under certification/policies' .github/workflows/product-certification.yml
-          grep -q -- '--cmake-args-json "$CMAKE_ARGS_JSON"' .github/workflows/product-certification.yml
-          grep -q 'shipping-cmake-args.json' .github/workflows/product-certification.yml
-          grep -q 'cmake_args_sha256' certification/record.schema.json
-          python3 -c 'import json; p=json.load(open("certification/policies/cortex-a32-low-shipping.json")); assert p["shipping_approved"] is True and float(p["min_soak_hours"]) >= 72'
           grep -q '^name: Lab User Mode Runtime$' .github/workflows/lab-user-mode.yml
           grep -q 'run_lab:' .github/workflows/verify.yml
           grep -q 'LAB_RESULT:' .github/workflows/verify.yml

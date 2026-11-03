@@ -93,7 +93,6 @@ LAB_REQUIRED = (
     ".github/workflows/extended-real-automation.yml",
     ".github/workflows/validation-extended-real.yml",
     ".github/workflows/hil-soak.yml",
-    ".github/workflows/product-certification.yml",
     ".github/workflows/lab-user-mode.yml",
 )
 
@@ -405,7 +404,6 @@ def validate_lab(root: Path, errors: list[str]) -> None:
         if token not in hil:
             errors.append(f"HIL workflow missing runner-local user-mode token: {token}")
     readiness = read(root, ".github/workflows/trusted-runner-readiness.yml")
-    certification = read(root, ".github/workflows/product-certification.yml")
     lab_user_mode = read(root, ".github/workflows/lab-user-mode.yml")
     verify_workflow = read(root, ".github/workflows/verify.yml")
     if "      base_sha: ${{ needs.impact.outputs.base_sha }}" not in verify_workflow:
@@ -437,29 +435,8 @@ def validate_lab(root: Path, errors: list[str]) -> None:
     ):
         if forbidden in hil:
             errors.append(f"HIL reintroduced duplicate board-authority input: {forbidden.strip()}")
-    if "default: /etc/audio-pipeline/board.json" in certification:
-        errors.append("Product Certification reintroduced a system-mode /etc board default")
-    for forbidden in (
-        "      capture_device:\n", "      playback_device:\n", "      farend_pcm:\n",
-        "      sample_rate:\n", "      mic_channels:\n", "      dsp_cpu:\n",
-        "      power_input:\n", "      power_scale:\n",
-    ):
-        if forbidden in certification:
-            errors.append(f"Product Certification reintroduced duplicate board-authority input: {forbidden.strip()}")
-    if "default: v2." in certification:
-        errors.append("Product Certification release_tag must be explicit, not a stale/default release")
-    for token in (
-        "AUDIO_PIPELINE_LAB_BOARD",
-        "XDG_CONFIG_HOME",
-        "$HOME/.config",
-        "AP_BOARD_MANIFEST",
-        '--board-manifest "$AP_BOARD_MANIFEST"',
-        "runs-on: [self-hosted, linux, audio-builder]",
-        "runs-on: [self-hosted, linux, certification-archive]",
-        "/usr/local/bin/audio-pipeline-cert-archive",
-    ):
-        if token not in certification:
-            errors.append(f"Product Certification missing runner-local/certification topology token: {token}")
+    if (root / ".github/workflows/product-certification.yml").exists():
+        errors.append("legacy product certification workflow was reintroduced into active research Actions")
     for token in (
         "audio_builder",
         "builderuser",
@@ -564,10 +541,6 @@ def validate(root: Path, *, require_lab: bool = True,
         ):
             if required not in text:
                 errors.append(f"{rel}: missing current truth-source token {required}")
-        if "72" not in text or "product-lifecycle" not in text:
-            errors.append(f"{rel}: must describe 72 h shipping certification and lifecycle archive")
-        if "product-certified" not in text or "certification/" not in text:
-            errors.append(f"{rel}: must separate product-certified from validation corpus tiers")
         if require_lab and "lab/README.md" not in text:
             errors.append(f"{rel}: missing laboratory deployment link lab/README.md")
 
@@ -592,7 +565,7 @@ def validate(root: Path, *, require_lab: bool = True,
         "AGENTS.zh-CN.md": (
             "纯技术研究", "docs/RESEARCH_ONLY_EXECUTION.md", "E001", "停止制造软件改动",
         ),
-        "docs/FLOWS.zh-CN.md": ("```mermaid", "Product Certification", "branch lifecycle"),
+        "docs/FLOWS.zh-CN.md": ("```mermaid", "branch lifecycle"),
     }
     for rel, tokens in critical_tokens.items():
         text = docs.get(rel, "")
@@ -608,11 +581,10 @@ def validate(root: Path, *, require_lab: bool = True,
         if "fail-visible" not in text and "fails visibly" not in text:
             errors.append(f"{rel}: missing fail-visible HIL policy")
 
-    certification_docs = ("README.md", "README.zh-CN.md", "docs/PRODUCT_ASSURANCE.md", "docs/TESTING.md", "docs/TESTING.zh-CN.md", "certification/README.md")
-    for rel in certification_docs:
-        text = docs.get(rel, "")
-        if "72" not in text:
-            errors.append(f"{rel}: missing 72 h shipping-certification policy")
+    # The historical 72-hour shipping certificate text stays available in Git
+    # history; it must never be a current research documentation admission test.
+    if (root / ".github/workflows/product-certification.yml").exists():
+        errors.append("active product-certification workflow is forbidden for research")
 
     if require_validation:
         validate_validation_framework(root, errors)

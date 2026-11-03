@@ -26,6 +26,15 @@ class ResearchCIBoundaryTests(unittest.TestCase):
         self.assertIn("python3 scripts/ci_failure.py --self-test", text)
         self.assertIn("python3 tools/acoustic_upgrade_decision.py --self-test", text)
 
+    def test_no_active_commercial_publication_entrypoints(self):
+        for legacy in (
+            ".github/workflows/release.yml",
+            ".github/workflows/post-release-qualification-summary.yml",
+        ):
+            with self.subTest(legacy=legacy):
+                self.assertFalse((ROOT / legacy).exists(),
+                                 "commercial publication workflow must be retired")
+
     def test_doc_gate_keeps_source_science_and_excludes_release_approval(self):
         text = (ROOT / ".github/scripts/verify-docs-gate.sh").read_text(encoding="utf-8")
         self.assertIn("python3 tests/test_research_ci_boundary.py", text)

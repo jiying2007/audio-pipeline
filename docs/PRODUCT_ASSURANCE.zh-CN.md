@@ -1,5 +1,7 @@
 # 产品保障与认证边界（中文）
 
+> **历史产品发布与认证记录，非当前科研准入**。原自动 Release、发布后资格汇总及产品认证 Actions 已退出活动工作流；旧政策、证据和权限界限原样保留供审计。当前仅以 [纯技术研究执行边界](RESEARCH_ONLY_EXECUTION.md) 为准，合法数据准备、算法和资源实验不依赖产品认证、商用导入或 72 小时发布门槛。
+
 本页说明仓库软件就绪、Release、HIL 与最终 Product Certification 的权限边界。英文 canonical 文档为 [`PRODUCT_ASSURANCE.md`](PRODUCT_ASSURANCE.md)。
 
 ## 1. 软件 Release Gate

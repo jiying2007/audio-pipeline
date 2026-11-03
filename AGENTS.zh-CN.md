@@ -8,7 +8,7 @@
 
 **当前唯一执行定位：纯技术研究**。数据准备、算法实验、声学评测与 ARM/SSC305 类资源研究依赖可复现的科研证据和实际数据使用权，不要求 Shipping 审批、商业 SDK 发布或产品认证。既有商用就绪/E001/HIL/产品资格内容是待迁移的历史流程，**不作为研究准入门槛**；参见 [`docs/RESEARCH_ONLY_EXECUTION.md`](docs/RESEARCH_ONLY_EXECUTION.md) 和 [#882](https://github.com/jiying2007/audio-pipeline/issues/882)。历史证据保留真实原貌，不伪造真机结果。
 
-另有用户明确授权的 **frontend-evolution-v1 开放研究与集成阶段**正在推进。先读 `docs/research/frontend-evolution-v1/README.md`、原始归档方案和 live #657。该新阶段允许有限结构实验、训练/微调、原生单/双/四麦原型以及资源/数值优化；使用新的 FE 实验身份。原方案不等于执行证明，旧阶段 candidate-zero 限制不扩展为新研究禁令。I025-I040 等历史结论、失败和归档保持不变；第三方许可、独立数据角色、shipping 默认/API 资格和 E001 物理身份仍分别验收。
+另有用户明确授权的 **frontend-evolution-v1 开放研究与集成阶段**正在推进。先读 `docs/research/frontend-evolution-v1/README.md`、原始归档方案和 live #657。该新阶段允许有限结构实验、训练/微调、原生单/双/四麦原型以及资源/数值优化；使用新的 FE 实验身份。原方案不等于执行证明，旧阶段 candidate-zero 限制不扩展为新研究禁令。I025-I040 等历史结论、失败和归档保持不变；第三方许可、独立数据角色、API/ABI 兼容性和 E001 历史物理身份分别留存；它们不构成商业放行前置条件。
 
 默认行为不是无依据地“继续找新算法优化”，而是：
 
@@ -26,7 +26,7 @@
 - 开发：`docs/DEVELOPMENT.zh-CN.md` + `docs/DEVELOPMENT.md`；
 - 数据迭代：`validation/authority.json`、`docs/TESTING.zh-CN.md`；
 - 新 FE 研究：`docs/research/frontend-evolution-v1/README.md` 和 live #657；
-- Release/认证：`docs/PRODUCT_ASSURANCE.zh-CN.md`、`certification/README.md`；
+- 历史发布/认证文档（仅供溯源）：`docs/PRODUCT_ASSURANCE.zh-CN.md`、`certification/README.md`；
 - 实验室：`docs/TRUSTED_RUNNERS.zh-CN.md`、`lab/README.md`；
 - 历史 software program：只有需要解释既有 research evidence 时再读 `docs/program/*`。
 
@@ -51,7 +51,7 @@
 
 ### DSP/算法
 
-维护基线只为明确可重复问题引入复杂度；FE 新阶段可按已批准的研究假设和有限预算做结构实验。每轮冻结具体假设，一次只处理一个可归因变化。measurement change 与 shipping algorithm change 不得在同一实验中互相批准。候选冻结后需要独立确认；没有实质收益就 KEEP BASELINE。不能把新研究权限当成自动修改产品默认或复制未授权第三方资源的权限。
+维护基线只为明确可重复问题引入复杂度；FE 新阶段可按已批准的研究假设和有限预算做结构实验。每轮冻结具体假设，一次只处理一个可归因变化。测量合同改变与算法改变不能在同一实验中互相证明；候选冻结后需要独立确认，没有实质收益就 KEEP BASELINE。不能以研究权限绕过第三方权利或擅自改写已冻结的研究对照基线。
 
 ### 数据集自测
 
@@ -59,7 +59,7 @@
 
 ### 文档
 
-中文商用入口属于交付面。API/lifecycle/preset/validation/release/certification/operator command 变化时检查中文文档；不要复制低层机器契约形成第二套 truth。
+中文入口服务于科研复现、嵌入式资源测量及实验复核。API/lifecycle/preset/validation/operator command 变化时检查中文文档；历史 release/certification 只保留来源事实，不复制低层机器契约形成第二套 truth。
 
 ## PR / CI / Merge
 
@@ -72,7 +72,7 @@
 7. HEAD 移动后旧证据失效；
 8. protected squash merge；
 9. exact-main 再验证；
-10. release-bearing 变化走 governed Release，release-neutral 变化不得制造新版本；
+10. 科研 PR/main 检查不得自动发布产品 Release；实验快照保留精确源码/工具链/数据哈希，非运行时变更不得制造产品版本；
 11. evidence 已保存后由 fail-closed GC 清终态 branch。
 
 ## 真实硬件阶段
@@ -80,16 +80,14 @@
 只有当外部基础设施真的上线后，助手才能沿 live external-evidence tracker 执行：
 
 ```text
-四类 trusted runner READY
--> Extended Real / HIL 真实验证
--> activation variables enable
--> E001 Activation Preflight
--> HIL 历史
--> >=72 h Product Certification
--> immutable product-lifecycle receipt
+合法来源与固定实验输入
+-> 可用且真实的 trusted audio-validation/audio-target runner
+-> Extended Real / HIL 独立技术测量
+-> CPU/RSS/功耗/延迟/声学与连续运行的真实结果
+-> 带身份哈希及 NOT_RUN/FAIL 限制的研究证据
 ```
 
-E001 READY 仍不是 Product Certification PASS。
+E001 属于历史基础设施状态，不是研究效果结论；没有真机或真实采集时保留 NOT_RUN，不能用 Hosted CI/QEMU 冒充实测。
 
 ## 停止条件
 

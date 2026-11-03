@@ -197,7 +197,7 @@ jobs:
           echo "candidate_id=$candidate_id" >> "$GITHUB_OUTPUT"
       - name: Upload resolved acoustic candidate evidence
         if: steps.candidate.outputs.enabled == 'true'
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: resolved-acoustic-candidate-${{ github.run_id }}
           path: |
@@ -439,7 +439,7 @@ jobs:
             xargs -0 sha256sum > /tmp/validation-SHA256SUMS
           mv /tmp/validation-SHA256SUMS validation-out/SHA256SUMS
       - name: Upload validation evidence
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: validation-${{ inputs.tier }}-${{ github.run_id }}
           path: validation-out/
@@ -761,7 +761,7 @@ jobs:
             xargs -0 sha256sum > candidate-out/SHA256SUMS
       - name: Upload candidate-bound visible validation evidence
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: validation-validation-grade-${{ github.run_id }}
           path: candidate-out/

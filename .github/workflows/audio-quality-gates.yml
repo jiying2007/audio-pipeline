@@ -173,7 +173,7 @@ jobs:
           PY
       - name: Upload tuning iteration evidence
         if: always() && inputs.run_tuning
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: required-acoustic-tuning-${{ github.run_id }}
           path: /tmp/ap-tuning-pr/
@@ -206,7 +206,7 @@ jobs:
           $found || exit 0
       - name: Upload failed validation reproducer
         if: failure()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: validation-reproducer-${{ github.run_id }}
           path: |

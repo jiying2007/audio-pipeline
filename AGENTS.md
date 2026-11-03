@@ -16,7 +16,7 @@ Use the canonical validation authority. Development/search data may select candi
 
 Implement the smallest justified change, run targeted/self/negative tests, then consume the existing exact-head gates. Only merge after the live expected head/base and all required applicable checks, including required `summary`, are independently verified. If HEAD moves, earlier CI is stale. Reverify exact `main` after protected squash merge.
 
-Release only through the governed release chain when release-bearing. Release-neutral maintenance must not manufacture a new version. Clean branches only after evidence preservation and exact-live-SHA/no-open-PR checks; use the existing fail-closed lifecycle workflows. Never directly push main, force-update tags or delete unclassified refs.
+No automatic commercial release or post-release certification is permitted from research PR/main checks. Versioned historical publication evidence remains in Git/Actions history; research-only experiment assets must be reproducible, source-identified and explicitly authorized. Clean branches only after evidence preservation and exact-live-SHA/no-open-PR checks; use the existing fail-closed lifecycle workflows. Never directly push main, force-update tags or delete unclassified refs.
 
 Documentation is part of the commercial integration surface. Changes to API/lifecycle, product presets, ownership/data flow, validation authority, Release/Certification behavior, diagnostics/privacy or operator commands must check the critical Chinese entry layer under `docs/*.zh-CN.md` as applicable. Low-level machine schemas and explicitly canonical specifications remain the single source of truth.
 

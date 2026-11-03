@@ -136,6 +136,10 @@ fi
 python3 tests/validation/frontend_evolution/test_fe09_a3_r2_metadata_json.py
 python3 -O tests/validation/frontend_evolution/test_fe09_a3_r2_metadata_json.py
 python3 -OO tests/validation/frontend_evolution/test_fe09_a3_r2_metadata_json.py
+# Product duration proof is offline-only here; never starts physical soak.
+python3 .github/program/test_product_soak_observed_duration.py
+python3 -O .github/program/test_product_soak_observed_duration.py
+python3 -OO .github/program/test_product_soak_observed_duration.py
 python3 .github/program/workflow_pin_only_scope.py --self-test
 python3 .github/program/workflow_pin_only_replay_t1.py --self-test
 python3 .github/program/workflow_pin_only_actual_tree_t1m1.py --self-test

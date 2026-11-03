@@ -254,6 +254,13 @@ jobs:
         with:
           ref: ${{ needs.resolve.outputs.sha }}
           fetch-depth: 0
+      - name: Check out exact protected product-certification control plane
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ github.sha }}
+          path: certification-control
+          fetch-depth: 1
+          persist-credentials: false
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: shipping-build-${{ needs.resolve.outputs.sha }}
@@ -372,7 +379,16 @@ jobs:
             --power-input "$AP_POWER_INPUT" --power-scale "$AP_POWER_SCALE"
           )
           if [ -n "$AP_ROUTE_PLAYBACK" ]; then args+=(--playback-device "$AP_ROUTE_PLAYBACK"); fi
+          test "$GITHUB_REF" = refs/heads/main
+          test "$(git -C certification-control rev-parse HEAD)" = "$GITHUB_SHA"
+          soak_start_ns=$(python3 -c 'import time; print(time.monotonic_ns())')
           python3 tools/target_evidence.py route-soak "${args[@]}"
+          soak_end_ns=$(python3 -c 'import time; print(time.monotonic_ns())')
+          python3 certification-control/.github/program/product_soak_observed_duration.py \
+            --soak-json /tmp/soak.json --requested-seconds "$SOAK_SECONDS" \
+            --start-ns "$soak_start_ns" --end-ns "$soak_end_ns" \
+            --control-sha "$GITHUB_SHA" \
+            --release-source-sha '${{ needs.resolve.outputs.sha }}'
       - name: Bind build deployed and executed binary identity
         run: |
           set -euo pipefail

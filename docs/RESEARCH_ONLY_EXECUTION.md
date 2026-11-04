@@ -13,7 +13,7 @@ The normal PR/main `Verify` gate is for code correctness, sanitizers, resource/p
 - Preserve existing immutable scientific results, regression replay, data rights and source/hash receipts; never manufacture or silently upgrade real-person, final AFE, hardware, thermal or power evidence.
 - Keep experimental SSC305-style build and CPU/RSS/latency/energy measurements as research resource profiles. QEMU/host estimates must be distinguished from physical DUT data.
 - Maintain blind and independent evaluation roles and truthful NOT_RUN/FAIL signals. An empty or skipped target experiment must never be recast as PASS.
-- Historical `release.yml` and `post-release-qualification-summary.yml` have been retired from the active workflow directory in this change. Their source and previous results remain available in Git history and GitHub Actions history. `certification/` and `product-certification.yml` remain legacy qualification paths awaiting separate dependency-checked migration under #882, never as research-admission authority. No historical audit payload is rewritten.
+- Historical `release.yml` and `post-release-qualification-summary.yml` have been retired from the active workflow directory in this change. Their source and previous results remain available in Git history and GitHub Actions history. `product-certification.yml` is also retired from active Actions, while archived `certification/` source, schema, and historical receipts remain for provenance review and source-only negative tests; they are not research-admission authority. No historical audit payload is rewritten.
 
 ## Pending cleanup, not claimed complete
 

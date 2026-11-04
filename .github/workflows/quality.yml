@@ -66,11 +66,11 @@ jobs:
       - name: Build and install SDK
         run: |
           set -euo pipefail
-          python3 tests/test_release_source.py
+          python3 tests/test_research_source.py
           revision=$(git rev-parse HEAD)
           mkdir -p verified-delivery
           echo 'unit fixture, not delivery evidence' > verified-delivery/source-identity-fixture.txt
-          sh scripts/verify-release-source.sh "$revision"
+          sh scripts/verify-research-source.sh "$revision"
           cmake -S . -B build-sdk -DCMAKE_BUILD_TYPE=Release \
             -DAP_BUILD_SOURCE_REVISION="$revision"
           cmake --build build-sdk --parallel

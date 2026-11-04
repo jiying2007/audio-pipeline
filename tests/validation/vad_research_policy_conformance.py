@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Exact-source conformance gate for the shipping VAD strong/weak refresh policy.
+"""Exact-source conformance gate for the research VAD strong/weak refresh policy.
 
-The product processor is the authority for probability generation. This gate replays
+The C DSP processor is the authority for probability generation. This gate replays
 only the confirmed final hangover policy from the emitted probability trace and
-requires the product's emitted vad_active bit to match it frame-for-frame. Existing
-per-case VAD gates are then evaluated on the product trace itself.
+requires the C processor's emitted vad_active bit to match it frame-for-frame. Existing
+per-case VAD gates are then evaluated on the measured trace itself.
 """
 
 from __future__ import annotations
@@ -46,7 +46,7 @@ def threshold_for(profile: str) -> float:
 
 def expected_trace(probabilities: list[float], decision_threshold: float) -> list[int]:
     if not 0.0 < decision_threshold < STRONG_THRESHOLD < 1.0:
-        raise ValueError("invalid shipping VAD threshold ordering")
+        raise ValueError("invalid research VAD threshold ordering")
     hangover = 0
     active: list[int] = []
     for raw in probabilities:
@@ -79,7 +79,7 @@ def evaluate_case(processor: Path, corpus_path: Path, case: dict[str, Any]) -> d
     if labels_path is None:
         raise ValueError(f"missing VAD labels: {case['case_id']}")
     labels = engine.load_labels(labels_path)
-    with tempfile.TemporaryDirectory(prefix="ap-vad-shipping-conformance-") as temporary:
+    with tempfile.TemporaryDirectory(prefix="ap-vad-research-conformance-") as temporary:
         _, trace, _ = STAGE_INVOKE(processor, case, corpus_path, Path(temporary))
     probabilities = [float(row.get("vad_probability", 0.0)) for row in trace]
     actual = [int(row.get("vad_active", 0)) for row in trace]
@@ -135,7 +135,7 @@ def self_test() -> None:
     assert weak == [1, 1, 1, 1, 1, 1, 0, 0]
     strong = expected_trace([0.50] + [0.0] * 9, LOCAL_THRESHOLD)
     assert strong == [1, 1, 1, 1, 1, 1, 1, 1, 0, 0]
-    print("VAD shipping policy conformance self-test: OK")
+    print("VAD research policy conformance self-test: OK")
 
 
 def main() -> int:
@@ -153,7 +153,7 @@ def main() -> int:
     partitions = [evaluate_corpus(args.processor, path) for path in args.corpus]
     result = {
         "schema_version": 1,
-        "authority": "shipping-vad-policy-conformance",
+        "authority": "research-vad-policy-conformance",
         "policy": {
             "local_threshold": LOCAL_THRESHOLD,
             "ns_threshold": NS_THRESHOLD,

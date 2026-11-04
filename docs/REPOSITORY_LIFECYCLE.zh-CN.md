@@ -1,6 +1,6 @@
 # 仓库生命周期
 
-本文定义产品代码之外的仓库级生命周期：研究、验证权威资格、发布准备、不可变发布、外部实验室资格以及证据保留。
+本文定义纯技术研究仓库生命周期：实验、独立验证、受保护合并、可复现证据、可选真机实验与历史归档。旧商业发布与产品认证流程仅属不可变历史证据，不是当前操作指引。
 
 ## 研究生命周期
 
@@ -12,7 +12,7 @@
 
 ## 声学候选终止登记
 
-声学候选的 canonical 终止注册表是 `.github/program/acoustic_terminal_registry.json`，校验入口是 `.github/program/acoustic_terminal_registry.py`。身份由 `source_revision + candidate_id` 共同确定：相同 tuning 在不同 source 上不是同一个候选，但“未命中终止表”也不代表已经获得新的实验或发布授权。
+声学候选的 canonical 终止注册表是 `.github/program/acoustic_terminal_registry.json`，校验入口是 `.github/program/acoustic_terminal_registry.py`。身份由 `source_revision + candidate_id` 共同确定：相同 tuning 在不同 source 上不是同一个候选，但“未命中终止表”也不代表已经获得新的实验、数据权限或结果晋级授权。
 
 注册表必须非空，并完整覆盖 `docs/program/evidence/acoustic-candidate-*/**/terminal.json` 中现存的声学终止记录。每一条登记都要验证其证据；反过来，每一份声学终止证据也必须有对应登记。空表、非空漏项、重复身份、缺失证据或非 canonical 路径替换都会停止，不能把漏登记解释成候选重新可用。
 
@@ -33,26 +33,18 @@ Validation Grade 的 candidate resolver 在进入候选公开验证前，使用 
 
 普通 PR、main push 和 schedule 的 Hosted Real AEC 行为保持不变。
 
-## 发布准备
+## 科研变更与版本身份
 
-`scripts/prepare_release.py` 是统一 release metadata 工具，只修改 CMake project VERSION 并在 CHANGELOG 顶部增加新版本段。使用 `--base-ref` 时，会验证新版本标题以下的历史 CHANGELOG 与 base 完全逐字节一致。
+`scripts/ci_impact.py` 只决定实际验证范围；受保护 PR 及 fresh-main `summary` 成功用于证明该源码上的测试执行，不能转换为商用发布、产品资格或真实声学/设备结果。变更必须明确源码/数据角色、单变量比较、测量预算、失败原因和可复现收据。
 
-release-bearing authority 仍由 `scripts/ci_impact.py` 管理。仅修改 CMake project VERSION token 的变化在 PR 矩阵选择中识别为 `VERSION_ONLY`；main push 仍强制完整 FULL Verify。
+## 历史版本与源码归档
 
-## 不可变发行证据
+历史 `scripts/prepare_release.py`、`scripts/release_manifest.py`、不可变 Release、tag、SemVer 和 `docs/releases/*` 是既有证据的审计入口。**自动 GitHub Release/产品认证工作流已退役**；不得因普通研究合并或历史文档更新而新建版本、发布 SDK 或伪造旧版结果。
 
-后续 Release 将通过 `scripts/release_manifest.py` 生成机器可读 release evidence manifest，绑定 exact source commit/tree、merged PR lineage、main Verify run、validation authority 哈希、发行资产摘要以及外部实验室初始可用状态。
+## 外部实验室研究状态
 
-该 manifest 不降低任何发行门禁。新版本仍只能在 main-push Verify 成功后，由现有 exact-SHA Release workflow 和不可变 tag/release 治理发布。
-
-v2.3.6 早于集成 manifest asset，因此不修改其 immutable Release，而是在 `docs/releases/v2.3.6-evidence.json` 中补充审计索引。
-
-## 外部实验室状态
-
-软件 Release 与外部实验室 Qualification 是两个独立状态域。Release 后 HIL 和 Extended Real 继续 fail-visible；基础设施未就绪时绝不能伪 PASS。
-
-统一状态：`PASS`、`FAIL`、`BLOCKED_RUNNER`、`BLOCKED_CONFIG`、`PENDING`、`UNKNOWN`。`Post Release Qualification Summary` 会生成 JSON artifact 和 Actions Summary，明确区分软件回归与外部实验室不可用。
+Extended Real 的合法数据/许可和实时 target HIL 是不同证据域。HIL 只能手动指定精确源码 SHA、真实目标板与隔离 runner，使用按实验目的选择的持续时长（可选 72 小时）；缺少实际输入一律为 `NOT_RUN`、`BLOCKED_RUNNER` 或 `BLOCKED_CONFIG`，绝不写成 PASS。观测失败真实记录为 FAIL。历史 `Post Release Qualification Summary` 是只读资料，已不再执行发布后的自动产品认证。
 
 ## 证据保留与分支保留
 
-删除终态 research branch 不等于删除证据。被引用的 commit、Actions artifact、PR 讨论、Release 资产、不可变 tag 和 registry lineage 仍然独立存在，因此长期证据权威不再依赖远端分支名。
+删除终态 research branch 不等于删除证据。被引用的 commit、Actions artifact、PR 讨论、历史 Release 资产、不可变 tag 和 registry lineage 仍然独立存在，因此长期证据权威不再依赖远端分支名。

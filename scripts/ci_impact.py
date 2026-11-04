@@ -104,6 +104,10 @@ RELEASE_NEUTRAL_FILES = {
     # Deliberately do not exempt unknown scripts or target source files.
     "scripts/verify-shipping-toolchain.sh",
     "scripts/verify-research-toolchain.sh",
+    # Standalone source-SHA and clean-worktree validation is a research integrity
+    # check. Retire release-named helpers only via this exact-source allowlist.
+    "scripts/verify-release-source.sh",
+    "scripts/verify-research-source.sh",
     # Exact research-lab source-only retirement (#897): these file paths
     # affect operator-only Ansible/user-mode tooling, not DSP, installed API,
     # model outputs or product delivery. Unknown lab role/commands still
@@ -845,6 +849,13 @@ def self_test() -> None:
     assert is_release_neutral("scripts/compare-runtime-perf.sh")
     assert is_release_neutral("scripts/verify-shipping-toolchain.sh")
     assert is_release_neutral("scripts/verify-research-toolchain.sh")
+    assert is_release_neutral("scripts/verify-release-source.sh")
+    assert is_release_neutral("scripts/verify-research-source.sh")
+    assert not is_release_neutral("scripts/verify-unreviewed-source.sh")
+    integrity = analyze(["scripts/verify-release-source.sh",
+                         "scripts/verify-research-source.sh",
+                         "tests/test_release_source.py", "tests/test_research_source.py"])
+    assert integrity["full"] and not integrity["docs_only"]
     assert not is_release_neutral("scripts/verify-unreviewed-toolchain.sh")
     retired_lab = [
         "lab/ansible/inventory.example.yml",

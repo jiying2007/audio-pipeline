@@ -77,6 +77,19 @@ class ResearchCIBoundaryTests(unittest.TestCase):
                 self.assertNotIn(release_only, text)
 
 
+    def test_quality_source_integrity_is_research_only(self):
+        workflow = (ROOT / ".github/workflows/quality.yml").read_text(encoding="utf-8")
+        self.assertIn("python3 tests/test_research_source.py", workflow)
+        self.assertIn("sh scripts/verify-research-source.sh", workflow)
+        self.assertNotIn("test_release_source.py", workflow)
+        self.assertNotIn("verify-release-source.sh", workflow)
+        self.assertFalse((ROOT / "scripts/verify-release-source.sh").exists())
+        self.assertFalse((ROOT / "tests/test_release_source.py").exists())
+        source = (ROOT / "scripts/verify-research-source.sh").read_text(encoding="utf-8")
+        self.assertIn("git rev-parse --verify HEAD", source)
+        self.assertIn("git diff --cached --quiet HEAD", source)
+        self.assertNotIn("gh release", source)
+
     def test_agent_and_chinese_navigation_have_no_live_product_authority(self):
         documents = {
             "AGENTS.md": {

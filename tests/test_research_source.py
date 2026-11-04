@@ -1,22 +1,22 @@
 #!/usr/bin/env python3
-"""Exercise the release source preflight against real temporary Git states."""
+"""Exercise the research source preflight against real temporary Git states."""
 from pathlib import Path
 import subprocess
 import tempfile
 import unittest
 
 
-SCRIPT = Path(__file__).resolve().parents[1] / "scripts/verify-release-source.sh"
+SCRIPT = Path(__file__).resolve().parents[1] / "scripts/verify-research-source.sh"
 
 
-class ReleaseSourceTest(unittest.TestCase):
+class ResearchSourceTest(unittest.TestCase):
     def setUp(self):
         self.directory = tempfile.TemporaryDirectory()
         self.addCleanup(self.directory.cleanup)
         self.root = Path(self.directory.name)
         self.git("init", "-q")
-        self.git("config", "user.name", "Release source test")
-        self.git("config", "user.email", "release-source-test@example.invalid")
+        self.git("config", "user.name", "Research source test")
+        self.git("config", "user.email", "research-source-test@example.invalid")
         (self.root / "source.c").write_text("/* tracked fixture */\n")
         self.git("add", "source.c")
         self.git("commit", "-qm", "test source")

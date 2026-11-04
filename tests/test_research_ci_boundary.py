@@ -57,5 +57,44 @@ class ResearchCIBoundaryTests(unittest.TestCase):
                 self.assertNotIn(release_only, text)
 
 
+    def test_agent_and_chinese_navigation_have_no_live_product_authority(self):
+        documents = {
+            "AGENTS.md": {
+                "must": ("technical research only", "no mandatory product-certification path"),
+                "forbid": ("The real product path remains", ">=72 h Product Certification",
+                           "shipping algorithm change"),
+            },
+            "AGENTS.zh-CN.md": {
+                "must": ("纯技术研究", "真机研究阶段"),
+                "forbid": (">=72 h Product Certification", "release-bearing 变化走 governed Release",
+                           "measurement change 与 shipping algorithm change"),
+            },
+            "docs/README.zh-CN.md": {
+                "must": ("当前状态边界：纯技术研究", "RESEARCH_ONLY_EXECUTION.md"),
+                "forbid": ("仓库已经达到 `software-commercial-ready`",
+                           "中文文档负责**商用集成", "产品认证机器真相源"),
+            },
+            "docs/QUICKSTART.zh-CN.md": {
+                "must": ("SSC305 类 ARM 研究构建配置", "RESEARCH_ONLY_EXECUTION.md",
+                         "真实目标设备", "NOT_RUN", "BLOCKED", "ssc305-cortex-a32-low"),
+                "forbid": ("SSC305 软件商用起始配置", "软件商用就绪",
+                           "shipping-approved policy", "真实产品资格只能来自"),
+            },
+            "docs/DEVELOPMENT.zh-CN.md": {
+                "must": ("**纯技术研究**", "RESEARCH_ONLY_EXECUTION.md",
+                         "独立数据来源与许可", "exact-head"),
+                "forbid": ("software-commercial-ready", "release-bearing 变化必须",
+                           "关键中文商用入口必须同步"),
+            },
+        }
+        for path, rules in documents.items():
+            with self.subTest(path=path):
+                text = (ROOT / path).read_text(encoding="utf-8")
+                for token in rules["must"]:
+                    self.assertIn(token, text, (path, token))
+                for token in rules["forbid"]:
+                    self.assertNotIn(token, text, (path, token))
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -417,6 +417,8 @@ def validate_deferred_external_schedule_boundaries(root: Path) -> None:
     # availability guard never substitutes for real runner/DUT/data evidence.
     extended_text = (root / EXTENDED_REAL_AUTOMATION_WORKFLOW).read_text(encoding='utf-8')
     extended_job = job_block(extended_text, 'dispatch')
+    assert '  repository_dispatch:' not in extended_text, 'retired post-release Extended Real listener is forbidden'
+    assert 'profile=commercial-core' not in extended_job and 'profile=research' not in extended_job, 'automatic Extended Real must use reviewed CC-BY data profile'
     extended_required = 'EXTENDED_REAL_REQUIRED_BUT_DISABLED'
     assert 'EXTENDED_REAL_SCHEDULE_SKIPPED_DISABLED' not in extended_job, (
         'Extended Real disabled scheduled success/skip is forbidden'
@@ -668,7 +670,6 @@ def _write_deferred_external_schedule_fixtures(root: Path) -> None:
     extended.parent.mkdir(parents=True, exist_ok=True)
     extended.write_text(
         "name: Extended Real Automation\n\non:\n"
-        "  repository_dispatch:\n    types: [extended-real-post-release]\n"
         "  schedule:\n    - cron: '17 3 * * 0'\n"
         "  workflow_dispatch:\n\n"
         "jobs:\n"
@@ -683,6 +684,7 @@ def _write_deferred_external_schedule_fixtures(root: Path) -> None:
         "            exit 1\n"
         "          fi\n"
         "          echo 'run=true' >> \"$GITHUB_OUTPUT\"\n"
+        "          profile=commercial-plus\n"
         "      - name: Dispatch canonical extended-real workflow\n"
         "        if: steps.request.outputs.run == 'true'\n"
         "        run: echo dispatch\n",

@@ -1,32 +1,32 @@
 # Trusted Self-hosted Runner Operations
 
-This is the normative activation runbook for the trusted self-hosted runners used by public validation, HIL and product certification.
+This is the research-oriented activation runbook for trusted self-hosted runners used by public validation and independently requested physical HIL. Historical product certification remains read-only provenance and is not the current execution gate.
 
-A runner label is routing metadata, not evidence that the machine is ready. Before enabling long-running or shipping workflows, run the **Trusted Runner Readiness** workflow against the exact 40-character source commit SHA and keep its `runner-readiness.json` result with the lab/change record. The readiness JSON itself is hash-bound to that source revision.
+A runner label is routing metadata, not evidence that the machine is ready. Before running a scientific long-duration physical experiment, run the **Trusted Runner Readiness** workflow against the exact 40-character source commit SHA and keep its `runner-readiness.json` result with the lab/change record. The readiness JSON itself is hash-bound to that source revision.
 
 `READY` means only that the runner satisfies the checked infrastructure prerequisites. It is never an acoustic PASS, HIL PASS or `product-certified` result.
 
-## Bind the qualification source before activation
+## Bind an exact research source before a physical experiment
 
-For release qualification, obtain the approved immutable release tag and exact source SHA from the live external-evidence tracker or reviewed qualification request. Verify that the tag resolves to that commit before running readiness. A version mentioned in historical prose, the latest software release, and current `main` are not substitutes for this approved identity. If the request and release identity disagree, resolve the discrepancy before starting a run; do not silently choose the newer revision.
+Read [the research execution boundary](RESEARCH_ONLY_EXECUTION.md) and the
+[HIL runner contract](../hil/README.md). Each requested board experiment
+must explicitly bind a 40-character source SHA and the real board manifest.
+No release tag, shipping approval, SDK publication or 72-hour soak is a
+prerequisite to ordinary research. Recheck readiness when the source revision,
+hardware route or toolchain changes; the old readiness receipt does not
+authorize a new measurement.
 
-Bind the four role-readiness records, shipping toolchain, product inputs, HIL history and Product Certification to the intended qualification source and reviewed inputs. A later maintenance commit does not automatically replace that source. Re-run readiness when its source revision changes, even when the machine and paths are unchanged.
+Only the manual `hil-soak.yml` workflow handles HIL. It offers
+`accelerated-pr`, `research-1h`, `research-8h`, `research-24h` and optional
+`research-72h`. The automatic HIL post-release and scheduled listeners are
+retired. Current Extended Real automation is a separate source/rights-bounded
+research controller, not a commercial Release listener.
 
-### Automatic maintenance is not automatically release-bound
-
-The current source routing is defined by the [HIL workflow](../.github/workflows/hil-soak.yml) and [Extended Real automation](../.github/workflows/extended-real-automation.yml):
-
-| Entry | Source selected by the workflow |
-| --- | --- |
-| HIL manual dispatch | Explicit `inputs.source_sha` |
-| HIL post-release dispatch | `client_payload.release_ref`; tier `release-8h` |
-| HIL scheduled 1 h / 24 h maintenance | The scheduled main commit, `github.sha` |
-| Extended Real post-release automation | `release_ref`, checked against the supplied release tag; `commercial-core` |
-| Extended Real scheduled or manual automation | Fetched `origin/main`; `commercial-plus` |
-
-A successful scheduled main run is regression evidence for its recorded source, not automatically HIL/Extended Real evidence for a different approved release. To collect fixed-release evidence, use the reviewed exact-source entry and verify the recorded source and inputs. For Extended Real, the manual automation entry is not an exact-release selector; the canonical `validation-extended-real.yml` workflow accepts explicit `source_sha`. Do not redispatch consumed blind or research authority as an infrastructure check.
-
-When `HIL_ENABLED` or `EXTENDED_REAL_ENABLED` is not `true`, the corresponding **scheduled availability controller fails visibly**, respectively with `HIL_REQUIRED_BUT_DISABLED` or `EXTENDED_REAL_REQUIRED_BUT_DISABLED`; it does not allocate a target runner, perform physical work or emit a green skipped maintenance run. Required post-release events remain fail-closed. Manual HIL can perform a reviewed exact-SHA bring-up before `HIL_ENABLED` is set, but still requires the real target and preflight; manual Extended Real automation remains blocked while disabled. A disabled-controller failure is infrastructure-unavailable evidence, not an acoustic algorithm result. Only real target/validation outputs can count as HIL/Extended Real or Product Certification evidence.
+`HIL_ENABLED` must be `true` only with actual isolated hardware. If absent,
+a requested HIL run fails visibly (**fail-visible**) as
+`HIL_REQUIRED_BUT_DISABLED`, not a skipped or invented PASS.
+`EXTENDED_REAL_ENABLED` has its own truthful fail-visible runner/data gate.
+Hosted results and runner `READY` never become physical measured evidence.
 
 ## Roles
 

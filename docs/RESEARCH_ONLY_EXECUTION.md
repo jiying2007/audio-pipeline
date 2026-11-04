@@ -33,3 +33,17 @@ records, release-named tooling and previous certification documents still exist
 to preserve original source/evidence identity and need dependency-aware
 research migration under #882. Their presence must not block lawful research;
 they cannot grant new license rights or be relabeled as new measurements.
+
+## Research-only physical HIL
+
+The HIL Actions controller is now **manual-only**: a real isolated
+`audio-target` runner, `HIL_ENABLED=true` and explicit 40-character source
+SHA are mandatory. Neither a weekly schedule nor a GitHub Release triggers
+physical HIL. Missing hardware/configuration fails visibly, not as an invented
+result. The exact-DUT route/resource/thermal/power/long-soak evidence still
+remains hash-bound and physically measured.
+
+Durations 600 s, 1 h, 8 h, 24 h and optional 72 h are scientific
+experiment choices; **72 h is not a product-certification prerequisite** for
+research. Historic product soak policies remain in Git/Actions history only,
+not active workflow authority. See [HIL research runner guide](../hil/README.md).

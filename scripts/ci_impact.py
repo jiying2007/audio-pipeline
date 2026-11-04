@@ -660,6 +660,13 @@ def analyze(paths: list[str], force_full: bool = False, cmake_version_only_chang
         return _fast_only(reason, paths)
     if force_full:
         return _full("main push / explicit full verification", paths)
+    # Canonical research evidence-authority edits may change source/data-role
+    # eligibility even when they do not affect the public SDK or SemVer.
+    # Keep FULL verification; unknown validation tools are not exempt.
+    if any(p in ("validation/authority.json", "validation/tools/authority.py")
+           for p in effective_paths):
+        return _full("canonical research validation authority requires full checks",
+                     paths, run_tuning=requires_tuning_search(paths))
 
     flags = {
         "aec": False, "ns": False, "resampler": False, "activity": False,
@@ -855,6 +862,8 @@ def self_test() -> None:
     assert not is_release_neutral("validation/tools/authority_unknown.py")
     research_authority = analyze(["validation/authority.json", "validation/tools/authority.py"])
     assert research_authority["full"] and not research_authority["docs_only"]
+    for path in ("validation/authority.json", "validation/tools/authority.py"):
+        assert analyze([path])["full"], path
     assert not is_release_neutral("scripts/verify-unreviewed-toolchain.sh")
     retired_lab = [
         "lab/ansible/inventory.example.yml",

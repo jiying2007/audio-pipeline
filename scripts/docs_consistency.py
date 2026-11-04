@@ -429,7 +429,8 @@ def validate_lab(root: Path, errors: list[str]) -> None:
         'cat "/tmp/lab-$lane-lane.log"',
         '"audio_validation":"PASS"',
         '"audio_target":"PASS"',
-        '"/tmp/lab-user-mode-evidence.json"',
+        "cat >/tmp/lab-user-mode-evidence.json <<JSON",
+        "path: /tmp/lab-user-mode-evidence.json",
     ):
         if token not in lab_user_mode:
             errors.append(f"required research lab ordinary-user lane missing: {token}")

@@ -99,6 +99,10 @@ RELEASE_NEUTRAL_FILES = {
     "scripts/qualification_fingerprint.py", "scripts/program.py",
     "scripts/test_history.py",
     "scripts/compare-runtime-perf.sh",
+    # Research-only runner environment preflight: no DSP/runtime/public ABI or
+    # product publication authority. Unknown tools still require SemVer and
+    # this path still receives the conservative full Verify matrix.
+    "tools/runner_preflight.py",
 } | DEVICE_RESEARCH_FILES
 RELEASE_NEUTRAL_VALIDATION_FILES = {
     "validation/failure-replay/schema-v1.json",
@@ -821,6 +825,10 @@ def self_test() -> None:
     assert is_release_neutral("scripts/program.py")
     assert is_release_neutral("scripts/test_history.py")
     assert is_release_neutral("scripts/compare-runtime-perf.sh")
+    assert is_release_neutral("tools/runner_preflight.py")
+    assert not is_release_neutral("tools/runner_preflight_unreviewed.py")
+    runner = analyze(["tools/runner_preflight.py"])
+    assert runner["full"] and not runner["docs_only"]
     for path in sorted(DEVICE_RESEARCH_FILES):
         assert is_release_neutral(path)
     assert not is_release_neutral("tools/codex_assets/unregistered_backend.py")

@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
+from typing import Optional
 import subprocess
 import tempfile
 import textwrap
@@ -46,7 +47,7 @@ def evaluate(script: str, *, event: str, hil_enabled: str = "",
              extended_enabled: str = "", manual_sha: str = "",
              release_ref: str = "", release_tag: str = "", event_type: str = "",
              expected_success: bool, expected_marker: str,
-             expected_output: str | None = None) -> None:
+             expected_output: Optional[str] = None) -> None:
     with tempfile.TemporaryDirectory(prefix="audio-availability-") as home:
         output = Path(home) / "github-output"
         output.touch()
@@ -90,45 +91,51 @@ def self_test() -> None:
     require("if: steps.request.outputs.run == 'true'" in EXTENDED.read_text(encoding="utf-8"),
             "Extended Real dispatch guard lost")
     exact_sha = "1" * 40
-    # The unavailable scheduled controllers are expected FAILURES, not
-    # successfully skipped runners or a synthetic PASS.
-    evaluate(hil, event="schedule", hil_enabled="false", expected_success=False,
-             expected_marker="HIL_REQUIRED_BUT_DISABLED", expected_output="run=false\n")
-    evaluate(hil, event="schedule", hil_enabled="", expected_success=False,
-             expected_marker="HIL_REQUIRED_BUT_DISABLED", expected_output="run=false\n")
-    evaluate(hil, event="schedule", hil_enabled="true", expected_success=True,
+    # HIL accepts no implicit release, scheduled event, or unreviewed source.
+    for event in ("schedule", "repository_dispatch", "push", "pull_request"):
+        evaluate(hil, event=event, hil_enabled="true", manual_sha=exact_sha,
+                 expected_success=False, expected_marker="HIL_RESEARCH_MANUAL_ONLY",
+                 expected_output="")
+    # Explicit manual requests must fail when physical HIL is unavailable.
+    for enabled in ("", "false"):
+        evaluate(hil, event="workflow_dispatch", hil_enabled=enabled,
+                 manual_sha=exact_sha, expected_success=False,
+                 expected_marker="HIL_REQUIRED_BUT_DISABLED",
+                 expected_output="run=false\n")
+    evaluate(hil, event="workflow_dispatch", hil_enabled="true",
+             manual_sha=exact_sha, expected_success=True,
              expected_marker="", expected_output="run=true\n")
-    evaluate(hil, event="repository_dispatch", event_type="hil-post-release",
-             release_ref=exact_sha, release_tag="v1.0.0", hil_enabled="false",
-             expected_success=False, expected_marker="HIL_REQUIRED_BUT_DISABLED",
-             expected_output="run=false\n")
-    # Reviewed exact-SHA manual HIL bring-up is intentionally an exception to
-    # HIL_ENABLED, but its later real target job still requires a runner.
-    evaluate(hil, event="workflow_dispatch", hil_enabled="false",
-             manual_sha=exact_sha, expected_success=True, expected_marker="",
-             expected_output="run=true\n")
-    evaluate(hil, event="workflow_dispatch", hil_enabled="false",
+    evaluate(hil, event="workflow_dispatch", hil_enabled="true",
              manual_sha="bad", expected_success=False,
              expected_marker="source_sha must be a 40-character commit SHA",
              expected_output="")
+
+    # Extended Real retains an independently source/rights-bounded
+    # availability contract, never becoming HIL hardware evidence.
     for event in ("schedule", "workflow_dispatch", "repository_dispatch"):
         evaluate(ext, event=event, extended_enabled="false", expected_success=False,
                  expected_marker="EXTENDED_REAL_REQUIRED_BUT_DISABLED",
                  expected_output="")
-    # Negative control: a rewritten policy that exits zero when HIL is absent
-    # must be distinguishable from the exact-source fail-visible contract.
-    old = 'echo "HIL_REQUIRED_BUT_DISABLED: event=$EVENT_NAME; set HIL_ENABLED=true only after an isolated audio-target runner is online." >&2\n  exit 1'
-    require(old in hil, "cannot construct controller false-green negative")
+
+    # Counterexample: a disabled HIL runner may not be reclassified as
+    # success even when the original failure diagnosis is echoed.
+    old = (
+        'echo "HIL_REQUIRED_BUT_DISABLED: manual scientific experiment requires '
+        'an actual isolated audio-target runner and HIL_ENABLED=true." >&2\n'
+        '  exit 1'
+    )
+    require(old in hil, "cannot construct research HIL false-green negative")
     mutated = hil.replace(old, old.replace("exit 1", "exit 0"), 1)
     try:
-        evaluate(mutated, event="schedule", hil_enabled="false",
-                 expected_success=False, expected_marker="HIL_REQUIRED_BUT_DISABLED",
+        evaluate(mutated, event="workflow_dispatch", hil_enabled="false",
+                 manual_sha=exact_sha, expected_success=False,
+                 expected_marker="HIL_REQUIRED_BUT_DISABLED",
                  expected_output="run=false\n")
     except AssertionError:
         pass
     else:
-        raise AssertionError("known false-green controller unexpectedly qualified")
-    print("scheduled HIL/Extended Real availability: fail-visible self-test PASS")
+        raise AssertionError("known false-green manual HIL policy unexpectedly qualified")
+    print("manual HIL and scheduled Extended Real availability: fail-visible PASS")
 
 
 if __name__ == "__main__":

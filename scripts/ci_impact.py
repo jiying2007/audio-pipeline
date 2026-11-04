@@ -104,8 +104,8 @@ RELEASE_NEUTRAL_FILES = {
     # Deliberately do not exempt unknown scripts or target source files.
     "scripts/verify-shipping-toolchain.sh",
     "scripts/verify-research-toolchain.sh",
-    # Standalone source-SHA and clean-worktree validation is a research integrity
-    # check. Retire release-named helpers only via this exact-source allowlist.
+    # Standalone source-SHA and clean-worktree validation is research integrity.
+    # Retire release-named helpers only via this exact-source allowlist.
     "scripts/verify-release-source.sh",
     "scripts/verify-research-source.sh",
     # Exact research-lab source-only retirement (#897): these file paths
@@ -123,6 +123,11 @@ RELEASE_NEUTRAL_FILES = {
     "tools/runner_preflight.py",
 } | DEVICE_RESEARCH_FILES
 RELEASE_NEUTRAL_VALIDATION_FILES = {
+    # Research-only authority v2 eliminates product terminal status. These
+    # two exact canonical source paths have no commercial Release effect;
+    # they still trigger conservative FULL validation and independent gates.
+    "validation/research-authority.json",
+    "validation/tools/authority.py",
     "validation/failure-replay/schema-v1.json",
     "validation/policies/validation-aec-transition-development.json",
     "validation/policies/validation-s003-dechorate-artifact-exclusion.json",
@@ -659,6 +664,13 @@ def analyze(paths: list[str], force_full: bool = False, cmake_version_only_chang
         return _fast_only(reason, paths)
     if force_full:
         return _full("main push / explicit full verification", paths)
+    # Canonical research evidence-authority edits may change source/data-role
+    # eligibility even when they do not affect the public SDK or SemVer.
+    # Keep FULL verification; unknown validation tools are not exempt.
+    if any(p in ("validation/research-authority.json", "validation/tools/authority.py")
+           for p in effective_paths):
+        return _full("canonical research validation authority requires full checks",
+                     paths, run_tuning=requires_tuning_search(paths))
 
     flags = {
         "aec": False, "ns": False, "resampler": False, "activity": False,
@@ -856,6 +868,13 @@ def self_test() -> None:
                          "scripts/verify-research-source.sh",
                          "tests/test_release_source.py", "tests/test_research_source.py"])
     assert integrity["full"] and not integrity["docs_only"]
+    assert is_release_neutral("validation/research-authority.json")
+    assert is_release_neutral("validation/tools/authority.py")
+    assert not is_release_neutral("validation/tools/authority_unknown.py")
+    research_authority = analyze(["validation/research-authority.json", "validation/tools/authority.py"])
+    assert research_authority["full"] and not research_authority["docs_only"]
+    for path in ("validation/research-authority.json", "validation/tools/authority.py"):
+        assert analyze([path])["full"], path
     assert not is_release_neutral("scripts/verify-unreviewed-toolchain.sh")
     retired_lab = [
         "lab/ansible/inventory.example.yml",

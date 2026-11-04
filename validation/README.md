@@ -2,22 +2,22 @@
 
 `validation/` is the single repository-side framework for acoustic datasets, corpus construction, objective metrics, policies, tuning candidates, independent replay and validation evidence. The previous standalone `eval/` harness has been removed so metric math, corpus semantics and evidence rules cannot drift across two implementations.
 
-`certification/` remains the separate terminal shipping authority. `lab/` provisions trusted execution/data infrastructure; it does not define acoustic acceptance.
+This is a **research-only** repository. The old `certification/` directory is historical product-source provenance, **not** a live terminal authority, data prerequisite, or experiment publisher. `lab/` provisions trusted execution/data infrastructure and does not define acoustic acceptance.
 
 ## Authority model
 
-The machine-readable source of truth is [`validation/authority.json`](authority.json). `validation/tools/authority.py --self-test` verifies the authority contract and keeps the corpus schema tier enum synchronized.
+The machine-readable source of truth is [`validation/research-authority.json`](research-authority.json). `validation/tools/authority.py --self-test` verifies the authority contract and keeps the corpus schema tier enum synchronized.
 
 ### Validation corpus tiers
 
-| Tier | Data | Optimizer role | Purpose | Shipping authority? |
-| --- | --- | --- | --- | --- |
-| `regression` | deterministic generated fixtures | development / validation / shadow | correctness, CI regression, metric contracts | no |
-| `research-validation` | explicitly research/conditional data | development / validation / shadow | algorithm research that cannot satisfy commercial evidence | no |
-| `validation-grade` | pinned public real data + sealed public-derived simulation | validation / shadow only | independent acoustic quality evidence | no |
-| `validation-grade-blind` | validation-grade data split with a repository-external HMAC key | never optimizer input | post-candidate hidden holdout | no |
+| Tier | Data | Optimizer role | Scientific purpose |
+| --- | --- | --- | --- |
+| `regression` | deterministic generated fixtures | development / validation / shadow | correctness, CI regression and metric contracts |
+| `research-validation` | lawful research/conditional data with source-specific rights | development / validation / shadow | exploratory algorithm comparisons, not blind acceptance |
+| `validation-grade` | pinned public real data + sealed public-derived simulation | validation / shadow only | independent acoustic-quality diagnostics |
+| `validation-grade-blind` | a sealed evaluation split with repository-external HMAC identity | never optimizer input | independent post-candidate holdout |
 
-`product-certified` is intentionally **not** a validation corpus tier. It is a schema-v4 certification record owned by `certification/` and is the only terminal shipping authority.
+The current machine terminal is `independent-research-review`, **not** a product certificate. Its source/label/method/data-role conditions must pass on independent evidence; it does not certify physical hardware or grant third-party data rights.
 
 A generated fixture MUST NOT be relabeled as `validation-grade`. A validation-grade or blind corpus MUST NOT be used as tuning development/search input.
 
@@ -67,11 +67,10 @@ development search
   -> independent validation/shadow
   -> validation-grade-blind
   -> target resource evidence
-  -> HIL/soak
-  -> product-certified
+  -> independent-research-review
 ```
 
-No hosted optimizer path writes shipping defaults or bypasses certification.
+Optional `target-resource` and `hil-soak` experiments require independently authorized, physically measured source-identified data; they are **not** prerequisites to ordinary data preparation, training or source-only research review. Hosted/QEMU success never implies a real SSC305 measurement. No hosted optimizer path silently modifies default algorithm values.
 
 ## Frozen acoustic candidate replay
 

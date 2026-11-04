@@ -129,7 +129,7 @@ python3 tools/apreplay.py failure.apd \
 
 ## 数据集自测与迭代
 
-`validation/` 是仓库唯一 canonical 声学验证框架，权限真相源是 [`validation/authority.json`](validation/authority.json)：
+`validation/` 是仓库唯一 canonical 声学验证框架，权限真相源是 [`validation/research-authority.json`](validation/research-authority.json)：
 
 - `regression`：development/search 与回归；
 - `research-validation`：研究/条件性验证，不自动代表真实家庭或目标板效果；

@@ -1,15 +1,17 @@
 #!/usr/bin/env python3
-"""Single source of truth for validation/certification authority boundaries."""
+"""Single source of truth for independent research validation and data roles."""
 
 from __future__ import annotations
 
 import argparse
+import copy
 import json
 from pathlib import Path
 from typing import Any
 
 _VALIDATION_ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_AUTHORITY = _VALIDATION_ROOT / "authority.json"
+DEFAULT_AUTHORITY = _VALIDATION_ROOT / "research-authority.json"
+LEGACY_FROZEN_AUTHORITY = _VALIDATION_ROOT / "authority.json"
 DEFAULT_CORPUS_SCHEMA = _VALIDATION_ROOT / "corpus.schema.json"
 DEFAULT_POLICY_SCHEMA = _VALIDATION_ROOT / "policy.schema.json"
 DEFAULT_REPORT_SCHEMA = _VALIDATION_ROOT / "report.schema.json"
@@ -30,8 +32,8 @@ def load_authority(path: Path = DEFAULT_AUTHORITY) -> dict[str, Any]:
 
 
 def validate_authority(authority: dict[str, Any]) -> None:
-    if authority.get("schema_version") != 1:
-        raise ValueError("authority schema_version must be 1")
+    if authority.get("schema_version") != 2:
+        raise ValueError("research authority schema_version must be 2")
     tiers = authority.get("corpus_tiers")
     if not isinstance(tiers, dict) or not tiers:
         raise ValueError("authority.corpus_tiers must be a non-empty object")
@@ -63,20 +65,28 @@ def validate_authority(authority: dict[str, Any]) -> None:
     if len(ranks) != len(set(ranks)):
         raise ValueError("corpus tier authority ranks must be unique")
 
-    terminal = authority.get("terminal_authority", {})
-    product = terminal.get("product-certified") if isinstance(terminal, dict) else None
-    if not isinstance(product, dict) or product.get("system") != "certification":
-        raise ValueError("product-certified terminal authority must be owned by certification")
-    if product.get("shipping_authority") is not True:
-        raise ValueError("product-certified must be the shipping authority")
-    if int(product.get("record_schema_version", 0)) != 4:
-        raise ValueError("product-certified authority must bind certification schema v4")
+    expected_terminal = {
+        "independent-research-review": {
+            "system": "research-evidence",
+            "requires_independent_validation": True,
+            "requires_real_hardware": False,
+        }
+    }
+    if authority.get("terminal_authority") != expected_terminal:
+        raise ValueError("research terminal authority must not contain product certification")
 
+    # Candidate independent assessment does not require a physical board.
+    # Actual HIL remains an optional separately authorized experiment.
     chain = authority.get("candidate_promotion_chain")
-    if not isinstance(chain, list) or not chain or chain[-1] != "product-certified":
-        raise ValueError("candidate promotion chain must terminate at product-certified")
-    if "validation-grade-blind" not in chain or "hil-soak" not in chain:
-        raise ValueError("candidate promotion chain must retain blind and HIL authorities")
+    expected_chain = [
+        "development-search", "independent-validation",
+        "validation-grade-blind", "independent-research-review",
+    ]
+    if chain != expected_chain:
+        raise ValueError("research candidate chain must keep blind independence")
+    if authority.get("optional_physical_evidence") != ["target-resource", "hil-soak"]:
+        raise ValueError("real target and HIL evidence may be optional only")
+
 
 
 def corpus_tiers(authority: dict[str, Any]) -> set[str]:
@@ -162,6 +172,17 @@ def validate_optimizer_partitions(authority: dict[str, Any], development: Path,
 
 def self_test() -> None:
     authority = load_authority()
+    # I020 source-retention evidence pins this historical v1 blob; no in-place
+    # authority rewrite or automatic v1-to-v2 compatibility is allowed.
+    frozen = json.loads(LEGACY_FROZEN_AUTHORITY.read_text(encoding="utf-8"))
+    assert frozen["schema_version"] == 1
+    assert frozen["terminal_authority"]["product-certified"]["shipping_authority"] is True
+    try:
+        validate_authority(frozen)
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("historical product authority admitted as research")
     assert optimizer_role_allowed(authority, "regression", "development")
     assert optimizer_role_allowed(authority, "research-validation", "development")
     assert optimizer_role_allowed(authority, "validation-grade", "validation")
@@ -175,6 +196,23 @@ def self_test() -> None:
     validate_schema_sync(
         authority, DEFAULT_CORPUS_SCHEMA, DEFAULT_POLICY_SCHEMA, DEFAULT_REPORT_SCHEMA
     )
+    for mutation in (
+        lambda x: x.update(schema_version=1),
+        lambda x: x["terminal_authority"].update(
+            {"product-certified": {"system": "certification", "shipping_authority": True}}),
+        lambda x: x.update(candidate_promotion_chain=x["candidate_promotion_chain"][:-1]
+                         + ["product-certified"]),
+        lambda x: x.update(optional_physical_evidence=[]),
+        lambda x: x["corpus_tiers"]["validation-grade"].update(shipping_authority=True),
+    ):
+        damaged = copy.deepcopy(authority)
+        mutation(damaged)
+        try:
+            validate_authority(damaged)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError("product/false authority was admitted")
     print("validation authority self-test: OK")
 
 
@@ -207,7 +245,7 @@ def main() -> int:
     print(json.dumps({
         "result": "PASS",
         "corpus_tiers": sorted(corpus_tiers(authority)),
-        "terminal_authority": "product-certified",
+        "terminal_authority": "independent-research-review",
         "optimizer_partitions": identities,
     }, sort_keys=True))
     return 0

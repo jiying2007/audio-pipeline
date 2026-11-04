@@ -128,11 +128,14 @@ def validate_static(contract: dict) -> dict:
             "HIL must preserve the 72-hour certification tier")
 
     ext_auto = text(".github/workflows/extended-real-automation.yml")
-    require("types: [extended-real-post-release]" in ext_auto and
+    require("repository_dispatch:" not in ext_auto and
+            "extended-real-post-release" not in ext_auto and
             "EXTENDED_REAL_REQUIRED_BUT_DISABLED" in ext_auto and
             "EXTENDED_REAL_ENABLED" in ext_auto and
+            "profile=commercial-plus" in ext_auto and
+            "profile=research" not in ext_auto and
             "exit 1" in ext_auto,
-            "Extended Real control plane must fail closed when disabled")
+            "Extended Real research schedule must fail closed and cannot require a release")
     ext_validation = text(".github/workflows/validation-extended-real.yml")
     require("runs-on: [self-hosted, linux, audio-validation]" in ext_validation,
             "Extended Real validation must require audio-validation runner")

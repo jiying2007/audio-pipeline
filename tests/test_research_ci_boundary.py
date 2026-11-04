@@ -6,12 +6,91 @@ entrypoints. Historic standalone release/certification documents are not
 source of truth for research eligibility and are retired separately.
 """
 from pathlib import Path
+import re
 import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
 
 
+def live_publication_violations(source):
+    """Detect executable product-release authority in any active Actions workflow.
+
+    Historical documentation and negative source checks remain intact.  This
+    static contract does not execute a publisher, runner, or physical device.
+    """
+    header = source.split("\njobs:\n", 1)[0]
+    issues = []
+    for pattern, label in (
+        (r"(?m)^  release:\s*$", "release event"),
+        (r"(?m)^  repository_dispatch:\s*$", "repository-dispatch event"),
+        (r"(?m)^    tags:\s*$", "tag push"),
+        (r"(?m)^\s+workflows:\s*\[?\s*['\"]?Release\b", "release workflow-run"),
+    ):
+        if re.search(pattern, header):
+            issues.append(label)
+    for raw in source.splitlines():
+        line = raw.strip()
+        if not line or line.startswith("#"):
+            continue
+        for pattern, label in (
+            (r"\bgh\s+release\s+(?:create|upload|download|view|edit|delete|publish)\b",
+             "GitHub Release CLI"),
+            (r"\bgh\s+api\b[^\n]*?/releases(?:/|\b)", "GitHub Release API"),
+            (r"\b(?:python(?:3)?|bash|sh)\s+(?:-B\s+)?(?:certification/|"
+             r"tools/(?:ap_certify|certification_provenance)\.py|"
+             r"scripts/verify-shipping-toolchain\.sh)",
+             "product certificate/toolchain execution"),
+            (r"^(?:-\s*)?uses:\s*(?:softprops/action-gh-release|"
+             r"actions/create-release|actions/upload-release-asset)(?:@|\b)",
+             "GitHub Release publisher action"),
+        ):
+            if re.search(pattern, line):
+                issues.append(label)
+    return issues
+
+
 class ResearchCIBoundaryTests(unittest.TestCase):
+    def test_all_active_workflows_exclude_product_publication_commands(self):
+        workflows = sorted((ROOT / ".github/workflows").glob("*.yml"))
+        self.assertGreaterEqual(len(workflows), 60)
+        for name in ("verify.yml", "nightly.yml", "audio-quality-gates.yml",
+                     "lab-user-mode.yml", "hil-soak.yml"):
+            self.assertTrue((ROOT / ".github/workflows" / name).is_file())
+        for workflow in workflows:
+            with self.subTest(workflow=workflow.name):
+                source = workflow.read_text(encoding="utf-8")
+                self.assertEqual(live_publication_violations(source), [],
+                                 workflow.as_posix())
+
+    def test_active_workflow_publisher_counterexamples_are_rejected(self):
+        fixtures = (
+            "on:\n  release:\n    types: [published]\njobs:\n",
+            "on:\n  repository_dispatch:\n    types: [hil-post-release]\njobs:\n",
+            "on:\n  push:\n    tags:\n      - 'v*'\njobs:\n",
+            "on:\n  workflow_run:\n    workflows: [Release]\njobs:\n",
+            "on:\n  workflow_dispatch:\njobs:\n  x:\n    steps:\n"
+            "      - run: gh release create v1.0.0 old.bin\n",
+            "on:\n  workflow_dispatch:\njobs:\n  x:\n    steps:\n"
+            "      - run: gh api repos/example/repo/releases/tags/v1.0.0\n",
+            "on:\n  workflow_dispatch:\njobs:\n  x:\n    steps:\n"
+            "      - run: python3 certification/validate_record.py --self-test\n",
+            "on:\n  workflow_dispatch:\njobs:\n  x:\n    steps:\n"
+            "      - run: bash scripts/verify-shipping-toolchain.sh\n",
+            "on:\n  workflow_dispatch:\njobs:\n  x:\n    steps:\n"
+            "      - uses: softprops/action-gh-release@v2\n",
+        )
+        for fixture in fixtures:
+            with self.subTest(fixture=fixture[:55]):
+                self.assertTrue(live_publication_violations(fixture),
+                                "obsolete execution surface was admitted")
+        # A negative check of a retired path must remain permissible.
+        historical_guard = (
+            "on:\n  pull_request:\njobs:\n  test:\n    steps:\n"
+            "      - run: test ! -e .github/workflows/product-certification.yml\n"
+            "      # historical gh release create is no longer allowed\n"
+        )
+        self.assertEqual(live_publication_violations(historical_guard), [])
+
     def test_required_verify_has_no_product_release_authority(self):
         text = (ROOT / ".github/workflows/verify.yml").read_text(encoding="utf-8")
         for obsolete in (

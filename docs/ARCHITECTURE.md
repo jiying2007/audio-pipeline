@@ -145,7 +145,7 @@ certification/
   schema-v4 shipping record + lifecycle archive
 ```
 
-`validation/authority.json` is the machine source of truth for corpus tiers and optimizer permissions. `validation/` owns all repository acoustic evaluation; there is no parallel `eval/` implementation. `certification/` owns `product-certified` and is the only shipping authority. `lab/` owns infrastructure readiness only and cannot upgrade evidence by itself.
+`validation/research-authority.json` is the machine source of truth for corpus tiers and optimizer permissions. `validation/` owns all repository acoustic evaluation; there is no parallel `eval/` implementation. The old `certification/` product sources and the frozen authority v1 are historical provenance only; no active research acceptance or publication flow uses them. Physical target/HIL is independently authorized and never inferred from hosted validation. `lab/` owns infrastructure readiness only and cannot upgrade evidence by itself.
 
 The optimizer may search only data roles allowed by the authority contract. Validation-grade blind data is excluded from iterative search so repeated candidate feedback cannot leak the holdout. A hosted candidate must be materialized as a reviewed change/configuration before target/HIL/certification can promote it.
 

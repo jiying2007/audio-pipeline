@@ -97,7 +97,7 @@ Audio dumps may contain private speech; retention, access control and secure del
 
 ## Research evaluation and independent evidence
 
-`validation/` is the single repository-side acoustic data/evaluation/tuning framework. Its machine-readable authority source is [`validation/authority.json`](validation/authority.json), which defines four corpus tiers:
+`validation/` is the single repository-side acoustic data/evaluation/tuning framework. Its machine-readable authority source is [`validation/research-authority.json`](validation/research-authority.json), which defines four corpus tiers:
 
 - `regression`: deterministic generated CI fixtures; eligible for development/search and regression replay;
 - `research-validation`: sealed research/conditional data; eligible for algorithm research, not independent target-board or real-household evidence;

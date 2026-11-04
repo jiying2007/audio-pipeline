@@ -24,7 +24,7 @@
 - 使用/集成：`docs/QUICKSTART.zh-CN.md`；
 - 架构：`docs/ARCHITECTURE.zh-CN.md` + `docs/ARCHITECTURE.md`；
 - 开发：`docs/DEVELOPMENT.zh-CN.md` + `docs/DEVELOPMENT.md`；
-- 数据迭代：`validation/authority.json`、`docs/TESTING.zh-CN.md`；
+- 数据迭代：`validation/research-authority.json`、`docs/TESTING.zh-CN.md`；
 - 新 FE 研究：`docs/research/frontend-evolution-v1/README.md` 和 live #657；
 - 历史发布/认证档案（仅溯源，非研究执行入口）：`docs/PRODUCT_ASSURANCE.zh-CN.md`、`certification/README.md`；
 - 实验室：`docs/TRUSTED_RUNNERS.zh-CN.md`、`lab/README.md`；
@@ -55,7 +55,7 @@
 
 ### 数据集自测
 
-严格遵守 `validation/authority.json`：development/search 与 validation/blind 分离；保存 exact dataset identity/hash/seed；重复数据只是 replay，不算 fresh independence。
+严格遵守 `validation/research-authority.json`：development/search 与 validation/blind 分离；保存 exact dataset identity/hash/seed；重复数据只是 replay，不算 fresh independence。
 
 ### 文档
 

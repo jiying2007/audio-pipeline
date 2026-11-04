@@ -119,7 +119,7 @@ Use the canonical `validation/` corpus/report contract for repeatable result exc
 
 The repository has one bounded automatic tuning loop under `validation/tuning/` and `validation/tools/tuning_iteration.py`. It uses the public `ap_tuning_t` control boundary rather than private source pokes, so offline replay and product runtime use the same four supported controls. `ap_pipeline_get_tuning()` reads those four values back from the live pipeline, so a replay run or an on-device session can confirm the tuning that was actually in force instead of assuming the request was accepted.
 
-Evidence and optimizer permissions are defined in the machine-readable `validation/authority.json`; `validation/tools/authority.py --self-test` keeps that source synchronized with `corpus.schema.json`.
+Evidence and optimizer permissions are defined in the machine-readable `validation/research-authority.json`; `validation/tools/authority.py --self-test` keeps that source synchronized with `corpus.schema.json`.
 
 The default hosted loop deliberately separates data roles:
 

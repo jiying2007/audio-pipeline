@@ -65,3 +65,15 @@ product/SKU readiness. Its results never imply human audio, device HIL or a
 certified release. For real physical experiments, use the manual, exact-SHA
 [research HIL workflow](../hil/README.md) and a separately authorized source,
 board and data-rights contract. Missing devices are `NOT_RUN`/`BLOCKED`.
+
+
+## Retired scheduled product-certificate self-test (2026-11-04)
+
+The scheduled `nightly.yml` now runs research validation/data-source,
+provenance, fuzz, HIL **source-only** preflight, statistical regressions and
+workflow correctness checks without calling `certification/validate_record.py`.
+The original product-certificate script, policy snapshots and earlier nightly
+results remain available as historical source/evidence. A successful hosted
+research nightly is neither a new product certificate nor a physical-device
+measurement. The required research CI gate rejects restoration of this active
+product-certification command.

@@ -88,7 +88,6 @@ LAB_REQUIRED = (
     "lab/ansible/roles/audio_validation/tasks/main.yml",
     "lab/ansible/roles/audio_target/tasks/main.yml",
     "lab/ansible/roles/audio_builder/tasks/main.yml",
-    "lab/ansible/roles/certification_archive/tasks/main.yml",
     "lab/examples/board.ssc305.example.json",
     ".github/workflows/extended-real-automation.yml",
     ".github/workflows/validation-extended-real.yml",
@@ -341,7 +340,6 @@ def validate_lab(root: Path, errors: list[str]) -> None:
     inventory = read(root, "lab/ansible/inventory.example.yml")
     runner = read(root, "lab/ansible/roles/github_runner/tasks/main.yml")
     builder = read(root, "lab/ansible/roles/audio_builder/tasks/main.yml")
-    archive = read(root, "lab/ansible/roles/certification_archive/tasks/main.yml")
     site = read(root, "lab/ansible/site.yml")
     if "04cf0be1aff4c3ec3554466c39124ca250e3effd8873bb7e8d68535aa9505d5d" not in inventory:
         errors.append("lab GitHub Actions runner x64 SHA-256 pin drift")
@@ -351,35 +349,24 @@ def validate_lab(root: Path, errors: list[str]) -> None:
     for token in (
         "audio_builder:",
         'github_runner_labels: "audio-builder"',
-        "audio_builder_shipping_cc:",
-        "audio_builder_shipping_sysroot:",
-        "audio_builder_shipping_toolchain_root:",
-        "certification_archive:",
-        'github_runner_labels: "certification-archive"',
-        'certification_archive_command: "/usr/local/bin/audio-pipeline-cert-archive"',
+        "audio_builder_target_cc:",
+        "audio_builder_target_sysroot:",
+        "audio_builder_target_toolchain_root:",
     ):
         if token not in inventory:
-            errors.append(f"lab inventory missing certification topology contract: {token}")
+            errors.append(f"lab inventory missing research runner contract: {token}")
     for token in (
-        "audio_builder_shipping_cc",
-        "audio_builder_shipping_sysroot",
-        "audio_builder_shipping_toolchain_root",
+        "audio_builder_target_cc",
+        "audio_builder_target_sysroot",
+        "audio_builder_target_toolchain_root",
         "--version",
     ):
         if token not in builder:
             errors.append(f"audio-builder role missing fail-closed toolchain token: {token}")
     for token in (
-        "certification_archive_command",
-        "certification_archive_command_stat.stat.isreg",
-        "certification_archive_command_stat.stat.executable",
-    ):
-        if token not in archive:
-            errors.append(f"certification-archive role missing fail-closed backend token: {token}")
-    for token in (
         "hosts: audio_validation",
         "hosts: audio_target",
         "hosts: audio_builder",
-        "hosts: certification_archive",
         "github_runner",
     ):
         if token not in site:
@@ -443,17 +430,23 @@ def validate_lab(root: Path, errors: list[str]) -> None:
         "builder_lane()",
         "builder_lane > /tmp/lab-builder-lane.log 2>&1 & pids[builder]=$!",
         '"audio_builder":"PASS"',
-        "certification_archive",
-        "archiveuser",
-        "archive_lane()",
-        "archive_lane > /tmp/lab-archive-lane.log 2>&1 & pids[archive]=$!",
-        '"certification_archive":"PASS"',
-        "for lane in validation target builder archive; do",
+        "for lane in validation target builder; do",
         'wait "${pids[$lane]}"',
         'cat "/tmp/lab-$lane-lane.log"',
     ):
         if token not in lab_user_mode:
-            errors.append(f"required lab user-mode gate missing certification topology token: {token}")
+            errors.append(f"required lab user-mode science gate token missing: {token}")
+    # No archived commercial certification runner can re-enter active lab setup.
+    forbidden_active = (
+        "certification_archive", "certification-archive", "archiveuser",
+        "audio_builder_shipping_", "shipping-toolchain", "archive_lane()",
+    )
+    for stale in forbidden_active:
+        if any(stale in surface for surface in (inventory, site, builder, lab_user_mode)):
+            errors.append(f"retired commercial lab role or builder token reintroduced: {stale}")
+    if (root / "lab/ansible/roles/certification_archive/tasks/main.yml").exists():
+        errors.append("retired certification-archive Ansible role reintroduced")
+
     try:
         completed = subprocess.run(
             [sys.executable, str(root / "lab/scripts/labctl.py"), "self-test"],

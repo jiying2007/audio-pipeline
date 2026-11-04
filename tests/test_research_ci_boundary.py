@@ -26,6 +26,26 @@ class ResearchCIBoundaryTests(unittest.TestCase):
         self.assertIn("python3 scripts/ci_failure.py --self-test", text)
         self.assertIn("python3 tools/acoustic_upgrade_decision.py --self-test", text)
 
+    def test_scheduled_research_nightly_has_no_product_certificate_execution(self):
+        nightly = (ROOT / ".github/workflows/nightly.yml").read_text(encoding="utf-8")
+        for obsolete in (
+            "certification/validate_record.py",
+            "certification/validate_archive_receipt.py",
+            "tools/certification_provenance.py",
+            "scripts/verify-shipping-toolchain.sh",
+            "shipping_approved",
+        ):
+            with self.subTest(obsolete=obsolete):
+                self.assertNotIn(obsolete, nightly)
+        for required in (
+            "python3 validation/tools/authority.py --self-test",
+            "python3 validation/tools/dataset_lock.py validate",
+            "python3 validation/tools/run_validation.py --self-test",
+            "python3 tools/hil_board.py --self-test",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, nightly)
+
     def test_no_active_commercial_publication_entrypoints(self):
         for legacy in (
             ".github/workflows/release.yml",

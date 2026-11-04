@@ -87,8 +87,6 @@ LAB_REQUIRED = (
     "lab/ansible/roles/github_runner/tasks/main.yml",
     "lab/ansible/roles/audio_validation/tasks/main.yml",
     "lab/ansible/roles/audio_target/tasks/main.yml",
-    "lab/ansible/roles/audio_builder/tasks/main.yml",
-    "lab/ansible/roles/certification_archive/tasks/main.yml",
     "lab/examples/board.ssc305.example.json",
     ".github/workflows/extended-real-automation.yml",
     ".github/workflows/validation-extended-real.yml",
@@ -340,50 +338,34 @@ def validate_lab(root: Path, errors: list[str]) -> None:
         errors.append(f"invalid laboratory data catalog: {exc}")
     inventory = read(root, "lab/ansible/inventory.example.yml")
     runner = read(root, "lab/ansible/roles/github_runner/tasks/main.yml")
-    builder = read(root, "lab/ansible/roles/audio_builder/tasks/main.yml")
-    archive = read(root, "lab/ansible/roles/certification_archive/tasks/main.yml")
     site = read(root, "lab/ansible/site.yml")
     if "04cf0be1aff4c3ec3554466c39124ca250e3effd8873bb7e8d68535aa9505d5d" not in inventory:
         errors.append("lab GitHub Actions runner x64 SHA-256 pin drift")
     for token in ("github_runner_registration_token", "no_log: true", "--unattended", "--replace"):
         if token not in runner:
             errors.append(f"lab runner role missing security/idempotence token: {token}")
-    for token in (
-        "audio_builder:",
-        'github_runner_labels: "audio-builder"',
-        "audio_builder_shipping_cc:",
-        "audio_builder_shipping_sysroot:",
-        "audio_builder_shipping_toolchain_root:",
-        "certification_archive:",
-        'github_runner_labels: "certification-archive"',
-        'certification_archive_command: "/usr/local/bin/audio-pipeline-cert-archive"',
-    ):
+    for token in ("audio_validation:", "audio_target:",
+                  'github_runner_labels: "audio-validation"',
+                  'github_runner_labels: "audio-target"'):
         if token not in inventory:
-            errors.append(f"lab inventory missing certification topology contract: {token}")
-    for token in (
-        "audio_builder_shipping_cc",
-        "audio_builder_shipping_sysroot",
-        "audio_builder_shipping_toolchain_root",
-        "--version",
-    ):
-        if token not in builder:
-            errors.append(f"audio-builder role missing fail-closed toolchain token: {token}")
-    for token in (
-        "certification_archive_command",
-        "certification_archive_command_stat.stat.isreg",
-        "certification_archive_command_stat.stat.executable",
-    ):
-        if token not in archive:
-            errors.append(f"certification-archive role missing fail-closed backend token: {token}")
-    for token in (
-        "hosts: audio_validation",
-        "hosts: audio_target",
-        "hosts: audio_builder",
-        "hosts: certification_archive",
-        "github_runner",
-    ):
+            errors.append(f"research lab inventory missing real validation/target lane: {token}")
+    for token in ("hosts: audio_validation", "hosts: audio_target", "github_runner"):
         if token not in site:
-            errors.append(f"lab Ansible site missing role/host contract: {token}")
+            errors.append(f"research lab Ansible site missing lane: {token}")
+    for obsolete in ("audio_builder:", "certification_archive:",
+                     "audio_builder_shipping_cc:", "audio_builder_shipping_sysroot:",
+                     "audio_builder_shipping_toolchain_root:"):
+        if obsolete in inventory:
+            errors.append(f"retired commercial lab inventory authority reintroduced: {obsolete}")
+    for obsolete in ("hosts: audio_builder", "hosts: certification_archive"):
+        if obsolete in site:
+            errors.append(f"retired commercial lab Ansible play reintroduced: {obsolete}")
+    for historical_role in (
+        "lab/ansible/roles/audio_builder/tasks/main.yml",
+        "lab/ansible/roles/certification_archive/tasks/main.yml",
+    ):
+        if (root / historical_role).exists():
+            errors.append(f"retired product-only lab provisioning role reintroduced: {historical_role}")
     validation_pin = read(root, "lab/requirements-validation.txt").strip()
     if re.fullmatch(r"huggingface_hub==[0-9]+[.][0-9]+[.][0-9]+", validation_pin) is None:
         errors.append("lab validation dependency must be one exact huggingface_hub SemVer pin")
@@ -438,22 +420,26 @@ def validate_lab(root: Path, errors: list[str]) -> None:
     if (root / ".github/workflows/product-certification.yml").exists():
         errors.append("legacy product certification workflow was reintroduced into active research Actions")
     for token in (
-        "audio_builder",
-        "builderuser",
-        "builder_lane()",
-        "builder_lane > /tmp/lab-builder-lane.log 2>&1 & pids[builder]=$!",
-        '"audio_builder":"PASS"',
-        "certification_archive",
-        "archiveuser",
-        "archive_lane()",
-        "archive_lane > /tmp/lab-archive-lane.log 2>&1 & pids[archive]=$!",
-        '"certification_archive":"PASS"',
-        "for lane in validation target builder archive; do",
+        "validation_lane()",
+        "target_lane()",
+        "validation_lane > /tmp/lab-validation-lane.log 2>&1 & pids[validation]=$!",
+        "target_lane > /tmp/lab-target-lane.log 2>&1 & pids[target]=$!",
+        "for lane in validation target; do",
         'wait "${pids[$lane]}"',
         'cat "/tmp/lab-$lane-lane.log"',
+        '"audio_validation":"PASS"',
+        '"audio_target":"PASS"',
+        '"/tmp/lab-user-mode-evidence.json"',
     ):
         if token not in lab_user_mode:
-            errors.append(f"required lab user-mode gate missing certification topology token: {token}")
+            errors.append(f"required research lab ordinary-user lane missing: {token}")
+    for obsolete in (
+        "audio_builder", "certification_archive", "builderuser", "archiveuser",
+        "shipping-toolchain", "shipping_toolchain", "archive_backend",
+        "builder_lane()", "archive_lane()", "/tmp/ap-lab/archive",
+    ):
+        if obsolete in lab_user_mode:
+            errors.append(f"retired commercial lab runtime execution reintroduced: {obsolete}")
     try:
         completed = subprocess.run(
             [sys.executable, str(root / "lab/scripts/labctl.py"), "self-test"],

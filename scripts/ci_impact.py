@@ -99,6 +99,10 @@ RELEASE_NEUTRAL_FILES = {
     "scripts/qualification_fingerprint.py", "scripts/program.py",
     "scripts/test_history.py",
     "scripts/compare-runtime-perf.sh",
+    # Research-only runner environment preflight: no DSP/runtime/public ABI or
+    # product publication authority. Unknown tools still require SemVer and
+    # this path still receives the conservative full Verify matrix.
+    "tools/runner_preflight.py",
 } | DEVICE_RESEARCH_FILES
 RELEASE_NEUTRAL_VALIDATION_FILES = {
     "validation/failure-replay/schema-v1.json",
@@ -670,6 +674,10 @@ def analyze(paths: list[str], force_full: bool = False, cmake_version_only_chang
             flags["bench"] = True
         elif p.startswith("examples/alsa"):
             flags["alsa"] = True
+        elif p == "tools/runner_preflight.py":
+            # Research source-bound runner readiness is release-neutral but
+            # changes to its trust decision require the full code matrix.
+            flags["unknown"] = True
         elif p.startswith("examples/") or p.startswith("tools/"):
             flags["bench"] = True
         elif p.startswith("scripts/") or p.startswith("ci/") or p.startswith("hil/"):
@@ -821,6 +829,10 @@ def self_test() -> None:
     assert is_release_neutral("scripts/program.py")
     assert is_release_neutral("scripts/test_history.py")
     assert is_release_neutral("scripts/compare-runtime-perf.sh")
+    assert is_release_neutral("tools/runner_preflight.py")
+    assert not is_release_neutral("tools/runner_preflight_unreviewed.py")
+    runner = analyze(["tools/runner_preflight.py"])
+    assert runner["full"] and not runner["docs_only"]
     for path in sorted(DEVICE_RESEARCH_FILES):
         assert is_release_neutral(path)
     assert not is_release_neutral("tools/codex_assets/unregistered_backend.py")

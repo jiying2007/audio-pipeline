@@ -144,7 +144,7 @@ Representative hosted pipeline/runtime state measurements live in [`ci/resource-
 
 ## Trusted runner readiness
 
-`tools/runner_preflight.py` defines fail-closed readiness for `audio-validation`, `audio-builder`, `audio-target` and `certification-archive`. The manually dispatched **Trusted Runner Readiness** workflow runs that contract against an exact source ref. `READY` means infrastructure readiness only and is never acoustic, HIL, performance or product-certification evidence.
+`tools/runner_preflight.py` defines fail-closed research readiness for `audio-validation`, `audio-builder` and `audio-target` only. The manual **Research Runner Readiness** workflow checks the exact source SHA; `READY` means infrastructure readiness, not acoustic/HIL/performance measurements. Historical `certification-archive`/shipping roles have no live workflow authority.
 
 Compact/Full validation and HIL repeat the applicable preflight inside their real self-hosted jobs so a stale manual readiness result cannot bypass local prerequisites. See [`TRUSTED_RUNNERS.md`](TRUSTED_RUNNERS.md).
 

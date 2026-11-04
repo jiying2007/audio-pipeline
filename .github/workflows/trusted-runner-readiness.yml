@@ -1,4 +1,4 @@
-name: Trusted Runner Readiness
+name: Research Runner Readiness
 
 on:
   workflow_dispatch:
@@ -8,10 +8,10 @@ on:
         required: true
         type: string
       role:
-        description: Trusted self-hosted runner role
+        description: Source-bound self-hosted scientific validation, cross-build or physical target role
         required: true
         type: choice
-        options: [audio-validation, audio-builder, audio-target, certification-archive]
+        options: [audio-validation, audio-builder, audio-target]
       data_root:
         description: Optional public-validation cache root; blank uses $HOME/audio-validation-data on audio-validation
         required: false
@@ -27,18 +27,18 @@ on:
         required: false
         default: ''
         type: string
-      shipping_cc:
-        description: audio-builder exact shipping compiler
+      target_cc:
+        description: audio-builder exact research target compiler
         required: false
         default: ''
         type: string
-      shipping_sysroot:
-        description: audio-builder exact shipping sysroot
+      target_sysroot:
+        description: audio-builder exact research target sysroot
         required: false
         default: ''
         type: string
-      shipping_toolchain_root:
-        description: audio-builder exact toolchain root
+      target_toolchain_root:
+        description: audio-builder exact research target toolchain root
         required: false
         default: ''
         type: string
@@ -48,19 +48,14 @@ on:
         default: ''
         type: string
       corpus_manifest:
-        description: Optional real product corpus manifest on audio-target
+        description: Optional authorized real research corpus manifest on audio-target
         required: false
         default: ''
         type: string
       acoustic_json:
-        description: Optional real product acoustic result JSON on audio-target
+        description: Optional independent real research acoustic result JSON on audio-target
         required: false
         default: ''
-        type: string
-      archive_command:
-        description: certification-archive immutable backend command
-        required: false
-        default: /usr/local/bin/audio-pipeline-cert-archive
         type: string
 
 permissions:
@@ -142,17 +137,17 @@ jobs:
           fetch-depth: 0
       - name: Check audio-builder readiness
         env:
-          CC: ${{ inputs.shipping_cc }}
-          SYSROOT: ${{ inputs.shipping_sysroot }}
-          TOOLCHAIN_ROOT: ${{ inputs.shipping_toolchain_root }}
+          CC: ${{ inputs.target_cc }}
+          SYSROOT: ${{ inputs.target_sysroot }}
+          TOOLCHAIN_ROOT: ${{ inputs.target_toolchain_root }}
         run: |
           set -euo pipefail
           python3 tools/runner_preflight.py \
             --role audio-builder \
             --source-revision '${{ needs.resolve.outputs.sha }}' \
-            --shipping-cc "$CC" \
-            --shipping-sysroot "$SYSROOT" \
-            --shipping-toolchain-root "$TOOLCHAIN_ROOT" \
+            --target-cc "$CC" \
+            --target-sysroot "$SYSROOT" \
+            --target-toolchain-root "$TOOLCHAIN_ROOT" \
             --writable-path "$GITHUB_WORKSPACE" \
             --output runner-readiness.json
       - name: Upload readiness report
@@ -213,34 +208,5 @@ jobs:
           path: |
             runner-readiness.json
             board-preflight.json
-          if-no-files-found: error
-          retention-days: 90
-
-  archive:
-    needs: resolve
-    if: inputs.role == 'certification-archive'
-    runs-on: [self-hosted, linux, certification-archive]
-    steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
-        with:
-          ref: ${{ needs.resolve.outputs.sha }}
-          fetch-depth: 0
-      - name: Check certification-archive readiness
-        env:
-          ARCHIVE_COMMAND: ${{ inputs.archive_command }}
-        run: |
-          set -euo pipefail
-          python3 tools/runner_preflight.py \
-            --role certification-archive \
-            --source-revision '${{ needs.resolve.outputs.sha }}' \
-            --archive-command "$ARCHIVE_COMMAND" \
-            --writable-path "$GITHUB_WORKSPACE" \
-            --output runner-readiness.json
-      - name: Upload readiness report
-        if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: runner-readiness-certification-archive-${{ github.run_id }}
-          path: runner-readiness.json
           if-no-files-found: error
           retention-days: 90

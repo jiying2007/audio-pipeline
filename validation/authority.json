@@ -1,9 +1,13 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "corpus_tiers": {
     "regression": {
       "rank": 10,
-      "optimizer_roles": ["development", "validation", "shadow"],
+      "optimizer_roles": [
+        "development",
+        "validation",
+        "shadow"
+      ],
       "requires_sealed_data": false,
       "allows_dev_split": true,
       "requires_blind_key": false,
@@ -12,7 +16,11 @@
     },
     "research-validation": {
       "rank": 20,
-      "optimizer_roles": ["development", "validation", "shadow"],
+      "optimizer_roles": [
+        "development",
+        "validation",
+        "shadow"
+      ],
       "requires_sealed_data": true,
       "allows_dev_split": true,
       "requires_blind_key": false,
@@ -21,7 +29,10 @@
     },
     "validation-grade": {
       "rank": 30,
-      "optimizer_roles": ["validation", "shadow"],
+      "optimizer_roles": [
+        "validation",
+        "shadow"
+      ],
       "requires_sealed_data": true,
       "allows_dev_split": false,
       "requires_blind_key": false,
@@ -39,18 +50,20 @@
     }
   },
   "terminal_authority": {
-    "product-certified": {
-      "system": "certification",
-      "record_schema_version": 4,
-      "shipping_authority": true
+    "independent-research-review": {
+      "system": "research-evidence",
+      "requires_independent_validation": true,
+      "requires_real_hardware": false
     }
   },
   "candidate_promotion_chain": [
     "development-search",
     "independent-validation",
     "validation-grade-blind",
+    "independent-research-review"
+  ],
+  "optional_physical_evidence": [
     "target-resource",
-    "hil-soak",
-    "product-certified"
+    "hil-soak"
   ]
 }

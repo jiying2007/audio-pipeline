@@ -77,3 +77,15 @@ results remain available as historical source/evidence. A successful hosted
 research nightly is neither a new product certificate nor a physical-device
 measurement. The required research CI gate rejects restoration of this active
 product-certification command.
+
+## Research validation terminal authority
+
+The active `validation/authority.json` v2 now terminates candidate review at
+`independent-research-review`, not historical product certification. Four
+research/validation corpus roles and sealed blind-selection separation are
+unchanged; `target-resource` and `hil-soak` are **optional, separately
+source/rights-bound** physical experiments. Existing VAD/AEC/BF/NS/AGC
+numerical gates, data-source permissions and generated report hashes remain
+fail-closed; changing the authority contract is a new source identity, not a
+retroactive reinterpretation of historical experiments. Missing real SSC305
+measurements remain `NOT_RUN` or `BLOCKED`, never `PASS`.

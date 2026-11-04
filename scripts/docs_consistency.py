@@ -228,16 +228,27 @@ def validate_validation_framework(root: Path, errors: list[str]) -> None:
             errors.append("validation-grade must forbid development split")
         if tiers["validation-grade-blind"]["requires_blind_key"] is not True:
             errors.append("blind authority must require repository-external key identity")
-        product = authority["terminal_authority"]["product-certified"]
-        if product.get("system") != "certification" or product.get("record_schema_version") != 4:
-            errors.append("product-certified terminal authority drift")
+        research = authority["terminal_authority"]["independent-research-review"]
+        if (authority.get("schema_version") != 2 or
+                research != {
+                    "system": "research-evidence",
+                    "requires_independent_validation": True,
+                    "requires_real_hardware": False,
+                } or
+                set(authority["terminal_authority"]) != {"independent-research-review"} or
+                authority.get("candidate_promotion_chain", [])[-1:] !=
+                ["independent-research-review"] or
+                authority.get("optional_physical_evidence") != ["target-resource", "hil-soak"]):
+            errors.append("research-only terminal authority drift")
     except (KeyError, TypeError, json.JSONDecodeError) as exc:
         errors.append(f"invalid validation authority JSON: {exc}")
 
     if "research-validation" not in corpus_schema:
         errors.append("corpus schema is missing research-validation authority tier")
-    if "validation/authority.json" not in validation_readme or "certification/" not in validation_readme:
-        errors.append("validation README must document authority SSoT and certification boundary")
+    if ("validation/authority.json" not in validation_readme or
+            "independent-research-review" not in validation_readme or
+            "research-only" not in validation_readme):
+        errors.append("validation README must document source-bound research authority")
     if "there is no parallel `eval/` implementation" not in architecture:
         errors.append("architecture must forbid a parallel eval framework")
     if "canonical `validation/`" not in tuning:

@@ -93,3 +93,19 @@ measurements remain `NOT_RUN` or `BLOCKED`, never `PASS`.
 The original `validation/authority.json` v1 remains **byte-for-byte unchanged**
 for I020 source-bound historical replay; it is not a valid new research
 v2 authority, and no historic failure/receipt is silently reclassified.
+
+## Retired orphaned release-metadata helpers
+
+The former `scripts/prepare_release.py` and `scripts/release_manifest.py`
+were product-publication metadata tools. Neither is needed to build, train,
+evaluate, profile or verify current research, nor to reproduce the exact
+historical source. Their executables are retired from the active tree;
+source commits, old tags, manifests and immutable publication evidence remain
+available in Git/GitHub history. Current documentation consistency checks
+explicitly reject reintroduction of either helper, rather than executing
+their old product-release self-tests as a hidden requirement of research CI.
+
+Required C API/ABI compatibility, source SHA identity, integrity of historical
+`CHANGELOG.md` and existing protected-main quality gates are unchanged.
+Actual SSC305/HIL or real human recordings remain separately measured or
+`NOT_RUN`/`BLOCKED`; an archived release never supplies new acoustic truth.

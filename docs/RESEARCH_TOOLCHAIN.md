@@ -24,4 +24,3 @@ The original product-labelled shell script remains reachable in Git history
 for provenance, not as a supported execution entrypoint. Offline
 `tests/test_research_toolchain_boundary.py` keeps this research boundary
 under the normal documentation gate.
-

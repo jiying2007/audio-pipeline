@@ -47,3 +47,21 @@ Durations 600 s, 1 h, 8 h, 24 h and optional 72 h are scientific
 experiment choices; **72 h is not a product-certification prerequisite** for
 research. Historic product soak policies remain in Git/Actions history only,
 not active workflow authority. See [HIL research runner guide](../hil/README.md).
+
+## E001 commercial activation retired
+
+`.github/workflows/e001-activation-preflight.yml` formerly required an
+immutable GitHub Release, exact shipping C compiler/sysroot/toolchain and an
+independent `certification-archive` runner before creating a product
+activation readiness receipt. It is **retired from active GitHub Actions**,
+along with its release-bound source validator
+`.github/program/e001_activation_preflight.py`. The historical source,
+old workflow results, baseline SHA, and 72-hour product requirement remain
+in Git/Actions history for read-only provenance.
+
+The remaining `e001-hardware-readiness.yml` now checks E001 **historical
+record consistency and actual research infrastructure configuration**, not
+product/SKU readiness. Its results never imply human audio, device HIL or a
+certified release. For real physical experiments, use the manual, exact-SHA
+[research HIL workflow](../hil/README.md) and a separately authorized source,
+board and data-rights contract. Missing devices are `NOT_RUN`/`BLOCKED`.

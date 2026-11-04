@@ -250,6 +250,8 @@ def self_test() -> None:
     assert static["historical_deferred_release"] == HISTORICAL_RELEASE
     assert static["historical_deferred_source_sha"] == HISTORICAL_SOURCE
     assert not (ROOT / ".github/workflows/product-certification.yml").exists()
+    assert not (ROOT / ".github/workflows/e001-activation-preflight.yml").exists()
+    assert not (ROOT / ".github/program/e001_activation_preflight.py").exists()
     assert classify("", "") == "E001_DEFERRED_INFRASTRUCTURE_DISABLED"
     assert classify("true", "") == "E001_PARTIAL_CONFIGURATION_REQUIRES_COMPLETION"
     assert classify("", "true") == "E001_PARTIAL_CONFIGURATION_REQUIRES_COMPLETION"

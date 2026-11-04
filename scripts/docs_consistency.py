@@ -113,8 +113,6 @@ VALIDATION_REQUIRED = (
 
 LIFECYCLE_REQUIRED = (
     "scripts/research_registry.py",
-    "scripts/prepare_release.py",
-    "scripts/release_manifest.py",
     "scripts/post_release_status.py",
     "scripts/qualification_fingerprint.py",
     ".github/research/evidence-index.json",
@@ -492,7 +490,7 @@ def validate_lifecycle(root: Path, errors: list[str]) -> None:
                    '.github/workflows/post-release-qualification-summary.yml'):
         if (root / legacy).exists():
             errors.append(f'legacy commercial publication workflow remains active: {legacy}')
-    for tool in ('research_registry.py', 'prepare_release.py', 'release_manifest.py', 'post_release_status.py', 'qualification_fingerprint.py'):
+    for tool in ('research_registry.py', 'post_release_status.py', 'qualification_fingerprint.py'):
         completed = subprocess.run(
             [sys.executable, str(root / 'scripts' / tool), '--self-test'],
             cwd=root, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, check=False,
@@ -603,6 +601,9 @@ def validate(root: Path, *, require_lab: bool = True,
     # history; it must never be a current research documentation admission test.
     if (root / ".github/workflows/product-certification.yml").exists():
         errors.append("active product-certification workflow is forbidden for research")
+    for retired in ("scripts/prepare_release.py", "scripts/release_manifest.py"):
+        if (root / retired).exists():
+            errors.append("retired product-release helper reintroduced: " + retired)
 
     if require_validation:
         validate_validation_framework(root, errors)
@@ -655,6 +656,18 @@ def self_test() -> None:
             errors = validate(root, require_lab=False, require_validation=False,
                               require_supply_chain=False, require_lifecycle=False)
             assert any("stale phrase" in error for error in errors)
+        (root / "docs/TESTING.md").write_text(fixture, encoding="utf-8")
+        scripts = root / "scripts"
+        scripts.mkdir(exist_ok=True)
+        for retired in ("prepare_release.py", "release_manifest.py"):
+            candidate = scripts / retired
+            candidate.write_text("historical publication helper must remain retired\n", encoding="utf-8")
+            failed = validate(root, require_lab=False, require_validation=False,
+                              require_supply_chain=False, require_lifecycle=False)
+            assert any("retired product-release helper reintroduced" in error for error in failed)
+            candidate.unlink()
+        assert validate(root, require_lab=False, require_validation=False,
+                        require_supply_chain=False, require_lifecycle=False) == []
     print("documentation consistency self-test: OK")
 
 

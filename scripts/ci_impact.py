@@ -99,6 +99,11 @@ RELEASE_NEUTRAL_FILES = {
     "scripts/qualification_fingerprint.py", "scripts/program.py",
     "scripts/test_history.py",
     "scripts/compare-runtime-perf.sh",
+    # This exact orphaned helper -> research cross-toolchain replacement is
+    # a source-neutral tool migration, not an SDK/DSP/ABI delivery change.
+    # Deliberately do not exempt unknown scripts or target source files.
+    "scripts/verify-shipping-toolchain.sh",
+    "scripts/verify-research-toolchain.sh",
     # Research-only runner environment preflight: no DSP/runtime/public ABI or
     # product publication authority. Unknown tools still require SemVer and
     # this path still receives the conservative full Verify matrix.
@@ -829,6 +834,12 @@ def self_test() -> None:
     assert is_release_neutral("scripts/program.py")
     assert is_release_neutral("scripts/test_history.py")
     assert is_release_neutral("scripts/compare-runtime-perf.sh")
+    assert is_release_neutral("scripts/verify-shipping-toolchain.sh")
+    assert is_release_neutral("scripts/verify-research-toolchain.sh")
+    assert not is_release_neutral("scripts/verify-unreviewed-toolchain.sh")
+    tool = analyze(["scripts/verify-shipping-toolchain.sh",
+                    "scripts/verify-research-toolchain.sh"])
+    assert tool["full"] and not tool["docs_only"]
     assert is_release_neutral("tools/runner_preflight.py")
     assert not is_release_neutral("tools/runner_preflight_unreviewed.py")
     runner = analyze(["tools/runner_preflight.py"])

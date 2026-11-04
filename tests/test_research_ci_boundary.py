@@ -57,5 +57,32 @@ class ResearchCIBoundaryTests(unittest.TestCase):
                 self.assertNotIn(release_only, text)
 
 
+    def test_agent_and_chinese_navigation_have_no_live_product_authority(self):
+        documents = {
+            "AGENTS.md": {
+                "must": ("technical research only", "no mandatory product-certification path"),
+                "forbid": ("The real product path remains", ">=72 h Product Certification",
+                           "shipping algorithm change"),
+            },
+            "AGENTS.zh-CN.md": {
+                "must": ("纯技术研究", "真机研究阶段"),
+                "forbid": (">=72 h Product Certification", "release-bearing 变化走 governed Release",
+                           "measurement change 与 shipping algorithm change"),
+            },
+            "docs/README.zh-CN.md": {
+                "must": ("当前状态边界：纯技术研究", "RESEARCH_ONLY_EXECUTION.md"),
+                "forbid": ("仓库已经达到 `software-commercial-ready`",
+                           "中文文档负责**商用集成", "产品认证机器真相源"),
+            },
+        }
+        for path, rules in documents.items():
+            with self.subTest(path=path):
+                text = (ROOT / path).read_text(encoding="utf-8")
+                for token in rules["must"]:
+                    self.assertIn(token, text, (path, token))
+                for token in rules["forbid"]:
+                    self.assertNotIn(token, text, (path, token))
+
+
 if __name__ == "__main__":
     unittest.main()

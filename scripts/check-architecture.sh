@@ -191,13 +191,13 @@ auto = Path('.github/workflows/extended-real-automation.yml').read_text(encoding
 for token in ('source_sha:', 'commercial-core', 'commercial-plus', '--stratify scenario', '--source-manifest extended-out/source-manifest.json'):
     assert token in canonical, token
 assert "options: [commercial-core, commercial-plus, research]" in canonical
-assert "repository_dispatch:" in auto and "schedule:" in auto
+assert "repository_dispatch:" not in auto and "schedule:" in auto
 assert 'EXTENDED_REAL_ENABLED' in auto
 assert 'EXTENDED_REAL_REQUIRED_BUT_DISABLED' in auto
 assert 'gh workflow run validation-extended-real.yml' in auto
 assert '-f "source_sha=$SOURCE_SHA"' in auto
-assert 'profile=commercial-core' in auto and 'profile=commercial-plus' in auto
-assert 'research' not in auto, 'research profile must never be automated'
+assert 'profile=commercial-core' not in auto and 'profile=commercial-plus' in auto
+assert 'profile=research' not in auto, 'unreviewed conditional/NC research profile cannot be scheduled'
 print('extended-real automation contracts: OK')
 PY_AUTO
 
@@ -224,8 +224,8 @@ verify = Path('.github/workflows/verify.yml').read_text()
 require(not Path('.github/workflows/release.yml').exists(), 'automatic commercial release was reintroduced')
 require(not Path('.github/workflows/post-release-qualification-summary.yml').exists(),
         'post-release commercial certification scheduler was reintroduced')
-require('repository_dispatch:' in auto and 'types: [extended-real-post-release]' in auto,
-        'existing extended-real research input listener drift')
+require('repository_dispatch:' not in auto and 'extended-real-post-release' not in auto,
+        'legacy post-release Extended Real dispatch must remain retired')
 require('types: [published]' not in auto, 'implicit published release trigger residue')
 require('hosted-real-smoke:' in verify and 'HOSTED_REAL_RESULT' in verify,
         'required hosted real science gate')

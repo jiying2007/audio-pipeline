@@ -1,9 +1,7 @@
 name: Extended Real Automation
-run-name: ${{ github.event_name == 'repository_dispatch' && format('extended-real-post-release {0}', github.event.client_payload.tag) || format('Extended Real Automation {0}', github.event_name) }}
+run-name: ${{ format('Extended Research Validation {0}', github.event_name) }}
 
 on:
-  repository_dispatch:
-    types: [extended-real-post-release]
   schedule:
     - cron: '17 3 * * 0'
   workflow_dispatch:
@@ -27,8 +25,6 @@ jobs:
         id: request
         env:
           EVENT_NAME: ${{ github.event_name }}
-          RELEASE_REF: ${{ github.event.client_payload.release_ref }}
-          RELEASE_TAG: ${{ github.event.client_payload.tag }}
           EXTENDED_REAL_ENABLED: ${{ vars.EXTENDED_REAL_ENABLED }}
           EXTENDED_REAL_DATA_ROOT: ${{ vars.EXTENDED_REAL_DATA_ROOT }}
         run: |
@@ -40,17 +36,11 @@ jobs:
           echo 'run=true' >> "$GITHUB_OUTPUT"
           data_root=${EXTENDED_REAL_DATA_ROOT:-}
           case "$EVENT_NAME" in
-            repository_dispatch)
-              source_sha=$RELEASE_REF
-              profile=commercial-core
-              [[ "$source_sha" =~ ^[0-9a-f]{40}$ ]] || { echo 'release_ref must be exact 40-hex SHA' >&2; exit 2; }
-              case "$RELEASE_TAG" in v*) ;; *) echo 'invalid post-release tag' >&2; exit 2 ;; esac
-              git fetch --force origin "refs/tags/$RELEASE_TAG:refs/tags/$RELEASE_TAG"
-              test "$(git rev-list -n1 "$RELEASE_TAG")" = "$source_sha"
-              ;;
             schedule|workflow_dispatch)
               git fetch origin main
               source_sha=$(git rev-parse origin/main)
+              # Keep the existing reviewed CC-BY-4.0 dataset subset; never
+              # select conditional/NC datasets by unattended profile expansion.
               profile=commercial-plus
               ;;
             *) echo "unsupported automation event: $EVENT_NAME" >&2; exit 2 ;;

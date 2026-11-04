@@ -146,15 +146,17 @@ def validate_static(contract: dict) -> dict:
             "Extended Real must bind an exact source SHA")
 
     readiness = text(".github/workflows/trusted-runner-readiness.yml")
-    for role in ("audio-validation", "audio-builder", "audio-target", "certification-archive"):
-        require(role in readiness, f"trusted readiness missing role: {role}")
+    for role in ("audio-validation", "audio-builder", "audio-target"):
+        require(role in readiness, f"research readiness missing runner role: {role}")
     for label in (
         "runs-on: [self-hosted, linux, audio-validation]",
         "runs-on: [self-hosted, linux, audio-builder]",
         "runs-on: [self-hosted, linux, audio-target]",
-        "runs-on: [self-hosted, linux, certification-archive]",
     ):
-        require(label in readiness, f"trusted readiness missing runner boundary: {label}")
+        require(label in readiness, f"research readiness missing runner boundary: {label}")
+    require("certification-archive" not in readiness and
+            "--shipping-cc" not in readiness and "archive_command" not in readiness,
+            "research runner admission must not reintroduce commercial archive/toolchain")
 
     require(not (ROOT / ".github/workflows/product-certification.yml").exists(),
             "retired commercial product certification workflow was reintroduced")

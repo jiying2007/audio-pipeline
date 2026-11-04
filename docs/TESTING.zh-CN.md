@@ -139,7 +139,7 @@ Runtime 没有测试调度钩子。这些测试验证并发协议，host 调度�
 
 ## Trusted Runner Readiness
 
-`tools/runner_preflight.py` 对 `audio-validation`、`audio-builder`、`audio-target`、`certification-archive` 提供 fail-closed readiness。**Trusted Runner Readiness** 针对 exact ref 执行；`READY` 只表示基础设施可用，不是 acoustic/HIL/performance/product PASS。
+`tools/runner_preflight.py` 仅对 `audio-validation`、`audio-builder`、`audio-target` 提供科研 fail-closed readiness。手动 **Research Runner Readiness** 按精确 SHA 检查基础设施；`READY` 不是声学、性能或真机 HIL PASS。旧的 `certification-archive` / Shipping 角色已退役，只属于历史溯源。
 
 Compact/Full validation 和 HIL 仍会在真实 self-hosted job 内重复 preflight，防止陈旧 readiness 结果被误用。详见 `TRUSTED_RUNNERS.md`。
 

@@ -24,13 +24,11 @@ ROLES = (
     "audio-validation",
     "audio-builder",
     "audio-target",
-    "certification-archive",
 )
 ROLE_COMMANDS = {
     "audio-validation": ("python3", "cmake", "cc", "git", "git-lfs"),
     "audio-builder": ("python3", "cmake", "git", "sha256sum", "tar"),
     "audio-target": ("python3", "git", "sha256sum"),
-    "certification-archive": ("python3", "git", "sha256sum"),
 }
 
 
@@ -101,17 +99,15 @@ def evaluate(
         checks.append(_path_check("validation:extended-catalog", args.extended_catalog, "file", required=False))
         checks.append(_path_check("validation:dns-data-root", args.dns_data_root, "dir", required=False))
     elif args.role == "audio-builder":
-        checks.append(_path_check("builder:shipping-cc", args.shipping_cc, "exec", required=True))
-        checks.append(_path_check("builder:shipping-sysroot", args.shipping_sysroot, "dir", required=True))
-        checks.append(_path_check("builder:shipping-toolchain-root", args.shipping_toolchain_root, "dir", required=True))
+        checks.append(_path_check("builder:target-cc", args.target_cc, "exec", required=True))
+        checks.append(_path_check("builder:target-sysroot", args.target_sysroot, "dir", required=True))
+        checks.append(_path_check("builder:target-toolchain-root", args.target_toolchain_root, "dir", required=True))
     elif args.role == "audio-target":
         checks.append(_path_check("target:board-manifest", args.board_manifest, "file", required=False))
         checks.append(_path_check("target:corpus-manifest", args.corpus_manifest, "file", required=False))
         checks.append(_path_check("target:acoustic-json", args.acoustic_json, "file", required=False))
         checks.append(_path_check("target:farend-file", args.farend_file, "file", required=False))
         checks.append(_path_check("target:power-input", args.power_input, "readable", required=False))
-    elif args.role == "certification-archive":
-        checks.append(_path_check("archive:command", args.archive_command, "exec", required=True))
 
     for index, writable in enumerate(args.writable_path or []):
         checks.append(_path_check(f"writable:{index}", writable, "writable", required=True))
@@ -151,15 +147,14 @@ def _namespace(role: str, **overrides: object) -> argparse.Namespace:
         "seal": None,
         "extended_catalog": None,
         "dns_data_root": None,
-        "shipping_cc": None,
-        "shipping_sysroot": None,
-        "shipping_toolchain_root": None,
+        "target_cc": None,
+        "target_sysroot": None,
+        "target_toolchain_root": None,
         "board_manifest": None,
         "corpus_manifest": None,
         "acoustic_json": None,
         "farend_file": None,
         "power_input": None,
-        "archive_command": None,
         "writable_path": [],
     }
     values.update(overrides)
@@ -168,6 +163,7 @@ def _namespace(role: str, **overrides: object) -> argparse.Namespace:
 
 def self_test() -> None:
     assert set(ROLE_COMMANDS) == set(ROLES)
+    assert "certification-archive" not in ROLES
     assert "git-lfs" in ROLE_COMMANDS["audio-validation"]
     assert "cmake" in ROLE_COMMANDS["audio-builder"]
 
@@ -177,16 +173,13 @@ def self_test() -> None:
         data.mkdir()
         seal = data / "datasets.seal.json"
         seal.write_text("{}\n", encoding="utf-8")
-        cc = root / "shipping-cc"
+        cc = root / "target-cc"
         cc.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
         cc.chmod(cc.stat().st_mode | stat.S_IXUSR)
         sysroot = root / "sysroot"
         toolchain = root / "toolchain"
         sysroot.mkdir()
         toolchain.mkdir()
-        archive = root / "archive"
-        archive.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
-        archive.chmod(archive.stat().st_mode | stat.S_IXUSR)
 
         fake_which = lambda command: f"/fake/{command}"
         validation = evaluate(
@@ -219,21 +212,14 @@ def self_test() -> None:
         builder = evaluate(
             _namespace(
                 "audio-builder",
-                shipping_cc=str(cc),
-                shipping_sysroot=str(sysroot),
-                shipping_toolchain_root=str(toolchain),
+                target_cc=str(cc),
+                target_sysroot=str(sysroot),
+                target_toolchain_root=str(toolchain),
             ),
             which=fake_which,
             system_name="Linux",
         )
         assert builder["classification"] == "READY", builder
-
-        archive_report = evaluate(
-            _namespace("certification-archive", archive_command=str(archive)),
-            which=fake_which,
-            system_name="Linux",
-        )
-        assert archive_report["classification"] == "READY", archive_report
 
         missing = evaluate(
             _namespace("audio-validation", data_root=str(root / "missing"), seal=str(seal)),
@@ -264,9 +250,9 @@ def parser() -> argparse.ArgumentParser:
     result.add_argument("--extended-catalog")
     result.add_argument("--dns-data-root")
 
-    result.add_argument("--shipping-cc")
-    result.add_argument("--shipping-sysroot")
-    result.add_argument("--shipping-toolchain-root")
+    result.add_argument("--target-cc")
+    result.add_argument("--target-sysroot")
+    result.add_argument("--target-toolchain-root")
 
     result.add_argument("--board-manifest")
     result.add_argument("--corpus-manifest")
@@ -274,7 +260,6 @@ def parser() -> argparse.ArgumentParser:
     result.add_argument("--farend-file")
     result.add_argument("--power-input")
 
-    result.add_argument("--archive-command", default="/usr/local/bin/audio-pipeline-cert-archive")
     result.add_argument("--self-test", action="store_true")
     return result
 

@@ -428,6 +428,8 @@ def self_test() -> None:
     assert dispatch_validation_args.data_root is None
     dispatch_hil_args = parser().parse_args(["dispatch-hil", "--source-revision", "0" * 40])
     assert dispatch_hil_args.board is None
+    research_72 = parser().parse_args(["dispatch-hil", "--source-revision", "0" * 40, "--tier", "research-72h"])
+    assert research_72.tier == "research-72h"
     for retired in ("capture", "playback", "farend", "power"):
         assert not hasattr(dispatch_hil_args, retired)
     target_readiness_args = parser().parse_args(["target-readiness", "--source-revision", "0" * 40])
@@ -491,7 +493,7 @@ def parser() -> argparse.ArgumentParser:
     dh.add_argument("--source-revision", required=True)
     dh.add_argument("--repo", default="jiying2007/audio-pipeline")
     dh.add_argument("--board", type=Path)
-    dh.add_argument("--tier", choices=["accelerated-pr", "nightly-1h", "release-8h", "weekly-24h", "certification-72h"], default="accelerated-pr")
+    dh.add_argument("--tier", choices=["accelerated-pr", "research-1h", "research-8h", "research-24h", "research-72h"], default="accelerated-pr")
     return p
 
 

@@ -22,6 +22,9 @@ if [ -e .github/workflows/product-certification.yml ]; then
   fail "commercial product-certification Actions workflow must remain retired"
 fi
 
+# Research quality gates cannot resurrect product-certification authority.
+python3 -B tests/test_research_audio_quality_boundary.py
+
 # Per-stage runtime composition replaced the old pile of public enable booleans.
 if grep -R -n -E '\b(enable_hpf|enable_beamformer|enable_aec|enable_residual_echo_suppression|enable_noise_suppression|enable_agc|enable_vad)\b' \
     --exclude='check-architecture.sh' \

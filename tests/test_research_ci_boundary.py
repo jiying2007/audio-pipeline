@@ -74,6 +74,18 @@ class ResearchCIBoundaryTests(unittest.TestCase):
                 "forbid": ("仓库已经达到 `software-commercial-ready`",
                            "中文文档负责**商用集成", "产品认证机器真相源"),
             },
+            "docs/QUICKSTART.zh-CN.md": {
+                "must": ("SSC305 类 ARM 研究构建配置", "RESEARCH_ONLY_EXECUTION.md",
+                         "真实目标设备", "NOT_RUN", "BLOCKED", "ssc305-cortex-a32-low"),
+                "forbid": ("SSC305 软件商用起始配置", "软件商用就绪",
+                           "shipping-approved policy", "真实产品资格只能来自"),
+            },
+            "docs/DEVELOPMENT.zh-CN.md": {
+                "must": ("**纯技术研究**", "RESEARCH_ONLY_EXECUTION.md",
+                         "独立数据来源与许可", "exact-head"),
+                "forbid": ("software-commercial-ready", "release-bearing 变化必须",
+                           "关键中文商用入口必须同步"),
+            },
         }
         for path, rules in documents.items():
             with self.subTest(path=path):

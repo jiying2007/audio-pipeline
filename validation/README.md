@@ -11,11 +11,11 @@ The machine-readable source of truth is [`validation/authority.json`](authority.
 ### Validation corpus tiers
 
 | Tier | Data | Optimizer role | Scientific purpose |
-| --- | --- | --- | --- | --- |
-| `regression` | deterministic generated fixtures | development / validation / shadow | correctness, CI regression, metric contracts | no |
-| `research-validation` | explicitly research/conditional data | development / validation / shadow | algorithm research that cannot satisfy commercial evidence | no |
-| `validation-grade` | pinned public real data + sealed public-derived simulation | validation / shadow only | independent acoustic quality evidence | no |
-| `validation-grade-blind` | validation-grade data split with a repository-external HMAC key | never optimizer input | post-candidate hidden holdout | no |
+| --- | --- | --- | --- |
+| `regression` | deterministic generated fixtures | development / validation / shadow | correctness, CI regression and metric contracts |
+| `research-validation` | lawful research/conditional data with source-specific rights | development / validation / shadow | exploratory algorithm comparisons, not blind acceptance |
+| `validation-grade` | pinned public real data + sealed public-derived simulation | validation / shadow only | independent acoustic-quality diagnostics |
+| `validation-grade-blind` | a sealed evaluation split with repository-external HMAC identity | never optimizer input | independent post-candidate holdout |
 
 The current machine terminal is `independent-research-review`, **not** a product certificate. Its source/label/method/data-role conditions must pass on independent evidence; it does not certify physical hardware or grant third-party data rights.
 

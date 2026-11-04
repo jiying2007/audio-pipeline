@@ -1,5 +1,7 @@
 # 产品保障与认证边界（中文）
 
+> **历史商业发布流程记录。** 这里的 Release/Product Certification 规则仅用于理解旧版证据，不再是当前技术研究准入。活动 GitHub Actions 的商业发布和产品认证工作流已退役；当前研究入口见[纯技术研究执行边界](RESEARCH_ONLY_EXECUTION.md)。
+
 本页说明仓库软件就绪、Release、HIL 与最终 Product Certification 的权限边界。英文 canonical 文档为 [`PRODUCT_ASSURANCE.md`](PRODUCT_ASSURANCE.md)。
 
 ## 1. 软件 Release Gate

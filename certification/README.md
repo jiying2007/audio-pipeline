@@ -1,5 +1,7 @@
 # Product Certification
 
+> **Historical product certification documentation.** The product-certification GitHub Actions workflow has been retired. The schemas and old receipts documented here are frozen technical history, not a required gate for current audio/DSP research. See [research execution](../docs/RESEARCH_ONLY_EXECUTION.md).
+
 `certification/` is the shipping-SKU evidence layer. Hosted CI, QEMU and public validation-grade corpora can validate software contracts, but they cannot create a `product-certified` result.
 
 ## Current record contract

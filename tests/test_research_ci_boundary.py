@@ -30,6 +30,7 @@ class ResearchCIBoundaryTests(unittest.TestCase):
         for legacy in (
             ".github/workflows/release.yml",
             ".github/workflows/post-release-qualification-summary.yml",
+            ".github/workflows/product-certification.yml",
         ):
             with self.subTest(legacy=legacy):
                 self.assertFalse((ROOT / legacy).exists(),

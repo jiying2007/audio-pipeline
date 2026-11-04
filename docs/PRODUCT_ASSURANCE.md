@@ -1,5 +1,7 @@
 # Product Assurance Closure
 
+> **Archived commercial publication procedure.** This document describes historical Release/Product Certification architecture only. Active GitHub Actions release and product-certification workflows have been retired. Current authority is [technical research execution](RESEARCH_ONLY_EXECUTION.md); these instructions are not executable research admission or shipping policy.
+
 This document defines the current repository/product assurance boundary. It does not expand DSP architecture and never treats hosted CI as product evidence.
 
 ## Software release gate

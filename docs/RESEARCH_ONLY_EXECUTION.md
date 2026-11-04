@@ -1,6 +1,6 @@
 # Technical-research execution boundary
 
-**Status: research-only target, migration in progress.** See [issue #882](https://github.com/jiying2007/audio-pipeline/issues/882) for the live dependency audit and retirement checklist. This document deliberately does not claim that historical certification and commercial publication entrypoints have all been removed.
+**Status: active research CI/publication boundary detached; historical vocabulary and lab evidence-policy migration continues.** See [issue #882](https://github.com/jiying2007/audio-pipeline/issues/882) for the live dependency audit and retirement checklist. This document deliberately does not claim that historical certification and commercial publication entrypoints have all been removed.
 
 ## Active research authority
 
@@ -18,3 +18,18 @@ The normal PR/main `Verify` gate is for code correctness, sanitizers, resource/p
 ## Pending cleanup, not claimed complete
 
 Source-root product certificates, VAD shipping-policy naming, lab and SKU-specific tools, other EN/ZH guides, test helpers and archived product-doc terminology still need separate atomic migration. Remove consumers before deleting their old files, preserve applicable third-party licenses (including noncommercial conditions), and verify exact-head CI plus fresh protected main. Retain Python 3.8 compatibility where used.
+
+## Default language and admission
+
+The EN/ZH root README files describe only technical algorithm, data-source,
+resource and independent test authority. Their historical product-facing
+contract wording no longer defines default experiment admission; the automated
+GitHub Release and product-certification entrypoints are retired. A successful
+Verify `summary` establishes source/quality coverage at that SHA, **not**
+commercial release approval or a physical target performance claim.
+
+Some laboratory `commercial-core` catalogs, `product-certified` policy
+records, release-named tooling and previous certification documents still exist
+to preserve original source/evidence identity and need dependency-aware
+research migration under #882. Their presence must not block lawful research;
+they cannot grant new license rights or be relabeled as new measurements.

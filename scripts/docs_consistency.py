@@ -573,6 +573,25 @@ def validate(root: Path, *, require_lab: bool = True,
             if token not in text:
                 errors.append(f"{rel}: missing critical research-documentation token {token!r}")
 
+    legacy_launch_claims = {
+        "README.md": (
+            "Release automation requires the exact main SHA",
+            "A current `product-certified` record must",
+            "a shipping-approved SKU policy;",
+            "## HIL and shipping certification",
+        ),
+        "README.zh-CN.md": (
+            "最终 `product-certified` 要求：",
+            "当前商用起始 preset",
+            "## HIL / Product Certification",
+            "只有 exact PR/main SHA 的 required `summary=success` 才是合并/Release 权威证据",
+        ),
+    }
+    for rel, stale in legacy_launch_claims.items():
+        for phrase in stale:
+            if phrase in docs.get(rel, ""):
+                errors.append(f"{rel}: retired commercial authority reintroduced: {phrase!r}")
+
     hil_docs = ("README.md", "README.zh-CN.md", "docs/TESTING.md", "docs/TESTING.zh-CN.md", "hil/README.md")
     for rel in hil_docs:
         text = docs.get(rel, "")
@@ -627,6 +646,11 @@ def self_test() -> None:
             require_lifecycle=False
         )
         assert any("resource literal" in item for item in errors)
+        (root / "README.md").write_text(fixture + "Release automation requires the exact main SHA", encoding="utf-8")
+        forbidden = validate(root, require_lab=False, require_validation=False,
+                             require_supply_chain=False, require_lifecycle=False)
+        assert any("retired commercial authority" in issue for issue in forbidden)
+        (root / "README.md").write_text(fixture, encoding="utf-8")
         for phrase in ("Every PR and `main` Verify runs four", "每个 PR 与 `main` Verify"):
             (root / "docs/TESTING.md").write_text(fixture + phrase, encoding="utf-8")
             errors = validate(root, require_lab=False, require_validation=False,

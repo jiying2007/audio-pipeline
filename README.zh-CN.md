@@ -2,9 +2,9 @@
 
 [English](README.md) | 简体中文
 
-`audio-pipeline` 是面向**低算力 Arm Linux 产品**的轻依赖、无动态分配实时语音前端与可组合 DSP SDK，覆盖 ARMv7-A/Cortex-A7、Cortex-A32 类 AArch32 和 AArch64 产品。CPU/SOC 型号只属于构建、测试和认证配置，不进入通用 DSP 算法依赖。
+`audio-pipeline` 是面向**低算力 Arm Linux 嵌入式研究平台**的轻依赖、无动态分配实时语音前端与可组合 DSP SDK，覆盖 ARMv7-A/Cortex-A7、Cortex-A32 类 AArch32 和 AArch64。CPU/SoC 型号属于构建和实验配置，不进入通用 DSP 算法依赖。
 
-> **纯技术研究定位（清理中）**：本仓库用于可复现的 DSP/音频前端算法、多麦克风、声学验证、ARM/SSC305 类资源与嵌入式运行时研究。数据、训练、实验和评测不依赖商用导入批准、Shipping SKU、GitHub 产品发布或 72 小时产品认证；下文涉及的商用认证/交付路径属于**待迁移的历史流程**，不得用于阻塞正常科研。参见[研究执行边界](docs/RESEARCH_ONLY_EXECUTION.md)和[清理跟踪 #882](https://github.com/jiying2007/audio-pipeline/issues/882)。仍应保留来源/许可、数据独立性、实验复现和真实性能证据。
+> **纯技术研究定位**：以可复现的 DSP/音频前端算法、多麦克风、独立声学验证、ARM/SSC305 类资源和嵌入式运行时为目标。数据、训练、实验和评测不要求商业导入批准、Shipping SKU、GitHub Release 发布或 72 小时产品认证。原有自动 Release、产品认证 Actions 已退役；剩余历史命名按[清理跟踪 #882](https://github.com/jiying2007/audio-pipeline/issues/882)迁移，不得阻塞科研。参见[研究执行边界](docs/RESEARCH_ONLY_EXECUTION.md)。保留真实来源/许可、独立测试、数据权益、可复现证据和物理板实测要求。
 
 ## 中文用户从这里开始
 
@@ -62,9 +62,9 @@ ap_runtime_deinit(runtime);
 
 worker started 后独占 live Pipeline。公开契约以 [`docs/API_CONTRACT.md`](docs/API_CONTRACT.md) 为准。
 
-`ap_build_info()` 暴露版本、模块组合、几何上限、backend、source revision、compiler/target、配置 SHA-256 和 build identity；商用定位问题应优先保存这份身份。
+`ap_build_info()` 暴露版本、模块组合、几何上限、backend、source revision、compiler/target、配置 SHA-256 和 build identity；研究复现和性能归因应保存这份身份。
 
-## 产品组合与 SSC305
+## 算法模块组合与 SSC305 研究
 
 主要 build envelope：
 
@@ -87,7 +87,7 @@ AP_SIMD_BACKEND=SCALAR|NEON
 AP_RESAMPLER_MODE=BANDLIMITED|FAST
 ```
 
-保守的 `ssc305-cortex-a32-low` 是当前商用起始 preset，required CI 会直接 configure/build 它、检查 generated envelope/build identity、clean install SDK，并以 AArch32/QEMU 运行 build-info/core/runtime consumer。
+保守的 `ssc305-cortex-a32-low` 是可复现的嵌入式构建/资源研究 preset。必需 CI 会 configure/build、校验生成的 envelope/build identity、clean install SDK，并以 AArch32/QEMU 运行 build-info/core/runtime consumer。
 
 该 Gate 证明**软件构建与集成**，不代表 SSC305 真机性能。
 
@@ -125,20 +125,20 @@ python3 tools/apreplay.py failure.apd \
   --output-pcm replay.pcm
 ```
 
-`.apd` 可能包含用户语音；保留周期、访问控制和安全删除属于产品责任。
+`.apd` 可能包含真实语音；数据处理方须按实际许可和隐私要求管理保留周期、访问控制与安全删除。
 
 ## 数据集自测与迭代
 
 `validation/` 是仓库唯一 canonical 声学验证框架，权限真相源是 [`validation/authority.json`](validation/authority.json)：
 
 - `regression`：development/search 与回归；
-- `research-validation`：研究/条件性验证，不能作为商业发货证据；
+- `research-validation`：研究/条件性验证，不自动代表真实家庭或目标板效果；
 - `validation-grade`：只能 validation/shadow，不能反馈 optimizer；
-- `validation-grade-blind`：仓库外 blind key，只用于独立晋级，不能进入 optimizer。
+- `validation-grade-blind`：仓库外 blind key，仅供独立后选验证，不能进入 optimizer。
 
-`product-certified` **不是** validation corpus tier，而是独立 `certification/` schema/policy 权限。
+历史 `product-certified` **不是科研数据集分层**。其原始 schema/policy 保留在 `certification/` 供溯源，活动产品认证入口已退役；科学评估按独立数据、来源/标签与实际目标板测量判断。
 
-Extended Real 可使用 RealMAN、BUT ReverbDB、MUSAN、Mini LibriSpeech 等真实公开数据扩大远场/房间/会议/环境负例覆盖，但仍不能代替真实 DUT Product Certification。
+Extended Real 可使用 RealMAN、BUT ReverbDB、MUSAN、Mini LibriSpeech 等真实公开数据扩大远场/房间/会议/环境负例覆盖，但它们不能替代真实 DUT 的 CPU、音频路径、功耗和连续运行实测。
 
 ## 资源与性能
 
@@ -146,31 +146,19 @@ Hosted 资源机器真相源只有 [`ci/resource-baseline.json`](ci/resource-bas
 
 真机性能需真实测量 CPU p95/p99、RSS/cache/context switch、XRUN/route、thermal、power 等。
 
-## HIL / Product Certification
+## HIL / 物理目标板研究测量
 
-真实 HIL 使用 `[self-hosted, linux, audio-target]`。Scheduled/Release 后要求硬件时执行 **fail-visible** 策略：`HIL_ENABLED!=true` 时不能静默伪装为健康 PASS。
+真实 HIL 依赖可信 `[self-hosted, linux, audio-target]` Runner，必须显式绑定源码、构建和实际测量。可开展 10 分钟、1 小时、8 小时、24 小时或 72 小时等有界实验；**72 小时不是研究代码或算法评估的商业准入门槛**。
 
-最终 `product-certified` 要求：
+请求硬件测试但尚未配置时，`HIL_ENABLED!=true` 采取 **fail-visible** 策略，不能将不可用、跳过或等待真机的状态伪装为 PASS。没有真实采集时标记 NOT_RUN/BLOCKED。Host/QEMU 只能证明源码构建与软件回放，不应冒充 SSC305 真机测量。
 
-- annotated semantic release tag + immutable GitHub Release；
-- exact release source/build/toolchain identity；
-- 独立 `audio-builder` 与 `audio-target`；
-- build/deployed/executed binary SHA-256 一致；
-- 真实 route/acoustic/performance/thermal/power；
-- shipping-approved policy；
-- 至少 **72 h** soak（当前 Cortex-A32 LOW policy）；
-- artifact attestation；
-- immutable `product-lifecycle` archive receipt。
-
-Hosted CI、QEMU、公开数据、较短 HIL 或 E001 readiness 均不能替代这一步。
-
-详见 [`docs/PRODUCT_ASSURANCE.zh-CN.md`](docs/PRODUCT_ASSURANCE.zh-CN.md) 和 [`docs/TRUSTED_RUNNERS.zh-CN.md`](docs/TRUSTED_RUNNERS.zh-CN.md)。实验室部署入口仍为 [`lab/README.md`](lab/README.md)。
+科研报告按需记录真实 build/deployed/executed SHA-256、板端 CPU/RSS/p95/p99、音频路径连续性、独立声学效果、温度/功耗及连续运行时长。每种结论必须由其真实数据支持，历史 Shipping 证书和产品长稳策略仅供溯源，不参与科研放行。实验室路径见 [lab/README.md](lab/README.md) 与 [可信 Runner](docs/TRUSTED_RUNNERS.zh-CN.md)。
 
 ## 仓库 Gate
 
-PR/main Verify 覆盖 strict compile/test、GCC/Clang、sanitizer、TSan、CodeQL/static analysis、coverage、backend/composition、Arm/QEMU、SSC305 exact product profile、RAM/ROM pruning、paired performance、SDK consumer、diagnostics replay、deterministic acoustic regression、bounded tuning、ordinary-user lab contract 和 public API/ABI contract。
+PR/main Verify 覆盖 strict compile/test、GCC/Clang、sanitizer、TSan、CodeQL/static analysis、coverage、backend/composition、Arm/QEMU、SSC305 exact research profile、RAM/ROM pruning、paired performance、SDK consumer、diagnostics replay、deterministic acoustic regression、bounded tuning、ordinary-user lab contract 和 public API/ABI contract。
 
-只有 exact PR/main SHA 的 required `summary=success` 才是合并/Release 权威证据。release-bearing 变化遵循 SemVer/CHANGELOG；release-neutral 文档/治理变化不得人为制造新版本。
+受保护研究主线以 exact PR/main SHA 的 required `summary=success` 为合并质量依据。公开 API/ABI 版本变更遵循 SemVer/CHANGELOG；研究文档、数据与治理变更不人为制造版本，Verify 成功也**不自动触发 GitHub 产品 Release 或产品认证**。
 
 ## License
 

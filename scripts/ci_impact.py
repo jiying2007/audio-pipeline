@@ -119,6 +119,11 @@ RELEASE_NEUTRAL_FILES = {
     "tools/runner_preflight.py",
 } | DEVICE_RESEARCH_FILES
 RELEASE_NEUTRAL_VALIDATION_FILES = {
+    # Research-only authority v2 eliminates product terminal status. These
+    # two exact canonical source paths have no commercial Release effect;
+    # they still trigger conservative FULL validation and independent gates.
+    "validation/authority.json",
+    "validation/tools/authority.py",
     "validation/failure-replay/schema-v1.json",
     "validation/policies/validation-aec-transition-development.json",
     "validation/policies/validation-s003-dechorate-artifact-exclusion.json",
@@ -845,6 +850,11 @@ def self_test() -> None:
     assert is_release_neutral("scripts/compare-runtime-perf.sh")
     assert is_release_neutral("scripts/verify-shipping-toolchain.sh")
     assert is_release_neutral("scripts/verify-research-toolchain.sh")
+    assert is_release_neutral("validation/authority.json")
+    assert is_release_neutral("validation/tools/authority.py")
+    assert not is_release_neutral("validation/tools/authority_unknown.py")
+    research_authority = analyze(["validation/authority.json", "validation/tools/authority.py"])
+    assert research_authority["full"] and not research_authority["docs_only"]
     assert not is_release_neutral("scripts/verify-unreviewed-toolchain.sh")
     retired_lab = [
         "lab/ansible/inventory.example.yml",

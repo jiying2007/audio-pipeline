@@ -148,55 +148,39 @@ Representative hosted pipeline/runtime state measurements live in [`ci/resource-
 
 Compact/Full validation and HIL repeat the applicable preflight inside their real self-hosted jobs so a stale manual readiness result cannot bypass local prerequisites. See [`TRUSTED_RUNNERS.md`](TRUSTED_RUNNERS.md).
 
-## HIL board contract
+## Physical HIL research (manual only)
 
-Product boards use `[self-hosted, linux, audio-target]` plus a board-local manifest, normally `/etc/audio-pipeline/board.json`, conforming to `hil/board.schema.json`. It binds stable board/revision/SoC/codec/microphone/speaker identity, sensor inputs, optional reset/cleanup hooks and default product route.
+The active `hil-soak.yml` accepts only explicit `workflow_dispatch`
+with an exact 40-character source SHA and a real isolated
+`[self-hosted, linux, audio-target]` runner. It never listens to release
+events or scheduled product-certification triggers. The board-local manifest
+`hil/board.schema.json` binds real capture/playback route, hardware identity
+and available thermal/power sensors; `tools/hil_board.py preflight` verifies
+those before the run. Missing hardware leaves the experiment unmeasured.
 
-`tools/hil_board.py preflight` records board/kernel/machine/disk/thermal/governor/NTP/ALSA state. Setup faults are `INFRA_FAILURE`, not product regressions. Cleanup always runs and evidence is SHA-256 sealed.
+| Manual research tier | Duration | Purpose |
+| --- | ---: | --- |
+| `accelerated-pr` | 600 s | controlled XRUN fault diagnostic |
+| `research-1h` | 1 h | short real-route stability |
+| `research-8h` | 8 h | medium soak |
+| `research-24h` | 24 h | full-day thermal/resource study |
+| `research-72h` | 72 h | optional extended scientific measurement |
 
-## Tiered soak and fault injection
-
-| Tier | Duration | Fault profile | Purpose |
-| --- | ---: | --- | --- |
-| accelerated-pr | 10 min | accelerated | reviewed PR/reproduction |
-| nightly-1h | 1 h | none | recurring product route health |
-| release-8h | 8 h | none | post-release exact-SHA engineering validation |
-| weekly-24h | 24 h | none | long stability trend |
-| certification-72h | 72 h | none | shipping certification minimum for the checked-in LOW policy |
-
-Untrusted public PRs never automatically execute on product hardware. Scheduled/Release HIL requires `HIL_ENABLED=true`; if policy expects hardware but it is disabled, availability **fails visibly** / is **fail-visible** with `HIL_REQUIRED_BUT_DISABLED` rather than silently skipping.
-
-Fault injection is reserved for accelerated engineering testing. Product certification and nominal performance evidence use the normal route without synthetic fault profiles.
-
-## Shipping certification topology
-
-```text
-audio-builder
-  exact compiler + sysroot + C flags + reviewed SKU CMake args
-        |
-        | sealed shipping artifact + build provenance
-        v
-audio-target DUT
-  verify -> deploy -> benchmark -> real route soak -> execute
-        |
-        | build == deployed == executed SHA-256
-        v
-attested certification bundle
-        |
-        v
-certification-archive
-  immutable product-lifecycle storage + receipt
-```
-
-The builder and DUT must be different runners. Current certification accepts schema v4 only. The checked-in Cortex-A32 LOW shipping policy requires 72 hours. Actions artifacts are transport/cache; lifecycle acceptance requires the separately validated immutable archive receipt.
+`HIL_ENABLED=true` may be set only after real hardware and route readiness.
+Otherwise a manual request fails visibly (`HIL_REQUIRED_BUT_DISABLED`,
+**fail-visible**), never SKIP/PASS. Real HIL evidence remains exact-source
+SHA-bound, with independent build/route, XRUN, timing, thermal/power and SHA256
+receipts; fault injection applies only to the accelerated research tier.
+No fixed duration or commercial release status is an admission prerequisite.
+Historical product certification remains archival, not active HIL authority.
 
 ## Evidence boundary
 
-Hosted x86, generated regression, cross-build and QEMU signals are software evidence only. They are never relabeled as Cortex-A32 product performance or shipping acoustic certification. A shipping policy is not a PASS result. Product certification requires real hardware, exact shipping toolchain/deployed identity, product route, real acoustic results, thermal/power data, policy-duration soak, attestation and lifecycle archive evidence.
+Hosted x86, generated regression, cross-build and QEMU signals are software evidence only. They are never relabeled as Cortex-A32 product performance or shipping acoustic certification. A shipping policy is not a PASS result. Actual physical-target research results require real hardware, exact executable/source identity, real audio route and observed acoustic/resource/thermal/power/duration data. A missing experiment is NOT_RUN/BLOCKED; historical certification policies remain archival only.
 
 ## Hosted real-audio smoke
 
-Every non-docs PR and every `main` Verify runs four SHA-pinned CC-BY-4.0 Microsoft P.808 clips on GitHub-hosted Linux. The gate verifies upstream bytes, WAV geometry, materialization, processor identity, clipping/DC/RMS safety and hash-bound evidence. It is required by `summary` but does not replace Extended Real, DUT HIL or Product Certification.
+Every non-docs PR and every `main` Verify runs four SHA-pinned CC-BY-4.0 Microsoft P.808 clips on GitHub-hosted Linux. The gate verifies upstream bytes, WAV geometry, materialization, processor identity, clipping/DC/RMS safety and hash-bound evidence. It is required by `summary` but does not replace independent Extended Real or real-DUT HIL measurements.
 
 ## Validation authority qualification
 

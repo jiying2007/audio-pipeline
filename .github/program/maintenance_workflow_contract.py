@@ -166,12 +166,11 @@ CONTRACT_ONLY_RESEARCH_EVIDENCE = {
 
 
 # Recurring execution is an explicit maintenance capability, not a default.
-# Every legal cron below is validation, data-integrity, HIL or qualification
-# convergence work. Candidate/research search is intentionally absent.
+# Every legal cron below is bounded scientific validation or data-integrity
+# work. Physical HIL is explicitly manual, not a release/schedule dependency.
 ALLOWED_SCHEDULED_WORKFLOWS = {
     AEC_MOTION_MAINTENANCE_WORKFLOW: ('41 18 * * 2,5',),
     EXTENDED_REAL_AUTOMATION_WORKFLOW: ('17 3 * * 0',),
-    HIL_SOAK_WORKFLOW: ('43 18 * * *', '17 17 * * 0'),
     Path('.github/workflows/hosted-aec-real-validation.yml'): ('23 18 * * *',),
     Path('.github/workflows/hosted-real-validation.yml'): ('47 18 * * *',),
     Path('.github/workflows/lab-acquisition-smoke.yml'): ('23 3 * * 3',),
@@ -436,28 +435,37 @@ def validate_deferred_external_schedule_boundaries(root: Path) -> None:
     )
 
     hil_text = (root / HIL_SOAK_WORKFLOW).read_text(encoding='utf-8')
+    assert '  schedule:' not in hil_text, 'research HIL must not have an autonomous schedule'
+    assert '  repository_dispatch:' not in hil_text and 'hil-post-release' not in hil_text, (
+        'retired product-release HIL listener must not be restored'
+    )
+    assert '  workflow_dispatch:' in hil_text and 'source_sha:' in hil_text, (
+        'research HIL requires explicit exact-SHA manual request'
+    )
+    assert 'certification-72h' not in hil_text and 'release-8h' not in hil_text, (
+        'historical shipping soak tiers are not active research authority'
+    )
+    for tier in ('research-1h', 'research-8h', 'research-24h', 'research-72h'):
+        assert tier in hil_text, f'research HIL duration tier missing: {tier}'
     availability = job_block(hil_text, 'availability')
-    hil_required = 'HIL_REQUIRED_BUT_DISABLED'
-    assert 'HIL_SCHEDULE_SKIPPED_DISABLED' not in availability, (
-        'HIL disabled scheduled success/skip is forbidden'
+    assert 'HIL_RESEARCH_MANUAL_ONLY' in availability and 'exit 2' in availability, (
+        'research HIL must reject non-manual dispatch'
     )
+    assert 'source_sha must be a 40-character commit SHA' in availability, (
+        'manual research HIL exact-source guard is missing'
+    )
+    required = 'HIL_REQUIRED_BUT_DISABLED'
+    assert 'HIL_SCHEDULE_SKIPPED_DISABLED' not in availability
     assert 'if [ "$HIL_ENABLED" != true ]; then' in availability, (
-        'HIL disabled availability guard missing'
+        'research HIL must check actual runner availability'
     )
-    hil_block = availability.split('if [ "$HIL_ENABLED" != true ]; then', 1)[1]
-    disabled = hil_block.split('\n          fi', 1)[0]
-    assert hil_required in disabled and 'exit 1' in disabled and 'exit 0' not in disabled, (
-        'HIL disabled schedule must fail visibly instead of skipping'
+    disabled = availability.split('if [ "$HIL_ENABLED" != true ]; then', 1)[1].split('\n          fi', 1)[0]
+    assert required in disabled and 'exit 1' in disabled and 'exit 0' not in disabled, (
+        'manual HIL disabled must fail visibly'
     )
-    assert 'if [ "$EVENT_NAME" = repository_dispatch ]; then' in availability, (
-        'HIL post-release dispatch validation must remain explicit'
+    assert 'runs-on: [self-hosted, linux, audio-target]' in hil_text, (
+        'HIL cannot fabricate a physical runner'
     )
-    assert 'if [ "$EVENT_NAME" = workflow_dispatch ]; then' in availability, (
-        'HIL explicit manual execution path must remain available'
-    )
-    assert availability.index('if [ "$EVENT_NAME" = workflow_dispatch ]; then') < (
-        availability.index('if [ "$HIL_ENABLED" != true ]; then')
-    ), 'HIL reviewed manual bring-up cannot be gated as an ordinary disabled schedule'
 
 
 
@@ -693,25 +701,22 @@ def _write_deferred_external_schedule_fixtures(root: Path) -> None:
 
     hil = root / HIL_SOAK_WORKFLOW
     hil.write_text(
-        "name: HIL Tiered Soak\n\non:\n"
-        "  schedule:\n"
-        "    - cron: '43 18 * * *'\n"
-        "    - cron: '17 17 * * 0'\n"
-        "  repository_dispatch:\n    types: [hil-post-release]\n"
-        "  workflow_dispatch:\n\n"
+        "name: HIL Research Soak (manual, exact-source)\n\non:\n"
+        "  workflow_dispatch:\n    inputs:\n      source_sha:\n"
+        "        description: Exact 40-character source commit SHA to test\n"
+        "      tier:\n"
+        "        options: [accelerated-pr, research-1h, research-8h, research-24h, research-72h]\n"
         "jobs:\n"
         "  availability:\n"
         "    runs-on: ubuntu-latest\n"
         "    steps:\n"
         "      - name: Enforce HIL availability policy\n"
         "        run: |\n"
-        "          if [ \"$EVENT_NAME\" = workflow_dispatch ]; then\n"
-        "            echo 'run=true' >> \"$GITHUB_OUTPUT\"\n"
-        "            exit 0\n"
+        "          if [ \"$EVENT_NAME\" != workflow_dispatch ]; then\n"
+        "            echo 'HIL_RESEARCH_MANUAL_ONLY' >&2\n"
+        "            exit 2\n"
         "          fi\n"
-        "          if [ \"$EVENT_NAME\" = repository_dispatch ]; then\n"
-        "            echo validate-post-release\n"
-        "          fi\n"
+        "          echo 'source_sha must be a 40-character commit SHA'\n"
         "          if [ \"$HIL_ENABLED\" != true ]; then\n"
         "            echo 'run=false' >> \"$GITHUB_OUTPUT\"\n"
         "            echo 'HIL_REQUIRED_BUT_DISABLED' >&2\n"
@@ -721,11 +726,12 @@ def _write_deferred_external_schedule_fixtures(root: Path) -> None:
         "  soak:\n"
         "    needs: availability\n"
         "    if: needs.availability.outputs.run == 'true'\n"
-        "    runs-on: ubuntu-latest\n"
+        "    runs-on: [self-hosted, linux, audio-target]\n"
         "    steps:\n"
         "      - run: echo soak\n",
         encoding='utf-8',
     )
+
 
 
 def _write_i002_terminal_fixture(root: Path) -> None:
@@ -900,20 +906,27 @@ def self_test() -> None:
 
         hil_path = root / HIL_SOAK_WORKFLOW
         hil_text = hil_path.read_text(encoding='utf-8')
-        for updated in (
-            hil_text.replace('HIL_REQUIRED_BUT_DISABLED', 'HIL_DISABLED'),
-            hil_text.replace(
+        for updated, message in (
+            (hil_text.replace('HIL_REQUIRED_BUT_DISABLED', 'HIL_DISABLED'),
+             'manual HIL disabled must fail visibly'),
+            (hil_text.replace(
                 "            echo 'HIL_REQUIRED_BUT_DISABLED' >&2\n            exit 1",
-                "            echo 'HIL_REQUIRED_BUT_DISABLED' >&2\n            exit 0",
-            ),
+                "            echo 'HIL_REQUIRED_BUT_DISABLED' >&2\n            exit 0"),
+             'manual HIL disabled must fail visibly'),
+            (hil_text.replace("  workflow_dispatch:", "  repository_dispatch:\n    types: [hil-post-release]\n  workflow_dispatch:"),
+             'retired product-release HIL listener'),
+            (hil_text.replace("  workflow_dispatch:", "  schedule:\n    - cron: '43 18 * * *'\n  workflow_dispatch:"),
+             'research HIL must not have an autonomous schedule'),
+            (hil_text.replace('research-72h', 'certification-72h'),
+             'historical shipping soak tiers'),
         ):
             hil_path.write_text(updated, encoding='utf-8')
             try:
                 validate(root)
             except AssertionError as exc:
-                assert 'disabled schedule must fail visibly' in str(exc)
+                assert message in str(exc), (message, str(exc))
             else:
-                raise AssertionError('HIL false-green disabled policy was accepted')
+                raise AssertionError('research HIL regression was accepted: ' + message)
         hil_path.write_text(hil_text, encoding='utf-8')
 
         _write_program_archive_fixture(root, duplicate=True)

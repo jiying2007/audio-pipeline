@@ -143,39 +143,27 @@ Runtime 没有测试调度钩子。这些测试验证并发协议，host 调度�
 
 Compact/Full validation 和 HIL 仍会在真实 self-hosted job 内重复 preflight，防止陈旧 readiness 结果被误用。详见 `TRUSTED_RUNNERS.md`。
 
-## HIL 板卡合同
+## 真机 HIL 研究（仅手动启动）
 
-真实产品板使用 `[self-hosted, linux, audio-target]`，并在板卡本地保存符合 `hil/board.schema.json` 的 `/etc/audio-pipeline/board.json`。它绑定 board/revision/SoC/codec/麦板/扬声器、thermal/power sensor、reset/cleanup hook 和默认 route。
+活动 `hil-soak.yml` 仅接受 `workflow_dispatch`、明确的 40 位源码 SHA
+和真实 `[self-hosted, linux, audio-target]` 隔离设备；不得由 Release、定时任务
+或产品认证请求自动触发。板卡私有配置符合 `hil/board.schema.json`，记录真实
+codec、麦克风/扬声器、ALSA route、内核、传感器与复位钩子。
+`tools/hil_board.py preflight` 必须在实际测量前完成检查。
 
-`tools/hil_board.py preflight` 在测量前记录板卡身份、kernel/machine、磁盘、温度、CPU governor、NTP、ALSA inventory。实验室/环境故障归类为 `INFRA_FAILURE`；结束始终 cleanup，evidence 使用 SHA-256 封存。
+| 手动研究档位 | 时长 | 用途 |
+| --- | ---: | --- |
+| `accelerated-pr` | 600 秒 | XRUN/故障注入诊断 |
+| `research-1h` | 1 小时 | 短稳与实机 route |
+| `research-8h` | 8 小时 | 中时长运行 |
+| `research-24h` | 24 小时 | 日级资源/温度 |
+| `research-72h` | 72 小时 | 可选长稳科研实验 |
 
-## 分层 Soak 与故障注入
-
-| Tier | 时长 | Fault profile | 用途 |
-| --- | ---: | --- | --- |
-| accelerated-pr | 10 分钟 | accelerated | 可信 PR/复现 |
-| nightly-1h | 1 小时 | none | 产品 route 日常健康 |
-| release-8h | 8 小时 | none | immutable Release 后 exact-SHA 验证 |
-| weekly-24h | 24 小时 | none | 长时稳定性趋势 |
-| certification-72h | 72 小时 | none | 当前 LOW shipping policy 正式最低 soak |
-
-外部 PR 不自动进入 self-hosted 产品板。Scheduled/Release HIL 是 **fail-visible**：当策略要求执行但 `HIL_ENABLED!=true` 时，availability 直接失败，而不是静默 skip 或伪造 PASS。只有真实 target runner、板卡和 route 在线后才应打开该变量。
-
-故障注入仅用于 accelerated 工程测试；正式 certification/nominal evidence 不注入人工 fault。
-
-## Product Certification 拓扑
-
-正式 shipping certification 使用：
-
-`audio-builder -> audio-target -> certification-archive`
-
-- builder 使用精确 shipping compiler/sysroot/toolchain/CFLAGS/CMake args；
-- target 只部署并执行该构建产物，采集 real route benchmark/soak/thermal/power/acoustic evidence；
-- build/deployed/executed SHA-256 必须一致，builder 与 DUT 必须分离；
-- archive 返回 immutable `product-lifecycle` receipt；
-- 当前 certification record **只接受 schema v4**。
-
-正式 Cortex-A32 LOW shipping policy 要求最少 72 小时 soak；1 h / 8 h / 24 h HIL 只属于运营健康和发布历史，不能替代正式认证。
+仅在真实 runner、板卡与 route 完整可用时设置 `HIL_ENABLED=true`。
+否则请求必须 **fail-visible**，输出 `HIL_REQUIRED_BUT_DISABLED`，不能静默跳过、
+伪造 PASS 或把 Hosted/QEMU 结果当真机。持续时长按实验目的预注册；
+72 小时**不是科研准入或认证前置要求**。原始 HIL 路由、CPU、功耗、温度、
+XRUN 和时长测量继续以 SHA256 封存，历史产品认证记录保持只读溯源。
 
 ## 证据边界
 
@@ -188,11 +176,11 @@ Compact/Full validation 和 HIL 仍会在真实 self-hosted job 内重复 prefli
 Python3.10.20/Git2.43.0环境及完整门禁命令；系统Python/Git版本不能静默沿用CI通过结论。
 主线A2元数据自测保持独立，不能把其通过解释为实际RealMAN音频/DOA资格。
 
-Hosted x86、generated regression、cross-build、QEMU 只属于 software correctness/regression evidence，不能包装成 Cortex-A32 真机性能或产品声学认证。正式 `product-certified` 必须来自真实发货硬件、exact shipping toolchain/deployed binary、真实 route、声学 corpus/result、thermal/power、72 h policy soak、attestation 与 lifecycle archive evidence。
+Hosted x86、generated regression、cross-build、QEMU 只属于软件正确性/回归证据，不能包装成 Cortex-A32 真机或独立声学结果。真机科研结论须有真实板卡、实际工具链/二进制身份、音频 route、声学与资源/热/功耗原件；缺少设备时必须 NOT_RUN/BLOCKED，不以产品认证替代研究结论。
 
 ## Hosted 真实音频 smoke
 
-每个非纯文档 PR 与所有 `main` Verify 都在 GitHub-hosted Linux 上处理 4 个 SHA 固定的 CC-BY-4.0 Microsoft P.808 clip，验证上游字节、WAV 几何、materialization、processor identity、clipping/DC/RMS safety 与 hash-bound evidence。该 gate 是 required `summary` 的一部分，但不能替代 Extended Real、DUT HIL 或 Product Certification。
+每个非纯文档 PR 与所有 `main` Verify 都在 GitHub-hosted Linux 上处理 4 个 SHA 固定的 CC-BY-4.0 Microsoft P.808 clip，验证上游字节、WAV 几何、materialization、processor identity、clipping/DC/RMS safety 与 hash-bound evidence。该 gate 是 required `summary` 的一部分，但不能替代独立 Extended Real 或真实 DUT/HIL 研究测量。
 
 ## Validation authority qualification
 

@@ -117,15 +117,18 @@ def validate_static(contract: dict) -> dict:
             "E001 may bind only the deferred readiness contract")
 
     hil = text(".github/workflows/hil-soak.yml")
-    require("types: [hil-post-release]" in hil and
+    require("  schedule:" not in hil and "  repository_dispatch:" not in hil and
+            "hil-post-release" not in hil and
+            "  workflow_dispatch:" in hil and
+            "HIL_RESEARCH_MANUAL_ONLY" in hil and
             "HIL_REQUIRED_BUT_DISABLED" in hil and
-            "HIL_ENABLED" in hil and
-            "exit 1" in hil,
-            "HIL control plane must fail closed when disabled")
+            "HIL_ENABLED" in hil and "exit 1" in hil,
+            "research HIL must be manual, release-independent and fail closed")
     require("runs-on: [self-hosted, linux, audio-target]" in hil,
-            "HIL must require the trusted audio-target runner")
-    require("certification-72h) seconds=259200" in hil,
-            "HIL must preserve the 72-hour certification tier")
+            "research HIL must require the real audio-target runner")
+    require("research-72h) seconds=259200" in hil and
+            "certification-72h" not in hil and "release-8h" not in hil,
+            "72h remains a voluntary scientific duration, not shipping authority")
 
     ext_auto = text(".github/workflows/extended-real-automation.yml")
     require("repository_dispatch:" not in ext_auto and

@@ -4,14 +4,14 @@
 
 ## 当前开发姿态
 
-仓库当前处于 **software-commercial-ready 的稳定维护阶段**。软件/public-data program 已无 READY 任务；E001 仍是 external/deferred。
+仓库当前定位为**纯技术研究**，维护已验证的 DSP/Runtime 主线，并按已授权的 FE 与资源实验推进。研究可执行性由独立数据来源与许可、代码质量及可复现测量决定；E001 仅是历史基础设施准备身份，不能充当研究准入或真机 PASS。详见 [`RESEARCH_ONLY_EXECUTION.md`](RESEARCH_ONLY_EXECUTION.md)。
 
 因此默认原则是：
 
 - 有明确缺陷、回归、集成问题或真实外部基础设施失败，再改代码；
 - 不为了“看起来更终态”主动堆 DSP heuristic、线程、缓存、workflow 或治理层；
 - 不利用缺少真机证据作为理由降低 gate；
-- 不把公开数据/QEMU/Hosted CI 写成真实 SKU 性能或 PQ 证据。
+- 不把公开数据/QEMU/Hosted CI 写成实际目标板声学、资源或功耗证据。
 
 ## Public API/ABI 纪律
 
@@ -37,7 +37,7 @@
 - 函数和局部变量使用清晰的 `snake_case` 风格；
 - public API 保持 `ap_` 前缀；
 - enum/status 名称保持项目已有大写风格；
-- 不引入未说明的 magic number；产品/算法阈值应有命名、单位和测试；
+- 不引入未说明的 magic number；实验/算法阈值应有命名、单位和测试；
 - 显式处理整数宽度、符号和溢出边界；
 - 公共浮点输入处理 NaN/±Inf；
 - 不使用隐藏全局 mutable state 模拟实例状态；
@@ -101,7 +101,7 @@ AP_RESAMPLER_MODE=BANDLIMITED|FAST
 
 1. CMake/public validation；
 2. generated build-info；
-3. 至少一个 CI boundary product；
+3. 至少一个 CI 边界构建实例；
 4. state/ELF pruning 证明（适用时）；
 5. 安装后 SDK consumer。
 
@@ -114,7 +114,7 @@ AP_RESAMPLER_MODE=BANDLIMITED|FAST
 3. 证明失败不是测量/renderer/decoder/route contract 假象；
 4. 单次只改一个根因方向；
 5. candidate 与 measurement change 不能互相批准；
-6. independent confirmation 后才能讨论 shipping behavior；
+6. independent confirmation 后才能讨论候选是否值得进入下一轮独立研究实验；
 7. 无有效提升则 KEEP BASELINE。
 
 validation-grade/blind 数据不能反馈给 optimizer。
@@ -124,30 +124,30 @@ validation-grade/blind 数据不能反馈给 optimizer。
 按变更类型选择 targeted tests，但合并前服从仓库 exact-head gate。典型要求：
 
 - API/参数：boundary + invalid + NaN/Inf；
-- 内存：state-size、SKU pruning、consumer ELF；
+- 内存：state-size、目标配置 pruning、consumer ELF；
 - Runtime：TSan + lifecycle + queue/backpressure；
 - DSP：unit/property + backend/composition + acoustic regression；
 - Arm：cross-build + QEMU；
 - SDK：clean install + CMake/pkg-config consumer；
 - 性能：same-runner paired base vs candidate；
 - 数据搜索：固定 seed/hash/roles + independent validation；
-- Release/certification：negative/fail-closed contract。
+- 研究制品/历史来源：hash/provenance、negative/fail-closed contract；
 
-禁止通过修改 acceptance threshold、删测试、allow-failure 或 mock product evidence 获取绿色结果。
+禁止通过修改 acceptance threshold、删测试、allow-failure 或 mock 真实声学/硬件证据获取绿色结果。
 
 ## 文档要求
 
 以下变化必须同步文档：
 
 - public API/ABI/lifecycle；
-- build option/product preset；
+- build option/研究配置 preset；
 - stage/ownership/data flow；
 - validation authority；
-- Release/Certification authority；
+- 研究证据权威及历史 Release/Certification 引用；
 - 操作命令或路径；
 - 诊断/隐私边界。
 
-关键中文商用入口必须同步；低层协议仍保持一个 canonical truth，避免双语文档互相成为独立标准。
+关键中文研究入口必须同步；低层协议仍保持一个 canonical truth，避免双语文档互相成为独立标准。
 
 ## Commit / PR
 
@@ -158,8 +158,8 @@ validation-grade/blind 数据不能反馈给 optimizer。
 - required `summary` 未成功不合并；
 - exact head 改变后旧 CI 不再作为 merge evidence；
 - squash merge 后再验证 exact main；
-- release-neutral 变化不得为了“配版本”制造新 release；
-- release-bearing 变化必须遵循 SemVer/CHANGELOG/immutable Release 流程。
+- 普通研究变更不得触发商业 SDK/GitHub Release 或产品资格审批；
+- 确需归档的研究制品必须独立授权，固定源码、数据、许可、参数与实验收据，不修改历史不可变证据。
 
 ## Definition of Done
 
@@ -172,5 +172,5 @@ validation-grade/blind 数据不能反馈给 optimizer。
 - 文档/中文入口（适用时）同步；
 - protected merge；
 - exact-main 再验证；
-- release/provenance 行为符合变更类别；
+- 研究制品与来源追溯符合变更类别，不能自动发布商用版本；
 - 不留下未分类 branch/ref/evidence 债务。

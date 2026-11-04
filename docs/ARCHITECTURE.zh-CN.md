@@ -4,18 +4,18 @@
 
 ## 设计目标
 
-`audio-pipeline` 面向低算力 Arm Linux 产品，核心目标是：
+`audio-pipeline` 面向低算力 Arm Linux 实时语音前端技术研究，核心目标是：
 
 - 实时数据面有界、可预测；
-- 产品 SKU 可通过编译期组合和几何 envelope 裁剪；
+- 不同实验目标可通过编译期组合和几何 envelope 裁剪；
 - CPU/平台差异隔离在 arch/platform 层，不污染算法；
-- Runtime、DSP、验证、HIL、Product Certification 各自拥有清晰 authority；
-- 每个发货构建都可通过 build identity 追溯源码、配置、编译器和模块组合。
+- Runtime、DSP、公开数据验证与可选真机 HIL 有相互独立的证据边界；
+- 每个研究构建均通过 build identity 追溯源码、配置、编译器和模块组合，既不隐含商用发货也不代表目标板性能。
 
 ## 分层
 
 ```text
-应用/产品
+实验/应用
   |
   +-- public C API / installed SDK
   |
@@ -30,7 +30,7 @@
          +-- dsp / arch
 ```
 
-允许的生产依赖方向：
+允许的模块依赖方向：
 
 ```text
 core -> frontend / sync / activity / aec / enhance
@@ -62,12 +62,12 @@ Pipeline 以固定 10 ms frame 工作。设备 I/O 可在构建 envelope 内选�
 同步 Pipeline、standalone module 和 Runtime 的持久状态均由调用方提供有界内存。核心原则：
 
 - data plane 无 heap allocation；
-- SKU 几何上限决定实际 state 大小；
+- 目标实验几何上限决定实际 state 大小；
 - 未编译模块真实移除实现 TU/state，不是 runtime bypass；
 - state/ELF pruning 由 CI 直接验证；
 - 安装后的 consumer 也必须能链接并运行，而不是只检查文件存在。
 
-## 模块组合与 SKU envelope
+## 模块组合与实验构建 envelope
 
 主要编译维度：
 
@@ -90,7 +90,7 @@ AP_SIMD_BACKEND=SCALAR|NEON
 AP_RESAMPLER_MODE=BANDLIMITED|FAST
 ```
 
-当前 SSC305 软件商用起始配置 `ssc305-cortex-a32-low` 已成为 required CI 的独立 executable contract。它不代表真机性能认证。
+当前 `ssc305-cortex-a32-low` 是 required CI 的独立 AArch32 软件构建研究契约，验证链接和构建行为，不能推导 SSC305 真机声学、CPU、热或功耗性能。
 
 ## Runtime ownership
 
@@ -124,7 +124,7 @@ Pipeline 在 `ap_runtime_open()` 前由调用方拥有；worker started 后由�
 - 文件/配置加载；
 - dump/replay 管理；
 - self-hosted runner/toolchain/DUT 编排；
-- validation/HIL/certification evidence sealing。
+- validation、可选真实 HIL 的证据与来源哈希封存。
 
 ## Diagnostics
 
@@ -140,7 +140,7 @@ Runtime/DSP event -> bounded diagnostics -> .apd -> apdump -> apreplay -> reprod
 
 `validation/` 是仓库内唯一 canonical 声学验证框架。`validation/authority.json` 决定哪些数据可用于 development/search、validation/shadow 或 blind promotion。
 
-`product-certified` 不属于 validation corpus tier。最终产品权限来自独立 `certification/` schema/policy + 真实 DUT/HIL/72 h evidence。
+当前为**纯技术研究**。`certification/`、产品批准和 72 小时历史认证链不构成研究准入；遗留源及原始结果仅供溯源。真实 HIL 要有具体授权、物理板卡和实际测量，未执行则 `NOT_RUN`/`BLOCKED`。
 
 因此以下层次不可互相替代：
 
@@ -149,12 +149,12 @@ unit/property/hosted CI
   < public-data validation
   < Extended Real
   < real DUT/HIL
-  < Product Certification / product-certified
+  < 独立授权和物理设备的实测 HIL（不等于产品认证）
 ```
 
 ## Build identity
 
-`ap_build_info()` 暴露版本、模块、几何上限、backend、source revision、compiler/target 和配置 SHA-256。定位商用问题时，build identity 是第一层 provenance，不应只依赖包名、tag 名或人工记录。
+`ap_build_info()` 暴露版本、模块、几何上限、backend、source revision、compiler/target 和配置 SHA-256。复现研究问题时，build identity 是第一层 provenance，不应只依赖包名、tag 名或人工记录。
 
 ## 架构变更准入
 
@@ -165,6 +165,6 @@ unit/property/hosted CI
 3. 新状态/线程/队列/延迟/内存成本；
 4. 如何 fail-closed；
 5. targeted/negative/TSan/ABI/resource/Arm/QEMU 测试；
-6. 是否影响 shipping behavior、SemVer 或 Product Certification。
+6. 是否改变算法基线、公开 API/ABI、研究准入或历史证据边界。
 
 没有明确收益证据时，保留更简单的实现。

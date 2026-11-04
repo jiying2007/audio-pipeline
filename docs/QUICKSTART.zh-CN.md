@@ -1,6 +1,6 @@
 # 快速使用指南（中文）
 
-本页面向第一次集成 `audio-pipeline` 的应用/系统开发人员。低层 API 的最终契约以 [`API_CONTRACT.md`](API_CONTRACT.md) 为准。
+本页面向首次使用 `audio-pipeline` 的算法研究与嵌入式系统开发人员，说明可复现的构建、API、诊断和评测，不提供商用发布或产品认证流程。低层 API 的最终契约以 [`API_CONTRACT.md`](API_CONTRACT.md) 为准，当前研究准入以 [`RESEARCH_ONLY_EXECUTION.md`](RESEARCH_ONLY_EXECUTION.md) 为准。
 
 ## 1. 选择构建方式
 
@@ -12,7 +12,7 @@ cmake --build build --parallel
 ctest --test-dir build --output-on-failure
 ```
 
-### SSC305 软件商用起始配置
+### SSC305 类 ARM 研究构建配置
 
 仓库提供命名 preset：
 
@@ -74,7 +74,7 @@ ap_pipeline_process_capture(pipeline, mic_interleaved, frames, output_frame);
 
 - `ap_pipeline_observe_io_timestamps()`：同一 monotonic clock domain 的 capture/render hardware timestamp；
 - `ap_pipeline_notify_stream_discontinuity()`：gap/XRUN/clock reset/codec reopen；
-- `ap_pipeline_notify_echo_path_change()`：产品已知的 route/path 变化；
+- `ap_pipeline_notify_echo_path_change()`：调用方已知的 route/path 变化；
 - `ap_pipeline_apply_tuning()`：调用方串行化后的 frame-boundary tuning；
 - `ap_pipeline_get_config()`：读回 init 时生效的完整 `ap_config_t`；
 - `ap_pipeline_get_tuning()`：读回当前生效的 tuning 值（mask 恒为全部四项、`reserved[]` 清零，可直接回灌 `ap_pipeline_apply_tuning()`）。
@@ -129,7 +129,7 @@ ap_runtime_deinit(runtime);
 const ap_build_info_t *info = ap_build_info();
 ```
 
-读取版本、模块、几何 envelope、backend、source revision、compiler/target、配置和 build identity。商用问题定位时，**先记录 build identity，再比较音频结果**，不要仅依赖文件名或手工版本字符串。
+读取版本、模块、几何 envelope、backend、source revision、compiler/target、配置和 build identity。研究复现与问题定位时，**先记录 build identity，再比较音频结果**，不要仅依赖文件名或手工版本字符串。
 
 ## 6. Diagnostics / Dump / Replay
 
@@ -154,7 +154,7 @@ python3 tools/apreplay.py failure.apd \
   --require-bit-exact
 ```
 
-`.apd` 可能包含用户语音。产品必须定义访问控制、保留时长、上传策略和安全删除；Realtime worker 不负责文件 I/O。
+`.apd` 可能包含可识别的真实语音。研究操作者必须落实适用的数据授权、访问控制、保留时长、传输策略和安全删除；Realtime worker 不负责文件 I/O。
 
 ## 7. 数据集自测
 
@@ -166,32 +166,31 @@ python3 tools/apreplay.py failure.apd \
 - validation-grade 只能用于 validation/shadow；
 - validation-grade-blind 不允许进入 optimizer；
 - 公共/真实数据必须锁 revision/hash/license/用途；
-- 候选搜索只能形成 `ACOUSTIC_CANDIDATE`，不能自动改变 shipping default；
-- 真实产品资格只能来自 `certification/`。
+- 候选搜索只能形成 `ACOUSTIC_CANDIDATE`，不能自动改变被测源码、默认算法行为或声学结论；
+- 真机结论只能来自真实目标设备、合法音频和独立留出的实际测量；历史 `certification/` 存档不得作为当前研究准入。
 
 详细见 [`TESTING.zh-CN.md`](TESTING.zh-CN.md) 和 [`EXTENDED_REAL_VALIDATION.zh-CN.md`](EXTENDED_REAL_VALIDATION.zh-CN.md)。
 
-## 8. 集成 SSC305 时必须额外完成的事情
+## 8. SSC305 类目标板研究的独立实测
 
-仓库 CI 已证明 `ssc305-cortex-a32-low` 软件构建契约，但真正量产前还需要真实设备完成：
+仓库 CI 验证了 `ssc305-cortex-a32-low` 软件构建与 AArch32/QEMU 兼容性，但不等于 SSC305 实机效果。实际有设备且研究方案明确后，再采集并封存：
 
-- 实际交叉工具链/sysroot 与量产 CFLAGS/CMake args 固定；
-- ALSA/codec capture/playback/far-end route；
-- timestamp、XRUN、reopen、clock reset 行为；
-- 真机 CPU p95/p99、RSS/cache、热与功耗；
-- 实际机壳/麦克风/扬声器声学；
-- HIL 1 h/8 h/24 h 历史；
-- shipping-approved policy 下至少 72 h Product Certification。
+- 真实交叉工具链/sysroot、目标编译参数、可复现的源码与二进制身份；
+- ALSA/codec capture/playback/far-end route、时间戳与断流恢复；
+- timestamp、XRUN、reopen、clock reset 的实测行为；
+- 物理目标板 CPU p95/p99、RSS/cache、功耗与温升；
+- 真实机壳、麦克风、扬声器的 BF/AEC/NS/AGC/VAD 声学效果；
+- 按实验目的预注册的持续运行时长及故障判据，源数据、脚本和结果独立留档。
 
-在这些证据完成前，可以称为 `software-commercial-ready`，不能称为 `product-certified`。
+上述实验未执行时报告 `NOT_RUN` 或 `BLOCKED`，不得用 Hosted/QEMU 推断真机 PASS；科研流程**不要求固定 72 小时产品认证、SKU 商用批准或 GitHub Release**。
 
 ## 9. 常见错误
 
 - **把 QEMU 时间当真机性能**：禁止；QEMU 只证明可执行/ABI/链接契约。
-- **把 Hosted Real 当产品认证**：禁止；它只是 validation 证据。
+- **把 Hosted Real 当真机证据**：禁止；它只是对应来源的 validation 证据。
 - **调 threshold 直到测试变绿**：禁止；接受规则必须在搜索前冻结。
 - **直接修改 started Runtime 的 Pipeline**：违反 ownership。
-- **把缺失 HIL 写成 skip/PASS**：Scheduled/Release HIL 必须 fail-visible。
+- **把缺失 HIL 写成 PASS**：真实设备不可用时保持 `NOT_RUN`/`BLOCKED`，需要设备的实验不得伪造通过。
 - **只复制库文件、不记录 build identity**：会破坏可追溯性。
 
 ## 10. 出问题从哪里开始
@@ -219,4 +218,4 @@ PCM 与 JSONL metrics 的立即写入失败、最终缓冲关闭失败均非零�
 失败时丢弃不完整结果；输入与输出须使用不同路径，不支持原地覆盖。
 
 完整契约见 [OFFLINE_PCM_IO](OFFLINE_PCM_IO.md)。这些回归测试验证软件文件 I/O，
-不产生新的声学、SSC305、HIL 或产品认证结论。
+不产生新的声学、SSC305 或真机 HIL 结果。

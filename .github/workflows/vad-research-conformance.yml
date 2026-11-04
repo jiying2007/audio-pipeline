@@ -9,7 +9,7 @@ on:
       - 'validation/tools/build_stage_validation_corpus.py'
       - 'validation/tools/run_validation*.py'
       - 'validation/tools/stage_profile_support.py'
-      - '.github/workflows/vad-research-policy-validation.yml'
+      - '.github/workflows/vad-research-conformance.yml'
   workflow_dispatch:
 
 permissions:

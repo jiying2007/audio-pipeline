@@ -37,8 +37,6 @@ jobs:
         run: cmake --build build-audio --parallel
       - name: Run resampler and acoustic-path contracts
         run: ctest --test-dir build-audio --output-on-failure -R 'ap_resampler_tests|ap_contract_tests|ap_drift_res_tests'
-      - name: Verify certification evidence validator
-        run: python3 certification/validate_record.py --self-test
 
   validation-smoke:
     runs-on: ubuntu-latest

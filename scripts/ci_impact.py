@@ -99,6 +99,20 @@ RELEASE_NEUTRAL_FILES = {
     "scripts/qualification_fingerprint.py", "scripts/program.py",
     "scripts/test_history.py",
     "scripts/compare-runtime-perf.sh",
+    # This exact orphaned helper -> research cross-toolchain replacement is
+    # a source-neutral tool migration, not an SDK/DSP/ABI delivery change.
+    # Deliberately do not exempt unknown scripts or target source files.
+    "scripts/verify-shipping-toolchain.sh",
+    "scripts/verify-research-toolchain.sh",
+    # Exact research-lab source-only retirement (#897): these file paths
+    # affect operator-only Ansible/user-mode tooling, not DSP, installed API,
+    # model outputs or product delivery. Unknown lab role/commands still
+    # require SemVer and the full source checks reject restored product roles.
+    "lab/ansible/inventory.example.yml",
+    "lab/ansible/site.yml",
+    "lab/scripts/labctl.py",
+    "lab/ansible/roles/audio_builder/tasks/main.yml",
+    "lab/ansible/roles/certification_archive/tasks/main.yml",
     # Research-only runner environment preflight: no DSP/runtime/public ABI or
     # product publication authority. Unknown tools still require SemVer and
     # this path still receives the conservative full Verify matrix.
@@ -829,6 +843,25 @@ def self_test() -> None:
     assert is_release_neutral("scripts/program.py")
     assert is_release_neutral("scripts/test_history.py")
     assert is_release_neutral("scripts/compare-runtime-perf.sh")
+    assert is_release_neutral("scripts/verify-shipping-toolchain.sh")
+    assert is_release_neutral("scripts/verify-research-toolchain.sh")
+    assert not is_release_neutral("scripts/verify-unreviewed-toolchain.sh")
+    retired_lab = [
+        "lab/ansible/inventory.example.yml",
+        "lab/ansible/site.yml",
+        "lab/scripts/labctl.py",
+        "lab/ansible/roles/audio_builder/tasks/main.yml",
+        "lab/ansible/roles/certification_archive/tasks/main.yml",
+    ]
+    assert all(is_release_neutral(path) for path in retired_lab)
+    assert analyze(retired_lab)["full"] and not analyze(retired_lab)["docs_only"]
+    for unknown in ("lab/ansible/roles/unreviewed_product/tasks/main.yml",
+                    "lab/scripts/unreviewed_shipping.py",
+                    "src/platform/shipping_controller.c"):
+        assert not is_release_neutral(unknown), unknown
+    tool = analyze(["scripts/verify-shipping-toolchain.sh",
+                    "scripts/verify-research-toolchain.sh"])
+    assert tool["full"] and not tool["docs_only"]
     assert is_release_neutral("tools/runner_preflight.py")
     assert not is_release_neutral("tools/runner_preflight_unreviewed.py")
     runner = analyze(["tools/runner_preflight.py"])

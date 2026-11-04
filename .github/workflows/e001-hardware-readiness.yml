@@ -1,14 +1,12 @@
-name: E001 Hardware Activation Readiness
+name: E001 Research Infrastructure Readiness
 
 on:
   pull_request:
     paths:
       - '.github/workflows/e001-hardware-readiness.yml'
-      - '.github/workflows/e001-activation-preflight.yml'
       - 'docs/program/iterations/E001-readiness.json'
       - 'docs/program/iterations/E001-deferred-evidence.json'
       - '.github/program/e001_hardware_readiness.py'
-      - '.github/program/e001_activation_preflight.py'
       - '.github/workflows/hil-soak.yml'
       - '.github/workflows/extended-real-automation.yml'
       - '.github/workflows/validation-extended-real.yml'
@@ -21,11 +19,9 @@ on:
     branches: [main]
     paths:
       - '.github/workflows/e001-hardware-readiness.yml'
-      - '.github/workflows/e001-activation-preflight.yml'
       - 'docs/program/iterations/E001-readiness.json'
       - 'docs/program/iterations/E001-deferred-evidence.json'
       - '.github/program/e001_hardware_readiness.py'
-      - '.github/program/e001_activation_preflight.py'
       - '.github/workflows/hil-soak.yml'
       - '.github/workflows/extended-real-automation.yml'
       - '.github/workflows/validation-extended-real.yml'
@@ -50,8 +46,9 @@ jobs:
         run: |
           set -euo pipefail
           python3 .github/program/e001_hardware_readiness.py --self-test
-          python3 .github/program/e001_activation_preflight.py --self-test
-      - name: Evaluate software-side activation prerequisites
+          test ! -e .github/workflows/e001-activation-preflight.yml
+          test ! -e .github/program/e001_activation_preflight.py
+      - name: Evaluate historical E001 readiness (no commercial activation)
         env:
           HIL_ENABLED: ${{ vars.HIL_ENABLED }}
           EXTENDED_REAL_ENABLED: ${{ vars.EXTENDED_REAL_ENABLED }}

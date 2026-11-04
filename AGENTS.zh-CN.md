@@ -8,7 +8,7 @@
 
 **当前唯一执行定位：纯技术研究**。数据准备、算法实验、声学评测与 ARM/SSC305 类资源研究依赖可复现的科研证据和实际数据使用权，不要求 Shipping 审批、商业 SDK 发布或产品认证。既有商用就绪/E001/HIL/产品资格内容是待迁移的历史流程，**不作为研究准入门槛**；参见 [`docs/RESEARCH_ONLY_EXECUTION.md`](docs/RESEARCH_ONLY_EXECUTION.md) 和 [#882](https://github.com/jiying2007/audio-pipeline/issues/882)。历史证据保留真实原貌，不伪造真机结果。
 
-另有用户明确授权的 **frontend-evolution-v1 开放研究与集成阶段**正在推进。先读 `docs/research/frontend-evolution-v1/README.md`、原始归档方案和 live #657。该新阶段允许有限结构实验、训练/微调、原生单/双/四麦原型以及资源/数值优化；使用新的 FE 实验身份。原方案不等于执行证明，旧阶段 candidate-zero 限制不扩展为新研究禁令。I025-I040 等历史结论、失败和归档保持不变；第三方许可、独立数据角色、shipping 默认/API 资格和 E001 物理身份仍分别验收。
+另有用户明确授权的 **frontend-evolution-v1 开放研究与集成阶段**正在推进。先读 `docs/research/frontend-evolution-v1/README.md`、原始归档方案和 live #657。该新阶段允许有限结构实验、训练/微调、原生单/双/四麦原型以及资源/数值优化；使用新的 FE 实验身份。原方案不等于执行证明，旧阶段 candidate-zero 限制不扩展为新研究禁令。I025-I040 等历史结论、失败和归档保持不变；第三方许可、独立数据角色与真机实测分别验收；历史 shipping 默认/API 资格不构成当前研究门禁。
 
 默认行为不是无依据地“继续找新算法优化”，而是：
 
@@ -26,7 +26,7 @@
 - 开发：`docs/DEVELOPMENT.zh-CN.md` + `docs/DEVELOPMENT.md`；
 - 数据迭代：`validation/authority.json`、`docs/TESTING.zh-CN.md`；
 - 新 FE 研究：`docs/research/frontend-evolution-v1/README.md` 和 live #657；
-- Release/认证：`docs/PRODUCT_ASSURANCE.zh-CN.md`、`certification/README.md`；
+- 历史发布/认证档案（仅溯源，非研究执行入口）：`docs/PRODUCT_ASSURANCE.zh-CN.md`、`certification/README.md`；
 - 实验室：`docs/TRUSTED_RUNNERS.zh-CN.md`、`lab/README.md`；
 - 历史 software program：只有需要解释既有 research evidence 时再读 `docs/program/*`。
 
@@ -34,7 +34,7 @@
 
 ## 绝对边界
 
-- 不伪造或模拟 runner availability、DUT route、sensor、真实 corpus、shipping toolchain、soak duration、archive receipt、HIL/PQ/Product Certification PASS；
+- 不伪造或模拟 runner availability、DUT route、sensor、真实 corpus、目标工具链、实测时长、归档回执或真机 HIL PASS；
 - 不通过提高/降低 threshold、timeout、sample budget、allow-failure 或 skip 来获得绿色；
 - 不直接 push main；
 - 不 force-update tag；
@@ -51,7 +51,7 @@
 
 ### DSP/算法
 
-维护基线只为明确可重复问题引入复杂度；FE 新阶段可按已批准的研究假设和有限预算做结构实验。每轮冻结具体假设，一次只处理一个可归因变化。measurement change 与 shipping algorithm change 不得在同一实验中互相批准。候选冻结后需要独立确认；没有实质收益就 KEEP BASELINE。不能把新研究权限当成自动修改产品默认或复制未授权第三方资源的权限。
+维护基线只为明确可重复问题引入复杂度；FE 新阶段可按已批准的研究假设和有限预算做结构实验。每轮冻结具体假设，一次只处理一个可归因变化。测量方法变更与候选算法变更不得在同一实验中互相批准。候选冻结后需要独立确认；没有实质收益就 KEEP BASELINE。不能把新研究权限当成自动修改产品默认或复制未授权第三方资源的权限。
 
 ### 数据集自测
 
@@ -59,7 +59,7 @@
 
 ### 文档
 
-中文商用入口属于交付面。API/lifecycle/preset/validation/release/certification/operator command 变化时检查中文文档；不要复制低层机器契约形成第二套 truth。
+中文研究入口属于可复现性契约。API、生命周期、研究 preset、数据验证、历史发布/认证引用或实验操作命令变化时检查中文文档；不要复制低层机器契约形成第二套 truth。
 
 ## PR / CI / Merge
 
@@ -72,24 +72,12 @@
 7. HEAD 移动后旧证据失效；
 8. protected squash merge；
 9. exact-main 再验证；
-10. release-bearing 变化走 governed Release，release-neutral 变化不得制造新版本；
+10. 仅在明确授权的研究制品归档任务中生成来源可复现的快照；普通 PR/main 不触发 GitHub Release 或产品认证；
 11. evidence 已保存后由 fail-closed GC 清终态 branch。
 
-## 真实硬件阶段
+## 真机研究阶段
 
-只有当外部基础设施真的上线后，助手才能沿 live external-evidence tracker 执行：
-
-```text
-四类 trusted runner READY
--> Extended Real / HIL 真实验证
--> activation variables enable
--> E001 Activation Preflight
--> HIL 历史
--> >=72 h Product Certification
--> immutable product-lifecycle receipt
-```
-
-E001 READY 仍不是 Product Certification PASS。
+仅在有真实设备、独立授权和明确实验方案时，使用可用的可信 runner 采集 Extended Real/HIL 声学、时延、CPU/RSS、功耗、温升或长稳数据。E001 仅反映基础设施准备情况，不是声学效果或真机实验 PASS。没有设备或完整数据就保持 `NOT_RUN`/`BLOCKED`，不得以固定 72 小时产品认证或发布审核阻塞普通科研流程。
 
 ## 停止条件
 

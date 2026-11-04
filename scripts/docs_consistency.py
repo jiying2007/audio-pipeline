@@ -95,7 +95,8 @@ LAB_REQUIRED = (
 )
 
 VALIDATION_REQUIRED = (
-    "validation/authority.json",
+    "validation/authority.json",  # frozen I020 source identity
+    "validation/research-authority.json",  # active research-only contract
     "validation/corpus.schema.json",
     "validation/policy.schema.json",
     "validation/report.schema.json",
@@ -197,7 +198,7 @@ def validate_validation_framework(root: Path, errors: list[str]) -> None:
     if errors and any(item.startswith("missing canonical validation") for item in errors):
         return
 
-    authority_text = read(root, "validation/authority.json")
+    authority_text = read(root, "validation/research-authority.json")
     corpus_schema = read(root, "validation/corpus.schema.json")
     validation_readme = read(root, "validation/README.md")
     architecture = read(root, "docs/ARCHITECTURE.md")
@@ -245,7 +246,7 @@ def validate_validation_framework(root: Path, errors: list[str]) -> None:
 
     if "research-validation" not in corpus_schema:
         errors.append("corpus schema is missing research-validation authority tier")
-    if ("validation/authority.json" not in validation_readme or
+    if ("validation/research-authority.json" not in validation_readme or
             "independent-research-review" not in validation_readme or
             "research-only" not in validation_readme):
         errors.append("validation README must document source-bound research authority")
@@ -535,7 +536,7 @@ def validate(root: Path, *, require_lab: bool = True,
         text = docs.get(rel, "")
         for required in (
             "ci/resource-baseline.json", "docs/generated/RESOURCE_BASELINE.md",
-            "validation/authority.json", "research-validation",
+            "validation/research-authority.json", "research-validation",
         ):
             if required not in text:
                 errors.append(f"{rel}: missing current truth-source token {required}")
@@ -620,7 +621,7 @@ def self_test() -> None:
         fixture = (
             "current HIL_ENABLED fail-visible 72 product-lifecycle "
             "ci/resource-baseline.json docs/generated/RESOURCE_BASELINE.md "
-            "validation/authority.json research-validation product-certified certification/ "
+            "validation/authority.json validation/research-authority.json research-validation product-certified certification/ "
             "docs/README.zh-CN.md docs/QUICKSTART.zh-CN.md AGENTS.zh-CN.md CONTRIBUTING.zh-CN.md "
             "QUICKSTART.zh-CN.md FLOWS.zh-CN.md DEVELOPMENT.zh-CN.md PRODUCT_ASSURANCE.zh-CN.md "
             "TRUSTED_RUNNERS.zh-CN.md Technical research only technical research only 纯技术研究定位 纯技术研究 docs/RESEARCH_ONLY_EXECUTION.md "

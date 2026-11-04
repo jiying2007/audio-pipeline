@@ -45,7 +45,7 @@
 - `docs/DSP_DESIGN.md`：算法公式、状态与实现细节；
 - `docs/PCR02_REAL_CAPTURE.md`：PCR02 真机采集、bundle/replay/diagnosis 与证据边界；
 - `docs/PERFORMANCE.md`：资源/性能机器 Gate；
-- `validation/authority.json`：数据权限真相源；
+- `validation/research-authority.json`：数据权限真相源；
 - `certification/*.schema.json` 与旧 shipping policy：仅为历史认证源与存档校验使用，不决定当前科研是否可执行；
 - `.github/workflows/*`：当前 CI/研究实验定义；已退役的 Release/Certification 工作流只能从 Git 历史查证。
 

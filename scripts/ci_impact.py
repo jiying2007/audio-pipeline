@@ -122,7 +122,7 @@ RELEASE_NEUTRAL_VALIDATION_FILES = {
     # Research-only authority v2 eliminates product terminal status. These
     # two exact canonical source paths have no commercial Release effect;
     # they still trigger conservative FULL validation and independent gates.
-    "validation/authority.json",
+    "validation/research-authority.json",
     "validation/tools/authority.py",
     "validation/failure-replay/schema-v1.json",
     "validation/policies/validation-aec-transition-development.json",
@@ -663,7 +663,7 @@ def analyze(paths: list[str], force_full: bool = False, cmake_version_only_chang
     # Canonical research evidence-authority edits may change source/data-role
     # eligibility even when they do not affect the public SDK or SemVer.
     # Keep FULL verification; unknown validation tools are not exempt.
-    if any(p in ("validation/authority.json", "validation/tools/authority.py")
+    if any(p in ("validation/research-authority.json", "validation/tools/authority.py")
            for p in effective_paths):
         return _full("canonical research validation authority requires full checks",
                      paths, run_tuning=requires_tuning_search(paths))
@@ -857,12 +857,12 @@ def self_test() -> None:
     assert is_release_neutral("scripts/compare-runtime-perf.sh")
     assert is_release_neutral("scripts/verify-shipping-toolchain.sh")
     assert is_release_neutral("scripts/verify-research-toolchain.sh")
-    assert is_release_neutral("validation/authority.json")
+    assert is_release_neutral("validation/research-authority.json")
     assert is_release_neutral("validation/tools/authority.py")
     assert not is_release_neutral("validation/tools/authority_unknown.py")
-    research_authority = analyze(["validation/authority.json", "validation/tools/authority.py"])
+    research_authority = analyze(["validation/research-authority.json", "validation/tools/authority.py"])
     assert research_authority["full"] and not research_authority["docs_only"]
-    for path in ("validation/authority.json", "validation/tools/authority.py"):
+    for path in ("validation/research-authority.json", "validation/tools/authority.py"):
         assert analyze([path])["full"], path
     assert not is_release_neutral("scripts/verify-unreviewed-toolchain.sh")
     retired_lab = [

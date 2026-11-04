@@ -10,7 +10,8 @@ from pathlib import Path
 from typing import Any
 
 _VALIDATION_ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_AUTHORITY = _VALIDATION_ROOT / "authority.json"
+DEFAULT_AUTHORITY = _VALIDATION_ROOT / "research-authority.json"
+LEGACY_FROZEN_AUTHORITY = _VALIDATION_ROOT / "authority.json"
 DEFAULT_CORPUS_SCHEMA = _VALIDATION_ROOT / "corpus.schema.json"
 DEFAULT_POLICY_SCHEMA = _VALIDATION_ROOT / "policy.schema.json"
 DEFAULT_REPORT_SCHEMA = _VALIDATION_ROOT / "report.schema.json"
@@ -171,6 +172,17 @@ def validate_optimizer_partitions(authority: dict[str, Any], development: Path,
 
 def self_test() -> None:
     authority = load_authority()
+    # I020 source-retention evidence pins this historical v1 blob; no in-place
+    # authority rewrite or automatic v1-to-v2 compatibility is allowed.
+    frozen = json.loads(LEGACY_FROZEN_AUTHORITY.read_text(encoding="utf-8"))
+    assert frozen["schema_version"] == 1
+    assert frozen["terminal_authority"]["product-certified"]["shipping_authority"] is True
+    try:
+        validate_authority(frozen)
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("historical product authority admitted as research")
     assert optimizer_role_allowed(authority, "regression", "development")
     assert optimizer_role_allowed(authority, "research-validation", "development")
     assert optimizer_role_allowed(authority, "validation-grade", "validation")

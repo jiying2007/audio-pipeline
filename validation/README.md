@@ -6,7 +6,7 @@ This is a **research-only** repository. The old `certification/` directory is hi
 
 ## Authority model
 
-The machine-readable source of truth is [`validation/authority.json`](authority.json). `validation/tools/authority.py --self-test` verifies the authority contract and keeps the corpus schema tier enum synchronized.
+The machine-readable source of truth is [`validation/research-authority.json`](research-authority.json). `validation/tools/authority.py --self-test` verifies the authority contract and keeps the corpus schema tier enum synchronized.
 
 ### Validation corpus tiers
 

@@ -210,6 +210,10 @@ class ResearchCIBoundaryTests(unittest.TestCase):
         ):
             with self.subTest(obsolete=obsolete):
                 self.assertNotIn('"' + obsolete + '"', current)
+        navigation_gate = source.split("    critical_tokens = {", 1)[1].split(
+            "\n    for rel, tokens in critical_tokens.items():", 1
+        )[0]
+        self.assertNotIn('"PRODUCT_ASSURANCE.zh-CN.md"', navigation_gate)
         research = (ROOT / "docs/RESEARCH_ONLY_EXECUTION.md").read_text(
             encoding="utf-8"
         )

@@ -39,7 +39,7 @@ def resolve_user_paths(env: dict[str, str] | None = None, user_home: Path | None
 (USER_HOME, XDG_DATA_HOME, XDG_CACHE_HOME, XDG_STATE_HOME, XDG_CONFIG_HOME,
  DEFAULT_DATA_ROOT, DEFAULT_CACHE_ROOT, DEFAULT_STATE_ROOT, DEFAULT_BOARD) = resolve_user_paths()
 SUPPORTED_PROVIDERS = {"huggingface_snapshot", "http_archive", "operator_import"}
-COMMERCIAL_PROFILES = {"commercial-core", "commercial-plus"}
+REVIEWED_RESEARCH_PROFILES = {"research-attribution-core", "research-attribution-extended"}
 
 
 def load_json(path: Path) -> dict:
@@ -111,13 +111,13 @@ def validate_catalog(catalog: dict) -> None:
         missing = set(ids) - set(by_id)
         if missing:
             raise ValueError(f"profile {profile} references missing datasets: {sorted(missing)}")
-        if profile in COMMERCIAL_PROFILES:
-            bad = [item for item in ids if by_id[item].get("usage_class") != "commercial-validation"]
+        if profile in REVIEWED_RESEARCH_PROFILES:
+            bad = [item for item in ids if by_id[item].get("usage_class") != "attribution-reviewed"]
             if bad:
-                raise ValueError(f"commercial profile {profile} contains non-commercial sources: {bad}")
+                raise ValueError(f"attribution-reviewed research profile {profile} contains unreviewed or conditional sources: {bad}")
     expected_core = {"realman", "but-reverbdb", "musan", "openslr-slr31"}
-    if set(profiles.get("commercial-core", [])) != expected_core:
-        raise ValueError("commercial-core materialization set drifted")
+    if set(profiles.get("research-attribution-core", [])) != expected_core:
+        raise ValueError("research-attribution-core materialization set drifted")
 
 
 def catalog_index(catalog: dict) -> dict[str, dict]:
@@ -321,8 +321,8 @@ def adopt_dataset(catalog: dict, dataset_id: str, source: Path, data_root: Path,
 
 def verify_profile(profile: str, data_root: Path, state_root: Path, limit: int,
                    source_revision: str | None) -> dict:
-    if profile not in COMMERCIAL_PROFILES:
-        raise ValueError("lab activation currently accepts commercial-core or commercial-plus")
+    if profile not in REVIEWED_RESEARCH_PROFILES:
+        raise ValueError("lab activation currently accepts research-attribution-core or research-attribution-extended")
     evidence = state_root / "readiness" / profile
     evidence.mkdir(parents=True, exist_ok=True)
     manifest = evidence / "source-manifest.json"
@@ -398,7 +398,7 @@ def self_test() -> None:
     assert by_id["realman"]["revision"] == "12b6f7979e4e5efad4e1004280cf7419201ce209"
     assert by_id["musan"]["integrity"]["value"] == "0c472d4fc0c5141eca47ad1ffeb2a7df"
     assert by_id["openslr-slr31"]["integrity"]["value"] == "6d7ab67ac6a1d2c993d050e16d61080d"
-    assert {by_id[item]["provider"] for item in catalog["profiles"]["commercial-core"]} <= {"http_archive", "huggingface_snapshot"}
+    assert {by_id[item]["provider"] for item in catalog["profiles"]["research-attribution-core"]} <= {"http_archive", "huggingface_snapshot"}
     fake_home = Path("/tmp/audio-pipeline-selftest-home")
     resolved = resolve_user_paths({}, fake_home)
     assert resolved[5] == fake_home / "audio-validation-extended"
@@ -461,9 +461,9 @@ def parser() -> argparse.ArgumentParser:
     sub.add_parser("self-test")
     sub.add_parser("validate-catalog")
     plan = sub.add_parser("plan")
-    plan.add_argument("--profile", choices=sorted(COMMERCIAL_PROFILES), required=True)
+    plan.add_argument("--profile", choices=sorted(REVIEWED_RESEARCH_PROFILES), required=True)
     mat = sub.add_parser("materialize")
-    mat.add_argument("--profile", choices=sorted(COMMERCIAL_PROFILES), required=True)
+    mat.add_argument("--profile", choices=sorted(REVIEWED_RESEARCH_PROFILES), required=True)
     mat.add_argument("--data-root", type=Path, default=DEFAULT_DATA_ROOT)
     mat.add_argument("--cache-root", type=Path, default=DEFAULT_CACHE_ROOT)
     mat.add_argument("--state-root", type=Path, default=DEFAULT_STATE_ROOT)
@@ -475,7 +475,7 @@ def parser() -> argparse.ArgumentParser:
     adopt.add_argument("--data-root", type=Path, default=DEFAULT_DATA_ROOT)
     adopt.add_argument("--delete", action="store_true")
     verify = sub.add_parser("verify-profile")
-    verify.add_argument("--profile", choices=sorted(COMMERCIAL_PROFILES), required=True)
+    verify.add_argument("--profile", choices=sorted(REVIEWED_RESEARCH_PROFILES), required=True)
     verify.add_argument("--data-root", type=Path, default=DEFAULT_DATA_ROOT)
     verify.add_argument("--state-root", type=Path, default=DEFAULT_STATE_ROOT)
     verify.add_argument("--limit-per-dataset", type=int, default=48)
@@ -486,7 +486,7 @@ def parser() -> argparse.ArgumentParser:
     target.add_argument("--output", type=Path, default=DEFAULT_STATE_ROOT / "readiness/audio-target/runner-readiness.json")
     dv = sub.add_parser("dispatch-validation")
     dv.add_argument("--source-revision", required=True)
-    dv.add_argument("--profile", choices=sorted(COMMERCIAL_PROFILES), default="commercial-core")
+    dv.add_argument("--profile", choices=sorted(REVIEWED_RESEARCH_PROFILES), default="research-attribution-core")
     dv.add_argument("--data-root", type=Path)
     dv.add_argument("--repo", default="jiying2007/audio-pipeline")
     dh = sub.add_parser("dispatch-hil")

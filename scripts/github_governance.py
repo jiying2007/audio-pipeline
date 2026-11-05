@@ -1,362 +1,200 @@
 #!/usr/bin/env python3
-"""Audit the GitHub controls that make the repository release path non-bypassable."""
-
+"""Audit protected research-main GitHub controls, not publication authority."""
 from __future__ import annotations
 
 import argparse
 import json
 import os
-import re
 import subprocess
 from pathlib import Path
+from typing import Optional
 
 API_VERSION = "2026-03-10"
 GITHUB_ACTIONS_APP_ID = 15368
 
 
-def _ref_included(ruleset: dict, ref: str, default_branch: bool = False) -> bool:
+def _ref_included(ruleset: dict) -> bool:
     conditions = ruleset.get("conditions")
-    if type(conditions) is not dict:
+    if not isinstance(conditions, dict):
         return False
     ref_name = conditions.get("ref_name")
-    if type(ref_name) is not dict:
+    if not isinstance(ref_name, dict):
         return False
     includes = ref_name.get("include")
-    if type(includes) is not list or not all(type(item) is str for item in includes):
+    excludes = ref_name.get("exclude")
+    return (
+        isinstance(includes, list)
+        and all(type(item) is str for item in includes)
+        and any(item in ("refs/heads/main", "~DEFAULT_BRANCH") for item in includes)
+        and type(excludes) is list
+        and excludes == []
+    )
+
+
+def _rule(ruleset: dict, kind: str) -> dict:
+    for item in ruleset.get("rules", []) or []:
+        if isinstance(item, dict) and item.get("type") == kind:
+            return item
+    return {}
+
+
+def _main_enforced(rule: dict) -> bool:
+    if rule.get("target") != "branch" or rule.get("enforcement") != "active":
         return False
-    # Prove full coverage using the bootstrap contract, without approximating
-    # GitHub's pattern semantics. Even apparently unrelated exclusions fail.
-    if type(ref_name.get("exclude")) is not list or ref_name["exclude"] != []:
+    if not _ref_included(rule):
         return False
-    wanted = {ref}
-    if default_branch:
-        wanted.add("~DEFAULT_BRANCH")
-    return any(item in wanted for item in includes)
-
-
-def _rule(ruleset: dict, kind: str) -> dict | None:
-    for rule in ruleset.get("rules", []) or []:
-        if rule.get("type") == kind:
-            return rule
-    return None
-
-
-def audit(rulesets: list[dict], immutable: dict | None, repository: dict | None) -> dict:
-    active = [r for r in rulesets if r.get("enforcement") == "active"]
-    main_candidates = [
-        r for r in active
-        if r.get("target") == "branch" and _ref_included(r, "refs/heads/main", True)
-    ]
-    tag_candidates = [
-        r for r in active
-        if r.get("target") == "tag"
-        and any(
-            _ref_included(r, ref)
-            for ref in ("refs/tags/v*", "refs/tags/v**")
-        )
-    ]
-
-    findings: list[str] = []
-    if not main_candidates:
-        findings.append("no active branch ruleset targets main")
-    if not tag_candidates:
-        findings.append("no active tag ruleset targets refs/tags/v*")
-
-    def main_ok(ruleset: dict) -> bool:
-        required = {"pull_request", "required_status_checks", "deletion", "non_fast_forward"}
-        present = {rule.get("type") for rule in ruleset.get("rules", []) or []}
-        if not required.issubset(present):
-            return False
-
-        pull = _rule(ruleset, "pull_request") or {}
-        pull_params = pull.get("parameters", {})
-        if pull_params.get("allowed_merge_methods") != ["squash"]:
-            return False
-        if pull_params.get("required_review_thread_resolution") is not True:
-            return False
-
-        status = _rule(ruleset, "required_status_checks") or {}
-        status_params = status.get("parameters", {})
-        checks = [
-            item for item in status_params.get("required_status_checks", []) or []
-            if isinstance(item, dict)
-        ]
-        summary_checks = [item for item in checks if item.get("context") == "summary"]
-        if not any(item.get("integration_id") == GITHUB_ACTIONS_APP_ID for item in summary_checks):
-            return False
-        if status_params.get("strict_required_status_checks_policy") is not True:
-            return False
-        if type(ruleset.get("bypass_actors")) is not list or ruleset["bypass_actors"] != []:
-            return False
-        return True
-
-    def tag_ok(ruleset: dict) -> bool:
-        present = {rule.get("type") for rule in ruleset.get("rules", []) or []}
-        return (
-            {"deletion", "non_fast_forward"}.issubset(present)
-            and type(ruleset.get("bypass_actors")) is list
-            and ruleset["bypass_actors"] == []
-        )
-
-    main_enforced = any(main_ok(r) for r in main_candidates)
-    tags_enforced = any(tag_ok(r) for r in tag_candidates)
-    if main_candidates and not main_enforced:
-        findings.append(
-            "main ruleset must require PRs, squash-only merge, conversation resolution, "
-            "strict GitHub-Actions summary status, deletion protection, non-fast-forward "
-            "protection and no bypass actors"
-        )
-    if tag_candidates and not tags_enforced:
-        findings.append("v* tag ruleset must protect deletion/force-update and have no bypass actors")
-
-    immutable_readable = bool(
-        immutable is not None and immutable.get("_readable", True) is not False
+    if type(rule.get("bypass_actors")) is not list or rule["bypass_actors"] != []:
+        return False
+    present = {r.get("type") for r in rule.get("rules", []) or [] if isinstance(r, dict)}
+    if not {"deletion", "non_fast_forward", "pull_request", "required_status_checks"} <= present:
+        return False
+    pull = _rule(rule, "pull_request").get("parameters", {})
+    if (
+        not isinstance(pull, dict)
+        or pull.get("allowed_merge_methods") != ["squash"]
+        or pull.get("required_review_thread_resolution") is not True
+    ):
+        return False
+    checks = _rule(rule, "required_status_checks").get("parameters", {})
+    if not isinstance(checks, dict):
+        return False
+    if checks.get("strict_required_status_checks_policy") is not True:
+        return False
+    items = checks.get("required_status_checks")
+    return isinstance(items, list) and any(
+        isinstance(item, dict)
+        and item.get("context") == "summary"
+        and item.get("integration_id") == GITHUB_ACTIONS_APP_ID
+        for item in items
     )
-    immutable_enabled = bool(
-        immutable_readable and immutable and immutable.get("enabled") is True
-    )
-    if not immutable_readable:
-        findings.append(
-            "immutable releases setting could not be verified; "
-            "governance credential requires repository Administration(read)"
-        )
-    elif not immutable_enabled:
-        findings.append("immutable releases are not enabled")
 
-    delete_branch_on_merge = bool(
-        repository is not None and repository.get("delete_branch_on_merge") is True
+
+def audit(rulesets: list, repository: Optional[dict]) -> dict:
+    main_enforced = any(
+        _main_enforced(item) for item in rulesets if isinstance(item, dict)
     )
-    if not delete_branch_on_merge:
+    delete_on_merge = bool(
+        isinstance(repository, dict) and repository.get("delete_branch_on_merge") is True
+    )
+    findings = []
+    if not main_enforced:
+        findings.append("protected research main requires strict PR/squash/summary/no-bypass rules")
+    if not delete_on_merge:
         findings.append("repository delete_branch_on_merge must be enabled")
-
     return {
-        "schema_version": 1,
+        "schema_version": 2,
+        "scope": "technical-research-main-only",
         "result": "PASS" if not findings else "FAIL",
         "main_ruleset_enforced": main_enforced,
-        "version_tag_ruleset_enforced": tags_enforced,
-        "immutable_releases_readable": immutable_readable,
-        "immutable_releases_enabled": immutable_enabled,
-        "immutable_releases_http_status":
-            immutable.get("_http_status") if isinstance(immutable, dict) else None,
-        "delete_branch_on_merge_enabled": delete_branch_on_merge,
+        "delete_branch_on_merge_enabled": delete_on_merge,
         "findings": findings,
     }
 
 
-class GitHubAPIError(RuntimeError):
-    def __init__(self,status: int | None,stderr: str):
-        super().__init__(
-            f"GitHub API request failed: HTTP {status if status is not None else 'unknown'}"
-        )
-        self.status=status
-        self.stderr=stderr
-
-
-def _gh_json(args: list[str], *, token: str | None = None) -> object:
+def _gh_json(args: list, *, token: Optional[str] = None) -> object:
     command = [
-        "gh", "api",
-        "-H", "Accept: application/vnd.github+json",
-        "-H", f"X-GitHub-Api-Version: {API_VERSION}",
-        *args,
+        "gh", "api", "-H", "Accept: application/vnd.github+json",
+        "-H", "X-GitHub-Api-Version: " + API_VERSION, *args,
     ]
     env = os.environ.copy()
     if token is not None:
         env["GH_TOKEN"] = token
-    process=subprocess.run(
-        command,text=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE,
-        check=False,env=env,
+    process = subprocess.run(
+        command, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+        check=False, env=env,
     )
     if process.returncode:
-        match=re.search(r"\(HTTP ([1-5][0-9]{2})\)",process.stderr)
-        raise GitHubAPIError(
-            int(match.group(1)) if match else None,
-            process.stderr,
+        raise RuntimeError(
+            "GitHub API read failed; repository/branch protection was not verified: "
+            + process.stderr.strip()
         )
     return json.loads(process.stdout)
 
 
-def fetch_live(
-    repository: str, *, repository_metadata_token: str | None = None
-) -> tuple[list[dict], dict | None, dict | None]:
-    summaries = _gh_json([f"repos/{repository}/rulesets"])
+def fetch_live(repository: str, *, repository_metadata_token: Optional[str] = None):
+    summaries = _gh_json(["repos/{}/rulesets".format(repository)])
     if not isinstance(summaries, list):
-        raise RuntimeError("GitHub rulesets response is not an array")
-    details: list[dict] = []
+        raise RuntimeError("repository ruleset list is not an array")
+    details = []
     for item in summaries:
-        if not isinstance(item, dict) or "id" not in item:
+        if not isinstance(item, dict) or type(item.get("id")) is not int:
             continue
-        detail = _gh_json([f"repos/{repository}/rulesets/{item['id']}"])
+        detail = _gh_json(["repos/{}/rulesets/{}".format(repository, item["id"])])
         if isinstance(detail, dict):
             details.append(detail)
-    try:
-        immutable = _gh_json([f"repos/{repository}/immutable-releases"])
-    except GitHubAPIError as exc:
-        if exc.status == 404:
-            immutable = {
-                "enabled":False,
-                "_readable":True,
-                "_http_status":404,
-            }
-        elif exc.status in {401,403}:
-            immutable = {
-                "enabled":None,
-                "_readable":False,
-                "_http_status":exc.status,
-            }
-        else:
-            raise
-    repository_settings = _gh_json(
-        [f"repos/{repository}"], token=repository_metadata_token
+    repository_info = _gh_json(
+        ["repos/{}".format(repository)], token=repository_metadata_token
     )
-    if not isinstance(repository_settings, dict):
-        raise RuntimeError("GitHub repository response is not an object")
-    return (
-        details,
-        immutable if isinstance(immutable, dict) else None,
-        repository_settings,
-    )
+    if not isinstance(repository_info, dict):
+        raise RuntimeError("repository metadata is not an object")
+    return details, repository_info
 
 
 def self_test() -> None:
+    import copy
+
     main = {
-        "target": "branch",
-        "enforcement": "active",
-        "bypass_actors": [],
-        "conditions": {"ref_name": {"include": ["~DEFAULT_BRANCH"], "exclude": []}},
+        "target": "branch", "enforcement": "active", "bypass_actors": [],
+        "conditions": {"ref_name": {"include": ["refs/heads/main"], "exclude": []}},
         "rules": [
-            {
-                "type": "pull_request",
-                "parameters": {
-                    "allowed_merge_methods": ["squash"],
-                    "required_review_thread_resolution": True,
-                },
-            },
-            {
-                "type": "required_status_checks",
-                "parameters": {
-                    "strict_required_status_checks_policy": True,
-                    "required_status_checks": [
-                        {"context": "summary", "integration_id": GITHUB_ACTIONS_APP_ID}
-                    ],
-                },
-            },
             {"type": "deletion"},
             {"type": "non_fast_forward"},
+            {"type": "pull_request", "parameters": {
+                "allowed_merge_methods": ["squash"],
+                "required_review_thread_resolution": True,
+            }},
+            {"type": "required_status_checks", "parameters": {
+                "strict_required_status_checks_policy": True,
+                "required_status_checks": [
+                    {"context": "summary", "integration_id": GITHUB_ACTIONS_APP_ID}
+                ],
+            }},
         ],
     }
-    tags = {
-        "target": "tag",
-        "enforcement": "active",
-        "bypass_actors": [],
-        "conditions": {"ref_name": {"include": ["refs/tags/v*"], "exclude": []}},
-        "rules": [{"type": "deletion"}, {"type": "non_fast_forward"}],
-    }
-    repository = {"delete_branch_on_merge": True}
-    assert audit([main, tags], {"enabled": True}, repository)["result"] == "PASS"
-    # Public ruleset responses can omit this sensitive field. Only a visible
-    # empty JSON array proves no bypass actors; false-like values prove nothing.
-    missing = object()
-    invalid_bypass = [missing, None, False, True, 0, "", {}, (),
-                      [{"actor_type": "RepositoryRole", "actor_id": 5}]]
-    for target, field, other in (
-        (0, "main_ruleset_enforced", "version_tag_ruleset_enforced"),
-        (1, "version_tag_ruleset_enforced", "main_ruleset_enforced"),
-    ):
-        for value in invalid_bypass:
-            candidates = [dict(main), dict(tags)]
-            if value is missing:
-                candidates[target].pop("bypass_actors")
-            else:
-                candidates[target]["bypass_actors"] = value
-            denied = audit(candidates, {"enabled": True}, repository)
-            assert denied["result"] == "FAIL", (target, value, denied)
-            assert denied[field] is False, (target, value, denied)
-            assert denied[other] is True, (target, value, denied)
-    # A recognized include cannot prove coverage when ref exclusions are
-    # missing, malformed or nonempty. Check each scope without masking the other.
-    invalid_nodes = [missing, None, False, True, 0, "", [], (), {}]
-    invalid_exclusions = [
-        ["refs/heads/*"], ["refs/tags/v*"], missing, None, False, True, 0,
-        "", {}, (), ["refs/heads/main"], ["~DEFAULT_BRANCH"], ["~ALL"],
-        ["refs/tags/v**"], ["refs/tags/v1.0.0"], ["refs/heads/dev"], [None], [{}],
-    ]
-    for target, field, other in (
-        (0, "main_ruleset_enforced", "version_tag_ruleset_enforced"),
-        (1, "version_tag_ruleset_enforced", "main_ruleset_enforced"),
-    ):
-        anchor = [main, tags][target]["conditions"]["ref_name"]["include"][0]
-        invalid_includes = invalid_nodes + [
-            ["~ALL"], ["refs/heads/*"], ["refs/tags/release*"],
-            [anchor, None], [anchor, {}],
-        ]
-        for path, values in (
-            (("conditions", "ref_name", "exclude"), invalid_exclusions),
-            (("conditions",), invalid_nodes),
-            (("conditions", "ref_name"), invalid_nodes),
-            (("conditions", "ref_name", "include"), invalid_includes),
-        ):
-            for value in values:
-                candidates = json.loads(json.dumps([main, tags]))
-                node = candidates[target]
-                for key in path[:-1]:
-                    node = node[key]
-                if value is missing:
-                    node.pop(path[-1])
-                else:
-                    node[path[-1]] = value
-                denied = audit(candidates, {"enabled": True}, repository)
-                assert denied["result"] == "FAIL", (target, path, value, denied)
-                assert denied[field] is False, (target, path, value, denied)
-                assert denied[other] is True, (target, path, value, denied)
-    # Retain the four existing anchors and multiple include entries. No new
-    # glob syntax is accepted as a substitute for a recognized coverage anchor.
-    for target, anchors, extra in (
-        (0, ("refs/heads/main", "~DEFAULT_BRANCH"), "refs/heads/dev"),
-        (1, ("refs/tags/v*", "refs/tags/v**"), "refs/tags/preview-*"),
-    ):
-        for anchor in anchors:
-            for includes in ([anchor], [extra, anchor]):
-                candidates = json.loads(json.dumps([main, tags]))
-                candidates[target]["conditions"]["ref_name"]["include"] = includes
-                allowed = audit(candidates, {"enabled": True}, repository)
-                assert allowed["result"] == "PASS", (target, includes, allowed)
-    assert audit([main, tags], {"enabled": True}, repository)["result"] == "PASS"
-    main["rules"][0]["parameters"]["allowed_merge_methods"] = ["merge", "squash"]
-    assert audit([main, tags], {"enabled": True}, repository)["result"] == "FAIL"
-    main["rules"][0]["parameters"]["allowed_merge_methods"] = ["squash"]
-    main["bypass_actors"] = [{"actor_type": "RepositoryRole", "actor_id": 5}]
-    failed = audit([main, tags], {"enabled": False}, repository)
-    assert failed["result"] == "FAIL"
-    assert not failed["main_ruleset_enforced"]
-    main["bypass_actors"] = []
-    unreadable = audit(
-        [main, tags],
-        {"enabled":None,"_readable":False,"_http_status":403},
-        repository,
-    )
-    assert unreadable["result"] == "FAIL"
-    assert unreadable["main_ruleset_enforced"]
-    assert unreadable["version_tag_ruleset_enforced"]
-    assert unreadable["immutable_releases_readable"] is False
-    assert unreadable["immutable_releases_http_status"] == 403
-    assert any(
-        "Administration(read)" in finding
-        for finding in unreadable["findings"]
-    )
-    assert audit(
-        [main, tags],
-        {"enabled": True},
-        {"delete_branch_on_merge": True},
-    )["delete_branch_on_merge_enabled"] is True
-    no_auto_delete = audit(
-        [main, tags],
-        {"enabled": True},
+    repo = {"delete_branch_on_merge": True}
+    assert audit([main], repo)["result"] == "PASS"
+    assert audit([main, {"target": "tag", "enforcement": "active"}], repo)["result"] == "PASS"
+    for variant in (
         {"delete_branch_on_merge": False},
-    )
-    assert no_auto_delete["result"] == "FAIL"
-    assert no_auto_delete["delete_branch_on_merge_enabled"] is False
-    assert "repository delete_branch_on_merge must be enabled" in no_auto_delete["findings"]
-    print("github governance self-test: OK")
+        {"delete_branch_on_merge": "true"},
+        {},
+    ):
+        assert audit([main], variant)["result"] == "FAIL"
+    assert audit([], repo)["result"] == "FAIL"
+    for field, replacements in (
+        ("bypass_actors", [None, False, {}, [{"actor_type": "RepositoryRole", "actor_id": 5}]]),
+        ("enforcement", ["evaluate", "disabled", None]),
+        ("target", ["tag", None]),
+    ):
+        for value in replacements:
+            bad = copy.deepcopy(main)
+            bad[field] = value
+            assert audit([bad], repo)["result"] == "FAIL", (field, value)
+    for ref in ([], ["refs/heads/*"], ["refs/tags/v*"], ["refs/heads/main", None]):
+        bad = copy.deepcopy(main)
+        bad["conditions"]["ref_name"]["include"] = ref
+        assert audit([bad], repo)["result"] == "FAIL", ref
+    for exclusion in (None, ["refs/heads/main"], ["~DEFAULT_BRANCH"]):
+        bad = copy.deepcopy(main)
+        bad["conditions"]["ref_name"]["exclude"] = exclusion
+        assert audit([bad], repo)["result"] == "FAIL", exclusion
+    for kind in ("deletion", "non_fast_forward", "pull_request", "required_status_checks"):
+        bad = copy.deepcopy(main)
+        bad["rules"] = [item for item in bad["rules"] if item["type"] != kind]
+        assert audit([bad], repo)["result"] == "FAIL", kind
+    bad = copy.deepcopy(main)
+    bad["rules"][2]["parameters"]["allowed_merge_methods"] = ["merge", "squash"]
+    assert audit([bad], repo)["result"] == "FAIL"
+    bad = copy.deepcopy(main)
+    bad["rules"][3]["parameters"]["strict_required_status_checks_policy"] = False
+    assert audit([bad], repo)["result"] == "FAIL"
+    bad = copy.deepcopy(main)
+    bad["rules"][3]["parameters"]["required_status_checks"][0]["integration_id"] = 0
+    assert audit([bad], repo)["result"] == "FAIL"
+    bad = copy.deepcopy(main)
+    bad["conditions"]["ref_name"]["include"] = ["~DEFAULT_BRANCH"]
+    assert audit([bad], repo)["result"] == "PASS"
+    print("research main governance self-test: OK")
 
 
 def main() -> int:
@@ -368,15 +206,16 @@ def main() -> int:
     if args.self_test:
         self_test()
         return 0
-    if not args.repository or not args.output:
+    if not args.repository or args.output is None:
         parser.error("--repository and --output are required")
-    rulesets, immutable, repository_settings = fetch_live(
+    rulesets, repository = fetch_live(
         args.repository,
         repository_metadata_token=os.environ.get("REPOSITORY_METADATA_TOKEN"),
     )
-    result = audit(rulesets, immutable, repository_settings)
+    result = audit(rulesets, repository)
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    args.output.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n",
+                           encoding="utf-8")
     print(json.dumps(result, sort_keys=True))
     return 0 if result["result"] == "PASS" else 1
 

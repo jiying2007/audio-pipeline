@@ -1,12 +1,12 @@
-# Product Certification
+# Retired product-certification records (historical only)
 
-> **Historical product certification documentation.** The product-certification GitHub Actions workflow has been retired. The schemas and old receipts documented here are frozen technical history, not a required gate for current audio/DSP research. See [research execution](../docs/RESEARCH_ONLY_EXECUTION.md).
+> **Archive warning (research only).** The former product-certification publication workflow is not present in active GitHub Actions. The procedures, identifiers, schemas and thresholds below document a retired historical evidence system; they are **not runnable current release instructions** and cannot authorize any model, SDK, dataset, source change or target-device measurement. Current research uses [research execution](../docs/RESEARCH_ONLY_EXECUTION.md) and the explicitly requested [HIL research experiment](../hil/README.md). Original historical Git/Actions receipts remain unchanged.
 
-`certification/` is the shipping-SKU evidence layer. Hosted CI, QEMU and public validation-grade corpora can validate software contracts, but they cannot create a `product-certified` result.
+The retained `certification/` namespace records the former shipping-SKU evidence contract. Its validators may still be inspected offline for audit/regression, but no current scientific workflow consults them for source acceptance. Hosted CI, QEMU, real-audio research and physical HIL have their own independent evidence limits; none creates a product-approval result.
 
-## Current record contract
+## Historical record contract (retired)
 
-The v2 repository accepts **schema v4 only** for formal product certification. `tools/ap_certify.py` emits the release-source v4 payload and the current Product Certification control plane adds the immutable GitHub Release identity before final validation, attestation and archival. `certification/validate_record.py` rejects older certification schemas. Historical v1.x v2/v3 records may be retained externally for audit history, but they are not accepted as current shipping evidence and must not be used to satisfy v2 certification gates.
+The retired v2-era procedure used **schema v4** for product-era receipts. `tools/ap_certify.py` created a release-source v4 payload, and the now-retired publication workflow formerly bound an immutable GitHub Release identity for archival review. `certification/validate_record.py` still checks that historical schema; it is **not** a current research gate. Older v1.x/v2/v3 records remain audit-only and must not be relabeled as fresh evidence.
 
 A formal v4 certification bundle binds all of the following to one immutable GitHub Release, one exact source revision and one exact shipping binary set:
 
@@ -29,25 +29,25 @@ A formal v4 certification bundle binds all of the following to one immutable Git
 - cryptographic artifact attestation for the final certification bundle;
 - an immutable `product-lifecycle` archive receipt whose bundle hash matches that attested certification bundle.
 
-`record.json` is a core evidence document, not by itself the final lifecycle authority. Formal completion requires the **Product Certification workflow** to finish successfully through the `certification-archive` job, including validation of the immutable `product-lifecycle` archive receipt for the exact final bundle hash. A locally assembled record, a transport artifact, or an otherwise valid record without that workflow/archive lineage must not be interpreted as final Product Certification PASS.
+`record.json` is a core evidence document, not by itself the final lifecycle authority. Under the historical process, formal completion would have required the **now-retired Product Certification workflow** to finish successfully through the `certification-archive` job, including validation of the immutable `product-lifecycle` archive receipt for the exact final bundle hash. A locally assembled record, a transport artifact, or an otherwise valid record without that workflow/archive lineage must not be interpreted as final Product Certification PASS.
 
-## Formal policy
+## Archived formal policy (not current research authority)
 
-`certification/policies/cortex-a32-low-shipping.json` is the formal repository baseline for the Cortex-A32 LOW SKU profile. It declares `shipping_approved=true` and requires a 72-hour route soak.
+`certification/policies/cortex-a32-low-shipping.json` is a frozen historical Cortex-A32 LOW policy sample. Its `shipping_approved=true` and 72-hour minimum are **archived policy fields**, not research execution prerequisites or evidence that a real device passed.
 
 The policy is an acceptance contract, **not measured evidence and not a PASS result**. Threshold changes are reviewed product-requirement changes. Never tune policy values inside a certification run to make failing evidence pass.
 
 `example-cortex-a32-low.json` is explicitly `shipping_approved=false`; the collector/validator rejects example and `not-for-shipping` policies.
 
-## Trusted runner readiness
+## Historical trusted-runner readiness (retired)
 
-Before allocating a formal certification run, dispatch **Trusted Runner Readiness** against the exact immutable release source for `audio-builder`, `audio-target`, and `certification-archive`. Require `READY` for the exact shipping compiler/sysroot/toolchain paths, the reviewed DUT board manifest and product evidence paths, and the immutable archive command that will be used. See [`docs/TRUSTED_RUNNERS.md`](../docs/TRUSTED_RUNNERS.md).
+The former procedure called for **Trusted Runner Readiness** against the exact immutable release source for `audio-builder`, `audio-target`, and `certification-archive`. Require `READY` for the exact shipping compiler/sysroot/toolchain paths, the reviewed DUT board manifest and product evidence paths, and the immutable archive command that will be used. See [`docs/TRUSTED_RUNNERS.md`](../docs/TRUSTED_RUNNERS.md).
 
 Readiness is an infrastructure prerequisite only. It is not acoustic/HIL/product evidence.
 
-## Automated shipping workflow
+## Retired automated workflow architecture
 
-`.github/workflows/product-certification.yml` separates release binding, build, DUT execution and long-term archive responsibilities:
+The deleted `.github/workflows/product-certification.yml` historically separated release binding, build, DUT execution and long-term archive responsibilities (diagram retained for audit only):
 
 ```text
 annotated immutable GitHub Release tag
@@ -83,11 +83,11 @@ trusted exact release source SHA
 formal Product Certification workflow PASS
 ```
 
-The workflow deliberately does **not** synthesize `acoustic.json` and does not compile the shipping binary on the DUT. Product acoustic evidence must come from the real microphone/speaker/enclosure corpus and the DUT executes the exact artifact produced by the shipping builder.
+That retired workflow deliberately did **not** synthesize `acoustic.json` and does not compile the shipping binary on the DUT. Product acoustic evidence must come from the real microphone/speaker/enclosure corpus and the DUT executes the exact artifact produced by the shipping builder.
 
-## Required shipping inputs
+## Former shipping inputs (historical checklist)
 
-A formal run requires:
+The retired formal procedure required:
 
 - an annotated semantic Git tag with a non-draft, non-prerelease, immutable GitHub Release;
 - the exact source SHA to which that tag resolves; `release_tag` must equal `v<project-version>` and both identities must match before any self-hosted hardware allocation;
@@ -104,7 +104,7 @@ Critical CMake boundary variables such as compiler, sysroot, root-path modes, C 
 
 Missing release identity, hardware, sensor, route, archive service, corpus or toolchain input is failed/incomplete certification, not a degraded hosted PASS.
 
-## Target collectors
+## Target collectors (reusable research measurements)
 
 Synthetic DSP timing and real route stability remain separate measurements:
 
@@ -124,11 +124,11 @@ python3 tools/target_evidence.py route-soak \
   --power-input /path/to/live_power --power-scale 1000000
 ```
 
-`benchmark` measures deterministic DSP workload. `route-soak` exercises the actual ALSA route. The commands above are low-level collector examples only; the formal Product Certification workflow derives their route, far-end, CPU and power arguments exclusively from the reviewed board manifest and does not expose parallel workflow overrides. A synthetic runtime benchmark is never labeled product-route soak evidence.
+`benchmark` measures deterministic DSP workload. `route-soak` exercises the actual ALSA route. The commands above are low-level source-locked measurement examples only. For current device studies use the explicit HIL research runbook and actual private board manifest; no product-certification workflow derives these inputs anymore. A synthetic runtime benchmark is never labeled product-route soak evidence.
 
-## Provenance helpers
+## Retained historical provenance helpers
 
-`tools/certification_provenance.py` produces/validates build, deployed and executed snapshots. `tools/ap_certify.py` reuses the canonical `hil_board` parser, derives the v4 `audio_route` from the reviewed board manifest, copies that manifest into the materialized evidence set and records its SHA-256. The Product Certification control plane then seals the immutable Release identity into the evidence set and record before validation. `certification/validate_record.py` revalidates policy, corpus/evidence hashes, exact binaries, target metrics and deployment provenance. `certification/validate_archive_receipt.py` validates the immutable lifecycle receipt.
+`tools/certification_provenance.py` produces/validates build, deployed and executed snapshots. `tools/ap_certify.py` reuses the canonical `hil_board` parser, derives the v4 `audio_route` from the reviewed board manifest, copies that manifest into the materialized evidence set and records its SHA-256. The retired publication control plane formerly sealed an immutable Release identity into historical evidence sets. `certification/validate_record.py` revalidates policy, corpus/evidence hashes, exact binaries, target metrics and deployment provenance. `certification/validate_archive_receipt.py` validates the immutable lifecycle receipt.
 
 For diagnostic inspection of an unpacked bundle, the record/evidence validator can be run as follows:
 
@@ -139,6 +139,6 @@ python3 certification/validate_record.py certification-out/record.json \
   --evidence-manifest certification-out/evidence-manifest.json
 ```
 
-That command validates the record/evidence contract only; it is **not** a replacement for the successful Product Certification workflow, final bundle attestation, or validated immutable archive receipt.
+That command checks the archived record/evidence schema only. It is **not** an active research acceptance path, real SSC305/HIL observation, or permission to publish a product release.
 
-A successful software release, public validation run, HIL engineering soak, checked-in policy, locally valid record or Actions artifact remains separate from formal Product Certification.
+For current research, source and data rights, independent acoustic evaluation and genuine physical target measurements are assessed on their own evidence; old product-certification status has no approval authority. Preserve historical receipts without manufacturing new PASS.

@@ -177,6 +177,26 @@ class ResearchCIBoundaryTests(unittest.TestCase):
         self.assertIn("git diff --cached --quiet HEAD", source)
         self.assertNotIn("gh release", source)
 
+    def test_fe09_s2a_readback_is_exact_attempt_id_bound(self):
+        # v7 artifacts are immutable and name discovery may lag final upload.
+        # The retry attempt must create a distinct artifact and consume the
+        # exact ID returned by the successful upload, not a name lookup.
+        workflow = (ROOT / ".github/workflows/quality.yml").read_text(
+            encoding="utf-8"
+        )
+        block = workflow.split("  frontend-s3-t3s2a:", 1)[1].split(
+            "\n  frontend-", 1
+        )[0]
+        self.assertIn("id: t3s2a_artifact", block)
+        self.assertIn("github.run_attempt", block)
+        self.assertIn("artifact-ids: ${{ steps.t3s2a_artifact.outputs.artifact-id }}", block)
+        self.assertIn("fe09-t3s2a-readback", block)
+        self.assertIn("SHA256SUMS", block)
+        self.assertNotIn(
+            "name: frontend-fe09-t3s2a-posix-spool-${{ github.run_id }}\n"
+            "          path: fe09-t3s2a-readback", block
+        )
+
     def test_agent_and_chinese_navigation_have_no_live_product_authority(self):
         documents = {
             "AGENTS.md": {

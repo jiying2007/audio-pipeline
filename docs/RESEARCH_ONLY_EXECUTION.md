@@ -32,6 +32,23 @@ obligations, historic Git commits or archived certification receipts. Actual
 research correctness/resource/HIL evidence continues to be tested on its own
 terms. No archived state creates a new product or hardware PASS.
 
+## Retired orphaned product-program executables (2026-11-05)
+
+A complete inspection of the 70 current GitHub Actions workflow files found no
+caller for the historical `.github/program/existing_release_identity.py`,
+`p002_candidate_zero_audit.py`, `product_soak_observed_duration.py` or
+`test_product_soak_observed_duration.py`. Those files could only reconstruct
+retired publication identity and fixed 72-hour product soak decisions; the P002
+audit depended on the now-absent `release.yml`. Their active-tree copies are
+retired, while original Git commits and previous evidence remain unchanged.
+
+Current `.github/program/maintenance_workflow_contract.py` describes only
+source-bound research maintenance, and the required research boundary test
+rejects reintroducing old product executables or wiring them into Actions.
+Physical HIL/readiness, exact real elapsed duration and immutable experimental
+source evidence continue through separate research controls. This cleanup
+does not claim real device qualification or rewrite historical release results.
+
 ## Pending cleanup, not claimed complete
 
 Source-root product certificates, VAD shipping-policy naming, lab and SKU-specific tools, other EN/ZH guides, test helpers and archived product-doc terminology still need separate atomic migration. Remove consumers before deleting their old files, preserve applicable third-party licenses (including noncommercial conditions), and verify exact-head CI plus fresh protected main. Retain Python 3.8 compatibility where used.

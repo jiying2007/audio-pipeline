@@ -5,7 +5,7 @@ on:
     branches: [main]
     paths:
       - scripts/bootstrap_github_governance.py
-      - scripts/github_governance.py
+      - scripts/research_github_governance.py
       - .github/workflows/repository-governance-bootstrap.yml
   workflow_dispatch:
 
@@ -24,7 +24,7 @@ jobs:
       - name: Validate governance payload and live-audit contracts
         run: |
           python3 scripts/bootstrap_github_governance.py --self-test
-          python3 scripts/github_governance.py --self-test
+          python3 scripts/research_github_governance.py --self-test
 
   apply:
     if: github.event_name == 'workflow_dispatch'
@@ -52,7 +52,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.REPOSITORY_ADMIN_TOKEN }}
         run: >-
-          python3 scripts/github_governance.py
+          python3 scripts/research_github_governance.py
           --repository "$GITHUB_REPOSITORY"
           --output /tmp/repository-governance.json
       - name: Publish research governance audit summary

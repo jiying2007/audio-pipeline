@@ -128,6 +128,8 @@ RELEASE_NEUTRAL_FILES = {
     # product publication authority. Unknown tools still require SemVer and
     # this path still receives the conservative full Verify matrix.
     "tools/runner_preflight.py",
+    # Research acoustic-threshold decisions do not modify published DSP/ABI.
+    "tools/acoustic_upgrade_decision.py",
 } | DEVICE_RESEARCH_FILES
 RELEASE_NEUTRAL_VALIDATION_FILES = {
     # Research-only authority v2 eliminates product terminal status. These
@@ -733,6 +735,8 @@ def analyze(paths: list[str], force_full: bool = False, cmake_version_only_chang
             flags["bench"] = True
         elif p.startswith("examples/alsa"):
             flags["alsa"] = True
+        elif p == "tools/acoustic_upgrade_decision.py":
+            flags["unknown"] = True
         elif p == "tools/runner_preflight.py":
             # Research source-bound runner readiness is release-neutral but
             # changes to its trust decision require the full code matrix.
@@ -934,6 +938,10 @@ def self_test() -> None:
     tool = analyze(["scripts/verify-shipping-toolchain.sh",
                     "scripts/verify-research-toolchain.sh"])
     assert tool["full"] and not tool["docs_only"]
+    assert is_release_neutral("tools/acoustic_upgrade_decision.py")
+    assert not is_release_neutral("tools/unreviewed_acoustic_upgrade.py")
+    acoustic = analyze(["tools/acoustic_upgrade_decision.py"])
+    assert acoustic["full"] and not acoustic["docs_only"] and acoustic["run_lab"]
     assert is_release_neutral("tools/runner_preflight.py")
     assert not is_release_neutral("tools/runner_preflight_unreviewed.py")
     runner = analyze(["tools/runner_preflight.py"])

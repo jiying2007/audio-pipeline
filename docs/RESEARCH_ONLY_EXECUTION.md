@@ -53,6 +53,12 @@ does not claim real device qualification or rewrite historical release results.
 
 Source-root product certificates, VAD shipping-policy naming, lab and SKU-specific tools, other EN/ZH guides, test helpers and archived product-doc terminology still need separate atomic migration. Remove consumers before deleting their old files, preserve applicable third-party licenses (including noncommercial conditions), and verify exact-head CI plus fresh protected main. Retain Python 3.8 compatibility where used.
 
+## Protected research-main governance (2026-11-05)
+
+Current repository administration no longer uses the retired product-release governance launcher. The optional `.github/workflows/repository-governance-bootstrap.yml` manual administrative job restores **only** the existing main-branch PR/status ruleset. `scripts/bootstrap_github_governance.py` does not create tags, configure immutable GitHub Releases or grant publication status. The required offline and optional live `scripts/github_governance.py` audit verifies strict source/CI `summary`, squash PR-only merges, review-thread resolution, no bypass/force/delete and `delete_branch_on_merge`. Historical Git tags and released archives remain preserved without becoming current research gates.
+
+No changed ruleset is applied automatically by this source migration. A manual operator action still requires explicit scoped repository administration. CI tests reject the return of active commercial release administration while keeping exact-head protected-main checks.
+
 ## Default language and admission
 
 The EN/ZH root README files describe only technical algorithm, data-source,

@@ -126,14 +126,14 @@ python3 tools/target_evidence.py route-soak \
 
 `benchmark` measures deterministic DSP workload. `route-soak` exercises the actual ALSA route. The commands above are low-level source-locked measurement examples only. For current device studies use the explicit HIL research runbook and actual private board manifest; no product-certification workflow derives these inputs anymore. A synthetic runtime benchmark is never labeled product-route soak evidence.
 
-## Retained historical provenance helpers
+## Retired certification generators; guarded historical replay
 
-`tools/certification_provenance.py` produces/validates build, deployed and executed snapshots. `tools/ap_certify.py` reuses the canonical `hil_board` parser, derives the v4 `audio_route` from the reviewed board manifest, copies that manifest into the materialized evidence set and records its SHA-256. The retired publication control plane formerly sealed an immutable Release identity into historical evidence sets. `certification/validate_record.py` revalidates policy, corpus/evidence hashes, exact binaries, target metrics and deployment provenance. `certification/validate_archive_receipt.py` validates the immutable lifecycle receipt.
+The old `tools/ap_certify.py` and `tools/certification_provenance.py` no longer exist in the active research source tree. Their exact original source, signed/hashed historical evidence and prior workflow runs remain recoverable through Git history. They cannot now mint `product-certified` payloads in current research. The preserved `certification/validate_record.py` and `certification/validate_archive_receipt.py` are **read-only historical format auditors**, default-deny on ordinary invocation and require `--historical-replay-only` for deliberate offline replay. A successful historical replay does not authorize publication, research data admission, HIL/DUT status or model promotion.
 
 For diagnostic inspection of an unpacked bundle, the record/evidence validator can be run as follows:
 
 ```bash
-python3 certification/validate_record.py certification-out/record.json \
+python3 certification/validate_record.py --historical-replay-only certification-out/record.json \
   --policy certification/policies/cortex-a32-low-shipping.json \
   --corpus-manifest /path/to/product-corpus.json \
   --evidence-manifest certification-out/evidence-manifest.json

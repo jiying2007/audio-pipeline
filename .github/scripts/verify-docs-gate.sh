@@ -6,6 +6,7 @@ set -eu
 python3 tests/validation/frontend_evolution/test_contracts.py
 python3 scripts/ci_impact.py --self-test
 python3 tests/test_research_ci_boundary.py
+python3 tests/test_research_certification_code_boundary.py
 python3 tests/test_research_hil_boundary.py
 python3 tests/test_research_runner_boundary.py
 python3 tests/test_research_toolchain_boundary.py

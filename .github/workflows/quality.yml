@@ -2010,10 +2010,11 @@ jobs:
           python3 tests/validation/frontend_evolution/fe09_b2s3_t3s2a_atomic_spool_qualification.py \
             --verify --output fe09-t3s2a --execution-source "$GITHUB_SHA"
       - name: Retain original S2-A POSIX-hosted fault-negative evidence
+        id: t3s2a_artifact
         if: always() && (steps.fe09_t3s2a.outcome == 'success' || steps.fe09_t3s2a.outcome == 'failure')
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: frontend-fe09-t3s2a-posix-spool-${{ github.run_id }}
+          name: frontend-fe09-t3s2a-posix-spool-${{ github.run_id }}-attempt-${{ github.run_attempt }}
           path: fe09-t3s2a/
           retention-days: 30
           if-no-files-found: error
@@ -2021,7 +2022,7 @@ jobs:
         if: steps.fe09_t3s2a.outcome == 'success'
         uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
-          name: frontend-fe09-t3s2a-posix-spool-${{ github.run_id }}
+          artifact-ids: ${{ steps.t3s2a_artifact.outputs.artifact-id }}
           path: fe09-t3s2a-readback
       - name: Independently rehash original S2-A members, reject fake durable HIL qualification
         if: steps.fe09_t3s2a.outcome == 'success'

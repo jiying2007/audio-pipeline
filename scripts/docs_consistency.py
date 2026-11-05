@@ -15,6 +15,10 @@ import sys
 import tempfile
 from pathlib import Path
 
+# Historical Product Assurance/certification pages remain in Git for provenance,
+# but are not *current* research-documentation prerequisites. Keep research
+# navigation links and negative checks independently; do not gate research on
+# archived publication policies or their former on-disk page count.
 CURRENT_DOCS = (
     "README.md",
     "README.zh-CN.md",
@@ -33,8 +37,6 @@ CURRENT_DOCS = (
     "docs/DEVELOPMENT.zh-CN.md",
     "docs/PERFORMANCE.md",
     "docs/PLATFORM_SUPPORT.md",
-    "docs/PRODUCT_ASSURANCE.md",
-    "docs/PRODUCT_ASSURANCE.zh-CN.md",
     "docs/REPOSITORY_GOVERNANCE.md",
     "docs/TESTING.md",
     "docs/TESTING.zh-CN.md",
@@ -43,8 +45,6 @@ CURRENT_DOCS = (
     "docs/TUNING.md",
     "validation/README.md",
     "hil/README.md",
-    "certification/README.md",
-    "certification/policies/README.md",
 )
 
 RESOURCE_LITERALS = (

@@ -132,6 +132,8 @@ RELEASE_NEUTRAL_VALIDATION_FILES = {
     # they still trigger conservative FULL validation and independent gates.
     # Exact bounded research source catalog/adapter migration; no SDK version bump.
     "validation/extended.datasets.lock.json",
+    "validation/hosted_real.datasets.lock.json",
+    "validation/tools/build_hosted_real_corpus.py",
     "validation/tools/extended_dataset_lock.py",
     "validation/tools/prepare_extended_validation.py",
     "validation/tools/build_extended_real_corpus.py",
@@ -867,6 +869,8 @@ def self_test() -> None:
     assert is_release_neutral("scripts/check-architecture.sh")
     for path in ("lab/data-sources.lock.json", "lab/scripts/researchctl.py",
                  "validation/extended.datasets.lock.json",
+                 "validation/hosted_real.datasets.lock.json",
+                 "validation/tools/build_hosted_real_corpus.py",
                  "validation/tools/extended_dataset_lock.py",
                  "validation/tools/prepare_extended_validation.py",
                  "validation/tools/build_extended_real_corpus.py"):

@@ -13,7 +13,7 @@
 - have **no bypass actors**;
 - enable `delete_branch_on_merge=true` for merged same-repository branches.
 
-`scripts/github_governance.py` audits these properties against the live branch ruleset and repository settings. A failure is visible and never converted to PASS. `scripts/bootstrap_github_governance.py` is an optional, explicitly administrative main-ruleset restoration tool; it does not create product Release artifacts, publish tags or alter immutable-Release settings. The matching workflow checks source contracts on PRs; a manual administrative restore requires a scoped credential and is not a normal research gate.
+`scripts/research_github_governance.py` audits these properties against the live branch ruleset and repository settings. A failure is visible and never converted to PASS. `scripts/bootstrap_github_governance.py` is an optional, explicitly administrative main-ruleset restoration tool; it does not create product Release artifacts, publish tags or alter immutable-Release settings. The matching workflow checks source contracts on PRs; a manual administrative restore requires a scoped credential and is not a normal research gate.
 
 Existing historical tags, already published archives, original commit identities and rights documentation are not deleted or rewritten. Their existence does **not** create a current commercial admission requirement.
 

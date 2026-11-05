@@ -103,7 +103,7 @@ class ResearchCIBoundaryTests(unittest.TestCase):
         bootstrap = (ROOT / "scripts/bootstrap_github_governance.py").read_text(
             encoding="utf-8"
         )
-        audit = (ROOT / "scripts/github_governance.py").read_text(
+        audit = (ROOT / "scripts/research_github_governance.py").read_text(
             encoding="utf-8"
         )
         workflow = (ROOT / ".github/workflows/repository-governance-bootstrap.yml").read_text(
@@ -124,6 +124,15 @@ class ResearchCIBoundaryTests(unittest.TestCase):
         self.assertNotIn("main/tag rulesets and immutable releases", workflow)
         self.assertIn("Restore main branch protection only", workflow)
         self.assertIn("Research repository governance", docs)
+        for current in (
+            ROOT / ".github/scripts/verify-docs-gate.sh",
+            ROOT / ".github/workflows/nightly.yml",
+            ROOT / ".github/workflows/repository-governance-bootstrap.yml",
+        ):
+            live = current.read_text(encoding="utf-8")
+            self.assertIn("scripts/research_github_governance.py", live)
+            self.assertNotIn("python3 scripts/github_governance.py", live)
+        self.assertTrue((ROOT / "scripts/github_governance.py").is_file())
         self.assertNotIn("When a new project version reaches `main`", docs)
 
     def test_required_verify_has_no_product_release_authority(self):

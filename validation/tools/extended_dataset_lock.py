@@ -76,6 +76,11 @@ def validate_catalog(catalog: dict) -> None:
             if dataset_id not in by_id:
                 raise ValueError(f"profile {profile} references unknown dataset {dataset_id}")
             usage = by_id[dataset_id]["usage_class"]
+            if profile in ("research-attribution-core", "research-attribution-extended"):
+                if by_id[dataset_id].get("license") != "CC-BY-4.0":
+                    raise ValueError(
+                        f"profile {profile} requires reviewed CC-BY-4.0 rights: {dataset_id}"
+                    )
             if usage not in allowed:
                 raise ValueError(
                     f"profile {profile} may not include {dataset_id} with usage_class={usage}"
@@ -204,6 +209,14 @@ def self_test() -> None:
         pass
     else:
         raise AssertionError("research-only dataset entered attribution-reviewed research profile")
+    bad = json.loads(json.dumps(catalog))
+    bad["datasets"][0]["license"] = "CC-BY-NC-SA-4.0"
+    try:
+        validate_catalog(bad)
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("noncommercial license changed the reviewed profile without rejection")
     manifest = {
         "schema_version": 1,
         "profile": "research-attribution-core",

@@ -10,11 +10,11 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 SCHEMA_VERSION = 1
-USAGE_CLASSES = {"commercial-validation", "conditional", "research-only", "catalog-only"}
+USAGE_CLASSES = {"attribution-reviewed", "conditional", "research-only", "catalog-only"}
 PROFILE_CLASSES = {
-    "commercial-core": {"commercial-validation"},
-    "commercial-plus": {"commercial-validation"},
-    "research": {"commercial-validation", "conditional", "research-only"},
+    "research-attribution-core": {"attribution-reviewed"},
+    "research-attribution-extended": {"attribution-reviewed"},
+    "research": {"attribution-reviewed", "conditional", "research-only"},
 }
 
 
@@ -80,10 +80,10 @@ def validate_catalog(catalog: dict) -> None:
                 raise ValueError(
                     f"profile {profile} may not include {dataset_id} with usage_class={usage}"
                 )
-    if not set(profiles["commercial-core"]).issubset(set(profiles["commercial-plus"])):
-        raise ValueError("commercial-plus must be a superset of commercial-core")
-    if not set(profiles["commercial-plus"]).issubset(set(profiles["research"])):
-        raise ValueError("research must be a superset of commercial-plus")
+    if not set(profiles["research-attribution-core"]).issubset(set(profiles["research-attribution-extended"])):
+        raise ValueError("research-attribution-extended must be a superset of research-attribution-core")
+    if not set(profiles["research-attribution-extended"]).issubset(set(profiles["research"])):
+        raise ValueError("research must be a superset of research-attribution-extended")
 
 
 def catalog_items(catalog: dict) -> dict[str, dict]:
@@ -178,14 +178,14 @@ def self_test() -> None:
     catalog = {
         "schema_version": 1,
         "profiles": {
-            "commercial-core": ["a"],
-            "commercial-plus": ["a"],
+            "research-attribution-core": ["a"],
+            "research-attribution-extended": ["a"],
             "research": ["a", "b"],
         },
         "datasets": [
             {
                 "id": "a", "source": "https://example.com/a", "license": "CC-BY-4.0",
-                "usage_class": "commercial-validation", "attribution": "A", "local_path": "a",
+                "usage_class": "attribution-reviewed", "attribution": "A", "local_path": "a",
                 "transforms_allowed": True, "validation_roles": ["clean"],
             },
             {
@@ -197,18 +197,18 @@ def self_test() -> None:
     }
     validate_catalog(catalog)
     bad = json.loads(json.dumps(catalog))
-    bad["profiles"]["commercial-core"].append("b")
+    bad["profiles"]["research-attribution-core"].append("b")
     try:
         validate_catalog(bad)
     except ValueError:
         pass
     else:
-        raise AssertionError("research-only dataset entered commercial profile")
+        raise AssertionError("research-only dataset entered attribution-reviewed research profile")
     manifest = {
         "schema_version": 1,
-        "profile": "commercial-core",
+        "profile": "research-attribution-core",
         "datasets": [{
-            "id": "a", "usage_class": "commercial-validation",
+            "id": "a", "usage_class": "attribution-reviewed",
             "entries": [{
                 "source_id": "x", "kind": "clean", "files": [
                     {"relative_path": "x.wav", "sha256": "0" * 64}

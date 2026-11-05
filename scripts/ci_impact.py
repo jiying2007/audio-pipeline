@@ -96,7 +96,7 @@ RELEASE_NEUTRAL_FILES = {
     "scripts/public_surface_contract.py", "scripts/check-abi-contract.sh",
     "scripts/check-architecture.sh",
     "scripts/research_registry.py", "scripts/prepare_release.py",
-    "scripts/release_manifest.py", "scripts/post_release_status.py",
+    "scripts/release_manifest.py",
     "scripts/qualification_fingerprint.py", "scripts/program.py",
     "scripts/test_history.py",
     "scripts/compare-runtime-perf.sh",

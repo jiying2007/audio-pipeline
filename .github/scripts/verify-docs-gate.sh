@@ -11,7 +11,7 @@ python3 tests/test_research_runner_boundary.py
 python3 tests/test_research_toolchain_boundary.py
 python3 tests/validation/test_immutable_whitespace.py
 python3 tests/validation/frontend_evolution/test_device_capture.py
-python3 scripts/github_governance.py --self-test
+python3 scripts/research_github_governance.py --self-test
 python3 scripts/resource_baseline.py --self-test
 python3 scripts/docs_consistency.py --self-test
 python3 tests/test_ci_evidence_transport.py

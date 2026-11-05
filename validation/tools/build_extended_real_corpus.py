@@ -180,7 +180,7 @@ def add_measured_room_cases(output: Path, catalog: dict, data_root: Path,
         provenance = {
             "dataset_id": "openslr-slr31+but-reverbdb+musan",
             "source_id": f"measured-room-{index:03d}",
-            "usage_class": "commercial-validation",
+            "usage_class": "attribution-reviewed",
             "license": "CC-BY-4.0",
             "clean": source_provenance(clean_ds, clean_entry),
             "rir": source_provenance(but, rir_entry),
@@ -254,7 +254,7 @@ def add_negative_cases(output: Path, catalog: dict, data_root: Path, dataset: di
         write_pcm(directory / "mic.pcm", samples)
         (directory / "vad.labels").write_text("".join("0\n" for _ in labels), encoding="utf-8")
         expected = dict(SAFETY_EXPECTED)
-        expected["max_vad_false_positive_rate"] = 0.35 if dataset["usage_class"] == "commercial-validation" else 0.50
+        expected["max_vad_false_positive_rate"] = 0.35 if dataset["usage_class"] == "attribution-reviewed" else 0.50
         expected["min_noise_only_attenuation_db"] = -1.0
         cases.append({
             "case_id": cid, "split": "validation", "scenario": scenario_prefix,

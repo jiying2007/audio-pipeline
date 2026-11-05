@@ -407,10 +407,14 @@ def main() -> int:
     parser.add_argument("--evidence-manifest", type=Path)
     parser.add_argument("--corpus-manifest", type=Path)
     parser.add_argument("--self-test", action="store_true")
+    parser.add_argument("--historical-replay-only", action="store_true",
+                        help="explicit offline audit of a retired receipt format; never model/product approval")
     args = parser.parse_args()
     if args.self_test:
         self_test()
         return 0
+    if not args.historical_replay_only:
+        parser.error("retired product certification: --historical-replay-only is required; no current research/product authority")
     if args.record is None:
         parser.error("record is required unless --self-test is used")
     record = json.loads(args.record.read_text(encoding="utf-8"))
@@ -426,7 +430,7 @@ def main() -> int:
         for error in errors:
             print(f"ERROR: {error}")
         return 1
-    print(f"certification record OK: {args.record}")
+    print(f"HISTORICAL_RECEIPT_VALID_NO_PRODUCT_AUTHORITY: {args.record}")
     return 0
 
 

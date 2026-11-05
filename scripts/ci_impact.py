@@ -131,9 +131,7 @@ RELEASE_NEUTRAL_FILES = {
     # product publication authority. Unknown tools still require SemVer and
     # this path still receives the conservative full Verify matrix.
     "tools/runner_preflight.py",
-    # The uninstalled acoustic threshold-study decision is research tooling:
-    # full source/CI validation is still required, but no product release or
-    # public C SDK/ABI SemVer change is created by updating its study schema.
+    # Research acoustic-threshold decisions do not modify published DSP/ABI.
     "tools/acoustic_upgrade_decision.py",
 } | DEVICE_RESEARCH_FILES
 RELEASE_NEUTRAL_VALIDATION_FILES = {
@@ -237,9 +235,20 @@ def is_docs(path: str) -> bool:
     return path in DOC_FILES or path.startswith(DOC_PREFIXES) or path.endswith(".md")
 
 
+HISTORICAL_CERTIFICATION_ONLY = {
+    # Exact retired product-certification executables and read-only replay
+    # validators: changing them does not change published DSP/SDK/ABI SemVer.
+    "tools/ap_certify.py",
+    "tools/certification_provenance.py",
+    "certification/validate_record.py",
+    "certification/validate_archive_receipt.py",
+}
+
+
 def is_release_neutral(path: str) -> bool:
     return (
         is_docs(path)
+        or path in HISTORICAL_CERTIFICATION_ONLY
         or path in RELEASE_NEUTRAL_FILES
         or path.startswith("docs/program/")
         or path.startswith(RELEASE_NEUTRAL_PREFIXES)
@@ -719,15 +728,17 @@ def analyze(paths: list[str], force_full: bool = False, cmake_version_only_chang
             flags["unknown"] = True
         elif p.startswith("validation/") or p.startswith("eval/"):
             flags["validation"] = True
-        elif p.startswith("certification/") or p in {"tools/ap_certify.py", "tools/target_evidence.py"}:
+        elif p in HISTORICAL_CERTIFICATION_ONLY:
+            # Retired product approval code must always receive full CI when
+            # deleted or when a historical replay guard changes.
+            flags["unknown"] = True
+        elif p.startswith("certification/") or p == "tools/target_evidence.py":
             flags["certification"] = True
         elif p.startswith("bench/") or p.startswith("scripts/compare-"):
             flags["bench"] = True
         elif p.startswith("examples/alsa"):
             flags["alsa"] = True
         elif p == "tools/acoustic_upgrade_decision.py":
-            # Study decision thresholds affect scientific interpretation, not
-            # a published C SDK. Re-check the full source/quality matrix.
             flags["unknown"] = True
         elif p == "tools/runner_preflight.py":
             # Research source-bound runner readiness is release-neutral but
@@ -875,6 +886,10 @@ def self_test() -> None:
     assert is_release_neutral("ci/Dockerfile")
     assert is_release_neutral("tests/test_pipeline.c")
     assert is_release_neutral("fuzz/fuzz_pipeline.c")
+    for historical in sorted(HISTORICAL_CERTIFICATION_ONLY):
+        assert is_release_neutral(historical), historical
+        assert analyze([historical])["full"], historical
+    assert not is_release_neutral("tools/unknown_product_approval.py")
     assert is_release_neutral("scripts/ci_impact.py")
     assert is_release_neutral("scripts/docs_consistency.py")
     assert is_release_neutral("scripts/github_governance.py")
@@ -930,11 +945,11 @@ def self_test() -> None:
     tool = analyze(["scripts/verify-shipping-toolchain.sh",
                     "scripts/verify-research-toolchain.sh"])
     assert tool["full"] and not tool["docs_only"]
-    assert is_release_neutral("tools/runner_preflight.py")
     assert is_release_neutral("tools/acoustic_upgrade_decision.py")
     assert not is_release_neutral("tools/unreviewed_acoustic_upgrade.py")
     acoustic = analyze(["tools/acoustic_upgrade_decision.py"])
     assert acoustic["full"] and not acoustic["docs_only"] and acoustic["run_lab"]
+    assert is_release_neutral("tools/runner_preflight.py")
     assert not is_release_neutral("tools/runner_preflight_unreviewed.py")
     runner = analyze(["tools/runner_preflight.py"])
     assert runner["full"] and not runner["docs_only"]

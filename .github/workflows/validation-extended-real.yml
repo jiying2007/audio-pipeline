@@ -11,9 +11,9 @@ on:
       profile:
         description: License and source profile
         required: true
-        default: commercial-core
+        default: research-attribution-core
         type: choice
-        options: [commercial-core, commercial-plus, research]
+        options: [research-attribution-core, research-attribution-extended, research]
       data_root:
         description: Optional dataset root; blank resolves AUDIO_PIPELINE_LAB_DATA_ROOT or $HOME/audio-validation-extended on audio-validation runner
         required: false
@@ -35,7 +35,7 @@ on:
         default: '16'
         type: string
       holdout_percent:
-        description: Scenario-stratified blind HMAC holdout percentage for commercial profiles
+        description: Scenario-stratified blind HMAC holdout percentage for attribution-reviewed research profiles
         required: true
         default: '20'
         type: choice
@@ -164,7 +164,7 @@ jobs:
           PROFILE: ${{ inputs.profile }}
         run: |
           set -euo pipefail
-          test -n "$AP_VALIDATION_HOLDOUT_KEY" || { echo 'AP_VALIDATION_HOLDOUT_KEY is required for commercial extended validation' >&2; exit 1; }
+          test -n "$AP_VALIDATION_HOLDOUT_KEY" || { echo 'AP_VALIDATION_HOLDOUT_KEY is required for attribution-reviewed extended research validation' >&2; exit 1; }
           python3 validation/tools/split_holdout.py \
             --corpus extended-out/corpus/corpus.json \
             --validation-output extended-out/corpus/corpus-validation.json \
@@ -172,11 +172,11 @@ jobs:
             --holdout-percent "$HOLDOUT" \
             --stratify scenario
           case "$PROFILE" in
-            commercial-core)
+            research-attribution-core)
               policy=validation/policies/validation-extended-real-core.json
               blind_policy=validation/policies/validation-extended-real-core-blind.json
               ;;
-            commercial-plus)
+            research-attribution-extended)
               policy=validation/policies/validation-extended-real-plus.json
               blind_policy=validation/policies/validation-extended-real-plus-blind.json
               ;;

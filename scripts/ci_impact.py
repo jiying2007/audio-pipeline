@@ -2,10 +2,11 @@
 """Conservative change-aware CI selection for audio-pipeline.
 
 Unknown paths always expand to the full matrix. The selector is an optimization
-layer only; main pushes force the full verification graph. Product/runtime,
-validation authority, certification, lab behavior and other release-bearing
-changes must advance SemVer. Repository maintenance that cannot change the
-shipped SDK or evidence authority may land between immutable releases.
+layer only; main pushes force the full verification graph. Public SDK/ABI
+changes still require exact version review. A fixed allowlist of research-only
+source catalogs and rights validators is SemVer-neutral but still receives the
+full source, data-integrity and quality matrix, without commercial Release
+approval. All unknown paths remain conservatively gated.
 """
 
 from __future__ import annotations
@@ -115,6 +116,9 @@ RELEASE_NEUTRAL_FILES = {
     "lab/ansible/inventory.example.yml",
     "lab/ansible/site.yml",
     "lab/scripts/labctl.py",
+    # Source-license classification/profile labels only; full Verify remains.
+    "lab/data-sources.lock.json",
+    "lab/scripts/researchctl.py",
     "lab/ansible/roles/audio_builder/tasks/main.yml",
     "lab/ansible/roles/certification_archive/tasks/main.yml",
     # Research-only runner environment preflight: no DSP/runtime/public ABI or
@@ -126,6 +130,13 @@ RELEASE_NEUTRAL_VALIDATION_FILES = {
     # Research-only authority v2 eliminates product terminal status. These
     # two exact canonical source paths have no commercial Release effect;
     # they still trigger conservative FULL validation and independent gates.
+    # Exact bounded research source catalog/adapter migration; no SDK version bump.
+    "validation/extended.datasets.lock.json",
+    "validation/hosted_real.datasets.lock.json",
+    "validation/tools/build_hosted_real_corpus.py",
+    "validation/tools/extended_dataset_lock.py",
+    "validation/tools/prepare_extended_validation.py",
+    "validation/tools/build_extended_real_corpus.py",
     "validation/research-authority.json",
     "validation/tools/authority.py",
     "validation/failure-replay/schema-v1.json",
@@ -856,6 +867,15 @@ def self_test() -> None:
     assert is_release_neutral("scripts/public_surface_contract.py")
     assert is_release_neutral("scripts/check-abi-contract.sh")
     assert is_release_neutral("scripts/check-architecture.sh")
+    for path in ("lab/data-sources.lock.json", "lab/scripts/researchctl.py",
+                 "validation/extended.datasets.lock.json",
+                 "validation/hosted_real.datasets.lock.json",
+                 "validation/tools/build_hosted_real_corpus.py",
+                 "validation/tools/extended_dataset_lock.py",
+                 "validation/tools/prepare_extended_validation.py",
+                 "validation/tools/build_extended_real_corpus.py"):
+        assert is_release_neutral(path), path
+    assert not is_release_neutral("validation/tools/unregistered_source_adapter.py")
     assert is_release_neutral("scripts/program.py")
     assert is_release_neutral("scripts/test_history.py")
     assert is_release_neutral("scripts/compare-runtime-perf.sh")

@@ -5,7 +5,7 @@
   "source_revision": "83b5ce8c3c8654a74fbae2d6171e11018636a5a8",
   "license": "CC-BY-4.0",
   "license_evidence": "https://github.com/microsoft/P.808/blob/83b5ce8c3c8654a74fbae2d6171e11018636a5a8/README.md#audio-clips-license",
-  "usage_class": "commercial-validation",
+  "usage_class": "attribution-reviewed",
   "clips": [
     {
       "id": "p808-math1",

@@ -64,8 +64,8 @@ jobs:
           dt = json.loads(Path('validation/policies/validation-aec-research-doubletalk.json').read_text())
           assert {'locata','mimii','mimii-due'} <= set(ext['profiles']['research'])
           assert set(lab['profiles']['dsp-research']) == {'locata','mimii','mimii-due'}
-          assert not ({'locata','mimii','mimii-due'} & set(lab['profiles']['commercial-core']))
-          assert not ({'locata','mimii','mimii-due'} & set(lab['profiles']['commercial-plus']))
+          assert not ({'locata','mimii','mimii-due'} & set(lab['profiles']['research-attribution-core']))
+          assert not ({'locata','mimii','mimii-due'} & set(lab['profiles']['research-attribution-extended']))
           due = next(x for x in ext['datasets'] if x['id'] == 'mimii-due')
           assert due['usage_class'] == 'research-only'
           assert far['allowed_tiers'] == ['research-validation']

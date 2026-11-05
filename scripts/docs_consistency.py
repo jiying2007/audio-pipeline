@@ -331,13 +331,22 @@ def validate_lab(root: Path, errors: list[str]) -> None:
     try:
         catalog = json.loads(read(root, "lab/data-sources.lock.json"))
         by_id = {item["id"]: item for item in catalog["datasets"]}
-        core = set(catalog["profiles"]["commercial-core"])
+        core = set(catalog["profiles"]["research-attribution-core"])
+        extended = set(catalog["profiles"]["research-attribution-extended"])
         expected_core = {"realman", "but-reverbdb", "musan", "openslr-slr31"}
+        expected_extended = expected_core | {"voices", "ami", "icsi"}
         if core != expected_core:
-            errors.append(f"lab commercial-core drift: {sorted(core)}")
-        bad = [item for item in core if by_id[item].get("usage_class") != "commercial-validation"]
+            errors.append(f"research attribution core source set drift: {sorted(core)}")
+        if extended != expected_extended:
+            errors.append(f"research attribution extended source set drift: {sorted(extended)}")
+        bad = [item for item in extended
+               if by_id[item].get("usage_class") != "attribution-reviewed"
+               or by_id[item].get("license") != "CC-BY-4.0"]
         if bad:
-            errors.append(f"lab commercial-core contains non-commercial data: {bad}")
+            errors.append(f"research attribution profiles contain unreviewed or NC data: {bad}")
+        restricted = {"locata", "mimii", "mimii-due"}
+        if restricted & extended:
+            errors.append("conditional/NC research corpora leaked into unattended attribution set")
         if not re.fullmatch(r"[0-9a-f]{40}", by_id["realman"].get("revision", "")):
             errors.append("lab RealMAN source is not pinned to an exact revision")
         if by_id["musan"].get("integrity", {}).get("value") != "0c472d4fc0c5141eca47ad1ffeb2a7df":

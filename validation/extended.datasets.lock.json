@@ -2,13 +2,13 @@
   "schema_version": 1,
   "catalog_id": "audio-pipeline-extended-real-v1",
   "profiles": {
-    "commercial-core": [
+    "research-attribution-core": [
       "realman",
       "but-reverbdb",
       "musan",
       "openslr-slr31"
     ],
-    "commercial-plus": [
+    "research-attribution-extended": [
       "realman",
       "but-reverbdb",
       "musan",
@@ -38,7 +38,7 @@
       "id": "realman",
       "source": "https://huggingface.co/datasets/AISHELL/RealMAN",
       "license": "CC-BY-4.0",
-      "usage_class": "commercial-validation",
+      "usage_class": "attribution-reviewed",
       "attribution": "RealMAN: AudioLab at Westlake University and AISHELL Technology; NeurIPS 2024.",
       "local_path": "RealMAN",
       "transforms_allowed": true,
@@ -50,7 +50,7 @@
       "id": "voices",
       "source": "https://iqtlabs.github.io/voices/",
       "license": "CC-BY-4.0",
-      "usage_class": "commercial-validation",
+      "usage_class": "attribution-reviewed",
       "attribution": "VOiCES corpus by SRI International and Lab41/IQTLabs.",
       "local_path": "VOiCES",
       "transforms_allowed": true,
@@ -62,7 +62,7 @@
       "id": "but-reverbdb",
       "source": "https://speech.fit.vut.cz/software/but-speech-fit-reverb-database",
       "license": "CC-BY-4.0",
-      "usage_class": "commercial-validation",
+      "usage_class": "attribution-reviewed",
       "attribution": "BUT Speech@FIT Reverb Database, Brno University of Technology.",
       "local_path": "BUT_ReverbDB",
       "transforms_allowed": true,
@@ -74,7 +74,7 @@
       "id": "musan",
       "source": "https://www.openslr.org/resources/17/musan.tar.gz",
       "license": "CC-BY-4.0",
-      "usage_class": "commercial-validation",
+      "usage_class": "attribution-reviewed",
       "attribution": "MUSAN corpus by David Snyder, Guoguo Chen and Daniel Povey.",
       "local_path": "musan",
       "transforms_allowed": true,
@@ -86,7 +86,7 @@
       "id": "openslr-slr31",
       "source": "https://www.openslr.org/31/",
       "license": "CC-BY-4.0",
-      "usage_class": "commercial-validation",
+      "usage_class": "attribution-reviewed",
       "attribution": "Mini LibriSpeech (OpenSLR SLR31), derived from LibriSpeech.",
       "local_path": "LibriSpeechMini",
       "transforms_allowed": true,
@@ -98,7 +98,7 @@
       "id": "ami",
       "source": "https://groups.inf.ed.ac.uk/ami/download/",
       "license": "CC-BY-4.0",
-      "usage_class": "commercial-validation",
+      "usage_class": "attribution-reviewed",
       "attribution": "AMI Meeting Corpus.",
       "local_path": "AMI",
       "transforms_allowed": true,
@@ -110,7 +110,7 @@
       "id": "icsi",
       "source": "https://groups.inf.ed.ac.uk/ami/icsi/download/",
       "license": "CC-BY-4.0",
-      "usage_class": "commercial-validation",
+      "usage_class": "attribution-reviewed",
       "attribution": "ICSI Meeting Corpus.",
       "local_path": "ICSI",
       "transforms_allowed": true,
@@ -176,7 +176,7 @@
       "transforms_allowed": true,
       "validation_roles": ["machine-noise", "tonal-noise", "transient-noise", "vad-negative", "noise-suppression", "domain-stress"],
       "recommended_materialization": ["selected-machine-and-snr-subsets"],
-      "notes": "Research/shadow hard-negative source; ShareAlike obligations require separate legal/release handling before any commercial-validation use."
+      "notes": "Research/shadow hard-negative source; ShareAlike obligations require separate legal/release handling before any attribution-reviewed use."
     },
     {
       "id": "mimii-due",

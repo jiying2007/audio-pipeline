@@ -170,8 +170,8 @@ import json
 from pathlib import Path
 catalog = json.loads(Path('validation/extended.datasets.lock.json').read_text())
 by_id = {item['id']: item for item in catalog['datasets']}
-for profile in ('commercial-core', 'commercial-plus'):
-    assert all(by_id[item]['usage_class'] == 'commercial-validation' for item in catalog['profiles'][profile]), profile
+for profile in ('research-attribution-core', 'research-attribution-extended'):
+    assert all(by_id[item]['usage_class'] == 'attribution-reviewed' and by_id[item]['license'] == 'CC-BY-4.0' for item in catalog['profiles'][profile]), profile
 assert by_id['wham']['usage_class'] == 'research-only'
 assert by_id['aishell4']['usage_class'] == 'conditional'
 assert by_id['ace-challenge']['transforms_allowed'] is False
@@ -191,16 +191,16 @@ python3 - <<'PY_AUTO'
 from pathlib import Path
 canonical = Path('.github/workflows/validation-extended-real.yml').read_text(encoding='utf-8')
 auto = Path('.github/workflows/extended-real-automation.yml').read_text(encoding='utf-8')
-for token in ('source_sha:', 'commercial-core', 'commercial-plus', '--stratify scenario', '--source-manifest extended-out/source-manifest.json'):
+for token in ('source_sha:', 'research-attribution-core', 'research-attribution-extended', '--stratify scenario', '--source-manifest extended-out/source-manifest.json'):
     assert token in canonical, token
-assert "options: [commercial-core, commercial-plus, research]" in canonical
+assert "options: [research-attribution-core, research-attribution-extended, research]" in canonical
 assert "repository_dispatch:" not in auto and "schedule:" in auto
 assert 'EXTENDED_REAL_ENABLED' in auto
 assert 'EXTENDED_REAL_REQUIRED_BUT_DISABLED' in auto
 assert 'gh workflow run validation-extended-real.yml' in auto
 assert '-f "source_sha=$SOURCE_SHA"' in auto
-assert 'profile=commercial-core' not in auto and 'profile=commercial-plus' in auto
-assert 'profile=research' not in auto, 'unreviewed conditional/NC research profile cannot be scheduled'
+assignments = [line.strip() for line in auto.splitlines() if line.strip().startswith('profile=')]
+assert assignments == ['profile=research-attribution-extended'], 'automated research must select CC-BY-4.0-only sources'
 print('extended-real automation contracts: OK')
 PY_AUTO
 
@@ -218,7 +218,7 @@ def require(value, message):
 lock = json.loads(Path('validation/hosted_real.datasets.lock.json').read_text())
 require(lock['source_repository'] == 'microsoft/P.808', 'source repository')
 require(len(lock['source_revision']) == 40, 'revision')
-require(lock['license'] == 'CC-BY-4.0' and lock['usage_class'] == 'commercial-validation', 'license isolation')
+require(lock['license'] == 'CC-BY-4.0' and lock['usage_class'] == 'attribution-reviewed', 'license isolation')
 require(len(lock['clips']) >= 4 and all(len(item['sha256']) == 64 for item in lock['clips']), 'clip hashes')
 policy = json.loads(Path('validation/policies/validation-hosted-real-smoke.json').read_text())
 require(policy['minimum_cases'] >= 4 and float(policy['aggregate']['min_pass_rate']) == 1.0, 'policy')

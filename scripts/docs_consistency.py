@@ -113,7 +113,6 @@ VALIDATION_REQUIRED = (
 
 LIFECYCLE_REQUIRED = (
     "scripts/research_registry.py",
-    "scripts/post_release_status.py",
     "scripts/qualification_fingerprint.py",
     ".github/research/evidence-index.json",
     ".github/research/qualification-policy.json",
@@ -495,11 +494,13 @@ def validate_lifecycle(root: Path, errors: list[str]) -> None:
             errors.append(f'Hosted Real AEC reusable qualification missing token: {token}')
     if 'uses: ./.github/workflows/hosted-aec-real-validation.yml' not in qualifier:
         errors.append('qualification workflow must reuse canonical Hosted Real AEC workflow')
+    if (root / 'scripts/post_release_status.py').exists():
+        errors.append('retired post-release status tool reintroduced into active research tree')
     for legacy in ('.github/workflows/release.yml',
                    '.github/workflows/post-release-qualification-summary.yml'):
         if (root / legacy).exists():
             errors.append(f'legacy commercial publication workflow remains active: {legacy}')
-    for tool in ('research_registry.py', 'post_release_status.py', 'qualification_fingerprint.py'):
+    for tool in ('research_registry.py', 'qualification_fingerprint.py'):
         completed = subprocess.run(
             [sys.executable, str(root / 'scripts' / tool), '--self-test'],
             cwd=root, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, check=False,

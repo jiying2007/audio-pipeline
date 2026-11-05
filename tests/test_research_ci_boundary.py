@@ -197,6 +197,29 @@ class ResearchCIBoundaryTests(unittest.TestCase):
             "          path: fe09-t3s2a-readback", block
         )
 
+    def test_orphaned_product_program_executables_are_retired(self):
+        # These historic helpers only served deleted commercial Release / 72h
+        # product approval contracts. Keep original source in immutable Git.
+        old = (
+            "existing_release_identity.py",
+            "p002_candidate_zero_audit.py",
+            "product_soak_observed_duration.py",
+            "test_product_soak_observed_duration.py",
+        )
+        for name in old:
+            with self.subTest(name=name):
+                self.assertFalse((ROOT / ".github/program" / name).exists())
+                for workflow in (ROOT / ".github/workflows").glob("*.yml"):
+                    self.assertNotIn(
+                        name, workflow.read_text(encoding="utf-8"),
+                        "retired executable reintroduced to active research Actions"
+                    )
+        current = (ROOT / ".github/program/maintenance_workflow_contract.py").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("source-bound research maintenance state", current)
+        self.assertNotIn("software-commercial-ready maintenance state", current)
+
     def test_archived_commercial_docs_do_not_gate_research(self):
         # Historical certification procedures are retrievable via Git/docs
         # navigation, but must not be a required file for current quality CI.

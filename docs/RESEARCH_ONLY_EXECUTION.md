@@ -105,6 +105,12 @@ available in Git/GitHub history. Current documentation consistency checks
 explicitly reject reintroduction of either helper, rather than executing
 their old product-release self-tests as a hidden requirement of research CI.
 
+The orphaned `scripts/post_release_status.py` tool previously assembled
+`software_release=PASS` post-release status payloads after the publisher was
+retired. It has now also been removed from the active research tree. Its
+original source remains in Git history. Required research CI rejects
+reintroduction rather than executing its former product status self-test.
+
 Required C API/ABI compatibility, source SHA identity, integrity of historical
 `CHANGELOG.md` and existing protected-main quality gates are unchanged.
 Actual SSC305/HIL or real human recordings remain separately measured or

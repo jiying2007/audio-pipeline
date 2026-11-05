@@ -42,7 +42,7 @@ def validate_catalog(catalog: dict) -> None:
         local = Path(str(item.get("local_path", "")))
         if not str(local) or local.is_absolute() or ".." in local.parts:
             raise ValueError(f"unsafe research local_path: {dataset_id}")
-    for profile in ("commercial-core", "commercial-plus"):
+    for profile in ("research-attribution-core", "research-attribution-extended"):
         leaked = EXPECTED_IDS.intersection(profiles.get(profile, []))
         if leaked:
             raise ValueError(f"research sources leaked into {profile}: {sorted(leaked)}")
@@ -69,12 +69,12 @@ def materialization_status(catalog: dict, data_root: Path) -> dict:
 def self_test() -> None:
     catalog = {
         "profiles": {
-            "commercial-core": ["clean"],
-            "commercial-plus": ["clean"],
+            "research-attribution-core": ["clean"],
+            "research-attribution-extended": ["clean"],
             PROFILE: ["locata", "mimii", "mimii-due"],
         },
         "datasets": [
-            {"id": "clean", "provider": "operator_import", "local_path": "clean", "usage_class": "commercial-validation"},
+            {"id": "clean", "provider": "operator_import", "local_path": "clean", "usage_class": "attribution-reviewed"},
             {"id": "locata", "provider": "operator_import", "local_path": "LOCATA", "usage_class": "conditional"},
             {"id": "mimii", "provider": "operator_import", "local_path": "MIMII", "usage_class": "conditional"},
             {"id": "mimii-due", "provider": "operator_import", "local_path": "MIMII_DUE", "usage_class": "research-only"},
@@ -82,13 +82,13 @@ def self_test() -> None:
     }
     validate_catalog(catalog)
     bad = json.loads(json.dumps(catalog))
-    bad["profiles"]["commercial-plus"].append("mimii-due")
+    bad["profiles"]["research-attribution-extended"].append("mimii-due")
     try:
         validate_catalog(bad)
     except ValueError:
         pass
     else:
-        raise AssertionError("research-only source leaked into commercial profile")
+        raise AssertionError("research-only source leaked into attribution-reviewed research profile")
     bad = json.loads(json.dumps(catalog))
     next(item for item in bad["datasets"] if item["id"] == "locata")["provider"] = "http_archive"
     try:

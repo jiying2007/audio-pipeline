@@ -201,7 +201,7 @@ class ResearchCIBoundaryTests(unittest.TestCase):
         # Historical certification procedures are retrievable via Git/docs
         # navigation, but must not be a required file for current quality CI.
         source = (ROOT / "scripts/docs_consistency.py").read_text(encoding="utf-8")
-        current = source.split("CURRENT_DOCS = (", 1)[1].split("\\n)\\n", 1)[0]
+        current = source.split("CURRENT_DOCS = (", 1)[1].split("\n)\n", 1)[0]
         for obsolete in (
             "docs/PRODUCT_ASSURANCE.md",
             "docs/PRODUCT_ASSURANCE.zh-CN.md",

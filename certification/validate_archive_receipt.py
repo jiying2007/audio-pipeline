@@ -66,12 +66,16 @@ def self_test() -> None:
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--self-test", action="store_true")
+    parser.add_argument("--historical-replay-only", action="store_true",
+                        help="explicit offline audit of a retired archive format")
     parser.add_argument("--receipt", type=Path)
     parser.add_argument("--bundle", type=Path)
     args = parser.parse_args()
     if args.self_test:
         self_test()
         return 0
+    if not args.historical_replay_only:
+        parser.error("retired product archive: --historical-replay-only is required; no current research/product authority")
     if not args.receipt or not args.bundle:
         parser.error("--receipt and --bundle are required")
     receipt = json.loads(args.receipt.read_text(encoding="utf-8"))
@@ -80,7 +84,7 @@ def main() -> int:
         for error in errors:
             print(error)
         return 1
-    print("archive receipt: PASS")
+    print("HISTORICAL_ARCHIVE_VALID_NO_PRODUCT_AUTHORITY")
     return 0
 
 

@@ -15,6 +15,23 @@ The normal PR/main `Verify` gate is for code correctness, sanitizers, resource/p
 - Maintain blind and independent evaluation roles and truthful NOT_RUN/FAIL signals. An empty or skipped target experiment must never be recast as PASS.
 - Historical `release.yml` and `post-release-qualification-summary.yml` have been retired from the active workflow directory in this change. Their source and previous results remain available in Git history and GitHub Actions history. `product-certification.yml` is also retired from active Actions, while archived `certification/` source, schema, and historical receipts remain for provenance review and source-only negative tests; they are not research-admission authority. No historical audit payload is rewritten.
 
+## Archived commercial documentation is not current CI authority
+
+The old `docs/PRODUCT_ASSURANCE.md`, `docs/PRODUCT_ASSURANCE.zh-CN.md`,
+`certification/README.md` and `certification/policies/README.md`
+remain available as **archived commercial documentation** for source and
+decision provenance. The ordinary `scripts/docs_consistency.py` gate no longer
+requires their presence, validates their old commercial assertions, or regards
+their historical SKU/release values as current research prerequisites. Current
+bilingual navigation may link to the archive *as history*, not a live
+certification workflow. A negative research CI test prevents re-adding these
+files as current documentation requirements.
+
+This does not remove original measurement evidence, third-party license
+obligations, historic Git commits or archived certification receipts. Actual
+research correctness/resource/HIL evidence continues to be tested on its own
+terms. No archived state creates a new product or hardware PASS.
+
 ## Pending cleanup, not claimed complete
 
 Source-root product certificates, VAD shipping-policy naming, lab and SKU-specific tools, other EN/ZH guides, test helpers and archived product-doc terminology still need separate atomic migration. Remove consumers before deleting their old files, preserve applicable third-party licenses (including noncommercial conditions), and verify exact-head CI plus fresh protected main. Retain Python 3.8 compatibility where used.

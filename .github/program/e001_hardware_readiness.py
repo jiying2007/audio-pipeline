@@ -166,11 +166,10 @@ def validate_static(contract: dict) -> dict:
     minimum = int(contract["activation_requirements"]["minimum_certification_soak_hours"])
     require(minimum == 72, "historical E001 soak duration evidence drift")
 
-    post = text("scripts/post_release_status.py")
-    require("BLOCKED_RUNNER" in post and "BLOCKED_CONFIG" in post and
-            "disabled HIL post-release gate unexpectedly succeeded" in post and
-            "disabled Extended Real post-release gate unexpectedly succeeded" in post,
-            "post-release status must reject false success while infrastructure is disabled")
+    require(not (ROOT / "scripts/post_release_status.py").exists(),
+            "retired post-release status generator reintroduced to research execution")
+    # Current HIL and Extended Real checks above continue to fail visibly when
+    # disabled; historical E001 deferred evidence stays immutable below.
 
     observed = contract["observed_deferred_state"]
     require(observed["release"] == HISTORICAL_RELEASE and

@@ -143,9 +143,8 @@ def self_test() -> None:
         pass
     else:
         raise AssertionError("duplicate ruleset self-test did not fail")
-    source = Path(__file__).read_text(encoding="utf-8")
-    for forbidden in ("immutable-releases", "tag_ruleset()", "TAG_RULESET_NAME"):
-        assert forbidden not in source, forbidden
+    assert main["name"] == MAIN_RULESET_NAME
+    assert main["conditions"]["ref_name"]["include"] == ["refs/heads/main"]
     print("research main ruleset bootstrap self-test: OK")
 
 

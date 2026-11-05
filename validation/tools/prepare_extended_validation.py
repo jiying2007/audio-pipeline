@@ -373,7 +373,7 @@ def main() -> int:
     scan = sub.add_parser("scan")
     scan.add_argument("--catalog", type=Path, default=Path("validation/extended.datasets.lock.json"))
     scan.add_argument("--data-root", type=Path, required=True)
-    scan.add_argument("--profile", choices=("commercial-core", "commercial-plus", "research"), required=True)
+    scan.add_argument("--profile", choices=("research-attribution-core", "research-attribution-extended", "research"), required=True)
     scan.add_argument("--limit-per-dataset", type=int, default=24)
     scan.add_argument("--output", type=Path, required=True)
     verify = sub.add_parser("verify")

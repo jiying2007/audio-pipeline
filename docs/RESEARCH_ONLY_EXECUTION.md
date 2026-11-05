@@ -68,6 +68,10 @@ to preserve original source/evidence identity and need dependency-aware
 research migration under #882. Their presence must not block lawful research;
 they cannot grant new license rights or be relabeled as new measurements.
 
+## Research acoustic decision — no product policy (2026-11-05)
+
+The `Verify` self-test in `tools/acoustic_upgrade_decision.py` now uses an explicit `technical-research` study/policy identity and recorded acoustic metrics, not a SKU, `shipping_approved`, or product release authority. Its original ERLE, convergence, double-talk SI-SDR, noise SI-SDR, VAD F1 and corpus-case checks remain; non-finite metrics and historical product-policy inputs are rejected. `UPGRADE_ELIGIBLE` means only that a controlled research comparison may be justified, never model promotion, physical-board qualification or new evidence admission. Source, dataset rights and independent evaluation remain separate requirements. The prior implementation is available in Git history.
+
 ## Research-only physical HIL
 
 The HIL Actions controller is now **manual-only**: a real isolated

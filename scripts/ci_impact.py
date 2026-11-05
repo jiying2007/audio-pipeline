@@ -95,6 +95,7 @@ RELEASE_NEUTRAL_FILES = {
     "scripts/github_governance.py",
     # Main branch protection restoration/audit, no product release controls.
     "scripts/bootstrap_github_governance.py",
+    "scripts/research_github_governance.py",
     "scripts/public_surface_contract.py", "scripts/check-abi-contract.sh",
     "scripts/check-architecture.sh",
     "scripts/research_registry.py", "scripts/prepare_release.py",
@@ -878,6 +879,7 @@ def self_test() -> None:
     assert is_release_neutral("scripts/docs_consistency.py")
     assert is_release_neutral("scripts/github_governance.py")
     assert is_release_neutral("scripts/bootstrap_github_governance.py")
+    assert is_release_neutral("scripts/research_github_governance.py")
     restore = analyze(["scripts/bootstrap_github_governance.py"])
     assert restore["full"] and restore["run_lab"]
     assert is_release_neutral("scripts/public_surface_contract.py")

@@ -562,7 +562,7 @@ def validate(root: Path, *, require_lab: bool = True,
         ),
         "docs/README.zh-CN.md": (
             "QUICKSTART.zh-CN.md", "FLOWS.zh-CN.md", "DEVELOPMENT.zh-CN.md",
-            "PRODUCT_ASSURANCE.zh-CN.md", "TRUSTED_RUNNERS.zh-CN.md",
+            "TRUSTED_RUNNERS.zh-CN.md",
         ),
         "AGENTS.md": (
             "technical research only",

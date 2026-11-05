@@ -97,6 +97,9 @@ RELEASE_NEUTRAL_FILES = {
     "scripts/check-architecture.sh",
     "scripts/research_registry.py", "scripts/prepare_release.py",
     "scripts/release_manifest.py",
+    # Tombstone path: deletion is research maintenance, resurrection is
+    # rejected by docs/source boundary tests (never a release approval lane).
+    "scripts/post_release_status.py",
     "scripts/qualification_fingerprint.py", "scripts/program.py",
     "scripts/test_history.py",
     "scripts/compare-runtime-perf.sh",

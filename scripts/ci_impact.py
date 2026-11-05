@@ -722,6 +722,10 @@ def analyze(paths: list[str], force_full: bool = False, cmake_version_only_chang
             flags["bench"] = True
         elif p.startswith("examples/alsa"):
             flags["alsa"] = True
+        elif p == "tools/acoustic_upgrade_decision.py":
+            # Study decision thresholds affect scientific interpretation, not
+            # a published C SDK. Re-check the full source/quality matrix.
+            flags["unknown"] = True
         elif p == "tools/runner_preflight.py":
             # Research source-bound runner readiness is release-neutral but
             # changes to its trust decision require the full code matrix.

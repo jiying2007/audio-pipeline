@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fail-closed workflow contract for the software-commercial-ready maintenance state."""
+"""Fail-closed workflow contract for the source-bound research maintenance state."""
 
 from __future__ import annotations
 

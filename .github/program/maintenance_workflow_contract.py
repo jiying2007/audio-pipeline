@@ -696,7 +696,7 @@ def _write_deferred_external_schedule_fixtures(root: Path) -> None:
         "            exit 1\n"
         "          fi\n"
         "          echo 'run=true' >> \"$GITHUB_OUTPUT\"\n"
-        "          profile=commercial-plus\n"
+        "          profile=research-attribution-extended\n"
         "      - name: Dispatch canonical extended-real workflow\n"
         "        if: steps.request.outputs.run == 'true'\n"
         "        run: echo dispatch\n",

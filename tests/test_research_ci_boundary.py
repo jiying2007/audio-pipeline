@@ -197,6 +197,25 @@ class ResearchCIBoundaryTests(unittest.TestCase):
             "          path: fe09-t3s2a-readback", block
         )
 
+    def test_archived_commercial_docs_do_not_gate_research(self):
+        # Historical certification procedures are retrievable via Git/docs
+        # navigation, but must not be a required file for current quality CI.
+        source = (ROOT / "scripts/docs_consistency.py").read_text(encoding="utf-8")
+        current = source.split("CURRENT_DOCS = (", 1)[1].split("\\n)\\n", 1)[0]
+        for obsolete in (
+            "docs/PRODUCT_ASSURANCE.md",
+            "docs/PRODUCT_ASSURANCE.zh-CN.md",
+            "certification/README.md",
+            "certification/policies/README.md",
+        ):
+            with self.subTest(obsolete=obsolete):
+                self.assertNotIn('"' + obsolete + '"', current)
+        research = (ROOT / "docs/RESEARCH_ONLY_EXECUTION.md").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("archived commercial documentation", research)
+        self.assertFalse((ROOT / ".github/workflows/product-certification.yml").exists())
+
     def test_agent_and_chinese_navigation_have_no_live_product_authority(self):
         documents = {
             "AGENTS.md": {

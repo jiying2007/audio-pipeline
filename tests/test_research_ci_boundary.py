@@ -99,6 +99,33 @@ class ResearchCIBoundaryTests(unittest.TestCase):
         self.assertNotIn('"sku": policy.get("sku")', source)
         self.assertIn("obsolete product-policy fields are not research evidence", source)
 
+    def test_governance_only_restores_protected_research_main(self):
+        bootstrap = (ROOT / "scripts/bootstrap_github_governance.py").read_text(
+            encoding="utf-8"
+        )
+        audit = (ROOT / "scripts/github_governance.py").read_text(
+            encoding="utf-8"
+        )
+        workflow = (ROOT / ".github/workflows/repository-governance-bootstrap.yml").read_text(
+            encoding="utf-8"
+        )
+        docs = (ROOT / "docs/REPOSITORY_GOVERNANCE.md").read_text(
+            encoding="utf-8"
+        )
+        for text in (bootstrap, audit):
+            self.assertIn("technical-research-main-only", text)
+            self.assertNotIn("immutable-releases", text)
+            self.assertNotIn("tag_ruleset()", text)
+        self.assertIn("strict_required_status_checks_policy", bootstrap)
+        self.assertIn("strict_required_status_checks_policy", audit)
+        self.assertIn("delete_branch_on_merge", audit)
+        self.assertIn("summary", audit)
+        self.assertNotIn(".github/workflows/release.yml", workflow)
+        self.assertNotIn("main/tag rulesets and immutable releases", workflow)
+        self.assertIn("Restore main branch protection only", workflow)
+        self.assertIn("Research repository governance", docs)
+        self.assertNotIn("When a new project version reaches `main`", docs)
+
     def test_required_verify_has_no_product_release_authority(self):
         text = (ROOT / ".github/workflows/verify.yml").read_text(encoding="utf-8")
         for obsolete in (

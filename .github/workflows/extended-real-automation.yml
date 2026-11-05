@@ -41,7 +41,7 @@ jobs:
               source_sha=$(git rev-parse origin/main)
               # Keep the existing reviewed CC-BY-4.0 dataset subset; never
               # select conditional/NC datasets by unattended profile expansion.
-              profile=commercial-plus
+              profile=research-attribution-extended
               ;;
             *) echo "unsupported automation event: $EVENT_NAME" >&2; exit 2 ;;
           esac

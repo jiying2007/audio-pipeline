@@ -131,12 +131,13 @@ def validate_static(contract: dict) -> dict:
             "72h remains a voluntary scientific duration, not shipping authority")
 
     ext_auto = text(".github/workflows/extended-real-automation.yml")
+    selected_profiles = [line.strip() for line in ext_auto.splitlines()
+                         if line.strip().startswith("profile=")]
     require("repository_dispatch:" not in ext_auto and
             "extended-real-post-release" not in ext_auto and
             "EXTENDED_REAL_REQUIRED_BUT_DISABLED" in ext_auto and
             "EXTENDED_REAL_ENABLED" in ext_auto and
-            "profile=commercial-plus" in ext_auto and
-            "profile=research" not in ext_auto and
+            selected_profiles == ["profile=research-attribution-extended"] and
             "exit 1" in ext_auto,
             "Extended Real research schedule must fail closed and cannot require a release")
     ext_validation = text(".github/workflows/validation-extended-real.yml")

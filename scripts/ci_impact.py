@@ -230,9 +230,20 @@ def is_docs(path: str) -> bool:
     return path in DOC_FILES or path.startswith(DOC_PREFIXES) or path.endswith(".md")
 
 
+HISTORICAL_CERTIFICATION_ONLY = {
+    # Exact retired product-certification executables and read-only replay
+    # validators: changing them does not change published DSP/SDK/ABI SemVer.
+    "tools/ap_certify.py",
+    "tools/certification_provenance.py",
+    "certification/validate_record.py",
+    "certification/validate_archive_receipt.py",
+}
+
+
 def is_release_neutral(path: str) -> bool:
     return (
         is_docs(path)
+        or path in HISTORICAL_CERTIFICATION_ONLY
         or path in RELEASE_NEUTRAL_FILES
         or path.startswith("docs/program/")
         or path.startswith(RELEASE_NEUTRAL_PREFIXES)
@@ -712,7 +723,11 @@ def analyze(paths: list[str], force_full: bool = False, cmake_version_only_chang
             flags["unknown"] = True
         elif p.startswith("validation/") or p.startswith("eval/"):
             flags["validation"] = True
-        elif p.startswith("certification/") or p in {"tools/ap_certify.py", "tools/target_evidence.py"}:
+        elif p in HISTORICAL_CERTIFICATION_ONLY:
+            # Retired product approval code must always receive full CI when
+            # deleted or when a historical replay guard changes.
+            flags["unknown"] = True
+        elif p.startswith("certification/") or p == "tools/target_evidence.py":
             flags["certification"] = True
         elif p.startswith("bench/") or p.startswith("scripts/compare-"):
             flags["bench"] = True
@@ -864,6 +879,10 @@ def self_test() -> None:
     assert is_release_neutral("ci/Dockerfile")
     assert is_release_neutral("tests/test_pipeline.c")
     assert is_release_neutral("fuzz/fuzz_pipeline.c")
+    for historical in sorted(HISTORICAL_CERTIFICATION_ONLY):
+        assert is_release_neutral(historical), historical
+        assert analyze([historical])["full"], historical
+    assert not is_release_neutral("tools/unknown_product_approval.py")
     assert is_release_neutral("scripts/ci_impact.py")
     assert is_release_neutral("scripts/docs_consistency.py")
     assert is_release_neutral("scripts/github_governance.py")

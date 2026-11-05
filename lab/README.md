@@ -45,11 +45,11 @@ Run from a trusted checked-out exact source revision:
 ```bash
 python3 lab/scripts/labctl.py self-test
 python3 lab/scripts/labctl.py validate-catalog
-python3 lab/scripts/labctl.py plan --profile commercial-core
-python3 lab/scripts/labctl.py materialize --profile commercial-core
+python3 lab/scripts/labctl.py plan --profile research-attribution-core
+python3 lab/scripts/labctl.py materialize --profile research-attribution-core
 ```
 
-**Catalog terminology:** The legacy source-lock IDs `commercial-core` and `commercial-plus` remain exact machine-readable dataset-profile identifiers, not an entitlement to commercial use, product qualification or publication. Actual source notices, attribution, noncommercial/conditional restrictions, transform permissions, SHA/MD5 verification and independent holdout roles must always be respected. Do not substitute broader conditional/NC corpora into an unattended profile without separate source review. The acquisition smoke validates the OpenSLR SLR31 download/cache/integrity path; it does not represent a RealMAN/BUT/MUSAN acoustic PASS.
+**Research data-rights boundary:** The active `research-attribution-core` and `research-attribution-extended` identities select only the previously reviewed CC-BY-4.0 dataset sets. Their names grant no additional source rights or model/publication authority. The previous source-lock identifiers remain in historical Git records. Actual source notices, attribution, noncommercial/conditional restrictions, transform permissions, SHA/MD5 verification and independent holdout roles must always be respected. Do not substitute broader conditional/NC corpora into an unattended profile without separate source review. The acquisition smoke validates the OpenSLR SLR31 download/cache/integrity path; it does not represent a RealMAN/BUT/MUSAN acoustic PASS.
 
 Use `lab/data-sources.lock.json`, `validation/extended.datasets.lock.json`, `validation/authority.json` and the canonical `validation/tools` scanners for exact source and role enforcement. Cache under the user home; keep private or unlicensed raw voice files outside public Git/Actions artifacts.
 

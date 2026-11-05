@@ -135,6 +135,14 @@ class ResearchCIBoundaryTests(unittest.TestCase):
                 self.assertFalse((ROOT / legacy).exists(),
                                  "commercial publication workflow must be retired")
 
+    def test_post_release_status_tool_is_retired_from_active_tree(self):
+        retired = ROOT / "scripts/post_release_status.py"
+        self.assertFalse(retired.exists(),
+                         "historical post-release approval status is not active research")
+        docs = (ROOT / "scripts/docs_consistency.py").read_text(encoding="utf-8")
+        self.assertIn("retired post-release status tool reintroduced", docs)
+        self.assertNotIn('"scripts/post_release_status.py",', docs)
+
     def test_doc_gate_keeps_source_science_and_excludes_release_approval(self):
         text = (ROOT / ".github/scripts/verify-docs-gate.sh").read_text(encoding="utf-8")
         self.assertIn("python3 tests/test_research_ci_boundary.py", text)

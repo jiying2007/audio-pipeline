@@ -417,7 +417,11 @@ def validate_deferred_external_schedule_boundaries(root: Path) -> None:
     extended_text = (root / EXTENDED_REAL_AUTOMATION_WORKFLOW).read_text(encoding='utf-8')
     extended_job = job_block(extended_text, 'dispatch')
     assert '  repository_dispatch:' not in extended_text, 'retired post-release Extended Real listener is forbidden'
-    assert 'profile=commercial-core' not in extended_job and 'profile=research' not in extended_job, 'automatic Extended Real must use reviewed CC-BY data profile'
+    selected = [line.strip() for line in extended_job.splitlines()
+                if line.strip().startswith('profile=')]
+    assert selected == ['profile=research-attribution-extended'], (
+        'automatic Extended Real must preserve the reviewed CC-BY-4.0 extended source set'
+    )
     extended_required = 'EXTENDED_REAL_REQUIRED_BUT_DISABLED'
     assert 'EXTENDED_REAL_SCHEDULE_SKIPPED_DISABLED' not in extended_job, (
         'Extended Real disabled scheduled success/skip is forbidden'

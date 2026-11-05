@@ -105,6 +105,9 @@ def validate_catalog(catalog: dict) -> None:
                 if not re.fullmatch(rf"[0-9a-f]{{{width}}}", expected):
                     raise ValueError(f"invalid {mode} digest for {dataset_id}")
         by_id[dataset_id] = item
+    expected_profiles = REVIEWED_RESEARCH_PROFILES | {"dsp-research"}
+    if set(profiles) != expected_profiles:
+        raise ValueError("only reviewed attribution and separate DSP research profiles are supported")
     for profile, ids in profiles.items():
         if not isinstance(ids, list) or not ids:
             raise ValueError(f"profile must contain dataset ids: {profile}")
@@ -112,7 +115,9 @@ def validate_catalog(catalog: dict) -> None:
         if missing:
             raise ValueError(f"profile {profile} references missing datasets: {sorted(missing)}")
         if profile in REVIEWED_RESEARCH_PROFILES:
-            bad = [item for item in ids if by_id[item].get("usage_class") != "attribution-reviewed"]
+            bad = [item for item in ids
+                   if by_id[item].get("usage_class") != "attribution-reviewed"
+                   or by_id[item].get("license") != "CC-BY-4.0"]
             if bad:
                 raise ValueError(f"attribution-reviewed research profile {profile} contains unreviewed or conditional sources: {bad}")
     expected_core = {"realman", "but-reverbdb", "musan", "openslr-slr31"}
@@ -399,6 +404,18 @@ def self_test() -> None:
     assert by_id["musan"]["integrity"]["value"] == "0c472d4fc0c5141eca47ad1ffeb2a7df"
     assert by_id["openslr-slr31"]["integrity"]["value"] == "6d7ab67ac6a1d2c993d050e16d61080d"
     assert {by_id[item]["provider"] for item in catalog["profiles"]["research-attribution-core"]} <= {"http_archive", "huggingface_snapshot"}
+    assert set(catalog["profiles"]["research-attribution-extended"]) == {
+        "realman", "but-reverbdb", "musan", "openslr-slr31", "voices", "ami", "icsi"
+    }
+    assert all(by_id[item]["license"] == "CC-BY-4.0" for item in catalog["profiles"]["research-attribution-extended"])
+    bad = json.loads(json.dumps(catalog))
+    next(x for x in bad["datasets"] if x["id"] == "realman")["license"] = "CC-BY-NC-SA-4.0"
+    try:
+        validate_catalog(bad)
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("NC source was admitted to attribution-reviewed automated profile")
     fake_home = Path("/tmp/audio-pipeline-selftest-home")
     resolved = resolve_user_paths({}, fake_home)
     assert resolved[5] == fake_home / "audio-validation-extended"

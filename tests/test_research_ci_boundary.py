@@ -91,6 +91,14 @@ class ResearchCIBoundaryTests(unittest.TestCase):
         )
         self.assertEqual(live_publication_violations(historical_guard), [])
 
+    def test_acoustic_upgrade_has_research_policy_not_shipping_gate(self):
+        source = (ROOT / "tools/acoustic_upgrade_decision.py").read_text(encoding="utf-8")
+        self.assertIn('policy.get("scope") != "technical-research"', source)
+        self.assertIn('"study_id": policy["study_id"]', source)
+        self.assertNotIn('policy.get("shipping_approved") is not True', source)
+        self.assertNotIn('"sku": policy.get("sku")', source)
+        self.assertIn("obsolete product-policy fields are not research evidence", source)
+
     def test_required_verify_has_no_product_release_authority(self):
         text = (ROOT / ".github/workflows/verify.yml").read_text(encoding="utf-8")
         for obsolete in (

@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""Decide whether advanced acoustic complexity is justified by real SKU evidence."""
+"""Compare acoustic research evidence against declared study thresholds."""
 
 from __future__ import annotations
 
 import argparse
 import json
+import math
 import tempfile
 from pathlib import Path
 
@@ -19,13 +20,19 @@ CHECKS = (
 
 
 def decide(policy: dict, report: dict) -> dict:
-    if policy.get("shipping_approved") is not True:
-        raise ValueError("algorithm escalation requires a shipping-approved SKU policy")
+    if policy.get("scope") != "technical-research":
+        raise ValueError("explicit technical-research policy scope is required")
+    if "shipping_approved" in policy or "sku" in policy:
+        raise ValueError("obsolete product-policy fields are not research evidence")
     acoustic = report.get("acoustic")
     if not isinstance(acoustic, dict):
         raise ValueError("acoustic report must contain an 'acoustic' object")
-    if str(policy.get("sku", "")) == "":
-        raise ValueError("policy.sku is required")
+    if not isinstance(policy.get("policy_id"), str) or not policy["policy_id"].strip():
+        raise ValueError("nonempty policy_id is required")
+    if not isinstance(policy.get("study_id"), str) or not policy["study_id"].strip():
+        raise ValueError("nonempty study_id is required")
+    if not isinstance(acoustic.get("corpus_revision"), str) or not acoustic["corpus_revision"].strip():
+        raise ValueError("acoustic.corpus_revision is required")
 
     failures = []
     for metric, threshold_key, direction, category in CHECKS:
@@ -33,6 +40,8 @@ def decide(policy: dict, report: dict) -> dict:
             raise ValueError(f"missing {metric} or {threshold_key}")
         value = float(acoustic[metric])
         threshold = float(policy[threshold_key])
+        if not math.isfinite(value) or not math.isfinite(threshold):
+            raise ValueError(f"non-finite acoustic metric or threshold: {metric}")
         passed = value >= threshold if direction == "min" else value <= threshold
         if not passed:
             failures.append({
@@ -46,7 +55,9 @@ def decide(policy: dict, report: dict) -> dict:
     total = int(acoustic.get("cases_total", 0))
     passed_cases = int(acoustic.get("cases_passed", 0))
     if total <= 0:
-        raise ValueError("acoustic.cases_total must be positive real-corpus evidence")
+        raise ValueError("acoustic.cases_total must be positive recorded research evidence")
+    if passed_cases < 0 or passed_cases > total:
+        raise ValueError("acoustic.cases_passed must be between zero and cases_total")
     if passed_cases != total:
         failures.append({
             "metric": "cases_passed",
@@ -59,25 +70,28 @@ def decide(policy: dict, report: dict) -> dict:
     categories = sorted({item["category"] for item in failures})
     decision = "KEEP_BASELINE" if not failures else "UPGRADE_ELIGIBLE"
     return {
-        "schema_version": 1,
-        "policy_id": policy.get("policy_id"),
-        "sku": policy.get("sku"),
+        "schema_version": 2,
+        "policy_id": policy["policy_id"],
+        "study_id": policy["study_id"],
+        "scope": "technical-research",
         "corpus_revision": acoustic.get("corpus_revision"),
         "decision": decision,
         "failed_categories": categories,
         "failures": failures,
         "rule": (
-            "Advanced acoustic complexity is eligible only when real SKU evidence fails "
-            "the approved shipping policy. KEEP_BASELINE means no complexity escalation is justified."
+            "A research upgrade is eligible for further controlled evaluation when "
+            "recorded acoustic evidence misses a declared study threshold. "
+            "KEEP_BASELINE means no threshold-based escalation is justified. "
+            "Neither result certifies a product, a model or physical hardware."
         ),
     }
 
 
 def self_test() -> None:
     policy = {
-        "policy_id": "shipping-v1",
-        "sku": "sku-a",
-        "shipping_approved": True,
+        "policy_id": "research-threshold-v1",
+        "study_id": "aec-research-control",
+        "scope": "technical-research",
         "min_far_end_erle_db": 15,
         "max_aec_convergence_ms": 1000,
         "min_double_talk_near_si_sdr_db": 5,
@@ -101,10 +115,32 @@ def self_test() -> None:
     failed = decide(policy, report)
     assert failed["decision"] == "UPGRADE_ELIGIBLE"
     assert "aec_residual" in failed["failed_categories"]
+    assert failed["scope"] == "technical-research" and failed["schema_version"] == 2
+    for obsolete in ({"shipping_approved": True}, {"sku": "sku-a"}):
+        try:
+            decide({**policy, **obsolete}, report)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError("obsolete commercial-policy input accepted")
+    for invalid_scope in ("product", None):
+        try:
+            decide({**policy, "scope": invalid_scope}, report)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError("non-research study scope accepted")
+    bad_report = {"acoustic": {**report["acoustic"], "vad_f1": float("nan")}}
+    try:
+        decide(policy, bad_report)
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("non-finite metric was accepted")
     with tempfile.TemporaryDirectory(prefix="ap-acoustic-upgrade-") as temporary:
         path = Path(temporary) / "decision.json"
         path.write_text(json.dumps(failed), encoding="utf-8")
-        assert json.loads(path.read_text(encoding="utf-8"))["schema_version"] == 1
+        assert json.loads(path.read_text(encoding="utf-8"))["schema_version"] == 2
     print("acoustic upgrade decision self-test: OK")
 
 
@@ -117,7 +153,7 @@ def main() -> int:
     parser.add_argument(
         "--require-upgrade-eligible",
         action="store_true",
-        help="fail unless real evidence demonstrates at least one approved-policy acoustic failure",
+        help="fail unless recorded evidence misses at least one study threshold",
     )
     args = parser.parse_args()
     if args.self_test:

@@ -19,7 +19,7 @@ from urllib.parse import quote
 SCHEMA_VERSION = 1
 SOURCE_REPOSITORY = "microsoft/P.808"
 LICENSE = "CC-BY-4.0"
-USAGE_CLASS = "commercial-validation"
+USAGE_CLASS = "attribution-reviewed"
 MAX_DOWNLOAD_BYTES = 2 * 1024 * 1024
 ALLOWED_PREFIXES = (
     "src/P808Template/assets/clips/math/",
@@ -54,7 +54,7 @@ def validate_lock(lock: dict) -> None:
     if re.fullmatch(r"[0-9a-f]{40}", revision) is None:
         raise ValueError("hosted-real source_revision must be exact lowercase 40-hex")
     if lock.get("license") != LICENSE or lock.get("usage_class") != USAGE_CLASS:
-        raise ValueError("hosted-real lock must remain CC-BY-4.0 commercial-validation")
+        raise ValueError("hosted-real lock must remain CC-BY-4.0 attribution-reviewed")
     clips = lock.get("clips")
     if not isinstance(clips, list) or len(clips) < 4:
         raise ValueError("hosted-real lock requires at least four clips")
@@ -272,7 +272,7 @@ def self_test() -> None:
     except ValueError:
         pass
     else:
-        raise AssertionError("non-commercial hosted-real lock was accepted")
+        raise AssertionError("NC-licensed hosted-real source was incorrectly admitted")
     print("hosted real corpus builder self-test: OK")
 
 

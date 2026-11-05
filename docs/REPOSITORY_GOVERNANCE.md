@@ -1,124 +1,47 @@
-# Repository Governance
+# Research repository governance
 
-This document defines the GitHub repository policy required for `audio-pipeline` shipping releases. Workflow/release behavior is versioned in the repository; GitHub Rulesets and immutable-release enforcement are administrative repository settings and must independently match this contract.
+**Current scope: reproducible technical DSP, AFE and embedded-resource research.** This page describes protection of source, experimental evidence, GitHub CI and contributor review. The former product-release procedure is archived in Git history, not an active execution or acceptance rule. See [research-only execution](RESEARCH_ONLY_EXECUTION.md).
 
-## Main branch policy
+## Protected main
 
-`main` is the release integration branch.
+`main` is the integration branch for reviewed technical research. The GitHub ruleset must:
 
-The active branch ruleset must:
+- require pull requests and **squash-only** merge;
+- require current `summary` status from GitHub Actions, with strict up-to-date comparison;
+- require unresolved review conversations to be resolved when applicable;
+- block branch deletion, force and non-fast-forward updates;
+- have **no bypass actors**;
+- enable `delete_branch_on_merge=true` for merged same-repository branches.
 
-- target `main` / the default branch;
-- require changes through pull requests;
-- require the exact aggregate status context `summary`;
-- require the branch to be up to date before merge (`strict_required_status_checks_policy=true`);
-- block branch deletion;
-- block non-fast-forward/force updates;
-- have no bypass actors for the shipping path.
-- enable repository `delete_branch_on_merge=true` so ordinary same-repository merged PR heads are removed by GitHub itself rather than a redundant post-merge Actions job.
+`scripts/research_github_governance.py` audits these properties against the live branch ruleset and repository settings. A failure is visible and never converted to PASS. `scripts/bootstrap_github_governance.py` is an optional, explicitly administrative main-ruleset restoration tool; it does not create product Release artifacts, publish tags or alter immutable-Release settings. The matching workflow checks source contracts on PRs; a manual administrative restore requires a scoped credential and is not a normal research gate.
 
-Squash merge is the canonical merge method for feature/productization work. Unresolved review conversations should block merge when reviews are used.
+Existing historical tags, already published archives, original commit identities and rights documentation are not deleted or rewritten. Their existence does **not** create a current commercial admission requirement.
 
-The active tag ruleset must target `refs/tags/v*`, block deletion and non-fast-forward updates, and have no bypass actors. Shipping release tags are exact-SHA annotated tags created by the Release workflow.
+## Scientific CI acceptance
 
-`scripts/github_governance.py` encodes the machine-readable live audit for these rules plus repository immutable-release state and merged-branch cleanup. An audit is PASS only when the main ruleset, `v*` tag ruleset, immutable releases, and `delete_branch_on_merge=true` are all active.
+The protected `summary` check aggregates the applicable job graph, not just a filename or a job that happens to be skipped. Changes must preserve the required checks selected by the conservative impact analyzer:
 
-## Defense in depth for direct pushes
+- GCC/Clang native builds, installed C SDK and ABI consumer contracts;
+- sanitizers, thread safety, fuzz smoke, static analysis and coverage;
+- ARM/Cortex-A32 cross builds, QEMU portability and configured resource ceilings;
+- audio front-end BF/AEC/RES/NS/AGC/VAD regressions, acoustic experiment roles and source-rights verification;
+- source-/artifact-SHA reproducibility, exact held-out replay and failure receipts;
+- manual HIL/physical-target measurements only when the actual devices, consented audio and proper isolation are available.
 
-Platform rulesets are the primary enforcement boundary. The Release workflow also fail-closes against a direct-push release: the verified main SHA must be associated with at least one merged pull request targeting `main` before packaging/tagging can proceed.
+Hosted x86, synthetic audio, QEMU or skipped physical jobs cannot be described as actual SSC305 CPU/power, far-field FAR/FRR, thermals or field qualification. Unknown source paths continue to receive conservative CI. No historical product policy can mint a present research PASS.
 
-This defense does not make an unprotected `main` acceptable. A direct push could still pollute main even though Release refuses to publish it; therefore the branch ruleset remains a P0 shipping prerequisite.
+## Versioning and dependency updates
 
-## Required automated evidence
+`CMakeLists.txt`, `CHANGELOG.md` and build-info version remain synchronized for source/API compatibility. Version increments may still be required by conservative source/ABI change governance, but they are **not automatic GitHub Releases** or proof of model/device readiness.
 
-A product-code PR should not merge unless the relevant current workflows succeed. The required platform status is the single aggregate `summary` job; its implementation verifies the selected underlying domains.
+Dependabot updates only propose changes. GitHub Actions pins, build images, C toolchain dependencies, Ansible laboratory requirements and experiment sources must be reviewed according to their actual effect on source determinism, security, reproducibility, protected data and hardware safety. Preserve exact dependency pins where necessary; never weaken an acoustic gate to solve a CI download issue.
 
-### CI
+## Data rights and independent evidence
 
-- architecture contract;
-- native GCC and Clang;
-- strict-clang;
-- sanitizers;
-- fuzz-smoke;
-- backend NLMS;
-- backend MCRA;
-- fast-math contract;
-- ALSA compile;
-- composition contracts including LOW/TINY/RAW/voice/module-only/FAST-resampler;
-- composition-size/resource SSoT contract;
-- hosted paired performance comparators, including `event.before -> HEAD` on main;
-- ARM cross-build matrix.
+Third-party software, corpus and voice licenses remain binding, including research-only/noncommercial limitations. Record source/revision, original file hash, authorized purpose, speaker-consent scope where relevant, train/calibration/evaluation separation and real-hardware evidence. Unavailable data is `NOT_RUN`/`BLOCKED`, never inferred PASS.
 
-### Quality
+The repository keeps immutable historical results, failed studies and scientific research artifacts. An ordinary research PR does not require shipping approval, a commercial SKU, a GitHub Release, a 72-hour product soak, product certification, or administrator-read release credentials.
 
-- installed SDK consumer through CMake package and pkg-config;
-- SKU pipeline/runtime RAM and final consumer ELF pruning;
-- ThreadSanitizer runtime ownership;
-- Cortex-A7 NEON and AArch64 QEMU executable contracts;
-- source line coverage gate;
-- clang static analyzer;
-- acoustic-eval harness contract.
+## Operations and incident boundaries
 
-Hosted performance/QEMU signals do not substitute for board certification.
-
-## Version and release
-
-`CMakeLists.txt` project version is the release source of truth. `CHANGELOG.md` and `ap_build_info()` must match it.
-
-When a new project version reaches `main`, `.github/workflows/release.yml`:
-
-1. accepts only a successful push-triggered Verify on `main` and checks out that exact SHA;
-2. requires merged-PR lineage for that SHA;
-3. resolves `vX.Y.Z` from the project version and verifies an already-published version instead of rebuilding or republishing it;
-4. for a new version, rebuilds/tests and packages reproducible installed SDK and source archives;
-5. publishes checksums, SPDX SBOM and artifact attestations;
-6. creates/pushes the exact-SHA annotated `vX.Y.Z` tag when absent;
-7. creates a complete draft Release, then publishes it;
-8. reads the published Release and fails unless its `immutable` field is true.
-
-Repository immutable releases must therefore be enabled before a new shipping version is merged. Release-neutral descendants of an already-published version must preserve and verify the existing immutable release identity rather than manufacturing a replacement release.
-
-A software Release is not a target-board product certification.
-
-## Dependency automation and evidence authority
-
-Dependabot is a **proposal generator**, not merge or release authority. Its configured update range controls which proposals may be opened; it does not override SemVer classification, evidence authority, exact-head CI, or release policy.
-
-Dependency classes have different authority:
-
-- GitHub Actions pins and the `ci/Dockerfile` base-image digest are repository CI/supply-chain maintenance. They may remain release-neutral when they do not alter the shipped SDK or product evidence authority, but they still require the change-aware verification selected by the repository.
-- `lab/requirements-validation.txt` and `lab/requirements-ansible.txt` define the approved trusted-lab/evidence execution environment. Changing either exact pin changes the environment that materializes validation data, provisions trusted runners, or supports certification evidence. Those changes are therefore **release-bearing** and require a project SemVer/CHANGELOG advance plus the applicable full lab/certification control-plane verification.
-- A patch-level version number does not make a trusted-lab dependency update release-neutral. If no release-bearing cycle is intended, the proposal remains deferred/closed and the currently approved exact pin remains authoritative.
-- An urgent security correction to a trusted-lab dependency is handled as an explicit release-bearing maintenance release; the evidence boundary is not relaxed to make the dependency PR green.
-
-All trusted-lab requirement files remain exact pins (`package==version`). Floating ranges are not accepted as evidence-environment identity.
-
-## HIL and public-repository isolation
-
-Untrusted public pull requests never run automatically on product hardware. Trusted HIL uses isolated self-hosted `audio-target` runners and reviewed SHAs. Scheduled Nightly/Weekly and successful post-Release HIL fail visibly if `HIL_ENABLED` is not enabled; disabled hardware is missing evidence, not a successful/skipped product signal.
-
-Formal Product Certification separates `audio-builder`, `audio-target` and `certification-archive` responsibilities. A long-lived product DUT must not also act as an arbitrary public PR build runner.
-
-## Security
-
-Security reporting follows `SECURITY.md`. Public vulnerability details should not be opened before coordinated disclosure when a private channel is available.
-
-## Certification
-
-Every shipping SKU maintains a machine-readable v4 record conforming to `certification/record.schema.json`. Real target CPU/latency/RSS/thermal/power/acoustic, exact shipping toolchain, build/deployed/executed SHA-256 equality, policy-duration route soak, attestation and lifecycle archive evidence live in product certification records, not in hosted CI claims.
-
-The checked-in `cortex-a32-low-shipping-v1` policy requires a 72-hour soak. The policy itself is only an acceptance contract and must never be presented as a PASS result.
-
-## Live governance verification
-
-Current governance is checked from live repository state, not inferred from an old release phase or documentation snapshot. Release execution reruns `scripts/github_governance.py` and requires the active main ruleset, version-tag ruleset and immutable-release setting to pass at that exact release attempt.
-
-Historical periods when those controls were not yet enabled belong in release/program history. Current operator documentation must not carry a past-version activation checklist as if it were still an outstanding action.
-
-## Repository lifecycle state machine
-
-Research evidence, one-way validation qualification, immutable release lineage,
-post-release laboratory states, and evidence-bound branch garbage collection are
-specified in `docs/REPOSITORY_LIFECYCLE.md`. Research branches are not evidence
-archives: terminal evidence must be sealed in the registry/artifacts before a
-branch can become GC-eligible.
+Protect physical runners against untrusted pull requests and require an exact reviewed source SHA for manual HIL. Maintain device-specific source, environment, raw input/output, CPU/RSS/I/O and power measurements as research data only. Follow `SECURITY.md` for vulnerability handling and [repository lifecycle](REPOSITORY_LIFECYCLE.md) for branch/evidence retention. Deleting a merged branch never deletes the historical Git commit, source review or stored experiment receipts.

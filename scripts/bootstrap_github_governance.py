@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Idempotently install the repository governance required by v1.6 releases."""
+"""Restore only the protected research main branch ruleset (never publish releases)."""
 
 from __future__ import annotations
 
@@ -12,7 +12,6 @@ from pathlib import Path
 API_VERSION = "2026-03-10"
 GITHUB_ACTIONS_APP_ID = 15368
 MAIN_RULESET_NAME = "audio-pipeline-main"
-TAG_RULESET_NAME = "audio-pipeline-version-tags"
 
 
 def main_ruleset() -> dict:
@@ -51,22 +50,6 @@ def main_ruleset() -> dict:
                     ],
                 },
             },
-        ],
-    }
-
-
-def tag_ruleset() -> dict:
-    return {
-        "name": TAG_RULESET_NAME,
-        "target": "tag",
-        "enforcement": "active",
-        "bypass_actors": [],
-        "conditions": {
-            "ref_name": {"include": ["refs/tags/v*"], "exclude": []}
-        },
-        "rules": [
-            {"type": "deletion"},
-            {"type": "non_fast_forward"},
         ],
     }
 
@@ -133,19 +116,11 @@ def apply(repository: str) -> dict:
         raise RuntimeError("repository ruleset list is not an array")
 
     main_action, main_id = upsert_ruleset(repository, summaries, main_ruleset())
-    # Refresh after the first create so a second invocation remains unambiguous.
-    summaries = _json([f"repos/{repository}/rulesets"])
-    if not isinstance(summaries, list):
-        raise RuntimeError("repository ruleset list is not an array")
-    tag_action, tag_id = upsert_ruleset(repository, summaries, tag_ruleset())
-
-    _command(["-X", "PUT", f"repos/{repository}/immutable-releases"])
     return {
-        "schema_version": 1,
+        "schema_version": 2,
+        "scope": "technical-research-main-only",
         "repository": repository,
         "main_ruleset": {"action": main_action, "id": main_id},
-        "tag_ruleset": {"action": tag_action, "id": tag_id},
-        "immutable_releases": "enabled",
     }
 
 
@@ -159,19 +134,18 @@ def self_test() -> None:
     check = status["parameters"]["required_status_checks"][0]
     assert check == {"context": "summary", "integration_id": GITHUB_ACTIONS_APP_ID}
     assert status["parameters"]["strict_required_status_checks_policy"] is True
-    tags = tag_ruleset()
-    assert tags["conditions"]["ref_name"]["include"] == ["refs/tags/v*"]
-    assert {rule["type"] for rule in tags["rules"]} == {"deletion", "non_fast_forward"}
     sample = [{"id": 1, "name": MAIN_RULESET_NAME, "target": "branch"}]
     assert choose_existing(sample, MAIN_RULESET_NAME, "branch")["id"] == 1
-    assert choose_existing(sample, TAG_RULESET_NAME, "tag") is None
+    assert choose_existing(sample, "unrelated-archive", "tag") is None
     try:
         choose_existing(sample + sample, MAIN_RULESET_NAME, "branch")
     except ValueError:
         pass
     else:
         raise AssertionError("duplicate ruleset self-test did not fail")
-    print("github governance bootstrap self-test: OK")
+    assert main["name"] == MAIN_RULESET_NAME
+    assert main["conditions"]["ref_name"]["include"] == ["refs/heads/main"]
+    print("research main ruleset bootstrap self-test: OK")
 
 
 def main() -> int:

@@ -1,13 +1,12 @@
-name: Repository Governance Bootstrap
+name: Research Main Ruleset Bootstrap
 
 on:
   pull_request:
     branches: [main]
     paths:
       - scripts/bootstrap_github_governance.py
-      - scripts/github_governance.py
+      - scripts/research_github_governance.py
       - .github/workflows/repository-governance-bootstrap.yml
-      - .github/workflows/release.yml
   workflow_dispatch:
 
 permissions:
@@ -25,7 +24,7 @@ jobs:
       - name: Validate governance payload and live-audit contracts
         run: |
           python3 scripts/bootstrap_github_governance.py --self-test
-          python3 scripts/github_governance.py --self-test
+          python3 scripts/research_github_governance.py --self-test
 
   apply:
     if: github.event_name == 'workflow_dispatch'
@@ -33,30 +32,30 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
-      - name: Require repository administration credential
+      - name: Require scoped research ruleset credential
         env:
           GH_TOKEN: ${{ secrets.REPOSITORY_ADMIN_TOKEN }}
         run: |
           set -euo pipefail
           test -n "$GH_TOKEN" || {
-            echo "REPOSITORY_ADMIN_TOKEN is required with repository Administration: write." >&2
+            echo "Repository administration permission is required for main ruleset restoration." >&2
             exit 1
           }
-      - name: Install idempotent main/tag rulesets and immutable releases
+      - name: Restore main branch protection only
         env:
           GH_TOKEN: ${{ secrets.REPOSITORY_ADMIN_TOKEN }}
         run: >-
           python3 scripts/bootstrap_github_governance.py
           --repository "$GITHUB_REPOSITORY"
           --output /tmp/governance-bootstrap.json
-      - name: Verify resulting live governance
+      - name: Verify protected research main
         env:
           GH_TOKEN: ${{ secrets.REPOSITORY_ADMIN_TOKEN }}
         run: >-
-          python3 scripts/github_governance.py
+          python3 scripts/research_github_governance.py
           --repository "$GITHUB_REPOSITORY"
           --output /tmp/repository-governance.json
-      - name: Publish audit summary
+      - name: Publish research governance audit summary
         run: |
           cat /tmp/governance-bootstrap.json
           cat /tmp/repository-governance.json

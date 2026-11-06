@@ -1,0 +1,14 @@
+{
+  "started_utc": "2026-11-06T13:03:53.287975+00:00",
+  "started_monotonic": 47133.034824482,
+  "budget_seconds": 300,
+  "fixed_asset_id": 12107574410,
+  "status": "SOURCE_BYTES_VERIFIED",
+  "elapsed_seconds": 37.47575702299946,
+  "zip_bytes": 204415056,
+  "zip_sha256": "1dffd4fc4968a0a214658627f1faf8bf54268f119fda86600a48511f897f30d4",
+  "source_members": 46,
+  "old_scores_reused": false,
+  "source_transfer_sha256": "ef6aeb85a32368c3427bb2a0bc83e9d4f3fe2310b4c7fb0976891f08723e818f",
+  "completed_utc": "2026-11-06T13:04:30.763804+00:00"
+}

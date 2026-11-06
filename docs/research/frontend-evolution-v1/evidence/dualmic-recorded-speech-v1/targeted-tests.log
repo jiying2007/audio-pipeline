@@ -1,0 +1,15 @@
+test_failed_worker_is_retained_and_never_complete (__main__.RecordedCorpusTests.test_failed_worker_is_retained_and_never_complete) ... ok
+test_frame_loss_and_nonfinite_values_are_not_hidden (__main__.RecordedCorpusTests.test_frame_loss_and_nonfinite_values_are_not_hidden) ... ok
+test_frozen_coverage_placement_and_profile_pairing (__main__.RecordedCorpusTests.test_frozen_coverage_placement_and_profile_pairing) ... ok
+test_frozen_metadata_rejects_coverage_roles_events_and_labels (__main__.RecordedCorpusTests.test_frozen_metadata_rejects_coverage_roles_events_and_labels) ... ok
+test_listening_wavs_preserve_exact_levels_and_anonymous_key (__main__.RecordedCorpusTests.test_listening_wavs_preserve_exact_levels_and_anonymous_key) ... ok
+test_no_silent_clipping (__main__.RecordedCorpusTests.test_no_silent_clipping) ... ok
+test_real_source_admission_rejects_artificial_fixture (__main__.RecordedCorpusTests.test_real_source_admission_rejects_artificial_fixture) ... ok
+test_resealed_modified_derivative_is_rejected (__main__.RecordedCorpusTests.test_resealed_modified_derivative_is_rejected) ... ok
+test_truncated_derivative_and_extra_file_are_rejected (__main__.RecordedCorpusTests.test_truncated_derivative_and_extra_file_are_rejected) ... ok
+
+----------------------------------------------------------------------
+Ran 9 tests in 37.064s
+
+OK
+{"budget_seconds": 300, "child_pid": 7, "command": ["/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3", "/workspace/scratch/b74ab3415ba4/audio-dualmic-speech-v2/tests/validation/run_dualmic_recorded_replay.py", "--worker", "--processor", "/tmp/ap-recorded-method-unit-kcrfu5sr/not-a-processor", "--corpus", "/tmp/ap-recorded-method-unit-kcrfu5sr/corpus/corpus.json", "--output", "/tmp/ap-recorded-method-unit-kcrfu5sr/failed-worker", "--source-revision", "0000000000000000000000000000000000000000"], "elapsed_seconds": 0.16518455399636878, "error": null, "returncode": 1, "status": "FAIL", "terminal": true}

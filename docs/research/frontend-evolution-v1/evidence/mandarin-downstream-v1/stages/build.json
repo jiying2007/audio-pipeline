@@ -1,0 +1,48 @@
+{
+  "stage": "build",
+  "started_at": "2026-11-06T13:30:26.078328+00:00",
+  "budget_seconds": 300.0,
+  "cwd": "/workspace/scratch/b74ab3415ba4/audio-dualmic-downstream-v2",
+  "source_revision": "fea7e0735ce2e1d6fb45e1f02e0489dea6d7e920",
+  "commands": [
+    {
+      "argv": [
+        "/workspace/scratch/b74ab3415ba4/build-tools/cmake/data/bin/cmake",
+        "-S",
+        "/workspace/scratch/b74ab3415ba4/audio-dualmic-downstream-v2",
+        "-B",
+        "/workspace/scratch/b74ab3415ba4/mandarin-downstream-v1-build",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DAP_BUILD_TESTS=OFF",
+        "-DAP_BUILD_BENCH=OFF",
+        "-DAP_BUILD_EXAMPLES=ON",
+        "-DAP_ENABLE_FAST_MATH=OFF"
+      ],
+      "started_at": "2026-11-06T13:30:26.081218+00:00",
+      "ended_at": "2026-11-06T13:30:26.397993+00:00",
+      "exit_code": 0
+    },
+    {
+      "argv": [
+        "/workspace/scratch/b74ab3415ba4/build-tools/cmake/data/bin/cmake",
+        "--build",
+        "/workspace/scratch/b74ab3415ba4/mandarin-downstream-v1-build",
+        "--target",
+        "ap_process_pcm",
+        "ap_build_info_dump",
+        "-j",
+        "2"
+      ],
+      "started_at": "2026-11-06T13:30:26.398080+00:00",
+      "ended_at": "2026-11-06T13:30:28.167161+00:00",
+      "exit_code": 0
+    }
+  ],
+  "timing_scope": "before first command through all child exits; includes runner evidence sealing",
+  "status": "COMPLETE",
+  "ended_at": "2026-11-06T13:30:28.167197+00:00",
+  "elapsed_seconds": 2.0888736769993557,
+  "exit_code": 0,
+  "log_sha256": "f2af68b891f2a0786d865f3553cca119640a1b67e24f89ae43efcb35b98e760d",
+  "log_bytes": 1908
+}

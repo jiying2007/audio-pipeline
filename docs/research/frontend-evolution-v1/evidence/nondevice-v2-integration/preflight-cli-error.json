@@ -1,0 +1,11 @@
+{
+  "status": "PRE_MODEL_CLI_PREFLIGHT_ERROR_CORRECTED",
+  "tool_chunk": "21fad4",
+  "command": "python3 tests/validation/test_mandarin_downstream_integrity.py",
+  "exit_code": 2,
+  "stderr": "the following arguments are required: --source-root, --prepared",
+  "combined_metric_and_cli_elapsed_seconds": 0.244531567,
+  "model_inference_performed": false,
+  "correction": "Run real-artifact mutation tests after source, preparation and inference, with --source-root, --prepared and --result. Preserve standalone 24 canonical metric tests before model execution.",
+  "threshold_or_timeout_changed": false
+}

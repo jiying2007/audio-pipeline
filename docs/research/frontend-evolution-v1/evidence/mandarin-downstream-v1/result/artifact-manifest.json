@@ -1,0 +1,66 @@
+{
+  "assistant.json": {
+    "bytes": 6069,
+    "sha256": "aba0cac457274d8e43fc84c747fbbd4ff04917dfd354f7483e103937b46152c5"
+  },
+  "assistant.log": {
+    "bytes": 1258,
+    "sha256": "b17fae9d51b0f393e7f214ff6f97f5bf344ce2036961326ab6292c7d491b934e"
+  },
+  "assistant_duplex.json": {
+    "bytes": 5610,
+    "sha256": "924f90f6d9dd8caa70304721fa798a7b7bbd0dee621117a673a2e8ab7b276fac"
+  },
+  "assistant_duplex.log": {
+    "bytes": 1258,
+    "sha256": "26084e033b18f5ba8fd7e5ab38067851c3303084f20299c8059b31b64cbbeab2"
+  },
+  "call.json": {
+    "bytes": 6063,
+    "sha256": "8339b41ee8326a4bfa7453fec320a24fea21bb1715c3a0817d8bfa2b9355af74"
+  },
+  "call.log": {
+    "bytes": 1257,
+    "sha256": "fdad7350bd5ee96488054c43d2cd56c098cd86e78a2ae7b9ec2b34f0c8151e99"
+  },
+  "call_duplex.json": {
+    "bytes": 5596,
+    "sha256": "f41ddfdad5e889a2faa4f387d55f038cf2385029c53296df03ba25da53a82124"
+  },
+  "call_duplex.log": {
+    "bytes": 1257,
+    "sha256": "68fc3ec1282903b1d9b4a3df124ff8b2781d5f256e9cd2dc49de55d2d3024820"
+  },
+  "predictions.json": {
+    "bytes": 9052,
+    "sha256": "e71345793984951ff20fea6816deb349b8dcf4f36cb6acc7cbf3fb06905cb771"
+  },
+  "progress.json": {
+    "bytes": 4098,
+    "sha256": "819665f864a9ed47a69e804857166a3199d449b34fb3081dfd84d5890701ba56"
+  },
+  "raw.json": {
+    "bytes": 6064,
+    "sha256": "e71e11bfa76ae04da2ab842b89a8f033226a199ea5fee2da3673257225173271"
+  },
+  "raw.log": {
+    "bytes": 1258,
+    "sha256": "de4b1e4a062e6197123bf7378ad2723b50628069411727d2b8819c54d60f2688"
+  },
+  "raw_duplex.json": {
+    "bytes": 5599,
+    "sha256": "01efde656d3779a6eabd4406fde1a1de9df6295da2b193d8c4ecce183991ea7d"
+  },
+  "raw_duplex.log": {
+    "bytes": 1257,
+    "sha256": "7888d32d52d147c0d911d405c270c1123a35fc1d5aa007e855af4764bb757bdd"
+  },
+  "report.json": {
+    "bytes": 5117,
+    "sha256": "c5968e44f337b21f136e2e098369919aedd1f04f59111f72dd5ee4467d2e5e96"
+  },
+  "scores.json": {
+    "bytes": 8231,
+    "sha256": "cadc528856120309cf3f34bf415e2500d180d14417297f56ee4ac81564a0a5e5"
+  }
+}

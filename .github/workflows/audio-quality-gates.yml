@@ -39,9 +39,13 @@ jobs:
         run: ctest --test-dir build-audio --output-on-failure -R 'ap_resampler_tests|ap_contract_tests|ap_drift_res_tests'
 
   validation-smoke:
-    runs-on: ubuntu-latest
+    # The reviewed Mandarin host wheels use the CPython 3.12 Linux ABI.
+    # This changes no target toolchain or DSP/quality acceptance rule.
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
       - uses: ./.github/actions/setup-ccache
         with:
           namespace: validation-smoke
@@ -60,7 +64,7 @@ jobs:
           cmake -S . -B build-validation-smoke -DCMAKE_BUILD_TYPE=Release
           -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON
       - name: Build offline validation processor
-        run: cmake --build build-validation-smoke --target ap_process_pcm ap_build_info_dump ap_process_pcm_profile_tests --parallel
+        run: cmake --build build-validation-smoke --target ap_process_pcm ap_build_info_dump ap_process_pcm_profile_tests audio_pipeline_runtime --parallel
       - name: Verify CALL and ASSISTANT configuration and complete dual-mic output
         run: |
           ctest --test-dir build-validation-smoke --output-on-failure -R '^ap_process_pcm_profile_tests$'
@@ -77,6 +81,104 @@ jobs:
         with:
           name: dualmic-call-assistant-${{ github.run_id }}
           path: /tmp/ap-dualmic-profile-evidence/
+          retention-days: 30
+          if-no-files-found: warn
+      - name: Verify actual Opus and continuous Runtime intercom integration
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir /tmp/ap-dualmic-intercom-stage
+          timeout 300s sudo apt-get update -qq \
+            2>&1 | tee /tmp/ap-dualmic-intercom-stage/package-index.log
+          timeout 300s sudo apt-get install -y --no-install-recommends libopus0 \
+            2>&1 | tee /tmp/ap-dualmic-intercom-stage/opus-install.log
+          timeout 300s cc -std=c11 -O2 -Wall -Wextra -Werror \
+            -I build-validation-smoke/generated -I include \
+            tests/validation/frontend_evolution/dualmic_intercom_runtime.c \
+            build-validation-smoke/libaudio_pipeline_runtime.a \
+            build-validation-smoke/libaudio_pipeline.a -pthread -lm \
+            -o build-validation-smoke/dualmic_intercom_runtime \
+            2>&1 | tee /tmp/ap-dualmic-intercom-stage/bridge-build.log
+          timeout 300s python3 tests/validation/frontend_evolution/test_dualmic_intercom_transport.py \
+            --bridge ./build-validation-smoke/dualmic_intercom_runtime \
+            2>&1 | tee /tmp/ap-dualmic-intercom-stage/unit.log
+          timeout 300s python3 tests/validation/frontend_evolution/dualmic_intercom_transport.py \
+            --bridge ./build-validation-smoke/dualmic_intercom_runtime \
+            --source-revision "$GITHUB_SHA" \
+            --output /tmp/ap-dualmic-intercom-stage/evidence \
+            2>&1 | tee /tmp/ap-dualmic-intercom-stage/run.log
+      - name: Retain actual codec and simulated transport evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: dualmic-intercom-${{ github.run_id }}-attempt-${{ github.run_attempt }}
+          path: /tmp/ap-dualmic-intercom-stage/
+          retention-days: 30
+          if-no-files-found: warn
+      - name: Verify fixed Mandarin source and canonical downstream metrics
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir /tmp/ap-mandarin-stage
+          timeout 300s python3 tests/validation/test_downstream_metrics.py \
+            2>&1 | tee /tmp/ap-mandarin-stage/unit.log
+          timeout 300s python3 -O tests/validation/test_downstream_metrics.py \
+            2>&1 | tee /tmp/ap-mandarin-stage/unit-optimized.log
+          timeout 300s python3 tests/validation/mandarin_downstream_source.py \
+            --root "$RUNNER_TEMP/ap-mandarin-source" \
+            --lock docs/research/frontend-evolution-v1/mandarin-downstream-v1-source-lock.json \
+            2>&1 | tee /tmp/ap-mandarin-stage/source.log
+      - name: Execute the fixed six Mandarin views through actual ASR and KWS
+        shell: bash
+        run: |
+          set -euo pipefail
+          timeout 300s python3 tests/validation/mandarin_downstream.py prepare \
+            --source-root "$RUNNER_TEMP/ap-mandarin-source" \
+            --processor "$PWD/build-validation-smoke/ap_process_pcm" \
+            --source-revision "$GITHUB_SHA" --output /tmp/ap-mandarin-stage/prepared \
+            2>&1 | tee /tmp/ap-mandarin-stage/prepare.log
+          timeout 300s python3 tests/validation/mandarin_downstream.py run \
+            --source-root "$RUNNER_TEMP/ap-mandarin-source" \
+            --prepared /tmp/ap-mandarin-stage/prepared --output /tmp/ap-mandarin-stage/result \
+            2>&1 | tee /tmp/ap-mandarin-stage/run.log
+          timeout 300s python3 tests/validation/mandarin_downstream.py verify \
+            --source-root "$RUNNER_TEMP/ap-mandarin-source" \
+            --prepared /tmp/ap-mandarin-stage/prepared --output /tmp/ap-mandarin-stage/result \
+            2>&1 | tee /tmp/ap-mandarin-stage/readback.log
+          timeout 300s python3 tests/validation/test_mandarin_downstream_integrity.py \
+            --source-root "$RUNNER_TEMP/ap-mandarin-source" \
+            --prepared /tmp/ap-mandarin-stage/prepared --result /tmp/ap-mandarin-stage/result \
+            2>&1 | tee /tmp/ap-mandarin-stage/integrity.log
+          timeout 300s python3 -O tests/validation/test_mandarin_downstream_integrity.py \
+            --source-root "$RUNNER_TEMP/ap-mandarin-source" \
+            --prepared /tmp/ap-mandarin-stage/prepared --result /tmp/ap-mandarin-stage/result \
+            2>&1 | tee /tmp/ap-mandarin-stage/integrity-optimized.log
+      - name: Retain Mandarin source receipts without model or wheel archives
+        if: always()
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+          import shutil
+          root = Path(os.environ['RUNNER_TEMP']) / 'ap-mandarin-source'
+          target = Path('/tmp/ap-mandarin-stage/source-receipts')
+          target.mkdir(parents=True, exist_ok=True)
+          for pattern in ('*.json', 'assets/*.acquisition.json', 'wheels/*.acquisition.json',
+                          'assets/*LICENSE*', 'assets/*COPYING*', 'assets/wenet-transcript.txt'):
+              for path in root.glob(pattern):
+                  destination = target / path.relative_to(root)
+                  destination.parent.mkdir(parents=True, exist_ok=True)
+                  shutil.copyfile(path, destination)
+          shutil.copyfile('docs/research/frontend-evolution-v1/mandarin-downstream-v1-source-lock.json',
+                          target / 'source-lock.json')
+          PY
+      - name: Preserve actual Mandarin model observations and failures
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: dualmic-mandarin-${{ github.run_id }}-attempt-${{ github.run_attempt }}
+          path: /tmp/ap-mandarin-stage/
           retention-days: 30
           if-no-files-found: warn
       - name: Verify deterministic corpus bytes

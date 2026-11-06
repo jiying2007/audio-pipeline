@@ -1,0 +1,141 @@
+{
+  "started_at": "2026-11-06T13:32:14.039046+00:00",
+  "budget_seconds": 300,
+  "source_revision": "fea7e0735ce2e1d6fb45e1f02e0489dea6d7e920",
+  "model_inference_performed": false,
+  "frontend_rerun_performed": false,
+  "reviewer": "independent acoustic agent",
+  "method": "stdlib-only source/raw-payload audit; independent full-matrix CER traceback; no production scorer imports",
+  "status": "PASS",
+  "cases": [
+    {
+      "case_id": "raw",
+      "text": "广州市 房地产 中介 协会 分析",
+      "normalized_text": "广州市房地产中介协会分析",
+      "cer": {
+        "substitutions": 0,
+        "deletions": 0,
+        "insertions": 0,
+        "distance": 0,
+        "reference_units": 12,
+        "hypothesis_units": 12,
+        "error_rate": 0.0
+      },
+      "kws_emissions": [
+        33120
+      ]
+    },
+    {
+      "case_id": "call",
+      "text": "广州市 房地产 中介 协会 分析",
+      "normalized_text": "广州市房地产中介协会分析",
+      "cer": {
+        "substitutions": 0,
+        "deletions": 0,
+        "insertions": 0,
+        "distance": 0,
+        "reference_units": 12,
+        "hypothesis_units": 12,
+        "error_rate": 0.0
+      },
+      "kws_emissions": [
+        33120
+      ]
+    },
+    {
+      "case_id": "assistant",
+      "text": "广州市 房地产 中介 协会 分析",
+      "normalized_text": "广州市房地产中介协会分析",
+      "cer": {
+        "substitutions": 0,
+        "deletions": 0,
+        "insertions": 0,
+        "distance": 0,
+        "reference_units": 12,
+        "hypothesis_units": 12,
+        "error_rate": 0.0
+      },
+      "kws_emissions": [
+        33120
+      ]
+    },
+    {
+      "case_id": "raw_duplex",
+      "text": "广州市 房地产 中介 机会 分析",
+      "normalized_text": "广州市房地产中介机会分析",
+      "cer": {
+        "substitutions": 1,
+        "deletions": 0,
+        "insertions": 0,
+        "distance": 1,
+        "reference_units": 12,
+        "hypothesis_units": 12,
+        "error_rate": 0.08333333333333333
+      },
+      "kws_emissions": []
+    },
+    {
+      "case_id": "call_duplex",
+      "text": "中 是 房地产 中介 协会 分析",
+      "normalized_text": "中是房地产中介协会分析",
+      "cer": {
+        "substitutions": 2,
+        "deletions": 1,
+        "insertions": 0,
+        "distance": 3,
+        "reference_units": 12,
+        "hypothesis_units": 11,
+        "error_rate": 0.25
+      },
+      "kws_emissions": []
+    },
+    {
+      "case_id": "assistant_duplex",
+      "text": "我 中 是 房地产 中介 协会 分析",
+      "normalized_text": "我中是房地产中介协会分析",
+      "cer": {
+        "substitutions": 3,
+        "deletions": 0,
+        "insertions": 0,
+        "distance": 3,
+        "reference_units": 12,
+        "hypothesis_units": 12,
+        "error_rate": 0.25
+      },
+      "kws_emissions": []
+    }
+  ],
+  "pooled_view_accounting": {
+    "substitutions": 6,
+    "deletions": 1,
+    "insertions": 0,
+    "distance": 7,
+    "reference_units": 72,
+    "hypothesis_units": 71,
+    "error_rate": 0.09722222222222222,
+    "presentations": 6
+  },
+  "source_assets": 14,
+  "model_members": 18,
+  "runtime_members": 938,
+  "bound_source_files": 15,
+  "prepared_members": 35,
+  "result_members": 16,
+  "loaded_native_files_per_case": 19,
+  "continuous_processor_frames": 2316,
+  "source_lock_sha256": "306e4a6f4f83e7e577e17037103985804d353f67d0e1d5dc3c3027f320ba64dd",
+  "report_sha256": "c5968e44f337b21f136e2e098369919aedd1f04f59111f72dd5ee4467d2e5e96",
+  "artifact_manifest_sha256": "3b4777b96d9d66f12bba568edfb86a91bd93b5b5c11e9efd5a162c3387a1edc8",
+  "original_failure_sha256": "04a826a936281c8c4af689dc4145c82e28a66142624e1f3a825b9276f9772f5e",
+  "phase_elapsed_seconds": {
+    "build": 2.0888736769993557,
+    "metric-tests": 0.11624641700473148,
+    "prepare": 1.524045965001278,
+    "integrity-pre-inference": 6.241521081996325,
+    "formal-inference-first": 23.89718450300279,
+    "readback-first": 0.8700969749988872
+  },
+  "checks": 6391,
+  "ended_at": "2026-11-06T13:33:57.813944+00:00",
+  "elapsed_seconds": 103.77490304299863
+}

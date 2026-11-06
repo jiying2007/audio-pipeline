@@ -2648,6 +2648,38 @@ jobs:
             --base-evidence fe-speech/effects --output fe-speech/fir --execution-source "$GITHUB_SHA" --verify
           python3 tests/validation/frontend_evolution/speech_fir.py \
             --base-evidence fe-speech/effects --output fe-speech/fir --execution-source "$GITHUB_SHA" --negative-evidence
+      - name: Replay the admitted recordings through both complete dual-mic profiles
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir fe-speech/dualmic-stage
+          timeout 300s python3 tests/validation/test_dualmic_recorded_replay.py \
+            2>&1 | tee fe-speech/dualmic-stage/unit.log
+          timeout 300s cmake -S . -B build-dualmic-recorded -DCMAKE_BUILD_TYPE=Release \
+            -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON \
+            2>&1 | tee fe-speech/dualmic-stage/configure.log
+          timeout 300s cmake --build build-dualmic-recorded \
+            --target ap_process_pcm ap_build_info_dump --parallel \
+            2>&1 | tee fe-speech/dualmic-stage/build.log
+          timeout 300s python3 tests/validation/build_dualmic_recorded_corpus.py \
+            --source fe-speech/effects/data --output fe-speech/dualmic-stage/corpus \
+            2>&1 | tee fe-speech/dualmic-stage/corpus.log
+          timeout 300s python3 tests/validation/run_dualmic_recorded_replay.py \
+            --processor ./build-dualmic-recorded/ap_process_pcm \
+            --corpus fe-speech/dualmic-stage/corpus/corpus.json \
+            --output fe-speech/dualmic-stage/result --source-revision "$GITHUB_SHA" \
+            2>&1 | tee fe-speech/dualmic-stage/run.log
+          timeout 300s python3 tests/validation/run_dualmic_recorded_replay.py \
+            --output fe-speech/dualmic-stage/result --verify \
+            2>&1 | tee fe-speech/dualmic-stage/readback.log
+      - name: Preserve complete dual-mic recorded-speech diagnostics
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: dualmic-recorded-speech-${{ github.run_id }}-attempt-${{ github.run_attempt }}
+          path: fe-speech/dualmic-stage/
+          if-no-files-found: warn
+          retention-days: 30
       - name: Preserve recorded speech provenance and failures
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1

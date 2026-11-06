@@ -1,0 +1,124 @@
+import ctypes as C, hashlib, json, math, struct, subprocess, time
+from pathlib import Path
+BASE=Path('/workspace/scratch/b74ab3415ba4')
+START=json.loads((BASE/'intercom-v1-independent-acoustic-start.json').read_text())
+ROOT=BASE/'intercom-v1-evidence/formal-dbbbe7e'
+REPO=BASE/'audio-dualmic-intercom-v2'
+SHA='dbbbe7ecff03f0a98920cf8317f979470bcd86b4'
+receipt=dict(START); checks=0
+
+def h(b): return hashlib.sha256(b).hexdigest()
+def need(ok,why):
+ global checks
+ checks+=1
+ if not ok: raise ValueError(why)
+ if time.monotonic()-START['started_monotonic']>300: raise TimeoutError('whole independent review budget exceeded')
+def read(p): return json.loads(p.read_text())
+def lines(p): return [json.loads(x) for x in p.read_text().splitlines()]
+def finite(x):
+ if isinstance(x,float): return math.isfinite(x)
+ if isinstance(x,dict): return all(finite(v) for v in x.values())
+ if isinstance(x,list): return all(finite(v) for v in x)
+ return True
+try:
+ report=read(ROOT/'report.json'); manifest=read(ROOT/'artifact-manifest.json')['files']
+ need(report['source_revision']==SHA and report['result']=='HOST_INTEGRATION_COMPLETE' and not report['failures'],'source/completion')
+ need(report['quality_decision']=='NOT_EVALUATED' and report['promotion_allowed'] is False,'authority')
+ need(report['physical_device']==report['real_WAN']==report['human_listening']=='NOT_RUN' and report['mouth_to_ear_latency'] is None,'external scope')
+ actual={str(p.relative_to(ROOT)) for p in ROOT.rglob('*') if p.is_file()}
+ need(actual==set(manifest)|{'artifact-manifest.json'},'manifest exact set')
+ for name,b in manifest.items():
+  p=ROOT/name; data=p.read_bytes();need(not p.is_symlink() and len(data)==b['size_bytes'] and h(data)==b['sha256'],'file '+name)
+ for name,b in report['source_files'].items():
+  data=subprocess.check_output(['git','show',SHA+':'+name],cwd=REPO,timeout=10)
+  need(len(data)==b['size_bytes'] and h(data)==b['sha256'],'source '+name)
+ bridge=Path(report['bridge']['path']);need(h(bridge.read_bytes())==report['bridge']['sha256'],'actual bridge hash')
+ identity=json.loads(subprocess.check_output([str(bridge),'--identity'],timeout=10))
+ need(identity==report['build'],'actual post-init identity')
+ need(identity['effective_readback'] is True and identity['readback_phase']=='post_init_before_worker','real readback phase')
+ need(identity['tuning']['mask']==15 and identity['config']['aec_filter_ms']==96 and identity['config']['stages']==255,'readback envelope')
+ for name,expected in [('aec_mu',.22),('ns_floor',.12),('agc_target_dbfs',-20),('limiter_dbfs',-2)]:
+  need(abs(identity['config'][name]-expected)<1e-7 and identity['tuning'][name]==identity['config'][name],'config/tuning '+name)
+ opus=report['opus']; libpath=Path(opus['loaded_path']);need(h(libpath.read_bytes())==opus['sha256'],'loaded opus identity')
+ lib=C.CDLL(str(libpath));lib.opus_decoder_create.argtypes=[C.c_int32,C.c_int,C.POINTER(C.c_int)];lib.opus_decoder_create.restype=C.c_void_p
+ lib.opus_decoder_destroy.argtypes=[C.c_void_p];lib.opus_decode.argtypes=[C.c_void_p,C.POINTER(C.c_ubyte),C.c_int32,C.POINTER(C.c_int16),C.c_int,C.c_int];lib.opus_decode.restype=C.c_int
+ totals={'packets':0,'actual_decode_calls':0,'plc_calls':0,'runtime_frames':0,'direct_frames':0}; drops={}
+ for case in report['cases']:
+  name=case['case']; scenario=case['scenario']; p=ROOT/name
+  need(case==read(p/'case-report.json'),'case raw summary')
+  play=(p/'playback.pcm').read_bytes();need(len(play)==97280*2 and play==(p/'runtime/consumed-render.pcm').read_bytes(),'actual post-volume render')
+  raw=struct.unpack('<97280h',(p/'downlink/decoded.pcm').read_bytes()); wanted=list(raw)
+  if scenario=='gain-mute': wanted[32000:38400]=[0]*6400;wanted[38400:51200]=[int(v*.5) for v in wanted[38400:51200]]
+  if scenario=='reopen': wanted[48000:48320]=[0]*320
+  need(struct.pack('<97280h',*wanted)==play,'independent playback volume/reopen')
+  worker=read(p/'runtime/report.json'); r=worker['runtime'];drops[name]=r['event_drop_events']
+  need(worker['build']==identity and worker['status']=='PASS' and worker['frames']==608,'worker actual config')
+  need(r['submitted_frames']==r['processed_frames']==608,'runtime counts');totals['runtime_frames']+=608
+  for k in ['failed_frames','input_full_events','output_drop_events','render_push_failures','capture_process_failures','capture_gap_frames','timestamp_frames']:
+   need(r[k]==0,k)
+  need(r['stream_discontinuities']==int(scenario=='reopen') and r['render_gap_frames']==(2 if scenario=='reopen' else 0),'event discontinuities')
+  need(r['overload_us']==9000 and r['recover_frames']==1000,'unchanged scheduling thresholds')
+  trace=lines(p/'runtime/trace.jsonl');need(len(trace)==608 and finite(trace),'finite trace length')
+  for i,row in enumerate(trace):need(row['frame']==i and row['processed_frames']==i+1 and row['quality']==2 and row['render_present'] is True and row['metadata_flags']==(72 if scenario=='reopen' and i==302 else 0) and row['timestamp_observations']==0,'frame state')
+  need(len((p/'runtime/output.pcm').read_bytes())==194560,'output complete')
+  if name in ('normal','reorder','duplicate','single-loss','burst-loss','late','gain-mute','reopen'):
+   direct=read(p/'direct/report.json');need(direct['build']==identity and direct['status']=='PASS' and direct['frames']==608,'direct identity')
+   for f in ['output.pcm','consumed-render.pcm','trace.jsonl']:need((p/'direct'/f).read_bytes()==(p/'runtime'/f).read_bytes(),'direct/runtime '+f)
+   totals['direct_frames']+=608
+  for direction,count in [('downlink',300),('uplink',304)]:
+   q=p/direction; rows=lines(q/'packets.jsonl');blob=(q/'packets.bin').read_bytes(); packets=[];off=0
+   need(len(rows)==count,'packet count')
+   for i,row in enumerate(rows):
+    seq,size=struct.unpack_from('<II',blob,off);payload=blob[off+8:off+8+size]
+    need(seq==i and size==60 and row=={'sequence':i,'offset':off,'payload_bytes':60,'sha256':h(payload)},'packet raw identity')
+    packets.append(payload);off+=8+size
+   need(off==len(blob),'packet suffix');totals['packets']+=count
+   stream=(q/'decoded.pcm').read_bytes();need(stream[:2560]==b'\0'*2560 and len(stream)==(1280+count*320)*2,'untrimmed startup/length')
+   err=C.c_int();decoder=lib.opus_decoder_create(16000,1,C.byref(err));need(err.value==0 and bool(decoder),'independent opus create')
+   timeline=lines(q/'timeline.jsonl');next_seq=0;queue={};seen=set();seen_arr=[];high=0;plcs=late=duplicates=0
+   try:
+    for row in timeline:
+     seq=row['sequence']
+     if row['kind']=='arrival':
+      seen_arr.append((row['time_us'],seq))
+      need(row['payload_sha256']==h(packets[seq]),'arrival payload')
+      if seq in seen: action='duplicate';duplicates+=1
+      elif seq<next_seq: action='late_discard';late+=1;seen.add(seq)
+      else: action='enqueued';queue[seq]=packets[seq];seen.add(seq);high=max(high,len(queue))
+      need(row['action']==action and row['queue_depth']==len(queue) and len(queue)<=6,'arrival queue')
+     else:
+      need(row['kind']=='playout' and seq==next_seq and row['time_us']==(seq+1)*20000+60000,'fixed playout deadline/order')
+      payload=queue.pop(seq,None);action='decode' if payload is not None else 'plc';plcs+=payload is None
+      need(row['action']==action and row['queue_depth']==len(queue) and row['samples']==320,'playout slot')
+      data=(C.c_ubyte*len(payload)).from_buffer_copy(payload) if payload else None
+      pcm=(C.c_int16*320)();decoded=lib.opus_decode(decoder,data,len(payload) if payload else 0,pcm,320,0)
+      raw=bytes(pcm);need(decoded==320 and h(raw)==row['pcm_sha256'] and raw==stream[2560+seq*640:2560+(seq+1)*640],'independent real Opus decode/PLC byte match')
+      totals['actual_decode_calls']+=1;totals['plc_calls']+=payload is None;next_seq+=1
+   finally:lib.opus_decoder_destroy(decoder)
+   expected_arr=[];missing={100} if scenario=='single-loss' else {100,101} if scenario=='burst-loss' else set()
+   for i in range(count):
+    if i in missing:continue
+    delay=50000 if scenario=='reorder' and i==40 else 90000 if scenario=='late' and i==100 else 10000
+    when=(i+1)*20000+delay;expected_arr.append((when,i))
+    if scenario=='duplicate' and i==70:expected_arr.append((when+1000,i))
+   need(seen_arr==sorted(expected_arr) and next_seq==count and not queue,'independent fixed arrival schedule')
+   need(plcs==len(missing)+int(scenario=='late') and late==int(scenario=='late') and duplicates==int(scenario=='duplicate') and high==3,'network expected counters')
+ normal=ROOT/'normal';repeat=ROOT/'normal-repeat';future=ROOT/'normal-future'
+ for f in ['capture.pcm','playback.pcm','runtime/output.pcm','runtime/trace.jsonl','downlink/decoded.pcm','downlink/packets.bin','downlink/timeline.jsonl','uplink/decoded.pcm','uplink/packets.bin','uplink/timeline.jsonl']:
+  need((normal/f).read_bytes()==(repeat/f).read_bytes(),'repeat '+f)
+ for f,n in [('playback.pcm',368*160*2),('capture.pcm',368*160*4),('runtime/output.pcm',368*160*2),('uplink/decoded.pcm',376*160*2),('downlink/packets.bin',180*68),('uplink/packets.bin',184*68)]:
+  need((normal/f).read_bytes()[:n]==(future/f).read_bytes()[:n],'future prefix '+f)
+ need((normal/'capture.pcm').read_bytes()!=(future/'capture.pcm').read_bytes(),'changed future actually different')
+ need((ROOT/'gain-mute/playback.pcm').read_bytes()!=(ROOT/'gain-mute/downlink/decoded.pcm').read_bytes(),'pre-volume wrong reference')
+ need((ROOT/'single-loss/playback.pcm').read_bytes()!=(ROOT/'normal/playback.pcm').read_bytes(),'pre-PLC wrong reference')
+ old=BASE/'intercom-v1-evidence/formal-e7f4b67'
+ need(h((old/'report.json').read_bytes())=='0c45bad330dc133959e645d834e7142dbf49606c264e4ae0797820b4b917ca95','original e7f report preserved')
+ need(h((old/'artifact-manifest.json').read_bytes())=='2bbb7d323dc84e4f3ffff40271ba3cc2dd0c7b2499d7c5f3bb5a7299b469b1d9','original e7f manifest preserved')
+ receipt.update(status='INDEPENDENT_READBACK_PASS',checks=checks,totals=totals,event_drop_events=drops,raw_files=len(actual),source_files=len(report['source_files']),report_sha256=h((ROOT/'report.json').read_bytes()),manifest_sha256=h((ROOT/'artifact-manifest.json').read_bytes()),post_init_identity_reexecuted=True,independent_real_opus_decode=True,frontend_DSP_reexecuted=False,production_files_modified=False)
+except Exception as e:
+ receipt.update(status='FAIL',checks=checks,error=type(e).__name__+': '+str(e))
+receipt['elapsed_seconds']=time.monotonic()-START['started_monotonic']
+if receipt['elapsed_seconds']>300:receipt['status']='BUDGET_FAIL'
+(BASE/'intercom-v1-independent-acoustic-result.json').write_text(json.dumps(receipt,indent=2,sort_keys=True)+'\n')
+print(json.dumps(receipt,indent=2,sort_keys=True))
+raise SystemExit(0 if receipt['status']=='INDEPENDENT_READBACK_PASS' else 1)

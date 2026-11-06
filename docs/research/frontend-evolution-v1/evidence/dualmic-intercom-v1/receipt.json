@@ -1,0 +1,1528 @@
+{
+  "actual_direct_api_frames": 4864,
+  "actual_host_runtime": true,
+  "actual_runtime_frames": 6080,
+  "bridge": {
+    "path": "/workspace/scratch/b74ab3415ba4/intercom-v1-evidence/build-dbbbe7e/build/dualmic_intercom_runtime",
+    "sha256": "1ec8b84c52ce601fc01e674c62d0b633388041d22d067f17800d6944a724c43b",
+    "size_bytes": 118384
+  },
+  "build": {
+    "aec_backend": "MDF",
+    "build_type": "Release",
+    "compiler_id": "GNU",
+    "compiler_version": "14.2.0",
+    "config": {
+      "aec_filter_ms": 96,
+      "aec_mu": 0.219999999,
+      "agc_target_dbfs": -20,
+      "io_sample_rate_hz": 16000,
+      "limiter_dbfs": -2,
+      "mic_channels": 2,
+      "ns_floor": 0.119999997,
+      "runtime_queue_depth": 8,
+      "stages": 255
+    },
+    "config_digest": "7abf0ce0985d3d15682037f715d7afc0c1844a725f56aef29164c25d103d557a",
+    "effective_readback": true,
+    "fast_math": 0,
+    "has_linux_runtime": 1,
+    "module_mask": 1023,
+    "ns_estimator": "EMA",
+    "pipeline_state_bytes": 78224,
+    "readback_phase": "post_init_before_worker",
+    "resampler_mode": "BANDLIMITED",
+    "runtime_state_bytes": 32760,
+    "simd_backend": "SCALAR",
+    "source_revision": "dbbbe7ecff03f0a98920cf8317f979470bcd86b4",
+    "target_triple": "x86_64-linux-gnu",
+    "tuning": {
+      "aec_mu": 0.219999999,
+      "agc_target_dbfs": -20,
+      "limiter_dbfs": -2,
+      "mask": 15,
+      "ns_floor": 0.119999997
+    },
+    "version": "2.3.63"
+  },
+  "cases": [
+    {
+      "capture_frames": 608,
+      "case": "normal",
+      "downlink": {
+        "codec_lookahead_tail_flushed": false,
+        "decoded_pcm": {
+          "sha256": "e4f53c28ed7558059073beffb529d9ef34724ca7c633c53bc518eea7c5a15526",
+          "size_bytes": 194560
+        },
+        "input_samples": 96000,
+        "packets": {
+          "sha256": "c4cd22e5b759718e32b1faf03277299ccb188418b24275f1ae5c4c0d5fadea88",
+          "size_bytes": 20400
+        },
+        "settings": {
+          "application": 2048,
+          "bitrate": 24000,
+          "channels": 1,
+          "complexity": 5,
+          "dtx": 0,
+          "inband_fec": 0,
+          "lookahead_samples": 104,
+          "packet_loss_perc": 0,
+          "packet_samples": 320,
+          "sample_rate_hz": 16000,
+          "vbr": 0
+        },
+        "unflushed_codec_tail_samples": 104
+      },
+      "downlink_counts": {
+        "arrival_events": 300,
+        "decoded_packets": 300,
+        "duplicates": 0,
+        "encoded_packets": 300,
+        "late_packets": 0,
+        "network_dropped_packets": 0,
+        "playout_samples": 97280,
+        "plc_packets": 0,
+        "queue_capacity": 6,
+        "queue_high_water": 3,
+        "startup_samples": 1280
+      },
+      "public_api_comparison": {
+        "consumed-render.pcm": true,
+        "output.pcm": true,
+        "trace.jsonl": true
+      },
+      "render_binding": {
+        "sha256": "e4f53c28ed7558059073beffb529d9ef34724ca7c633c53bc518eea7c5a15526",
+        "size_bytes": 194560
+      },
+      "runtime_output": {
+        "sha256": "5f9ee2628945f049b35309b8b585c3664e7cecd2b1d7bd7e3c2e9880642fb01d",
+        "size_bytes": 194560
+      },
+      "scenario": "normal",
+      "uplink": {
+        "codec_lookahead_tail_flushed": false,
+        "decoded_pcm": {
+          "sha256": "7e16149145ea42ac49d9710b9d3aeb949ca4c0828d634f51127e778cb669cc0b",
+          "size_bytes": 197120
+        },
+        "input_samples": 97280,
+        "packets": {
+          "sha256": "e7e5709a07ee4a228a5d79a9a8959d7744ca129356c87e7c1f7e4e269cf81666",
+          "size_bytes": 20672
+        },
+        "settings": {
+          "application": 2048,
+          "bitrate": 24000,
+          "channels": 1,
+          "complexity": 5,
+          "dtx": 0,
+          "inband_fec": 0,
+          "lookahead_samples": 104,
+          "packet_loss_perc": 0,
+          "packet_samples": 320,
+          "sample_rate_hz": 16000,
+          "vbr": 0
+        },
+        "unflushed_codec_tail_samples": 104
+      },
+      "uplink_counts": {
+        "arrival_events": 304,
+        "decoded_packets": 304,
+        "duplicates": 0,
+        "encoded_packets": 304,
+        "late_packets": 0,
+        "network_dropped_packets": 0,
+        "playout_samples": 98560,
+        "plc_packets": 0,
+        "queue_capacity": 6,
+        "queue_high_water": 3,
+        "startup_samples": 1280
+      },
+      "worker_counts": {
+        "capture_gap_frames": 0,
+        "capture_process_failures": 0,
+        "dsp_overruns": 0,
+        "event_drop_events": 1,
+        "failed_frames": 0,
+        "input_full_events": 0,
+        "input_queue_high_water": 1,
+        "max_dsp_us": 349,
+        "output_drop_events": 0,
+        "output_queue_high_water": 1,
+        "overload_us": 9000,
+        "p50_dsp_us": 250,
+        "p95_dsp_us": 250,
+        "p99_dsp_us": 250,
+        "processed_frames": 608,
+        "recover_frames": 1000,
+        "render_gap_frames": 0,
+        "render_push_failures": 0,
+        "stream_discontinuities": 0,
+        "submitted_frames": 608,
+        "timestamp_frames": 0
+      }
+    },
+    {
+      "capture_frames": 608,
+      "case": "reorder",
+      "downlink": {
+        "codec_lookahead_tail_flushed": false,
+        "decoded_pcm": {
+          "sha256": "e4f53c28ed7558059073beffb529d9ef34724ca7c633c53bc518eea7c5a15526",
+          "size_bytes": 194560
+        },
+        "input_samples": 96000,
+        "packets": {
+          "sha256": "c4cd22e5b759718e32b1faf03277299ccb188418b24275f1ae5c4c0d5fadea88",
+          "size_bytes": 20400
+        },
+        "settings": {
+          "application": 2048,
+          "bitrate": 24000,
+          "channels": 1,
+          "complexity": 5,
+          "dtx": 0,
+          "inband_fec": 0,
+          "lookahead_samples": 104,
+          "packet_loss_perc": 0,
+          "packet_samples": 320,
+          "sample_rate_hz": 16000,
+          "vbr": 0
+        },
+        "unflushed_codec_tail_samples": 104
+      },
+      "downlink_counts": {
+        "arrival_events": 300,
+        "decoded_packets": 300,
+        "duplicates": 0,
+        "encoded_packets": 300,
+        "late_packets": 0,
+        "network_dropped_packets": 0,
+        "playout_samples": 97280,
+        "plc_packets": 0,
+        "queue_capacity": 6,
+        "queue_high_water": 3,
+        "startup_samples": 1280
+      },
+      "public_api_comparison": {
+        "consumed-render.pcm": true,
+        "output.pcm": true,
+        "trace.jsonl": true
+      },
+      "render_binding": {
+        "sha256": "e4f53c28ed7558059073beffb529d9ef34724ca7c633c53bc518eea7c5a15526",
+        "size_bytes": 194560
+      },
+      "runtime_output": {
+        "sha256": "5f9ee2628945f049b35309b8b585c3664e7cecd2b1d7bd7e3c2e9880642fb01d",
+        "size_bytes": 194560
+      },
+      "scenario": "reorder",
+      "uplink": {
+        "codec_lookahead_tail_flushed": false,
+        "decoded_pcm": {
+          "sha256": "7e16149145ea42ac49d9710b9d3aeb949ca4c0828d634f51127e778cb669cc0b",
+          "size_bytes": 197120
+        },
+        "input_samples": 97280,
+        "packets": {
+          "sha256": "e7e5709a07ee4a228a5d79a9a8959d7744ca129356c87e7c1f7e4e269cf81666",
+          "size_bytes": 20672
+        },
+        "settings": {
+          "application": 2048,
+          "bitrate": 24000,
+          "channels": 1,
+          "complexity": 5,
+          "dtx": 0,
+          "inband_fec": 0,
+          "lookahead_samples": 104,
+          "packet_loss_perc": 0,
+          "packet_samples": 320,
+          "sample_rate_hz": 16000,
+          "vbr": 0
+        },
+        "unflushed_codec_tail_samples": 104
+      },
+      "uplink_counts": {
+        "arrival_events": 304,
+        "decoded_packets": 304,
+        "duplicates": 0,
+        "encoded_packets": 304,
+        "late_packets": 0,
+        "network_dropped_packets": 0,
+        "playout_samples": 98560,
+        "plc_packets": 0,
+        "queue_capacity": 6,
+        "queue_high_water": 3,
+        "startup_samples": 1280
+      },
+      "worker_counts": {
+        "capture_gap_frames": 0,
+        "capture_process_failures": 0,
+        "dsp_overruns": 0,
+        "event_drop_events": 1,
+        "failed_frames": 0,
+        "input_full_events": 0,
+        "input_queue_high_water": 1,
+        "max_dsp_us": 133,
+        "output_drop_events": 0,
+        "output_queue_high_water": 1,
+        "overload_us": 9000,
+        "p50_dsp_us": 250,
+        "p95_dsp_us": 250,
+        "p99_dsp_us": 250,
+        "processed_frames": 608,
+        "recover_frames": 1000,
+        "render_gap_frames": 0,
+        "render_push_failures": 0,
+        "stream_discontinuities": 0,
+        "submitted_frames": 608,
+        "timestamp_frames": 0
+      }
+    },
+    {
+      "capture_frames": 608,
+      "case": "duplicate",
+      "downlink": {
+        "codec_lookahead_tail_flushed": false,
+        "decoded_pcm": {
+          "sha256": "e4f53c28ed7558059073beffb529d9ef34724ca7c633c53bc518eea7c5a15526",
+          "size_bytes": 194560
+        },
+        "input_samples": 96000,
+        "packets": {
+          "sha256": "c4cd22e5b759718e32b1faf03277299ccb188418b24275f1ae5c4c0d5fadea88",
+          "size_bytes": 20400
+        },
+        "settings": {
+          "application": 2048,
+          "bitrate": 24000,
+          "channels": 1,
+          "complexity": 5,
+          "dtx": 0,
+          "inband_fec": 0,
+          "lookahead_samples": 104,
+          "packet_loss_perc": 0,
+          "packet_samples": 320,
+          "sample_rate_hz": 16000,
+          "vbr": 0
+        },
+        "unflushed_codec_tail_samples": 104
+      },
+      "downlink_counts": {
+        "arrival_events": 301,
+        "decoded_packets": 300,
+        "duplicates": 1,
+        "encoded_packets": 300,
+        "late_packets": 0,
+        "network_dropped_packets": 0,
+        "playout_samples": 97280,
+        "plc_packets": 0,
+        "queue_capacity": 6,
+        "queue_high_water": 3,
+        "startup_samples": 1280
+      },
+      "public_api_comparison": {
+        "consumed-render.pcm": true,
+        "output.pcm": true,
+        "trace.jsonl": true
+      },
+      "render_binding": {
+        "sha256": "e4f53c28ed7558059073beffb529d9ef34724ca7c633c53bc518eea7c5a15526",
+        "size_bytes": 194560
+      },
+      "runtime_output": {
+        "sha256": "5f9ee2628945f049b35309b8b585c3664e7cecd2b1d7bd7e3c2e9880642fb01d",
+        "size_bytes": 194560
+      },
+      "scenario": "duplicate",
+      "uplink": {
+        "codec_lookahead_tail_flushed": false,
+        "decoded_pcm": {
+          "sha256": "7e16149145ea42ac49d9710b9d3aeb949ca4c0828d634f51127e778cb669cc0b",
+          "size_bytes": 197120
+        },
+        "input_samples": 97280,
+        "packets": {
+          "sha256": "e7e5709a07ee4a228a5d79a9a8959d7744ca129356c87e7c1f7e4e269cf81666",
+          "size_bytes": 20672
+        },
+        "settings": {
+          "application": 2048,
+          "bitrate": 24000,
+          "channels": 1,
+          "complexity": 5,
+          "dtx": 0,
+          "inband_fec": 0,
+          "lookahead_samples": 104,
+          "packet_loss_perc": 0,
+          "packet_samples": 320,
+          "sample_rate_hz": 16000,
+          "vbr": 0
+        },
+        "unflushed_codec_tail_samples": 104
+      },
+      "uplink_counts": {
+        "arrival_events": 305,
+        "decoded_packets": 304,
+        "duplicates": 1,
+        "encoded_packets": 304,
+        "late_packets": 0,
+        "network_dropped_packets": 0,
+        "playout_samples": 98560,
+        "plc_packets": 0,
+        "queue_capacity": 6,
+        "queue_high_water": 3,
+        "startup_samples": 1280
+      },
+      "worker_counts": {
+        "capture_gap_frames": 0,
+        "capture_process_failures": 0,
+        "dsp_overruns": 0,
+        "event_drop_events": 1,
+        "failed_frames": 0,
+        "input_full_events": 0,
+        "input_queue_high_water": 1,
+        "max_dsp_us": 164,
+        "output_drop_events": 0,
+        "output_queue_high_water": 1,
+        "overload_us": 9000,
+        "p50_dsp_us": 250,
+        "p95_dsp_us": 250,
+        "p99_dsp_us": 250,
+        "processed_frames": 608,
+        "recover_frames": 1000,
+        "render_gap_frames": 0,
+        "render_push_failures": 0,
+        "stream_discontinuities": 0,
+        "submitted_frames": 608,
+        "timestamp_frames": 0
+      }
+    },
+    {
+      "capture_frames": 608,
+      "case": "single-loss",
+      "downlink": {
+        "codec_lookahead_tail_flushed": false,
+        "decoded_pcm": {
+          "sha256": "99e2fd4c9940a72940e535d689732f0b241db5a6bf49097dfac51534f5fb7070",
+          "size_bytes": 194560
+        },
+        "input_samples": 96000,
+        "packets": {
+          "sha256": "c4cd22e5b759718e32b1faf03277299ccb188418b24275f1ae5c4c0d5fadea88",
+          "size_bytes": 20400
+        },
+        "settings": {
+          "application": 2048,
+          "bitrate": 24000,
+          "channels": 1,
+          "complexity": 5,
+          "dtx": 0,
+          "inband_fec": 0,
+          "lookahead_samples": 104,
+          "packet_loss_perc": 0,
+          "packet_samples": 320,
+          "sample_rate_hz": 16000,
+          "vbr": 0
+        },
+        "unflushed_codec_tail_samples": 104
+      },
+      "downlink_counts": {
+        "arrival_events": 299,
+        "decoded_packets": 299,
+        "duplicates": 0,
+        "encoded_packets": 300,
+        "late_packets": 0,
+        "network_dropped_packets": 1,
+        "playout_samples": 97280,
+        "plc_packets": 1,
+        "queue_capacity": 6,
+        "queue_high_water": 3,
+        "startup_samples": 1280
+      },
+      "public_api_comparison": {
+        "consumed-render.pcm": true,
+        "output.pcm": true,
+        "trace.jsonl": true
+      },
+      "render_binding": {
+        "sha256": "99e2fd4c9940a72940e535d689732f0b241db5a6bf49097dfac51534f5fb7070",
+        "size_bytes": 194560
+      },
+      "runtime_output": {
+        "sha256": "718d1411ec7fa13e2f297e7011628ebf584e33264e8ac73e0cc418ec47e5802b",
+        "size_bytes": 194560
+      },
+      "scenario": "single-loss",
+      "uplink": {
+        "codec_lookahead_tail_flushed": false,
+        "decoded_pcm": {
+          "sha256": "3e3f8fe257462ad9b59dd9b689838a94b3309afe355c65da68f26cd8757c0c7a",
+          "size_bytes": 197120
+        },
+        "input_samples": 97280,
+        "packets": {
+          "sha256": "e276ffa25b671df63ff4ba6bd84addc6453b58b42b305c90cb34890b861f0622",
+          "size_bytes": 20672
+        },
+        "settings": {
+          "application": 2048,
+          "bitrate": 24000,
+          "channels": 1,
+          "complexity": 5,
+          "dtx": 0,
+          "inband_fec": 0,
+          "lookahead_samples": 104,
+          "packet_loss_perc": 0,
+          "packet_samples": 320,
+          "sample_rate_hz": 16000,
+          "vbr": 0
+        },
+        "unflushed_codec_tail_samples": 104
+      },
+      "uplink_counts": {
+        "arrival_events": 303,
+        "decoded_packets": 303,
+        "duplicates": 0,
+        "encoded_packets": 304,
+        "late_packets": 0,
+        "network_dropped_packets": 1,
+        "playout_samples": 98560,
+        "plc_packets": 1,
+        "queue_capacity": 6,
+        "queue_high_water": 3,
+        "startup_samples": 1280
+      },
+      "worker_counts": {
+        "capture_gap_frames": 0,
+        "capture_process_failures": 0,
+        "dsp_overruns": 0,
+        "event_drop_events": 1,
+        "failed_frames": 0,
+        "input_full_events": 0,
+        "input_queue_high_water": 1,
+        "max_dsp_us": 290,
+        "output_drop_events": 0,
+        "output_queue_high_water": 1,
+        "overload_us": 9000,
+        "p50_dsp_us": 250,
+        "p95_dsp_us": 250,
+        "p99_dsp_us": 250,
+        "processed_frames": 608,
+        "recover_frames": 1000,
+        "render_gap_frames": 0,
+        "render_push_failures": 0,
+        "stream_discontinuities": 0,
+        "submitted_frames": 608,
+        "timestamp_frames": 0
+      }
+    },
+    {
+      "capture_frames": 608,
+      "case": "burst-loss",
+      "downlink": {
+        "codec_lookahead_tail_flushed": false,
+        "decoded_pcm": {
+          "sha256": "098d48f996c8aa1a846b998f40be1de93da10f46d3531a50f6225fb461c88769",
+          "size_bytes": 194560
+        },
+        "input_samples": 96000,
+        "packets": {
+          "sha256": "c4cd22e5b759718e32b1faf03277299ccb188418b24275f1ae5c4c0d5fadea88",
+          "size_bytes": 20400
+        },
+        "settings": {
+          "application": 2048,
+          "bitrate": 24000,
+          "channels": 1,
+          "complexity": 5,
+          "dtx": 0,
+          "inband_fec": 0,
+          "lookahead_samples": 104,
+          "packet_loss_perc": 0,
+          "packet_samples": 320,
+          "sample_rate_hz": 16000,
+          "vbr": 0
+        },
+        "unflushed_codec_tail_samples": 104
+      },
+      "downlink_counts": {
+        "arrival_events": 298,
+        "decoded_packets": 298,
+        "duplicates": 0,
+        "encoded_packets": 300,
+        "late_packets": 0,
+        "network_dropped_packets": 2,
+        "playout_samples": 97280,
+        "plc_packets": 2,
+        "queue_capacity": 6,
+        "queue_high_water": 3,
+        "startup_samples": 1280
+      },
+      "public_api_comparison": {
+        "consumed-render.pcm": true,
+        "output.pcm": true,
+        "trace.jsonl": true
+      },
+      "render_binding": {
+        "sha256": "098d48f996c8aa1a846b998f40be1de93da10f46d3531a50f6225fb461c88769",
+        "size_bytes": 194560
+      },
+      "runtime_output": {
+        "sha256": "7ecf0ffecb530493d1b291cd390dfe162222b35805f57917f90df9ed7bd924b2",
+        "size_bytes": 194560
+      },
+      "scenario": "burst-loss",
+      "uplink": {
+        "codec_lookahead_tail_flushed": false,
+        "decoded_pcm": {
+          "sha256": "7b0692f255620e58c67f6acd2f4b3fc93c228eddebb574762b63bbd3d01ead5f",
+          "size_bytes": 197120
+        },
+        "input_samples": 97280,
+        "packets": {
+          "sha256": "6febc19619cdc4627d898f6bded59db7a79ba9827653eb2e876d8b0eb3fdddc2",
+          "size_bytes": 20672
+        },
+        "settings": {
+          "application": 2048,
+          "bitrate": 24000,
+          "channels": 1,
+          "complexity": 5,
+          "dtx": 0,
+          "inband_fec": 0,
+          "lookahead_samples": 104,
+          "packet_loss_perc": 0,
+          "packet_samples": 320,
+          "sample_rate_hz": 16000,
+          "vbr": 0
+        },
+        "unflushed_codec_tail_samples": 104
+      },
+      "uplink_counts": {
+        "arrival_events": 302,
+        "decoded_packets": 302,
+        "duplicates": 0,
+        "encoded_packets": 304,
+        "late_packets": 0,
+        "network_dropped_packets": 2,
+        "playout_samples": 98560,
+        "plc_packets": 2,
+        "queue_capacity": 6,
+        "queue_high_water": 3,
+        "startup_samples": 1280
+      },
+      "worker_counts": {
+        "capture_gap_frames": 0,
+        "capture_process_failures": 0,
+        "dsp_overruns": 0,
+        "event_drop_events": 1,
+        "failed_frames": 0,
+        "input_full_events": 0,
+        "input_queue_high_water": 1,
+        "max_dsp_us": 291,
+        "output_drop_events": 0,
+        "output_queue_high_water": 1,
+        "overload_us": 9000,
+        "p50_dsp_us": 250,
+        "p95_dsp_us": 250,
+        "p99_dsp_us": 250,
+        "processed_frames": 608,
+        "recover_frames": 1000,
+        "render_gap_frames": 0,
+        "render_push_failures": 0,
+        "stream_discontinuities": 0,
+        "submitted_frames": 608,
+        "timestamp_frames": 0
+      }
+    },
+    {
+      "capture_frames": 608,
+      "case": "late",
+      "downlink": {
+        "codec_lookahead_tail_flushed": false,
+        "decoded_pcm": {
+          "sha256": "99e2fd4c9940a72940e535d689732f0b241db5a6bf49097dfac51534f5fb7070",
+          "size_bytes": 194560
+        },
+        "input_samples": 96000,
+        "packets": {
+          "sha256": "c4cd22e5b759718e32b1faf03277299ccb188418b24275f1ae5c4c0d5fadea88",
+          "size_bytes": 20400
+        },
+        "settings": {
+          "application": 2048,
+          "bitrate": 24000,
+          "channels": 1,
+          "complexity": 5,
+          "dtx": 0,
+          "inband_fec": 0,
+          "lookahead_samples": 104,
+          "packet_loss_perc": 0,
+          "packet_samples": 320,
+          "sample_rate_hz": 16000,
+          "vbr": 0
+        },
+        "unflushed_codec_tail_samples": 104
+      },
+      "downlink_counts": {
+        "arrival_events": 300,
+        "decoded_packets": 299,
+        "duplicates": 0,
+        "encoded_packets": 300,
+        "late_packets": 1,
+        "network_dropped_packets": 0,
+        "playout_samples": 97280,
+        "plc_packets": 1,
+        "queue_capacity": 6,
+        "queue_high_water": 3,
+        "startup_samples": 1280
+      },
+      "public_api_comparison": {
+        "consumed-render.pcm": true,
+        "output.pcm": true,
+        "trace.jsonl": true
+      },
+      "render_binding": {
+        "sha256": "99e2fd4c9940a72940e535d689732f0b241db5a6bf49097dfac51534f5fb7070",
+        "size_bytes": 194560
+      },
+      "runtime_output": {
+        "sha256": "718d1411ec7fa13e2f297e7011628ebf584e33264e8ac73e0cc418ec47e5802b",
+        "size_bytes": 194560
+      },
+      "scenario": "late",
+      "uplink": {
+        "codec_lookahead_tail_flushed": false,
+        "decoded_pcm": {
+          "sha256": "3e3f8fe257462ad9b59dd9b689838a94b3309afe355c65da68f26cd8757c0c7a",
+          "size_bytes": 197120
+        },
+        "input_samples": 97280,
+        "packets": {
+          "sha256": "e276ffa25b671df63ff4ba6bd84addc6453b58b42b305c90cb34890b861f0622",
+          "size_bytes": 20672
+        },
+        "settings": {
+          "application": 2048,
+          "bitrate": 24000,
+          "channels": 1,
+          "complexity": 5,
+          "dtx": 0,
+          "inband_fec": 0,
+          "lookahead_samples": 104,
+          "packet_loss_perc": 0,
+          "packet_samples": 320,
+          "sample_rate_hz": 16000,
+          "vbr": 0
+        },
+        "unflushed_codec_tail_samples": 104
+      },
+      "uplink_counts": {
+        "arrival_events": 304,
+        "decoded_packets": 303,
+        "duplicates": 0,
+        "encoded_packets": 304,
+        "late_packets": 1,
+        "network_dropped_packets": 0,
+        "playout_samples": 98560,
+        "plc_packets": 1,
+        "queue_capacity": 6,
+        "queue_high_water": 3,
+        "startup_samples": 1280
+      },
+      "worker_counts": {
+        "capture_gap_frames": 0,
+        "capture_process_failures": 0,
+        "dsp_overruns": 0,
+        "event_drop_events": 1,
+        "failed_frames": 0,
+        "input_full_events": 0,
+        "input_queue_high_water": 1,
+        "max_dsp_us": 765,
+        "output_drop_events": 0,
+        "output_queue_high_water": 1,
+        "overload_us": 9000,
+        "p50_dsp_us": 250,
+        "p95_dsp_us": 250,
+        "p99_dsp_us": 250,
+        "processed_frames": 608,
+        "recover_frames": 1000,
+        "render_gap_frames": 0,
+        "render_push_failures": 0,
+        "stream_discontinuities": 0,
+        "submitted_frames": 608,
+        "timestamp_frames": 0
+      }
+    },
+    {
+      "capture_frames": 608,
+      "case": "gain-mute",
+      "downlink": {
+        "codec_lookahead_tail_flushed": false,
+        "decoded_pcm": {
+          "sha256": "e4f53c28ed7558059073beffb529d9ef34724ca7c633c53bc518eea7c5a15526",
+          "size_bytes": 194560
+        },
+        "input_samples": 96000,
+        "packets": {
+          "sha256": "c4cd22e5b759718e32b1faf03277299ccb188418b24275f1ae5c4c0d5fadea88",
+          "size_bytes": 20400
+        },
+        "settings": {
+          "application": 2048,
+          "bitrate": 24000,
+          "channels": 1,
+          "complexity": 5,
+          "dtx": 0,
+          "inband_fec": 0,
+          "lookahead_samples": 104,
+          "packet_loss_perc": 0,
+          "packet_samples": 320,
+          "sample_rate_hz": 16000,
+          "vbr": 0
+        },
+        "unflushed_codec_tail_samples": 104
+      },
+      "downlink_counts": {
+        "arrival_events": 300,
+        "decoded_packets": 300,
+        "duplicates": 0,
+        "encoded_packets": 300,
+        "late_packets": 0,
+        "network_dropped_packets": 0,
+        "playout_samples": 97280,
+        "plc_packets": 0,
+        "queue_capacity": 6,
+        "queue_high_water": 3,
+        "startup_samples": 1280
+      },
+      "public_api_comparison": {
+        "consumed-render.pcm": true,
+        "output.pcm": true,
+        "trace.jsonl": true
+      },
+      "render_binding": {
+        "sha256": "7b78af3298019a6256cc0ef776ab97b6934bbe3c974ee2b46fbaec318faca0a4",
+        "size_bytes": 194560
+      },
+      "runtime_output": {
+        "sha256": "94ccd1e17b0f4a9c15f601bf2eb3279d0f8ff821b47becb76e4fc0b36132de83",
+        "size_bytes": 194560
+      },
+      "scenario": "gain-mute",
+      "uplink": {
+        "codec_lookahead_tail_flushed": false,
+        "decoded_pcm": {
+          "sha256": "6557dba76ac6d2165e278f0d76573663e4c0ec8ea52ce1572315505b5eb95ada",
+          "size_bytes": 197120
+        },
+        "input_samples": 97280,
+        "packets": {
+          "sha256": "5d155264be8ca3b8e9708efba8f9400d5a3e6af470703514629e3522c41ef60f",
+          "size_bytes": 20672
+        },
+        "settings": {
+          "application": 2048,
+          "bitrate": 24000,
+          "channels": 1,
+          "complexity": 5,
+          "dtx": 0,
+          "inband_fec": 0,
+          "lookahead_samples": 104,
+          "packet_loss_perc": 0,
+          "packet_samples": 320,
+          "sample_rate_hz": 16000,
+          "vbr": 0
+        },
+        "unflushed_codec_tail_samples": 104
+      },
+      "uplink_counts": {
+        "arrival_events": 304,
+        "decoded_packets": 304,
+        "duplicates": 0,
+        "encoded_packets": 304,
+        "late_packets": 0,
+        "network_dropped_packets": 0,
+        "playout_samples": 98560,
+        "plc_packets": 0,
+        "queue_capacity": 6,
+        "queue_high_water": 3,
+        "startup_samples": 1280
+      },
+      "worker_counts": {
+        "capture_gap_frames": 0,
+        "capture_process_failures": 0,
+        "dsp_overruns": 0,
+        "event_drop_events": 1,
+        "failed_frames": 0,
+        "input_full_events": 0,
+        "input_queue_high_water": 1,
+        "max_dsp_us": 85,
+        "output_drop_events": 0,
+        "output_queue_high_water": 1,
+        "overload_us": 9000,
+        "p50_dsp_us": 250,
+        "p95_dsp_us": 250,
+        "p99_dsp_us": 250,
+        "processed_frames": 608,
+        "recover_frames": 1000,
+        "render_gap_frames": 0,
+        "render_push_failures": 0,
+        "stream_discontinuities": 0,
+        "submitted_frames": 608,
+        "timestamp_frames": 0
+      }
+    },
+    {
+      "capture_frames": 608,
+      "case": "reopen",
+      "downlink": {
+        "codec_lookahead_tail_flushed": false,
+        "decoded_pcm": {
+          "sha256": "e4f53c28ed7558059073beffb529d9ef34724ca7c633c53bc518eea7c5a15526",
+          "size_bytes": 194560
+        },
+        "input_samples": 96000,
+        "packets": {
+          "sha256": "c4cd22e5b759718e32b1faf03277299ccb188418b24275f1ae5c4c0d5fadea88",
+          "size_bytes": 20400
+        },
+        "settings": {
+          "application": 2048,
+          "bitrate": 24000,
+          "channels": 1,
+          "complexity": 5,
+          "dtx": 0,
+          "inband_fec": 0,
+          "lookahead_samples": 104,
+          "packet_loss_perc": 0,
+          "packet_samples": 320,
+          "sample_rate_hz": 16000,
+          "vbr": 0
+        },
+        "unflushed_codec_tail_samples": 104
+      },
+      "downlink_counts": {
+        "arrival_events": 300,
+        "decoded_packets": 300,
+        "duplicates": 0,
+        "encoded_packets": 300,
+        "late_packets": 0,
+        "network_dropped_packets": 0,
+        "playout_samples": 97280,
+        "plc_packets": 0,
+        "queue_capacity": 6,
+        "queue_high_water": 3,
+        "startup_samples": 1280
+      },
+      "public_api_comparison": {
+        "consumed-render.pcm": true,
+        "output.pcm": true,
+        "trace.jsonl": true
+      },
+      "render_binding": {
+        "sha256": "35482a359db4ccfd68f4cc51a01057b143e804649db365237559aa550c135715",
+        "size_bytes": 194560
+      },
+      "runtime_output": {
+        "sha256": "e034cf946923f4351f70ce8c851fba9f1935ebac45d72620b6cd395b63c09c5a",
+        "size_bytes": 194560
+      },
+      "scenario": "reopen",
+      "uplink": {
+        "codec_lookahead_tail_flushed": false,
+        "decoded_pcm": {
+          "sha256": "d5f923623b5a9a3a9d97f740a2debce321ab6381d0af908f7ba0c330e61550c1",
+          "size_bytes": 197120
+        },
+        "input_samples": 97280,
+        "packets": {
+          "sha256": "c1d98d9e984ebe8e287c323827fa2f8817598d044f5a5cbd3358e49cddb09d7d",
+          "size_bytes": 20672
+        },
+        "settings": {
+          "application": 2048,
+          "bitrate": 24000,
+          "channels": 1,
+          "complexity": 5,
+          "dtx": 0,
+          "inband_fec": 0,
+          "lookahead_samples": 104,
+          "packet_loss_perc": 0,
+          "packet_samples": 320,
+          "sample_rate_hz": 16000,
+          "vbr": 0
+        },
+        "unflushed_codec_tail_samples": 104
+      },
+      "uplink_counts": {
+        "arrival_events": 304,
+        "decoded_packets": 304,
+        "duplicates": 0,
+        "encoded_packets": 304,
+        "late_packets": 0,
+        "network_dropped_packets": 0,
+        "playout_samples": 98560,
+        "plc_packets": 0,
+        "queue_capacity": 6,
+        "queue_high_water": 3,
+        "startup_samples": 1280
+      },
+      "worker_counts": {
+        "capture_gap_frames": 0,
+        "capture_process_failures": 0,
+        "dsp_overruns": 0,
+        "event_drop_events": 3,
+        "failed_frames": 0,
+        "input_full_events": 0,
+        "input_queue_high_water": 1,
+        "max_dsp_us": 156,
+        "output_drop_events": 0,
+        "output_queue_high_water": 1,
+        "overload_us": 9000,
+        "p50_dsp_us": 250,
+        "p95_dsp_us": 250,
+        "p99_dsp_us": 250,
+        "processed_frames": 608,
+        "recover_frames": 1000,
+        "render_gap_frames": 2,
+        "render_push_failures": 0,
+        "stream_discontinuities": 1,
+        "submitted_frames": 608,
+        "timestamp_frames": 0
+      }
+    },
+    {
+      "capture_frames": 608,
+      "case": "normal-repeat",
+      "downlink": {
+        "codec_lookahead_tail_flushed": false,
+        "decoded_pcm": {
+          "sha256": "e4f53c28ed7558059073beffb529d9ef34724ca7c633c53bc518eea7c5a15526",
+          "size_bytes": 194560
+        },
+        "input_samples": 96000,
+        "packets": {
+          "sha256": "c4cd22e5b759718e32b1faf03277299ccb188418b24275f1ae5c4c0d5fadea88",
+          "size_bytes": 20400
+        },
+        "settings": {
+          "application": 2048,
+          "bitrate": 24000,
+          "channels": 1,
+          "complexity": 5,
+          "dtx": 0,
+          "inband_fec": 0,
+          "lookahead_samples": 104,
+          "packet_loss_perc": 0,
+          "packet_samples": 320,
+          "sample_rate_hz": 16000,
+          "vbr": 0
+        },
+        "unflushed_codec_tail_samples": 104
+      },
+      "downlink_counts": {
+        "arrival_events": 300,
+        "decoded_packets": 300,
+        "duplicates": 0,
+        "encoded_packets": 300,
+        "late_packets": 0,
+        "network_dropped_packets": 0,
+        "playout_samples": 97280,
+        "plc_packets": 0,
+        "queue_capacity": 6,
+        "queue_high_water": 3,
+        "startup_samples": 1280
+      },
+      "public_api_comparison": null,
+      "render_binding": {
+        "sha256": "e4f53c28ed7558059073beffb529d9ef34724ca7c633c53bc518eea7c5a15526",
+        "size_bytes": 194560
+      },
+      "runtime_output": {
+        "sha256": "5f9ee2628945f049b35309b8b585c3664e7cecd2b1d7bd7e3c2e9880642fb01d",
+        "size_bytes": 194560
+      },
+      "scenario": "normal",
+      "uplink": {
+        "codec_lookahead_tail_flushed": false,
+        "decoded_pcm": {
+          "sha256": "7e16149145ea42ac49d9710b9d3aeb949ca4c0828d634f51127e778cb669cc0b",
+          "size_bytes": 197120
+        },
+        "input_samples": 97280,
+        "packets": {
+          "sha256": "e7e5709a07ee4a228a5d79a9a8959d7744ca129356c87e7c1f7e4e269cf81666",
+          "size_bytes": 20672
+        },
+        "settings": {
+          "application": 2048,
+          "bitrate": 24000,
+          "channels": 1,
+          "complexity": 5,
+          "dtx": 0,
+          "inband_fec": 0,
+          "lookahead_samples": 104,
+          "packet_loss_perc": 0,
+          "packet_samples": 320,
+          "sample_rate_hz": 16000,
+          "vbr": 0
+        },
+        "unflushed_codec_tail_samples": 104
+      },
+      "uplink_counts": {
+        "arrival_events": 304,
+        "decoded_packets": 304,
+        "duplicates": 0,
+        "encoded_packets": 304,
+        "late_packets": 0,
+        "network_dropped_packets": 0,
+        "playout_samples": 98560,
+        "plc_packets": 0,
+        "queue_capacity": 6,
+        "queue_high_water": 3,
+        "startup_samples": 1280
+      },
+      "worker_counts": {
+        "capture_gap_frames": 0,
+        "capture_process_failures": 0,
+        "dsp_overruns": 0,
+        "event_drop_events": 1,
+        "failed_frames": 0,
+        "input_full_events": 0,
+        "input_queue_high_water": 1,
+        "max_dsp_us": 199,
+        "output_drop_events": 0,
+        "output_queue_high_water": 1,
+        "overload_us": 9000,
+        "p50_dsp_us": 250,
+        "p95_dsp_us": 250,
+        "p99_dsp_us": 250,
+        "processed_frames": 608,
+        "recover_frames": 1000,
+        "render_gap_frames": 0,
+        "render_push_failures": 0,
+        "stream_discontinuities": 0,
+        "submitted_frames": 608,
+        "timestamp_frames": 0
+      }
+    },
+    {
+      "capture_frames": 608,
+      "case": "normal-future",
+      "downlink": {
+        "codec_lookahead_tail_flushed": false,
+        "decoded_pcm": {
+          "sha256": "ea644e0d767a38e6c8119ee21883dc0de55875254d47ffe8403e4fae91b52b0f",
+          "size_bytes": 194560
+        },
+        "input_samples": 96000,
+        "packets": {
+          "sha256": "d49302a568eb1a276fea16d819141382561fdf26385238b34f77e3b78506c403",
+          "size_bytes": 20400
+        },
+        "settings": {
+          "application": 2048,
+          "bitrate": 24000,
+          "channels": 1,
+          "complexity": 5,
+          "dtx": 0,
+          "inband_fec": 0,
+          "lookahead_samples": 104,
+          "packet_loss_perc": 0,
+          "packet_samples": 320,
+          "sample_rate_hz": 16000,
+          "vbr": 0
+        },
+        "unflushed_codec_tail_samples": 104
+      },
+      "downlink_counts": {
+        "arrival_events": 300,
+        "decoded_packets": 300,
+        "duplicates": 0,
+        "encoded_packets": 300,
+        "late_packets": 0,
+        "network_dropped_packets": 0,
+        "playout_samples": 97280,
+        "plc_packets": 0,
+        "queue_capacity": 6,
+        "queue_high_water": 3,
+        "startup_samples": 1280
+      },
+      "public_api_comparison": null,
+      "render_binding": {
+        "sha256": "ea644e0d767a38e6c8119ee21883dc0de55875254d47ffe8403e4fae91b52b0f",
+        "size_bytes": 194560
+      },
+      "runtime_output": {
+        "sha256": "953fac39b686ebe2d3e16e31b20e88821477af0f58374e26d90e188e1cdb572f",
+        "size_bytes": 194560
+      },
+      "scenario": "normal",
+      "uplink": {
+        "codec_lookahead_tail_flushed": false,
+        "decoded_pcm": {
+          "sha256": "0ed4f2ccc3450e129ee63df7b4128096741663ced699713fbb1c9e9a284156ed",
+          "size_bytes": 197120
+        },
+        "input_samples": 97280,
+        "packets": {
+          "sha256": "834d4a9bfb3476bcf5d0f6de272105ecd680f7002fc45be4116e8bcd1d26e0e4",
+          "size_bytes": 20672
+        },
+        "settings": {
+          "application": 2048,
+          "bitrate": 24000,
+          "channels": 1,
+          "complexity": 5,
+          "dtx": 0,
+          "inband_fec": 0,
+          "lookahead_samples": 104,
+          "packet_loss_perc": 0,
+          "packet_samples": 320,
+          "sample_rate_hz": 16000,
+          "vbr": 0
+        },
+        "unflushed_codec_tail_samples": 104
+      },
+      "uplink_counts": {
+        "arrival_events": 304,
+        "decoded_packets": 304,
+        "duplicates": 0,
+        "encoded_packets": 304,
+        "late_packets": 0,
+        "network_dropped_packets": 0,
+        "playout_samples": 98560,
+        "plc_packets": 0,
+        "queue_capacity": 6,
+        "queue_high_water": 3,
+        "startup_samples": 1280
+      },
+      "worker_counts": {
+        "capture_gap_frames": 0,
+        "capture_process_failures": 0,
+        "dsp_overruns": 0,
+        "event_drop_events": 1,
+        "failed_frames": 0,
+        "input_full_events": 0,
+        "input_queue_high_water": 1,
+        "max_dsp_us": 90,
+        "output_drop_events": 0,
+        "output_queue_high_water": 1,
+        "overload_us": 9000,
+        "p50_dsp_us": 250,
+        "p95_dsp_us": 250,
+        "p99_dsp_us": 250,
+        "processed_frames": 608,
+        "recover_frames": 1000,
+        "render_gap_frames": 0,
+        "render_push_failures": 0,
+        "stream_discontinuities": 0,
+        "submitted_frames": 608,
+        "timestamp_frames": 0
+      }
+    }
+  ],
+  "control_runs": 2,
+  "controls": {
+    "future_prefix": {
+      "capture.pcm": true,
+      "downlink_packets": true,
+      "playback.pcm": true,
+      "runtime/output.pcm": true,
+      "uplink/decoded.pcm": true,
+      "uplink_packets": true
+    },
+    "negative_real_render_references_rejected": {
+      "pre_plc_reference": true,
+      "pre_volume_reference": true
+    },
+    "repeat": {
+      "capture.pcm": true,
+      "downlink/decoded.pcm": true,
+      "downlink/packets.bin": true,
+      "downlink/timeline.jsonl": true,
+      "playback.pcm": true,
+      "runtime/output.pcm": true,
+      "runtime/trace.jsonl": true,
+      "uplink/decoded.pcm": true,
+      "uplink/packets.bin": true,
+      "uplink/timeline.jsonl": true
+    }
+  },
+  "data_role": "engineering-regression",
+  "experiment": "FE-C2-INTERCOM-TRANSPORT-V1",
+  "failures": [],
+  "human_listening": "NOT_RUN",
+  "latency_components": {
+    "actual_device_network_io": null,
+    "first_packet_playout_start": 80,
+    "frontend_algorithmic": 10,
+    "note": "Logical components; no physical mouth-to-ear measurement or claim.",
+    "opus_added_delay": 6.5,
+    "per_direction_packet_collection_max": 20,
+    "simulated_buffer_after_packet_ready": 60,
+    "unit": "ms"
+  },
+  "limitations": [
+    "deterministic simulated network, no real WAN or physical ADC/DAC",
+    "first-party synthetic engineering PCM, no real room or subjective speech quality",
+    "event notification queue drop counts retained; not audio output loss",
+    "codec lookahead tail is explicitly unflushed at finite fixture end",
+    "host arena/timing and Opus memory are not SSC305 resource qualification"
+  ],
+  "matrix_cases": 8,
+  "mouth_to_ear_latency": null,
+  "opus": {
+    "installed_copyright": {
+      "path": "/usr/share/doc/libopus0/copyright",
+      "sha256": "7c9b923fe330bd98d4736866d6a0b8ca99a971c09d4a300dbfb20566a5707c60",
+      "size_bytes": 9663
+    },
+    "license_url": "https://www.opus-codec.org/license/",
+    "loaded_path": "/usr/lib/x86_64-linux-gnu/libopus.so.0.10.1",
+    "sha256": "621e97f23655dbf2727873b7717e3b65ae8c734f84a0848f88c21edb95202357",
+    "size_bytes": 3549688,
+    "version": "libopus 1.5.2"
+  },
+  "phases": {
+    "author_readback": {
+      "details": {
+        "all_packet_payload_bytes": 60,
+        "artifact_manifest": {
+          "sha256": "ec7599525faec15e227bb44a17ae1a9b631f17561acea52c43311b3283609c6c",
+          "size_bytes": 45828
+        },
+        "budget_seconds": 300,
+        "checks": 6448,
+        "configuration_correction_kept_input_output_packet_bytes": true,
+        "controls": 2,
+        "elapsed_seconds": 0.11716141999932006,
+        "event_drop_counts": {
+          "burst-loss": 1,
+          "duplicate": 1,
+          "gain-mute": 1,
+          "late": 1,
+          "normal": 1,
+          "normal-future": 1,
+          "normal-repeat": 1,
+          "reopen": 3,
+          "reorder": 1,
+          "single-loss": 1
+        },
+        "files": 296,
+        "finished_at_utc": "2026-11-06T13:16:11.257972+00:00",
+        "kind": "author_raw_artifact_readback",
+        "metrics_not_physical": true,
+        "packets_per_case": {
+          "downlink": 300,
+          "uplink": 304
+        },
+        "primary_matrix_cases": 8,
+        "report": {
+          "sha256": "5715a8930e047b4c4ff0666acda36b0fbb0fdc40edac5bc378358b645fc11192",
+          "size_bytes": 169982
+        },
+        "source_revision": "dbbbe7ecff03f0a98920cf8317f979470bcd86b4",
+        "status": "PASS"
+      },
+      "receipt": {
+        "sha256": "152ecc1eedf132209dc00cf75bbd9d1a9013bc2278d1248e9410b3f64f464ea8",
+        "size_bytes": 1024
+      }
+    },
+    "build": {
+      "details": {
+        "budget_seconds": 300,
+        "elapsed_seconds": 2.7269284689973574,
+        "finished_at_utc": "2026-11-06T13:15:21.674880+00:00",
+        "source_revision": "dbbbe7ecff03f0a98920cf8317f979470bcd86b4",
+        "started_at_utc": "2026-11-06T13:15:18.947950+00:00",
+        "status": "PASS",
+        "steps": [
+          {
+            "command": [
+              "/workspace/scratch/b74ab3415ba4/build-tools/cmake/data/bin/cmake",
+              "-S",
+              "/workspace/scratch/b74ab3415ba4/audio-dualmic-intercom-v2",
+              "-B",
+              "/workspace/scratch/b74ab3415ba4/intercom-v1-evidence/build-dbbbe7e/build",
+              "-DCMAKE_BUILD_TYPE=Release",
+              "-DAP_BUILD_TESTS=OFF",
+              "-DAP_BUILD_BENCH=OFF",
+              "-DAP_BUILD_ALSA_EXAMPLE=OFF",
+              "-DAP_STRICT_WARNINGS=ON"
+            ],
+            "elapsed_cumulative_seconds": 0.2029830050014425,
+            "returncode": 0
+          },
+          {
+            "command": [
+              "/workspace/scratch/b74ab3415ba4/build-tools/cmake/data/bin/cmake",
+              "--build",
+              "/workspace/scratch/b74ab3415ba4/intercom-v1-evidence/build-dbbbe7e/build",
+              "--target",
+              "audio_pipeline_runtime",
+              "ap_process_pcm",
+              "ap_build_info_dump",
+              "-j2"
+            ],
+            "elapsed_cumulative_seconds": 2.5786883030013996,
+            "returncode": 0
+          },
+          {
+            "command": [
+              "cc",
+              "-std=c11",
+              "-O2",
+              "-Wall",
+              "-Wextra",
+              "-Werror",
+              "-I",
+              "/workspace/scratch/b74ab3415ba4/intercom-v1-evidence/build-dbbbe7e/build/generated",
+              "-I",
+              "/workspace/scratch/b74ab3415ba4/audio-dualmic-intercom-v2/include",
+              "/workspace/scratch/b74ab3415ba4/audio-dualmic-intercom-v2/tests/validation/frontend_evolution/dualmic_intercom_runtime.c",
+              "/workspace/scratch/b74ab3415ba4/intercom-v1-evidence/build-dbbbe7e/build/libaudio_pipeline_runtime.a",
+              "/workspace/scratch/b74ab3415ba4/intercom-v1-evidence/build-dbbbe7e/build/libaudio_pipeline.a",
+              "-pthread",
+              "-lm",
+              "-o",
+              "/workspace/scratch/b74ab3415ba4/intercom-v1-evidence/build-dbbbe7e/build/dualmic_intercom_runtime"
+            ],
+            "elapsed_cumulative_seconds": 2.7269246029973147,
+            "returncode": 0
+          }
+        ]
+      },
+      "receipt": {
+        "sha256": "d112afa0efcb76ffdb9ed58573284fac628a36c18cd66d7399cafb33c370f0c1",
+        "size_bytes": 2184
+      }
+    },
+    "formal": {
+      "details": {
+        "budget_seconds": 300,
+        "elapsed_seconds": 9.804972195997834,
+        "finished_at_utc": "2026-11-06T13:15:32.040638+00:00",
+        "source_revision": "dbbbe7ecff03f0a98920cf8317f979470bcd86b4",
+        "started_at_utc": "2026-11-06T13:15:22.235662+00:00",
+        "status": "PASS",
+        "steps": [
+          {
+            "command": [
+              "python3",
+              "tests/validation/frontend_evolution/dualmic_intercom_transport.py",
+              "--bridge",
+              "/workspace/scratch/b74ab3415ba4/intercom-v1-evidence/build-dbbbe7e/build/dualmic_intercom_runtime",
+              "--source-revision",
+              "dbbbe7ecff03f0a98920cf8317f979470bcd86b4",
+              "--output",
+              "/workspace/scratch/b74ab3415ba4/intercom-v1-evidence/formal-dbbbe7e"
+            ],
+            "elapsed_cumulative_seconds": 9.804968349999399,
+            "returncode": 0
+          }
+        ]
+      },
+      "receipt": {
+        "sha256": "853bfef8d2cc53eae355a4a986c95a21e52b5a285e2cb8e580e9f2f38297392b",
+        "size_bytes": 805
+      }
+    },
+    "tests": {
+      "details": {
+        "budget_seconds": 300,
+        "elapsed_seconds": 0.5599608499978785,
+        "finished_at_utc": "2026-11-06T13:15:22.235441+00:00",
+        "source_revision": "dbbbe7ecff03f0a98920cf8317f979470bcd86b4",
+        "started_at_utc": "2026-11-06T13:15:21.675478+00:00",
+        "status": "PASS",
+        "steps": [
+          {
+            "command": [
+              "python3",
+              "tests/validation/frontend_evolution/test_dualmic_intercom_transport.py",
+              "--bridge",
+              "/workspace/scratch/b74ab3415ba4/intercom-v1-evidence/build-dbbbe7e/build/dualmic_intercom_runtime",
+              "-v"
+            ],
+            "elapsed_cumulative_seconds": 0.19502396600000793,
+            "returncode": 0
+          },
+          {
+            "command": [
+              "python3",
+              "-O",
+              "tests/validation/frontend_evolution/test_dualmic_intercom_transport.py",
+              "--bridge",
+              "/workspace/scratch/b74ab3415ba4/intercom-v1-evidence/build-dbbbe7e/build/dualmic_intercom_runtime",
+              "-v"
+            ],
+            "elapsed_cumulative_seconds": 0.5599573949948535,
+            "returncode": 0
+          }
+        ]
+      },
+      "receipt": {
+        "sha256": "7383ed660ae718cdce2097507a2d6fd1d738aae84319ab6cf1032e40ec55917a",
+        "size_bytes": 1023
+      }
+    }
+  },
+  "physical_device": "NOT_RUN",
+  "preserved_first_identity_defect": {
+    "description": "Requested configuration was printed instead of post-init getter readback; not final effective-configuration evidence. Raw prior files remain unchanged.",
+    "execution": {
+      "budget_seconds": 300,
+      "command": [
+        "python3",
+        "tests/validation/frontend_evolution/dualmic_intercom_transport.py",
+        "--bridge",
+        "/workspace/scratch/b74ab3415ba4/intercom-v1-evidence/build-e7f4b67/build/dualmic_intercom_runtime",
+        "--source-revision",
+        "e7f4b67b24cc26336b8356e8a5bfbd9fc4aa254f",
+        "--output",
+        "/workspace/scratch/b74ab3415ba4/intercom-v1-evidence/formal-e7f4b67"
+      ],
+      "elapsed_seconds_including_subprocess_and_log_seal": 8.533989539995673,
+      "finished_at_utc": "2026-11-06T13:11:40.903294+00:00",
+      "returncode": 0,
+      "source_revision": "e7f4b67b24cc26336b8356e8a5bfbd9fc4aa254f",
+      "started_at_utc": "2026-11-06T13:11:32.369321+00:00"
+    },
+    "raw_manifest": {
+      "sha256": "2bbb7d323dc84e4f3ffff40271ba3cc2dd0c7b2499d7c5f3bb5a7299b469b1d9",
+      "size_bytes": 45828
+    },
+    "raw_report": {
+      "sha256": "0c45bad330dc133959e645d834e7142dbf49606c264e4ae0797820b4b917ca95",
+      "size_bytes": 166618
+    },
+    "source_revision": "e7f4b67b24cc26336b8356e8a5bfbd9fc4aa254f"
+  },
+  "promotion_allowed": false,
+  "public_api_control_runs": 8,
+  "quality_decision": "NOT_EVALUATED",
+  "raw_artifact_manifest": {
+    "files": 296,
+    "sha256": "ec7599525faec15e227bb44a17ae1a9b631f17561acea52c43311b3283609c6c",
+    "size_bytes": 45828
+  },
+  "raw_report": {
+    "sha256": "5715a8930e047b4c4ff0666acda36b0fbb0fdc40edac5bc378358b645fc11192",
+    "size_bytes": 169982
+  },
+  "real_WAN": "NOT_RUN",
+  "result": "HOST_INTEGRATION_COMPLETE",
+  "schema_version": 1,
+  "scope": "LOCAL_SOURCE_RESULT; successor protected PR/main needs its own qualification",
+  "simulated_network": true,
+  "source_revision": "dbbbe7ecff03f0a98920cf8317f979470bcd86b4"
+}

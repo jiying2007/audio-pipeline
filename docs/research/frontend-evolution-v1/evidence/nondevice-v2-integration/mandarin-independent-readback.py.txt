@@ -1,0 +1,193 @@
+#!/usr/bin/env python3
+"""Independent raw-evidence audit: stdlib only, no production imports/inference."""
+import array, datetime, hashlib, json, math, pathlib, random, subprocess, sys, time, unicodedata, wave
+
+B = pathlib.Path('/workspace/scratch/b74ab3415ba4')
+REPO = B / 'audio-dualmic-downstream-v2'
+SOURCE = B / 'mandarin-downstream-v1-source'
+PREP = B / 'mandarin-downstream-v1-prepared'
+RESULT = B / 'mandarin-downstream-v1-result'
+STAGES = B / 'mandarin-downstream-v1-stages'
+REV = 'fea7e0735ce2e1d6fb45e1f02e0489dea6d7e920'
+CHECKS = 0
+def check(ok, why):
+    global CHECKS
+    CHECKS += 1
+    if not ok: raise ValueError(why)
+def pairs(items):
+    out = {}
+    for k,v in items:
+        check(k not in out, 'duplicate JSON key ' + k); out[k]=v
+    return out
+def bad(value): raise ValueError('nonfinite JSON ' + value)
+def read(p): return json.loads(pathlib.Path(p).read_text(),object_pairs_hook=pairs,parse_constant=bad)
+def sha(p): return hashlib.sha256(pathlib.Path(p).read_bytes()).hexdigest()
+def digest(obj): return hashlib.sha256(json.dumps(obj,ensure_ascii=False,sort_keys=True,separators=(',',':'),allow_nan=False).encode()).hexdigest()
+def identity(p): return {'bytes':p.stat().st_size,'sha256':sha(p)}
+def inventory(root):
+    found={}
+    for p in sorted(root.rglob('*')):
+        check(not p.is_symlink(),'symlink '+str(p))
+        if p.is_file(): found[p.relative_to(root).as_posix()]=identity(p)
+    return found
+def norm(text): return ''.join(c for c in unicodedata.normalize('NFC',text) if not c.isspace())
+def independent_counts(ref,hyp):
+    # Full scalar distance matrix, followed by independent S,D,I priority traceback.
+    d=[[0]*(len(hyp)+1) for _ in range(len(ref)+1)]
+    for i in range(len(ref)+1):d[i][0]=i
+    for j in range(len(hyp)+1):d[0][j]=j
+    for i in range(1,len(ref)+1):
+        for j in range(1,len(hyp)+1):
+            d[i][j]=min(d[i-1][j]+1,d[i][j-1]+1,d[i-1][j-1]+int(ref[i-1]!=hyp[j-1]))
+    i,j=len(ref),len(hyp);s=de=ins=0
+    while i or j:
+        if i and j and ref[i-1]==hyp[j-1] and d[i][j]==d[i-1][j-1]:i-=1;j-=1
+        elif i and j and d[i][j]==d[i-1][j-1]+1:s+=1;i-=1;j-=1
+        elif i and d[i][j]==d[i-1][j]+1:de+=1;i-=1
+        else:check(j>0 and d[i][j]==d[i][j-1]+1,'backtrace');ins+=1;j-=1
+    return {'substitutions':s,'deletions':de,'insertions':ins,'distance':s+de+ins,
+            'reference_units':len(ref),'hypothesis_units':len(hyp),'error_rate':(s+de+ins)/len(ref) if ref else None}
+def pcm(values):
+    x=array.array('h',values)
+    if sys.byteorder!='little':x.byteswap()
+    return x.tobytes()
+
+start=read(B/'mandarin-v1-independent-acoustic-start.json')
+receipt={'started_at':start['started_at'],'budget_seconds':300,'source_revision':REV,
+         'model_inference_performed':False,'frontend_rerun_performed':False,'reviewer':'independent acoustic agent',
+         'method':'stdlib-only source/raw-payload audit; independent full-matrix CER traceback; no production scorer imports'}
+try:
+    lockpath=REPO/'docs/research/frontend-evolution-v1/mandarin-downstream-v1-source-lock.json'
+    lock=read(lockpath)
+    check(sha(lockpath)=='306e4a6f4f83e7e577e17037103985804d353f67d0e1d5dc3c3027f320ba64dd','frozen source lock')
+    for item in lock['assets']:
+        p=SOURCE/('wheels' if item['filename'].endswith('.whl') else 'assets')/item['filename']
+        check(identity(p)=={k:item[k] for k in ('bytes','sha256')},'original asset '+item['id'])
+        if 'git_blob_sha1' in item:
+            content=p.read_bytes();check(hashlib.sha1(b'blob '+str(len(content)).encode()+b'\0'+content).hexdigest()==item['git_blob_sha1'],'Git source blob '+item['id'])
+    check(inventory(SOURCE/'models')==lock['model_files'],'exact model membership/hash')
+    check(inventory(SOURCE/'runtime')==lock['runtime_files'],'exact runtime membership/hash')
+    meta=read(PREP/'preparation.json');manifest=read(PREP/'manifest.json')
+    report=read(RESULT/'report.json');pred=read(RESULT/'predictions.json');scores=read(RESULT/'scores.json')
+    art=read(RESULT/'artifact-manifest.json')
+    check(meta['source_revision']==report['source_revision']==REV,'execution code revision')
+    for name,expected in meta['source_files'].items():
+        content=subprocess.check_output(['git','show',REV+':'+name],cwd=REPO,timeout=10)
+        check(hashlib.sha256(content).hexdigest()==expected==sha(REPO/name),'bound source '+name)
+    unchanged=subprocess.run(['git','diff','--exit-code','2d93c9ddf74355c7e5ac0bc18c9a6fe3ae53cbd3',REV,'--','src','include','examples/process_pcm.c'],cwd=REPO,capture_output=True,timeout=10)
+    check(unchanged.returncode==0,'DSP/API source baseline unchanged')
+    inv=inventory(PREP);inv.pop('preparation.json')
+    check(inv==meta['prepared_files'],'preparation full inventory')
+    inv=inventory(RESULT);inv.pop('artifact-manifest.json')
+    check(inv==art,'formal full inventory')
+    cases=['raw','call','assistant','raw_duplex','call_duplex','assistant_duplex']
+    check(set(art)=={c+s for c in cases for s in ('.json','.log')}|{'report.json','predictions.json','scores.json','progress.json'},'exact result members')
+    expectedprep={'manifest.json','keywords.txt','clean_mono.pcm','clean_capture.pcm','duplex_mono.pcm','duplex_capture.pcm','duplex_render.pcm'}
+    expectedprep|={'processed/'+c+'/'+n for c in cases if not c.startswith('raw') for n in ('out.pcm','metrics.jsonl','command.json','execution.json','continuity.json','stdout.txt','stderr.txt')}
+    check(set(meta['prepared_files'])==expectedprep,'exact preparation members')
+    with wave.open(str(SOURCE/'assets/aishell-BAC009S0724W0121.wav'),'rb') as w:
+        check((w.getnchannels(),w.getframerate(),w.getsampwidth(),w.getnframes())==(1,16000,2,68496),'WAV original geometry')
+        original=array.array('h');original.frombytes(w.readframes(w.getnframes()))
+        if sys.byteorder!='little':original.byteswap()
+    check(hashlib.sha256(pcm(original)).hexdigest()==lock['audio']['pcm_sha256'],'original PCM identity')
+    ref='广州市房地产中介协会分析'
+    check('test/resources/dataset/aishell-BAC009S0724W0121 '+ref in (SOURCE/'assets/wenet-transcript.txt').read_text().splitlines(),'external transcript source')
+    clean=[0]*8000+list(original)+[0]*8144
+    near=[0]*16000+[round(x*.5) for x in original]+[0]*16144
+    rng=random.Random(20261106);phases=[rng.random()*math.tau for _ in range(3)]
+    render=[]
+    for n in range(64000):
+        envelope=.72+.22*math.sin(math.tau*1.7*n/16000)
+        val=sum(math.sin(math.tau*f*n/16000+phases[i])/(i+1) for i,f in enumerate([229.,421.,887.]))
+        render.append(max(-32768,min(32767,round(10500.*envelope*val/1.55))))
+    render += [0]*(len(near)-64000)
+    channels=[]
+    for m in [0,1]:
+        echo=[round((.25*render[n-800-m] if n>=800+m else 0)+(.10*render[n-1280-m] if n>=1280+m else 0)) for n in range(len(near))]
+        channels.append([x+y for x,y in zip(near,echo)])
+    inputs={'clean_mono':clean,'clean_capture':[x for v in clean for x in (v,v)],'duplex_mono':channels[0],
+            'duplex_capture':[x for pair in zip(*channels) for x in pair],'duplex_render':render}
+    for key,value in inputs.items():check((PREP/(key+'.pcm')).read_bytes()==pcm(value),'independently reconstructed '+key)
+    check((PREP/'keywords.txt').read_text()=='g uǎng zh ōu sh ì @广州市\n','fixed exact keyword tokens')
+    asr={'model':'vosk-model-small-cn-0.22','runtime':'vosk-0.3.45-C-API','sample_rate_hz':16000,'feed_samples':160,'grammar':None,'word_details':False,'finish':'FinalResult','extra_flush_samples':0}
+    kws={'model':'sherpa-onnx-kws-zipformer-zh-en-3M-2025-12-20','runtime':'sherpa-onnx-1.13.4','sample_rate_hz':16000,'feature_dim':80,'provider':'cpu','num_threads':1,'max_active_paths':4,'num_trailing_blanks':1,'keywords_score':1.,'keywords_threshold':.25,'keywords':'g uǎng zh ōu sh ì @广州市\n','feed_samples':160,'extra_flush_samples':5120,'chunk':8,'encoder':'encoder-epoch-13-avg-2-chunk-8-left-64.int8.onnx','decoder':'decoder-epoch-13-avg-2-chunk-8-left-64.onnx','joiner':'joiner-epoch-13-avg-2-chunk-8-left-64.int8.onnx','tokens':'tokens.txt'}
+    check(meta['asr_settings']==asr and meta['kws_settings']==kws,'fixed model settings')
+    bindings={k:digest({'kind':k,'settings':s,'model_files':{p:v for p,v in lock['model_files'].items() if p.startswith(s['model']+'/')},'runtime_inventory_digest':digest(lock['runtime_files'])}) for k,s in [('asr',asr),('kws',kws)]}
+    check(bindings==manifest['model_bindings']==pred['model_bindings']==scores['model_bindings'],'independent model binding reconstruction')
+    expectedmanifest={'schema_version':1,'normalization':'NFC-strip-whitespace-v1','model_bindings':bindings,'cases':[]}
+    rows=[];native=None;frames=0
+    for case in cases:
+        duplex=case.endswith('_duplex');count=100640 if duplex else 84640
+        rel=('duplex_mono.pcm' if duplex else 'clean_mono.pcm') if case.startswith('raw') else 'processed/'+case+'/out.pcm'
+        path=PREP/rel;check(path.stat().st_size==count*2,'view sample count '+case)
+        expectedmanifest['cases'].append({'case_id':case,'pcm_sha256':sha(path),'sample_rate_hz':16000,'samples':count,'max_emitted_samples':count+5120,'reference_text':ref,'reference_words':None,'kws_annotation':None})
+        actual=read(RESULT/(case+'.json'));p=next(x for x in pred['cases'] if x['case_id']==case);sc=next(x for x in scores['cases'] if x['case_id']==case)
+        check(actual['case_id']==case and actual['status']=='MODEL_EXECUTION_COMPLETE' and actual['exit_code']==0,'actual model completion '+case)
+        check(actual['pcm_sha256']==p['pcm_sha256']==sc['pcm_sha256']==sha(path),'actual consumed view '+case)
+        check(actual['model_bindings']==bindings and actual['manifest_digest']==digest(manifest),'actual model source identity '+case)
+        check(actual['asr']==p['asr'] and actual['kws']==p['kws'],'raw/prediction equality '+case)
+        ar=actual['asr'];kr=actual['kws'];raw=ar['raw_results']
+        check(raw[-1]['kind']=='final' and raw[-1]['consumed_samples']==count,'Vosk final complete '+case)
+        check(all(x['kind']=='endpoint' for x in raw[:-1]),'endpoint kind '+case)
+        check([x['consumed_samples'] for x in raw]==sorted(x['consumed_samples'] for x in raw),'endpoint temporal order '+case)
+        check(all(type(x['consumed_samples']) is int and 0<=x['consumed_samples']<=count and x['consumed_samples']%160==0 for x in raw),'endpoint feed boundaries '+case)
+        text=' '.join(x['result']['text'] for x in raw if x['result']['text'])
+        check(ar['status']=='ok' and ar['text']==text and ar['consumed_samples']==count and ar['accept_waveform_calls']==count//160,'Vosk records and feed '+case)
+        counts=independent_counts(norm(ref),norm(text))
+        check(sc['asr']['cer']==counts and sc['asr']['normalized_hypothesis']==norm(text) and sc['asr']['wer'] is None,'independent CER '+case)
+        check(kr['status']=='ok' and kr['input_samples']==count and kr['explicit_flush_samples']==5120 and kr['consumed_samples']==count+5120 and kr['accept_waveform_calls']==(count+5120)//160,'KWS streaming/flush '+case)
+        check(kr['token_time_is_trigger_latency'] is False,'no false latency '+case)
+        check(sc['kws']['annotation_status']=='UNAVAILABLE' and sc['kws']['emitted_events']==len(kr['events']),'KWS raw count '+case)
+        check(all(v is None for k,v in sc['kws'].items() if k not in ('annotation_status','emitted_events')),'all unlabelled KWS rates null '+case)
+        times=[]
+        for e in kr['events']:
+            check(e['keyword']=='广州市' and type(e['emitted_at_sample']) is int and 0<=e['emitted_at_sample']<=count+5120 and e['emitted_at_sample']%160==0,'KWS trigger consumed-clock '+case)
+            check(e['tokens']==['g','uǎng','zh','ōu','sh','ì'] and len(e['token_timestamps_seconds'])==6 and all(math.isfinite(x) for x in e['token_timestamps_seconds']),'KWS raw tokens '+case)
+            times.append(e['emitted_at_sample'])
+        check(times==sorted(times),'KWS emission order '+case)
+        for name,v in actual['loaded_native_files'].items():
+            file=pathlib.Path(name) if name.startswith('/') else SOURCE/name
+            check(identity(file)=={k:v[k] for k in ('bytes','sha256')},'actual loaded bytes '+name)
+            if name.startswith('runtime/'):
+                check(lock['runtime_files'][name[8:]]=={k:v[k] for k in ('bytes','sha256')} and v['source']=='frozen-runtime','loaded pinned native '+name)
+        check({'runtime/vosk/libvosk.so','runtime/sherpa_onnx/lib/libonnxruntime.so','runtime/sherpa_onnx/lib/_sherpa_onnx.cpython-312-x86_64-linux-gnu.so','runtime/numpy/_core/_multiarray_umath.cpython-312-x86_64-linux-gnu.so'} <= set(actual['loaded_native_files']),'required native extensions '+case)
+        if native is None:native=actual['loaded_native_files']
+        check(native==actual['loaded_native_files'],'native layout invariant '+case)
+        check(ar['native_library_sha256']==lock['runtime_files']['vosk/libvosk.so']['sha256'],'Vosk loaded file '+case)
+        check(actual['python']['executable_sha256']==sha(pathlib.Path(sys.executable).resolve()),'actual Python hash '+case)
+        if not case.startswith('raw'):
+            cmd=read(PREP/'processed'/case/'command.json');trace=[json.loads(x) for x in (PREP/'processed'/case/'metrics.jsonl').read_text().splitlines()]
+            check(cmd[cmd.index('--profile')+1]==case.split('_')[0] and cmd[cmd.index('--mic-channels')+1]=='2' and '--strict-capture-frames' in cmd,'real processor profile '+case)
+            check(('--capture-only' in cmd)==(not duplex),'actual duplex entry '+case)
+            check(str(PREP/('duplex_capture.pcm' if duplex else 'clean_capture.pcm')) in cmd,'actual capture '+case)
+            check((str(PREP/'duplex_render.pcm') in cmd)==duplex,'actual render reference '+case)
+            check(sha(pathlib.Path(cmd[0]))==meta['build_identity']['processor_sha256'],'actual processor bytes '+case)
+            check([t['frame'] for t in trace]==list(range(count//160)),'contiguous frame telemetry '+case)
+            check(all(all(not isinstance(v,float) or math.isfinite(v) for v in t.values()) for t in trace),'finite telemetry '+case)
+            if duplex:check(sum(t['far_end_active'] for t in trace)>0,'nonzero duplex reference observed '+case)
+            frames+=len(trace)
+        rows.append({'case_id':case,'text':text,'normalized_text':norm(text),'cer':counts,'kws_emissions':times})
+    check(manifest==expectedmanifest,'fully reconstructed frozen label/audio manifest')
+    check(digest(manifest)==pred['manifest_digest']==scores['manifest_digest']==report['manifest_digest'],'manifest all-bindings')
+    pooled={k:sum(x['cer'][k] for x in rows) for k in ('substitutions','deletions','insertions','distance','reference_units','hypothesis_units')}
+    pooled['error_rate']=pooled['distance']/pooled['reference_units'];pooled['presentations']=6
+    check(pooled==scores['pooled_view_accounting']['cer'] and scores['pooled_view_accounting']['independence_claim'] is False,'pooled canonical counts')
+    check(report['quality_decision']=='DESCRIPTIVE_ONLY' and report['promotion_allowed'] is False and report['original_utterances']==1,'scope and negative evidence')
+    check(sha(RESULT/'scores.json')==report['scores_sha256'] and sha(RESULT/'predictions.json')==report['predictions_sha256'],'report digest binding')
+    phases={}
+    for name in ['build','metric-tests','prepare','integrity-pre-inference','formal-inference-first','readback-first']:
+        phase=read(STAGES/(name+'.json'));check(phase['exit_code']==0 and 0<=phase['elapsed_seconds']<=300,'bounded phase '+name)
+        check(sha(STAGES/(name+'.log'))==phase['log_sha256'],'phase log intact '+name);phases[name]=phase['elapsed_seconds']
+    first=REPO/'docs/research/frontend-evolution-v1/evidence/mandarin-downstream-v1/source-acquisition-initial-http403.log'
+    check('HTTP Error 403' in first.read_text(),'original source failure retained')
+    acq=read(first.parent/'source-acquisition.json')
+    check(any(x.get('status')=='FAIL' and '403' in x.get('error','') for x in acq['receipts']),'original failed acquisition receipt retained')
+    receipt.update(status='PASS',cases=rows,pooled_view_accounting=pooled,source_assets=len(lock['assets']),model_members=len(lock['model_files']),runtime_members=len(lock['runtime_files']),bound_source_files=len(meta['source_files']),prepared_members=len(meta['prepared_files']),result_members=len(art),loaded_native_files_per_case=len(native),continuous_processor_frames=frames,source_lock_sha256=sha(lockpath),report_sha256=sha(RESULT/'report.json'),artifact_manifest_sha256=sha(RESULT/'artifact-manifest.json'),original_failure_sha256=sha(first),phase_elapsed_seconds=phases)
+except Exception as exc:
+    receipt.update(status='FAIL',error=type(exc).__name__+': '+str(exc))
+finally:
+    receipt.update(checks=CHECKS,ended_at=datetime.datetime.now(datetime.timezone.utc).isoformat(),elapsed_seconds=time.monotonic()-start['monotonic'])
+    if receipt['elapsed_seconds']>300:receipt.update(status='FAIL',budget_exceeded=True)
+    target=B/'mandarin-v1-independent-acoustic-result.json';target.write_text(json.dumps(receipt,ensure_ascii=False,indent=2,allow_nan=False)+'\n')
+    print(json.dumps(receipt,ensure_ascii=False,indent=2))
+    if receipt['status']!='PASS':sys.exit(1)

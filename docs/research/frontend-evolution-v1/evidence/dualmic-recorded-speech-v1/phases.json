@@ -1,0 +1,120 @@
+{
+  "author_self_readback": {
+    "budget_seconds": 300,
+    "command": [
+      "python3",
+      "tests/validation/run_dualmic_recorded_replay.py",
+      "--output",
+      "/workspace/scratch/b74ab3415ba4/dualmic-recorded-evidence-v1/replay-f4f222f",
+      "--verify"
+    ],
+    "completed_utc": "2026-11-06T13:16:12.888947+00:00",
+    "elapsed_seconds": 63.437064917998214,
+    "error": null,
+    "returncode": 0,
+    "reviewer_independent": false,
+    "status": "PASS"
+  },
+  "build": {
+    "budget_seconds": 300,
+    "commands": [
+      {
+        "command": [
+          "/workspace/scratch/b74ab3415ba4/build-tools/cmake/data/bin/cmake",
+          "-S",
+          ".",
+          "-B",
+          "/workspace/scratch/b74ab3415ba4/dualmic-recorded-evidence-v1/build-f4f222f",
+          "-DCMAKE_BUILD_TYPE=Release",
+          "-DAP_BUILD_TESTS=OFF",
+          "-DAP_BUILD_BENCH=OFF",
+          "-DAP_BUILD_EXAMPLES=ON",
+          "-DAP_STRICT_WARNINGS=ON"
+        ],
+        "elapsed_seconds": 0.21430203799536685,
+        "returncode": 0
+      },
+      {
+        "command": [
+          "/workspace/scratch/b74ab3415ba4/build-tools/cmake/data/bin/cmake",
+          "--build",
+          "/workspace/scratch/b74ab3415ba4/dualmic-recorded-evidence-v1/build-f4f222f",
+          "--target",
+          "ap_process_pcm",
+          "ap_build_info_dump",
+          "--parallel",
+          "4"
+        ],
+        "elapsed_seconds": 1.7724043740017805,
+        "returncode": 0
+      }
+    ],
+    "completed_utc": "2026-11-06T13:11:42.903512+00:00",
+    "elapsed_seconds": 1.9868426989996806,
+    "status": "PASS"
+  },
+  "compiled_source": "f4f222ff3f3c65689e2462bb50277b84afb6b025",
+  "corpus": {
+    "budget_seconds": 300,
+    "command": [
+      "python3",
+      "tests/validation/build_dualmic_recorded_corpus.py",
+      "--source",
+      "/workspace/scratch/b74ab3415ba4/dualmic-recorded-evidence-v1/source",
+      "--output",
+      "/workspace/scratch/b74ab3415ba4/dualmic-recorded-evidence-v1/corpus-f4f222f"
+    ],
+    "completed_utc": "2026-11-06T13:12:58.829136+00:00",
+    "elapsed_seconds": 5.4797989089929615,
+    "error": null,
+    "returncode": 0,
+    "status": "PASS"
+  },
+  "formal_matrix": {
+    "budget_seconds": 300,
+    "command": [
+      "python3",
+      "tests/validation/run_dualmic_recorded_replay.py",
+      "--processor",
+      "/workspace/scratch/b74ab3415ba4/dualmic-recorded-evidence-v1/build-f4f222f/ap_process_pcm",
+      "--corpus",
+      "/workspace/scratch/b74ab3415ba4/dualmic-recorded-evidence-v1/corpus-f4f222f/corpus.json",
+      "--output",
+      "/workspace/scratch/b74ab3415ba4/dualmic-recorded-evidence-v1/replay-f4f222f",
+      "--source-revision",
+      "f4f222ff3f3c65689e2462bb50277b84afb6b025"
+    ],
+    "completed_utc": "2026-11-06T13:14:44.959293+00:00",
+    "elapsed_seconds": 63.963196111995785,
+    "returncode": 0,
+    "status": "PASS"
+  },
+  "independent_reviewer_status": "PENDING_INTEGRATION_REVIEW",
+  "method_tests": {
+    "budget_seconds": 300,
+    "commands": [
+      {
+        "command": [
+          "python3",
+          "tests/validation/test_dualmic_recorded_replay.py",
+          "-v"
+        ],
+        "elapsed_seconds": 37.22945259499829,
+        "returncode": 0
+      }
+    ],
+    "completed_utc": "2026-11-06T13:12:18.142966+00:00",
+    "elapsed_seconds": 37.229583492997335,
+    "status": "PASS"
+  },
+  "self_readback_result": {
+    "DSP_reexecuted": false,
+    "cases": 56,
+    "elapsed_seconds": 63.259439574998396,
+    "files": 650,
+    "human_listening": "NOT_RUN",
+    "quality_decision": "DESCRIPTIVE_ONLY",
+    "result": "RECORDED_SPEECH_EVIDENCE_VERIFIED",
+    "wav_options": 84
+  }
+}

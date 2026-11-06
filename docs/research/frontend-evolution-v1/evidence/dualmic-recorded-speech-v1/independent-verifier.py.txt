@@ -1,0 +1,9 @@
+# Archive of the inline script actually executed during the review. Not rerun.
+import json,time,pathlib,subprocess,hashlib
+root=pathlib.Path('/workspace/scratch/b74ab3415ba4'); ev=root/'dualmic-recorded-evidence-v1/replay-f4f222f'; start=48007.924208663
+remaining=300-(time.monotonic()-start); print('remaining_seconds',remaining,flush=True)
+cmd=['python3','tests/validation/run_dualmic_recorded_replay.py','--verify','--output',str(ev)]
+p=subprocess.run(cmd,cwd=root/'audio-dualmic-recorded-independent-f4f',capture_output=True,timeout=max(1,remaining-8))
+log=root/'dualmic-recorded-independent-intercom-verify.log'; log.write_bytes(p.stdout+b'\nSTDERR\n'+p.stderr)
+print('returncode',p.returncode,'elapsed_total',time.monotonic()-start,'log',str(log),flush=True)
+print(p.stdout.decode()[-3000:]); print(p.stderr.decode()[-1000:])

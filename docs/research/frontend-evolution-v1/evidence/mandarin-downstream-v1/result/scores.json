@@ -1,0 +1,256 @@
+{
+  "cases": [
+    {
+      "asr": {
+        "cer": {
+          "deletions": 0,
+          "distance": 0,
+          "error_rate": 0.0,
+          "hypothesis_units": 12,
+          "insertions": 0,
+          "reference_units": 12,
+          "substitutions": 0
+        },
+        "normalization": "NFC-strip-whitespace-v1",
+        "normalized_hypothesis": "广州市房地产中介协会分析",
+        "normalized_reference": "广州市房地产中介协会分析",
+        "wer": null,
+        "wer_tokenization": null
+      },
+      "case_id": "raw",
+      "kws": {
+        "annotation_status": "UNAVAILABLE",
+        "duplicate_target_triggers": null,
+        "emitted_events": 1,
+        "far_per_hour": null,
+        "far_zero_event_one_sided_95_upper_per_hour": null,
+        "frr": null,
+        "latency_ms": null,
+        "matched_events": null,
+        "matches": null,
+        "missed_events": null,
+        "negative_exposure_hours": null,
+        "negative_exposure_samples": null,
+        "negative_false_alarms": null,
+        "positive_events": null,
+        "unmatched_events": null,
+        "unscored_event_ids": null
+      },
+      "pcm_sha256": "a48d9f5e939046e9a809626ff182a719f914fb263cc30a3b439788b4d2623a0b"
+    },
+    {
+      "asr": {
+        "cer": {
+          "deletions": 0,
+          "distance": 0,
+          "error_rate": 0.0,
+          "hypothesis_units": 12,
+          "insertions": 0,
+          "reference_units": 12,
+          "substitutions": 0
+        },
+        "normalization": "NFC-strip-whitespace-v1",
+        "normalized_hypothesis": "广州市房地产中介协会分析",
+        "normalized_reference": "广州市房地产中介协会分析",
+        "wer": null,
+        "wer_tokenization": null
+      },
+      "case_id": "call",
+      "kws": {
+        "annotation_status": "UNAVAILABLE",
+        "duplicate_target_triggers": null,
+        "emitted_events": 1,
+        "far_per_hour": null,
+        "far_zero_event_one_sided_95_upper_per_hour": null,
+        "frr": null,
+        "latency_ms": null,
+        "matched_events": null,
+        "matches": null,
+        "missed_events": null,
+        "negative_exposure_hours": null,
+        "negative_exposure_samples": null,
+        "negative_false_alarms": null,
+        "positive_events": null,
+        "unmatched_events": null,
+        "unscored_event_ids": null
+      },
+      "pcm_sha256": "bc9411db16f9bc6855b2bd42c424639a272906dcf1097844de27ed9892b60616"
+    },
+    {
+      "asr": {
+        "cer": {
+          "deletions": 0,
+          "distance": 0,
+          "error_rate": 0.0,
+          "hypothesis_units": 12,
+          "insertions": 0,
+          "reference_units": 12,
+          "substitutions": 0
+        },
+        "normalization": "NFC-strip-whitespace-v1",
+        "normalized_hypothesis": "广州市房地产中介协会分析",
+        "normalized_reference": "广州市房地产中介协会分析",
+        "wer": null,
+        "wer_tokenization": null
+      },
+      "case_id": "assistant",
+      "kws": {
+        "annotation_status": "UNAVAILABLE",
+        "duplicate_target_triggers": null,
+        "emitted_events": 1,
+        "far_per_hour": null,
+        "far_zero_event_one_sided_95_upper_per_hour": null,
+        "frr": null,
+        "latency_ms": null,
+        "matched_events": null,
+        "matches": null,
+        "missed_events": null,
+        "negative_exposure_hours": null,
+        "negative_exposure_samples": null,
+        "negative_false_alarms": null,
+        "positive_events": null,
+        "unmatched_events": null,
+        "unscored_event_ids": null
+      },
+      "pcm_sha256": "c67ffea92db6ed5feab146a6ee8fc1219e831b67c693629aefb5310b25920912"
+    },
+    {
+      "asr": {
+        "cer": {
+          "deletions": 0,
+          "distance": 1,
+          "error_rate": 0.08333333333333333,
+          "hypothesis_units": 12,
+          "insertions": 0,
+          "reference_units": 12,
+          "substitutions": 1
+        },
+        "normalization": "NFC-strip-whitespace-v1",
+        "normalized_hypothesis": "广州市房地产中介机会分析",
+        "normalized_reference": "广州市房地产中介协会分析",
+        "wer": null,
+        "wer_tokenization": null
+      },
+      "case_id": "raw_duplex",
+      "kws": {
+        "annotation_status": "UNAVAILABLE",
+        "duplicate_target_triggers": null,
+        "emitted_events": 0,
+        "far_per_hour": null,
+        "far_zero_event_one_sided_95_upper_per_hour": null,
+        "frr": null,
+        "latency_ms": null,
+        "matched_events": null,
+        "matches": null,
+        "missed_events": null,
+        "negative_exposure_hours": null,
+        "negative_exposure_samples": null,
+        "negative_false_alarms": null,
+        "positive_events": null,
+        "unmatched_events": null,
+        "unscored_event_ids": null
+      },
+      "pcm_sha256": "79ba900f2221e082f3bf624a912eb5e70586f1e20920131868c591bdab509ba3"
+    },
+    {
+      "asr": {
+        "cer": {
+          "deletions": 1,
+          "distance": 3,
+          "error_rate": 0.25,
+          "hypothesis_units": 11,
+          "insertions": 0,
+          "reference_units": 12,
+          "substitutions": 2
+        },
+        "normalization": "NFC-strip-whitespace-v1",
+        "normalized_hypothesis": "中是房地产中介协会分析",
+        "normalized_reference": "广州市房地产中介协会分析",
+        "wer": null,
+        "wer_tokenization": null
+      },
+      "case_id": "call_duplex",
+      "kws": {
+        "annotation_status": "UNAVAILABLE",
+        "duplicate_target_triggers": null,
+        "emitted_events": 0,
+        "far_per_hour": null,
+        "far_zero_event_one_sided_95_upper_per_hour": null,
+        "frr": null,
+        "latency_ms": null,
+        "matched_events": null,
+        "matches": null,
+        "missed_events": null,
+        "negative_exposure_hours": null,
+        "negative_exposure_samples": null,
+        "negative_false_alarms": null,
+        "positive_events": null,
+        "unmatched_events": null,
+        "unscored_event_ids": null
+      },
+      "pcm_sha256": "f0345b98bbb0536271ace5d9089ee639de44bb9aae3491fcf19fb7b513cb245a"
+    },
+    {
+      "asr": {
+        "cer": {
+          "deletions": 0,
+          "distance": 3,
+          "error_rate": 0.25,
+          "hypothesis_units": 12,
+          "insertions": 0,
+          "reference_units": 12,
+          "substitutions": 3
+        },
+        "normalization": "NFC-strip-whitespace-v1",
+        "normalized_hypothesis": "我中是房地产中介协会分析",
+        "normalized_reference": "广州市房地产中介协会分析",
+        "wer": null,
+        "wer_tokenization": null
+      },
+      "case_id": "assistant_duplex",
+      "kws": {
+        "annotation_status": "UNAVAILABLE",
+        "duplicate_target_triggers": null,
+        "emitted_events": 0,
+        "far_per_hour": null,
+        "far_zero_event_one_sided_95_upper_per_hour": null,
+        "frr": null,
+        "latency_ms": null,
+        "matched_events": null,
+        "matches": null,
+        "missed_events": null,
+        "negative_exposure_hours": null,
+        "negative_exposure_samples": null,
+        "negative_false_alarms": null,
+        "positive_events": null,
+        "unmatched_events": null,
+        "unscored_event_ids": null
+      },
+      "pcm_sha256": "145742efe0e0bd9158f04973de1809861db9afb2d62374208c72517400b3f9fd"
+    }
+  ],
+  "manifest_digest": "edd3b0570fc1bfcb2ec9ef0ea750f875d4c65e800bc20fa49cf62e5674ca6a32",
+  "model_bindings": {
+    "asr": "c3a0db71484b8bc53a28f00d22b979967f99bc50e9eaedb15c811e6056f7feec",
+    "kws": "19c4903d1b94212af5634cc0db50a11e81080a075b4d3847ee08a19d72c861b4"
+  },
+  "normalization": "NFC-strip-whitespace-v1",
+  "pooled_view_accounting": {
+    "cer": {
+      "deletions": 1,
+      "distance": 7,
+      "error_rate": 0.09722222222222222,
+      "hypothesis_units": 71,
+      "insertions": 0,
+      "presentations": 6,
+      "reference_units": 72,
+      "substitutions": 6
+    },
+    "independence_claim": false,
+    "scope": "count accounting over presented views, not independent speakers or utterances",
+    "wer": null
+  },
+  "promotion_allowed": false,
+  "quality_decision": "DESCRIPTIVE_ONLY",
+  "schema_version": 1
+}

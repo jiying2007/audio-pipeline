@@ -1,0 +1,30 @@
+Traceback (most recent call last):
+  File "/workspace/scratch/b74ab3415ba4/audio-dualmic-downstream-v2/tests/validation/mandarin_downstream_source.py", line 309, in <module>
+    main()
+  File "/workspace/scratch/b74ab3415ba4/audio-dualmic-downstream-v2/tests/validation/mandarin_downstream_source.py", line 303, in main
+    value = verify(args.root, args.lock or LOCK) if args.verify else acquire(args.root, args.lock)
+                                                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/b74ab3415ba4/audio-dualmic-downstream-v2/tests/validation/mandarin_downstream_source.py", line 265, in acquire
+    receipt = download(asset, root / ("wheels" if asset in WHEELS else "assets"), frozen.get(asset["id"]))
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/b74ab3415ba4/audio-dualmic-downstream-v2/tests/validation/mandarin_downstream_source.py", line 138, in download
+    with urllib.request.urlopen(request, timeout=30) as response, path.open("xb") as out:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/urllib/request.py", line 215, in urlopen
+    return opener.open(url, data, timeout)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/urllib/request.py", line 521, in open
+    response = meth(req, response)
+               ^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/urllib/request.py", line 630, in http_response
+    response = self.parent.error(
+               ^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/urllib/request.py", line 559, in error
+    return self._call_chain(*args)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/urllib/request.py", line 492, in _call_chain
+    result = func(*args)
+             ^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/urllib/request.py", line 639, in http_error_default
+    raise HTTPError(req.full_url, code, msg, hdrs, fp)
+urllib.error.HTTPError: HTTP Error 403: Forbidden

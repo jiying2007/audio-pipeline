@@ -1,0 +1,32 @@
+{
+  "stage": "integrity-post-inference",
+  "started_at": "2026-11-06T13:31:58.851172+00:00",
+  "budget_seconds": 300.0,
+  "cwd": "/workspace/scratch/b74ab3415ba4/audio-dualmic-downstream-v2",
+  "source_revision": "fea7e0735ce2e1d6fb45e1f02e0489dea6d7e920",
+  "commands": [
+    {
+      "argv": [
+        "python3",
+        "tests/validation/test_mandarin_downstream_integrity.py",
+        "--source-root",
+        "/workspace/scratch/b74ab3415ba4/mandarin-downstream-v1-source",
+        "--prepared",
+        "/workspace/scratch/b74ab3415ba4/mandarin-downstream-v1-prepared",
+        "--result",
+        "/workspace/scratch/b74ab3415ba4/mandarin-downstream-v1-result",
+        "-v"
+      ],
+      "started_at": "2026-11-06T13:31:58.853897+00:00",
+      "ended_at": "2026-11-06T13:32:10.007080+00:00",
+      "exit_code": 0
+    }
+  ],
+  "timing_scope": "before first command through all child exits; includes runner evidence sealing",
+  "status": "COMPLETE",
+  "ended_at": "2026-11-06T13:32:10.007110+00:00",
+  "elapsed_seconds": 11.155941978002375,
+  "exit_code": 0,
+  "log_sha256": "e903d622f2efe8d6ed972a0b8a6d1cd60bf437c2012fff9f6424bb353e056b9e",
+  "log_bytes": 1967
+}

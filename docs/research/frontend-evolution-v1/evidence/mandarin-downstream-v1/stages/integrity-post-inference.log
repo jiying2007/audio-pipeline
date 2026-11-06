@@ -1,0 +1,21 @@
+test_model_environment_does_not_inherit_tokens (__main__.PreparedIntegrity.test_model_environment_does_not_inherit_tokens) ... ok
+test_resealed_changed_capture_and_render (__main__.PreparedIntegrity.test_resealed_changed_capture_and_render) ... ok
+test_resealed_changed_raw_pcm (__main__.PreparedIntegrity.test_resealed_changed_raw_pcm) ... ok
+test_resealed_changed_reference_text (__main__.PreparedIntegrity.test_resealed_changed_reference_text) ... ok
+test_resealed_extra_and_missing_file (__main__.PreparedIntegrity.test_resealed_extra_and_missing_file) ... ok
+test_resealed_invented_kws_labels (__main__.PreparedIntegrity.test_resealed_invented_kws_labels) ... ok
+test_resealed_missing_source_binding (__main__.PreparedIntegrity.test_resealed_missing_source_binding) ... ok
+test_resealed_wrong_source_revision (__main__.PreparedIntegrity.test_resealed_wrong_source_revision) ... fatal: path 'docs/research/frontend-evolution-v1/MANDARIN_DOWNSTREAM_V1_CONTRACT.zh-CN.md' exists on disk, but not in '2d93c9ddf74355c7e5ac0bc18c9a6fe3ae53cbd3'
+ok
+test_simulated_final_sealing_budget_exhaustion_is_failure (__main__.PreparedIntegrity.test_simulated_final_sealing_budget_exhaustion_is_failure) ... ok
+test_simulated_timeout_preserves_partial_output_and_failure (__main__.PreparedIntegrity.test_simulated_timeout_preserves_partial_output_and_failure) ... ok
+test_valid_actual_preparation (__main__.PreparedIntegrity.test_valid_actual_preparation) ... ok
+test_resealed_actual_case_identity (__main__.ResultIntegrity.test_resealed_actual_case_identity) ... ok
+test_resealed_actual_native_library (__main__.ResultIntegrity.test_resealed_actual_native_library) ... ok
+test_resealed_extra_and_missing_result_file (__main__.ResultIntegrity.test_resealed_extra_and_missing_result_file) ... ok
+test_valid_actual_result (__main__.ResultIntegrity.test_valid_actual_result) ... ok
+
+----------------------------------------------------------------------
+Ran 15 tests in 10.980s
+
+OK

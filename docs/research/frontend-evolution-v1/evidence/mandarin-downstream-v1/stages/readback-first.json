@@ -1,0 +1,32 @@
+{
+  "stage": "readback-first",
+  "started_at": "2026-11-06T13:31:58.851047+00:00",
+  "budget_seconds": 300.0,
+  "cwd": "/workspace/scratch/b74ab3415ba4/audio-dualmic-downstream-v2",
+  "source_revision": "fea7e0735ce2e1d6fb45e1f02e0489dea6d7e920",
+  "commands": [
+    {
+      "argv": [
+        "python3",
+        "tests/validation/mandarin_downstream.py",
+        "verify",
+        "--source-root",
+        "/workspace/scratch/b74ab3415ba4/mandarin-downstream-v1-source",
+        "--prepared",
+        "/workspace/scratch/b74ab3415ba4/mandarin-downstream-v1-prepared",
+        "--output",
+        "/workspace/scratch/b74ab3415ba4/mandarin-downstream-v1-result"
+      ],
+      "started_at": "2026-11-06T13:31:58.853729+00:00",
+      "ended_at": "2026-11-06T13:31:59.721107+00:00",
+      "exit_code": 0
+    }
+  ],
+  "timing_scope": "before first command through all child exits; includes runner evidence sealing",
+  "status": "COMPLETE",
+  "ended_at": "2026-11-06T13:31:59.721138+00:00",
+  "elapsed_seconds": 0.8700969749988872,
+  "exit_code": 0,
+  "log_sha256": "8511be27c39c91f948b3741a7abdcc4b6b82eae4cc5b87a72119b64339e4473c",
+  "log_bytes": 67
+}

@@ -1,0 +1,310 @@
+{
+  "cases": [
+    {
+      "asr": {
+        "accept_waveform_calls": 529,
+        "consumed_samples": 84640,
+        "native_library_sha256": "85c4654de3acdeb99abab86eeb2a6e603927d37089597c0fcc33d8638dc2ccaf",
+        "raw_results": [
+          {
+            "consumed_samples": 79360,
+            "kind": "endpoint",
+            "result": {
+              "text": "广州市 房地产 中介 协会 分析"
+            }
+          },
+          {
+            "consumed_samples": 84640,
+            "kind": "final",
+            "result": {
+              "text": ""
+            }
+          }
+        ],
+        "status": "ok",
+        "text": "广州市 房地产 中介 协会 分析"
+      },
+      "case_id": "raw",
+      "kws": {
+        "accept_waveform_calls": 561,
+        "consumed_samples": 89760,
+        "decode_stream_calls": 34,
+        "events": [
+          {
+            "emitted_at_sample": 33120,
+            "event_id": "event-0",
+            "keyword": "广州市",
+            "token_timestamps_seconds": [
+              1.0399999618530273,
+              1.1999999284744263,
+              1.3199999332427979,
+              1.399999976158142,
+              1.6399999856948853,
+              1.6799999475479126
+            ],
+            "tokens": [
+              "g",
+              "uǎng",
+              "zh",
+              "ōu",
+              "sh",
+              "ì"
+            ]
+          }
+        ],
+        "explicit_flush_samples": 5120,
+        "input_samples": 84640,
+        "numpy_version": "2.3.3",
+        "sherpa_onnx_version": "1.13.4",
+        "status": "ok",
+        "token_time_is_trigger_latency": false
+      },
+      "pcm_sha256": "a48d9f5e939046e9a809626ff182a719f914fb263cc30a3b439788b4d2623a0b"
+    },
+    {
+      "asr": {
+        "accept_waveform_calls": 529,
+        "consumed_samples": 84640,
+        "native_library_sha256": "85c4654de3acdeb99abab86eeb2a6e603927d37089597c0fcc33d8638dc2ccaf",
+        "raw_results": [
+          {
+            "consumed_samples": 79360,
+            "kind": "endpoint",
+            "result": {
+              "text": "广州市 房地产 中介 协会 分析"
+            }
+          },
+          {
+            "consumed_samples": 84640,
+            "kind": "final",
+            "result": {
+              "text": ""
+            }
+          }
+        ],
+        "status": "ok",
+        "text": "广州市 房地产 中介 协会 分析"
+      },
+      "case_id": "call",
+      "kws": {
+        "accept_waveform_calls": 561,
+        "consumed_samples": 89760,
+        "decode_stream_calls": 34,
+        "events": [
+          {
+            "emitted_at_sample": 33120,
+            "event_id": "event-0",
+            "keyword": "广州市",
+            "token_timestamps_seconds": [
+              1.0399999618530273,
+              1.159999966621399,
+              1.3199999332427979,
+              1.399999976158142,
+              1.6399999856948853,
+              1.6799999475479126
+            ],
+            "tokens": [
+              "g",
+              "uǎng",
+              "zh",
+              "ōu",
+              "sh",
+              "ì"
+            ]
+          }
+        ],
+        "explicit_flush_samples": 5120,
+        "input_samples": 84640,
+        "numpy_version": "2.3.3",
+        "sherpa_onnx_version": "1.13.4",
+        "status": "ok",
+        "token_time_is_trigger_latency": false
+      },
+      "pcm_sha256": "bc9411db16f9bc6855b2bd42c424639a272906dcf1097844de27ed9892b60616"
+    },
+    {
+      "asr": {
+        "accept_waveform_calls": 529,
+        "consumed_samples": 84640,
+        "native_library_sha256": "85c4654de3acdeb99abab86eeb2a6e603927d37089597c0fcc33d8638dc2ccaf",
+        "raw_results": [
+          {
+            "consumed_samples": 79360,
+            "kind": "endpoint",
+            "result": {
+              "text": "广州市 房地产 中介 协会 分析"
+            }
+          },
+          {
+            "consumed_samples": 84640,
+            "kind": "final",
+            "result": {
+              "text": ""
+            }
+          }
+        ],
+        "status": "ok",
+        "text": "广州市 房地产 中介 协会 分析"
+      },
+      "case_id": "assistant",
+      "kws": {
+        "accept_waveform_calls": 561,
+        "consumed_samples": 89760,
+        "decode_stream_calls": 34,
+        "events": [
+          {
+            "emitted_at_sample": 33120,
+            "event_id": "event-0",
+            "keyword": "广州市",
+            "token_timestamps_seconds": [
+              1.0399999618530273,
+              1.159999966621399,
+              1.3199999332427979,
+              1.399999976158142,
+              1.6399999856948853,
+              1.6799999475479126
+            ],
+            "tokens": [
+              "g",
+              "uǎng",
+              "zh",
+              "ōu",
+              "sh",
+              "ì"
+            ]
+          }
+        ],
+        "explicit_flush_samples": 5120,
+        "input_samples": 84640,
+        "numpy_version": "2.3.3",
+        "sherpa_onnx_version": "1.13.4",
+        "status": "ok",
+        "token_time_is_trigger_latency": false
+      },
+      "pcm_sha256": "c67ffea92db6ed5feab146a6ee8fc1219e831b67c693629aefb5310b25920912"
+    },
+    {
+      "asr": {
+        "accept_waveform_calls": 629,
+        "consumed_samples": 100640,
+        "native_library_sha256": "85c4654de3acdeb99abab86eeb2a6e603927d37089597c0fcc33d8638dc2ccaf",
+        "raw_results": [
+          {
+            "consumed_samples": 87040,
+            "kind": "endpoint",
+            "result": {
+              "text": "广州市 房地产 中介 机会 分析"
+            }
+          },
+          {
+            "consumed_samples": 100640,
+            "kind": "final",
+            "result": {
+              "text": ""
+            }
+          }
+        ],
+        "status": "ok",
+        "text": "广州市 房地产 中介 机会 分析"
+      },
+      "case_id": "raw_duplex",
+      "kws": {
+        "accept_waveform_calls": 661,
+        "consumed_samples": 105760,
+        "decode_stream_calls": 40,
+        "events": [],
+        "explicit_flush_samples": 5120,
+        "input_samples": 100640,
+        "numpy_version": "2.3.3",
+        "sherpa_onnx_version": "1.13.4",
+        "status": "ok",
+        "token_time_is_trigger_latency": false
+      },
+      "pcm_sha256": "79ba900f2221e082f3bf624a912eb5e70586f1e20920131868c591bdab509ba3"
+    },
+    {
+      "asr": {
+        "accept_waveform_calls": 629,
+        "consumed_samples": 100640,
+        "native_library_sha256": "85c4654de3acdeb99abab86eeb2a6e603927d37089597c0fcc33d8638dc2ccaf",
+        "raw_results": [
+          {
+            "consumed_samples": 87040,
+            "kind": "endpoint",
+            "result": {
+              "text": "中 是 房地产 中介 协会 分析"
+            }
+          },
+          {
+            "consumed_samples": 100640,
+            "kind": "final",
+            "result": {
+              "text": ""
+            }
+          }
+        ],
+        "status": "ok",
+        "text": "中 是 房地产 中介 协会 分析"
+      },
+      "case_id": "call_duplex",
+      "kws": {
+        "accept_waveform_calls": 661,
+        "consumed_samples": 105760,
+        "decode_stream_calls": 40,
+        "events": [],
+        "explicit_flush_samples": 5120,
+        "input_samples": 100640,
+        "numpy_version": "2.3.3",
+        "sherpa_onnx_version": "1.13.4",
+        "status": "ok",
+        "token_time_is_trigger_latency": false
+      },
+      "pcm_sha256": "f0345b98bbb0536271ace5d9089ee639de44bb9aae3491fcf19fb7b513cb245a"
+    },
+    {
+      "asr": {
+        "accept_waveform_calls": 629,
+        "consumed_samples": 100640,
+        "native_library_sha256": "85c4654de3acdeb99abab86eeb2a6e603927d37089597c0fcc33d8638dc2ccaf",
+        "raw_results": [
+          {
+            "consumed_samples": 87040,
+            "kind": "endpoint",
+            "result": {
+              "text": "我 中 是 房地产 中介 协会 分析"
+            }
+          },
+          {
+            "consumed_samples": 100640,
+            "kind": "final",
+            "result": {
+              "text": ""
+            }
+          }
+        ],
+        "status": "ok",
+        "text": "我 中 是 房地产 中介 协会 分析"
+      },
+      "case_id": "assistant_duplex",
+      "kws": {
+        "accept_waveform_calls": 661,
+        "consumed_samples": 105760,
+        "decode_stream_calls": 40,
+        "events": [],
+        "explicit_flush_samples": 5120,
+        "input_samples": 100640,
+        "numpy_version": "2.3.3",
+        "sherpa_onnx_version": "1.13.4",
+        "status": "ok",
+        "token_time_is_trigger_latency": false
+      },
+      "pcm_sha256": "145742efe0e0bd9158f04973de1809861db9afb2d62374208c72517400b3f9fd"
+    }
+  ],
+  "manifest_digest": "edd3b0570fc1bfcb2ec9ef0ea750f875d4c65e800bc20fa49cf62e5674ca6a32",
+  "model_bindings": {
+    "asr": "c3a0db71484b8bc53a28f00d22b979967f99bc50e9eaedb15c811e6056f7feec",
+    "kws": "19c4903d1b94212af5634cc0db50a11e81080a075b4d3847ee08a19d72c861b4"
+  },
+  "schema_version": 1
+}

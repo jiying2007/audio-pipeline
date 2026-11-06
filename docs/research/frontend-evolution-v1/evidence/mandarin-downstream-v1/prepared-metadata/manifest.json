@@ -1,0 +1,70 @@
+{
+  "cases": [
+    {
+      "case_id": "raw",
+      "kws_annotation": null,
+      "max_emitted_samples": 89760,
+      "pcm_sha256": "a48d9f5e939046e9a809626ff182a719f914fb263cc30a3b439788b4d2623a0b",
+      "reference_text": "广州市房地产中介协会分析",
+      "reference_words": null,
+      "sample_rate_hz": 16000,
+      "samples": 84640
+    },
+    {
+      "case_id": "call",
+      "kws_annotation": null,
+      "max_emitted_samples": 89760,
+      "pcm_sha256": "bc9411db16f9bc6855b2bd42c424639a272906dcf1097844de27ed9892b60616",
+      "reference_text": "广州市房地产中介协会分析",
+      "reference_words": null,
+      "sample_rate_hz": 16000,
+      "samples": 84640
+    },
+    {
+      "case_id": "assistant",
+      "kws_annotation": null,
+      "max_emitted_samples": 89760,
+      "pcm_sha256": "c67ffea92db6ed5feab146a6ee8fc1219e831b67c693629aefb5310b25920912",
+      "reference_text": "广州市房地产中介协会分析",
+      "reference_words": null,
+      "sample_rate_hz": 16000,
+      "samples": 84640
+    },
+    {
+      "case_id": "raw_duplex",
+      "kws_annotation": null,
+      "max_emitted_samples": 105760,
+      "pcm_sha256": "79ba900f2221e082f3bf624a912eb5e70586f1e20920131868c591bdab509ba3",
+      "reference_text": "广州市房地产中介协会分析",
+      "reference_words": null,
+      "sample_rate_hz": 16000,
+      "samples": 100640
+    },
+    {
+      "case_id": "call_duplex",
+      "kws_annotation": null,
+      "max_emitted_samples": 105760,
+      "pcm_sha256": "f0345b98bbb0536271ace5d9089ee639de44bb9aae3491fcf19fb7b513cb245a",
+      "reference_text": "广州市房地产中介协会分析",
+      "reference_words": null,
+      "sample_rate_hz": 16000,
+      "samples": 100640
+    },
+    {
+      "case_id": "assistant_duplex",
+      "kws_annotation": null,
+      "max_emitted_samples": 105760,
+      "pcm_sha256": "145742efe0e0bd9158f04973de1809861db9afb2d62374208c72517400b3f9fd",
+      "reference_text": "广州市房地产中介协会分析",
+      "reference_words": null,
+      "sample_rate_hz": 16000,
+      "samples": 100640
+    }
+  ],
+  "model_bindings": {
+    "asr": "c3a0db71484b8bc53a28f00d22b979967f99bc50e9eaedb15c811e6056f7feec",
+    "kws": "19c4903d1b94212af5634cc0db50a11e81080a075b4d3847ee08a19d72c861b4"
+  },
+  "normalization": "NFC-strip-whitespace-v1",
+  "schema_version": 1
+}

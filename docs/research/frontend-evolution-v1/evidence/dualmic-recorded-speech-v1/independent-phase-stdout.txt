@@ -1,0 +1,5 @@
+Archive of observed stdout, no reexecution.
+remaining_seconds 102.85587894699711
+returncode 0 elapsed_total 256.4421856879999 log /workspace/scratch/b74ab3415ba4/dualmic-recorded-independent-intercom-verify.log
+Independent NumPy/WAV readback ended at elapsed 232.6166335010057 seconds; full stdout content is archived as dualmic-recorded-independent-intercom-readback.json.
+Administrative failure archival was written at elapsed 339.6280493350059 seconds.

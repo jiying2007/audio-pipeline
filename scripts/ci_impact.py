@@ -136,6 +136,10 @@ RELEASE_NEUTRAL_FILES = {
     "tools/acoustic_upgrade_decision.py",
 } | DEVICE_RESEARCH_FILES
 RELEASE_NEUTRAL_VALIDATION_FILES = {
+    # Canonical host-side transcript/event measurement for the explicitly
+    # authorized dual-mic downstream study. No SDK, DSP or public ABI change;
+    # the conservative full source/quality matrix still applies.
+    "validation/tools/downstream_metrics.py",
     # Research-only authority v2 eliminates product terminal status. These
     # two exact canonical source paths have no commercial Release effect;
     # they still trigger conservative FULL validation and independent gates.
@@ -695,10 +699,11 @@ def analyze(paths: list[str], force_full: bool = False, cmake_version_only_chang
         return _fast_only(reason, paths)
     if force_full:
         return _full("main push / explicit full verification", paths)
-    # Canonical research evidence-authority edits may change source/data-role
-    # eligibility even when they do not affect the public SDK or SemVer.
+    # Canonical research authority or downstream metric edits may change
+    # eligibility/scoring even when they do not affect SDK or SemVer.
     # Keep FULL verification; unknown validation tools are not exempt.
-    if any(p in ("validation/research-authority.json", "validation/tools/authority.py")
+    if any(p in ("validation/research-authority.json", "validation/tools/authority.py",
+                 "validation/tools/downstream_metrics.py")
            for p in effective_paths):
         return _full("canonical research validation authority requires full checks",
                      paths, run_tuning=requires_tuning_search(paths))
@@ -931,11 +936,14 @@ def self_test() -> None:
     assert integrity["full"] and not integrity["docs_only"]
     assert is_release_neutral("validation/research-authority.json")
     assert is_release_neutral("validation/tools/authority.py")
+    assert is_release_neutral("validation/tools/downstream_metrics.py")
     assert not is_release_neutral("validation/tools/authority_unknown.py")
     research_authority = analyze(["validation/research-authority.json", "validation/tools/authority.py"])
     assert research_authority["full"] and not research_authority["docs_only"]
-    for path in ("validation/research-authority.json", "validation/tools/authority.py"):
-        assert analyze([path])["full"], path
+    for path in ("validation/research-authority.json", "validation/tools/authority.py",
+                 "validation/tools/downstream_metrics.py"):
+        observed = analyze([path])
+        assert observed["full"] and observed["run_extended"] and observed["run_audio"], path
     assert not is_release_neutral("scripts/verify-unreviewed-toolchain.sh")
     retired_lab = [
         "lab/ansible/inventory.example.yml",

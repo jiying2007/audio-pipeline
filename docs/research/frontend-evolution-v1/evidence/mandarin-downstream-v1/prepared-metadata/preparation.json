@@ -1,0 +1,419 @@
+{
+  "asr_settings": {
+    "extra_flush_samples": 0,
+    "feed_samples": 160,
+    "finish": "FinalResult",
+    "grammar": null,
+    "model": "vosk-model-small-cn-0.22",
+    "runtime": "vosk-0.3.45-C-API",
+    "sample_rate_hz": 16000,
+    "word_details": false
+  },
+  "budget_seconds": 300.0,
+  "build_identity": {
+    "dump_sha256": "45d914db452f345bb530a9725058d9f3086bcb99b65121ef227db4bb28ac0455",
+    "processor_sha256": "06807f512d9afa7aed9fcc19d637a51fdd8464ada6f402b15e7ab3f035622e5e",
+    "values": {
+      "aec_backend": "MDF",
+      "build_type": "Release",
+      "compiler_id": "GNU",
+      "compiler_version": "14.2.0",
+      "config_digest": "7abf0ce0985d3d15682037f715d7afc0c1844a725f56aef29164c25d103d557a",
+      "fast_math": "0",
+      "module_mask": "1023",
+      "ns_estimator": "EMA",
+      "resampler_mode": "BANDLIMITED",
+      "simd_backend": "SCALAR",
+      "source_revision": "fea7e0735ce2e1d6fb45e1f02e0489dea6d7e920",
+      "target_triple": "x86_64-linux-gnu",
+      "version": "2.3.63"
+    }
+  },
+  "defaults": {
+    "assistant": {
+      "aec_mu": 0.180000007,
+      "agc_target_dbfs": -18,
+      "limiter_dbfs": -2,
+      "ns_floor": 0.180000007
+    },
+    "call": {
+      "aec_mu": 0.219999999,
+      "agc_target_dbfs": -20,
+      "limiter_dbfs": -2,
+      "ns_floor": 0.119999997
+    }
+  },
+  "derivation": {
+    "clean_alignment_padding_samples": 144,
+    "clean_postroll_samples": 8000,
+    "clean_preroll_samples": 8000,
+    "duplex_alignment_padding_samples": 144,
+    "duplex_near_gain": 0.5,
+    "duplex_postroll_samples": 16000,
+    "duplex_preroll_samples": 16000,
+    "duplex_render_active_samples": 64000,
+    "duplex_render_seed": 20261106,
+    "echo_taps_mic0": [
+      [
+        800,
+        0.25
+      ],
+      [
+        1280,
+        0.1
+      ]
+    ],
+    "echo_taps_mic1": [
+      [
+        801,
+        0.25
+      ],
+      [
+        1281,
+        0.1
+      ]
+    ],
+    "original_samples": 68496,
+    "real_array_recording": false,
+    "real_farend_speech": false
+  },
+  "elapsed_seconds": 1.351532558001054,
+  "ended_at": "2026-11-06T13:30:42.191810+00:00",
+  "exit_code": 0,
+  "independent_original_utterances": 1,
+  "kws_settings": {
+    "chunk": 8,
+    "decoder": "decoder-epoch-13-avg-2-chunk-8-left-64.onnx",
+    "encoder": "encoder-epoch-13-avg-2-chunk-8-left-64.int8.onnx",
+    "extra_flush_samples": 5120,
+    "feature_dim": 80,
+    "feed_samples": 160,
+    "joiner": "joiner-epoch-13-avg-2-chunk-8-left-64.int8.onnx",
+    "keywords": "g uǎng zh ōu sh ì @广州市\n",
+    "keywords_score": 1.0,
+    "keywords_threshold": 0.25,
+    "max_active_paths": 4,
+    "model": "sherpa-onnx-kws-zipformer-zh-en-3M-2025-12-20",
+    "num_threads": 1,
+    "num_trailing_blanks": 1,
+    "provider": "cpu",
+    "runtime": "sherpa-onnx-1.13.4",
+    "sample_rate_hz": 16000,
+    "tokens": "tokens.txt"
+  },
+  "manifest_digest": "edd3b0570fc1bfcb2ec9ef0ea750f875d4c65e800bc20fa49cf62e5674ca6a32",
+  "model_inference_performed": false,
+  "prepared_files": {
+    "clean_capture.pcm": {
+      "bytes": 338560,
+      "sha256": "221ee8f4b1acd8ce3df1e179772d1bb312d104ce99c14325fda23f4ed46b8bd0"
+    },
+    "clean_mono.pcm": {
+      "bytes": 169280,
+      "sha256": "a48d9f5e939046e9a809626ff182a719f914fb263cc30a3b439788b4d2623a0b"
+    },
+    "duplex_capture.pcm": {
+      "bytes": 402560,
+      "sha256": "b84053ff38db5a018883cdf9e800214fd6386a6bf90fb7bfa573d854ebf1a7d0"
+    },
+    "duplex_mono.pcm": {
+      "bytes": 201280,
+      "sha256": "79ba900f2221e082f3bf624a912eb5e70586f1e20920131868c591bdab509ba3"
+    },
+    "duplex_render.pcm": {
+      "bytes": 201280,
+      "sha256": "9e6df9b2efbc7da168f07f1899406362e580cb80faafeaca97c3280c639c7e46"
+    },
+    "keywords.txt": {
+      "bytes": 32,
+      "sha256": "ad36f91adecfc6310c7ba5d0bc008b3ac3218d5ec63afc0508f968bac7277882"
+    },
+    "manifest.json": {
+      "bytes": 2354,
+      "sha256": "a7d242a3a49bf9414ec80efecf694601366cfef135ecc97962319071eba04bbd"
+    },
+    "processed/assistant/command.json": {
+      "bytes": 564,
+      "sha256": "6eac2c8699e99c9bf3bc1fd1020910bfa1423a49cec972157b4996bdb673f1b0"
+    },
+    "processed/assistant/continuity.json": {
+      "bytes": 183,
+      "sha256": "6bce574c2801560073e7ada1cac09171288b95c5fc2eb05dfb475f04dc04386b"
+    },
+    "processed/assistant/execution.json": {
+      "bytes": 65,
+      "sha256": "ea0b8912ce07aad8993ce6fb3fc3c60051eaabbea047ab82fd6009cda281001e"
+    },
+    "processed/assistant/metrics.jsonl": {
+      "bytes": 114180,
+      "sha256": "65a0e121c4b5ad6cf5708fc144029a774b473511c97f20aa31d715da632993d1"
+    },
+    "processed/assistant/out.pcm": {
+      "bytes": 169280,
+      "sha256": "c67ffea92db6ed5feab146a6ee8fc1219e831b67c693629aefb5310b25920912"
+    },
+    "processed/assistant/stderr.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "processed/assistant/stdout.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "processed/assistant_duplex/command.json": {
+      "bytes": 610,
+      "sha256": "b70c20f892320dc0f08e2e35062baa24897631e629768b0f53dd85a6a248ac21"
+    },
+    "processed/assistant_duplex/continuity.json": {
+      "bytes": 185,
+      "sha256": "1b09b5530df7abdce286fc1d08a88975d11f2037f26850ed00a804a957a47920"
+    },
+    "processed/assistant_duplex/execution.json": {
+      "bytes": 65,
+      "sha256": "1149b0f56b570245dbd7fec31e98c4f1796479c9e7f07ad4083bbf46123363e5"
+    },
+    "processed/assistant_duplex/metrics.jsonl": {
+      "bytes": 141268,
+      "sha256": "e97f22db14d50d24113a9b0f9560e5c74ae4c19994bf0bfd4d0381c64132994b"
+    },
+    "processed/assistant_duplex/out.pcm": {
+      "bytes": 201280,
+      "sha256": "145742efe0e0bd9158f04973de1809861db9afb2d62374208c72517400b3f9fd"
+    },
+    "processed/assistant_duplex/stderr.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "processed/assistant_duplex/stdout.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "processed/call/command.json": {
+      "bytes": 549,
+      "sha256": "19330c58252f4ec3a12426fe0b46c64f6597c4b3442e80464aeb025c63843fa1"
+    },
+    "processed/call/continuity.json": {
+      "bytes": 183,
+      "sha256": "6bce574c2801560073e7ada1cac09171288b95c5fc2eb05dfb475f04dc04386b"
+    },
+    "processed/call/execution.json": {
+      "bytes": 65,
+      "sha256": "b5f497d229584adc2d825b77a00cb5472e38259251054316889efac220d9c912"
+    },
+    "processed/call/metrics.jsonl": {
+      "bytes": 114190,
+      "sha256": "2739155e3680a7c02a745fe2027b452315c969d6b9337da9f50acb59984b8193"
+    },
+    "processed/call/out.pcm": {
+      "bytes": 169280,
+      "sha256": "bc9411db16f9bc6855b2bd42c424639a272906dcf1097844de27ed9892b60616"
+    },
+    "processed/call/stderr.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "processed/call/stdout.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "processed/call_duplex/command.json": {
+      "bytes": 595,
+      "sha256": "4e5793dba06935a121d751b473da2cfb355e1b5d5b22988755eb0261639a83b7"
+    },
+    "processed/call_duplex/continuity.json": {
+      "bytes": 185,
+      "sha256": "1b09b5530df7abdce286fc1d08a88975d11f2037f26850ed00a804a957a47920"
+    },
+    "processed/call_duplex/execution.json": {
+      "bytes": 64,
+      "sha256": "07128fbf3abc22cbd365d9508e2fe19a1d7205562ac4d3dc30fe4d3c8ba909af"
+    },
+    "processed/call_duplex/metrics.jsonl": {
+      "bytes": 141003,
+      "sha256": "4409bf63a78f36649c9feffbef753e18e29bf590edc888ec1ebfcb458b66a20e"
+    },
+    "processed/call_duplex/out.pcm": {
+      "bytes": 201280,
+      "sha256": "f0345b98bbb0536271ace5d9089ee639de44bb9aae3491fcf19fb7b513cb245a"
+    },
+    "processed/call_duplex/stderr.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "processed/call_duplex/stdout.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "source_files": {
+    "CMakeLists.txt": "97f1e98a766a98c36cfa3e72ebb2d3bd2b75208470582a3abb3b7928d8774316",
+    "docs/research/frontend-evolution-v1/MANDARIN_DOWNSTREAM_V1_CONTRACT.zh-CN.md": "807939bc5b858a47311bab63c5b24b62df8574486828e9efa330a46f130583f9",
+    "docs/research/frontend-evolution-v1/MANDARIN_DOWNSTREAM_V1_DUPLEX_ADDENDUM.zh-CN.md": "832886e5614ac64802b3bca4cb87fd6f9a1938abba972ce40a43a4fbd0b885dd",
+    "docs/research/frontend-evolution-v1/mandarin-downstream-v1-source-lock.json": "306e4a6f4f83e7e577e17037103985804d353f67d0e1d5dc3c3027f320ba64dd",
+    "examples/process_pcm.c": "534163d0ca9b5fa3a1d8ceb309d34270b47ead8f80deed6215e781f9e010111b",
+    "tests/validation/dualmic_profile_support.py": "697e381bbee585cc6d2b42cc4fb038d7b6eb5086f26e02ca8d14d58c21da9dcb",
+    "tests/validation/mandarin_downstream.py": "2bba610f9154e0eb3d115a361104191a7fd2f5ac0fdb4d9972dd4633599bef9c",
+    "tests/validation/mandarin_downstream_source.py": "42587a1ea6c5a8935ddffd56ebc777d681ddbc47e1abeed081b59a0b8012113d",
+    "tests/validation/quality_metric_support.py": "cc310f62c3a16dcee299fafd99abccb6427a9db34d46c57364b8a830b24bd7eb",
+    "tests/validation/run_dualmic_profile_replay.py": "1eac05b6bd1859c24bf1b7ec4ef83ef93c6e122be891ad0e5a0685ea5a8178c5",
+    "validation/tools/build_validation_corpus.py": "136fddaaaa340f4d08116b93250f50c6c9d60adfdc002c054ba26983bb9d8bb9",
+    "validation/tools/downstream_metrics.py": "35f1e41697ca5becc744ae42fab73eb8a437daca0bd62815acd2e7b26005a3e1",
+    "validation/tools/run_validation.py": "b92f0f16b776356795b2ef9429f6408b279367e3f1008fb04d78eadaf6ac44f8",
+    "validation/tools/run_validation_engine.py": "9082b061e7e46aa1c48c82c0ec845524110e01e910aa51e5b83c2c9d9594789a",
+    "validation/tools/stage_profile_support.py": "8ad696c7e72d602cd8ea4ca9c14da1f6635111504426cf2d880f6638da7ee12b"
+  },
+  "source_lock_sha256": "306e4a6f4f83e7e577e17037103985804d353f67d0e1d5dc3c3027f320ba64dd",
+  "source_revision": "fea7e0735ce2e1d6fb45e1f02e0489dea6d7e920",
+  "started_at": "2026-11-06T13:30:40.840303+00:00",
+  "status": "PREPARED_NOT_INFERRED",
+  "views": {
+    "assistant": {
+      "bytes": 169280,
+      "continuity": {
+        "capture_frames": 529,
+        "frame_indices_contiguous": true,
+        "frame_samples": 160,
+        "input_samples_per_channel": 84640,
+        "metrics_frames": 529,
+        "output_mono_samples": 84640
+      },
+      "path": "processed/assistant/out.pcm",
+      "render_summary": {
+        "far_end_active_field_present": true,
+        "far_end_active_frames": 0,
+        "observed_trace_fields": [
+          "aec_converged",
+          "algorithmic_latency_ms",
+          "delay_error_samples",
+          "double_talk_active",
+          "erle_db",
+          "erle_valid",
+          "estimated_delay_ms",
+          "far_end_active",
+          "frame",
+          "vad_active",
+          "vad_probability"
+        ],
+        "render_input_nonzero_samples": 0,
+        "render_input_samples": 0
+      },
+      "sha256": "c67ffea92db6ed5feab146a6ee8fc1219e831b67c693629aefb5310b25920912"
+    },
+    "assistant_duplex": {
+      "bytes": 201280,
+      "continuity": {
+        "capture_frames": 629,
+        "frame_indices_contiguous": true,
+        "frame_samples": 160,
+        "input_samples_per_channel": 100640,
+        "metrics_frames": 629,
+        "output_mono_samples": 100640
+      },
+      "path": "processed/assistant_duplex/out.pcm",
+      "render_summary": {
+        "far_end_active_field_present": true,
+        "far_end_active_frames": 551,
+        "observed_trace_fields": [
+          "aec_converged",
+          "algorithmic_latency_ms",
+          "delay_error_samples",
+          "double_talk_active",
+          "erle_db",
+          "erle_valid",
+          "estimated_delay_ms",
+          "far_end_active",
+          "frame",
+          "vad_active",
+          "vad_probability"
+        ],
+        "render_input_nonzero_samples": 63998,
+        "render_input_samples": 100640
+      },
+      "sha256": "145742efe0e0bd9158f04973de1809861db9afb2d62374208c72517400b3f9fd"
+    },
+    "call": {
+      "bytes": 169280,
+      "continuity": {
+        "capture_frames": 529,
+        "frame_indices_contiguous": true,
+        "frame_samples": 160,
+        "input_samples_per_channel": 84640,
+        "metrics_frames": 529,
+        "output_mono_samples": 84640
+      },
+      "path": "processed/call/out.pcm",
+      "render_summary": {
+        "far_end_active_field_present": true,
+        "far_end_active_frames": 0,
+        "observed_trace_fields": [
+          "aec_converged",
+          "algorithmic_latency_ms",
+          "delay_error_samples",
+          "double_talk_active",
+          "erle_db",
+          "erle_valid",
+          "estimated_delay_ms",
+          "far_end_active",
+          "frame",
+          "vad_active",
+          "vad_probability"
+        ],
+        "render_input_nonzero_samples": 0,
+        "render_input_samples": 0
+      },
+      "sha256": "bc9411db16f9bc6855b2bd42c424639a272906dcf1097844de27ed9892b60616"
+    },
+    "call_duplex": {
+      "bytes": 201280,
+      "continuity": {
+        "capture_frames": 629,
+        "frame_indices_contiguous": true,
+        "frame_samples": 160,
+        "input_samples_per_channel": 100640,
+        "metrics_frames": 629,
+        "output_mono_samples": 100640
+      },
+      "path": "processed/call_duplex/out.pcm",
+      "render_summary": {
+        "far_end_active_field_present": true,
+        "far_end_active_frames": 551,
+        "observed_trace_fields": [
+          "aec_converged",
+          "algorithmic_latency_ms",
+          "delay_error_samples",
+          "double_talk_active",
+          "erle_db",
+          "erle_valid",
+          "estimated_delay_ms",
+          "far_end_active",
+          "frame",
+          "vad_active",
+          "vad_probability"
+        ],
+        "render_input_nonzero_samples": 63998,
+        "render_input_samples": 100640
+      },
+      "sha256": "f0345b98bbb0536271ace5d9089ee639de44bb9aae3491fcf19fb7b513cb245a"
+    },
+    "raw": {
+      "bytes": 169280,
+      "continuity": {
+        "output_mono_samples": 84640,
+        "raw_microphone0": true
+      },
+      "path": "clean_mono.pcm",
+      "render_summary": null,
+      "sha256": "a48d9f5e939046e9a809626ff182a719f914fb263cc30a3b439788b4d2623a0b"
+    },
+    "raw_duplex": {
+      "bytes": 201280,
+      "continuity": {
+        "output_mono_samples": 100640,
+        "raw_microphone0": true
+      },
+      "path": "duplex_mono.pcm",
+      "render_summary": null,
+      "sha256": "79ba900f2221e082f3bf624a912eb5e70586f1e20920131868c591bdab509ba3"
+    }
+  }
+}

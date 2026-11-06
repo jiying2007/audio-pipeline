@@ -50,6 +50,20 @@ def live_publication_violations(source):
 
 
 class ResearchCIBoundaryTests(unittest.TestCase):
+    def test_extended_research_guides_match_current_profile_names(self):
+        names = ("docs/EXTENDED_REAL_VALIDATION.md", "docs/EXTENDED_REAL_VALIDATION.zh-CN.md",
+                 "docs/TESTING.md", "docs/TESTING.zh-CN.md")
+        for name in names:
+            text = (ROOT / name).read_text(encoding="utf-8")
+            with self.subTest(path=name):
+                for profile in ("research-attribution-core", "research-attribution-extended", "research"):
+                    self.assertIn(profile, text)
+                self.assertIn("workflow_dispatch", text)
+                self.assertIn("source_sha", text)
+                for retired in ("--profile commercial-core", "EXTENDED_REAL_ENABLED=true",
+                                "Published releases automatically request", "Release published 自动申请"):
+                    self.assertNotIn(retired, text)
+
     def test_current_research_guides_do_not_restore_retired_approval(self):
         for name in ('docs/ARCHITECTURE.md', 'docs/AUDIO_QUALITY_EVALUATION.md', 'docs/EXTENDED_REAL_VALIDATION.zh-CN.md', 'docs/PERFORMANCE.md', 'docs/PLATFORM_SUPPORT.md', 'docs/PORTING.md', 'docs/SSC305_DELIVERY.md', 'docs/SSC305_DELIVERY.zh-CN.md', 'docs/TRUSTED_AUDIO_VALIDATION_BLIND_RUNNER.md', 'docs/TUNING.md'):
             with self.subTest(path=name):

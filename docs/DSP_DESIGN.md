@@ -37,7 +37,7 @@ Per-channel first-order high-pass filtering removes DC/very-low-frequency energy
 
 ## Beamformer
 
-The two-mic frontend uses a low-cost delay-and-sum geometry with optional compile-time direction tracking. It is selected only for two-microphone configurations. `AP_ENABLE_BF_DIRECTION_TRACKING` controls whether adaptive tracking is physically enabled; the effective result is exported as `AP_BUILD_BF_DIRECTION_TRACKING` and in build info. SAFE quality bypasses tracking/beamforming work in the high-level graph. The conservative `ssc305-cortex-a32-low` product preset keeps fixed broadside delay/sum BF by disabling direction tracking until real render-active, motor-noise and far-field evidence justifies enabling it.
+The two-mic frontend uses a low-cost delay-and-sum geometry with optional compile-time direction tracking. It is selected only for two-microphone configurations. `AP_ENABLE_BF_DIRECTION_TRACKING` controls whether adaptive tracking is physically enabled; the effective result is exported as `AP_BUILD_BF_DIRECTION_TRACKING` and in build info. SAFE quality bypasses tracking/beamforming work in the high-level graph. The conservative `ssc305-cortex-a32-low` research preset keeps fixed broadside delay/sum BF by disabling direction tracking until real render-active, motor-noise and far-field evidence justifies enabling it.
 
 ## Render synchronization
 
@@ -65,7 +65,7 @@ A single Activity result avoids independent AEC, RES and NS double-talk decision
 
 Default AEC is a clean-room partitioned MDF/AUMDF-lite style frequency-domain backend. It processes five 2 ms subblocks per 10 ms frame. A compile-time NLMS backend remains a validation/safety alternative.
 
-AEC resident geometry is derived from the compiled max tail/internal rate, so LOW/TINY product builds physically remove unused partitions/history.
+AEC resident geometry is derived from the compiled max tail/internal rate, so LOW/TINY bounded builds physically remove unused partitions/history.
 
 Adaptation is gated by far-end/double-talk activity. Both MDF and NLMS maintain two adaptation cadences:
 
@@ -126,11 +126,11 @@ The lightweight VAD tracks an RMS noise floor and hangover. When NS exists, upst
 
 Steady-state AEC cadence is an additional backend-local CPU reduction and does not replace FULL/LITE/SAFE overload policy.
 
-Compile-time TINY/LOW product envelopes are separate and may physically remove capacity that runtime quality cannot restore.
+Compile-time TINY/LOW build envelopes are separate and may physically remove capacity that runtime quality cannot restore.
 
 ## SIMD / math
 
-Scalar and NEON kernels are compile-time selected; algorithm code does not contain CPU model names. Fast math is independently opt-in. Correctness, deterministic behavior where required and acoustic contracts must pass for every shipping combination.
+Scalar and NEON kernels are compile-time selected; algorithm code does not contain CPU model names. Fast math is independently opt-in. Correctness, deterministic behavior where required and acoustic contracts must pass for every supported build combination.
 
 ## Clean-room policy
 

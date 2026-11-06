@@ -13,6 +13,7 @@
 - [中文模型实际结果](MANDARIN_DOWNSTREAM_V1_RESULT.zh-CN.md)：capture 三视图 CER0/12，duplex raw1/12、CALL/ASSISTANT3/12，三个 duplex KWS 均零触发；这些单句负结果不作效果晋升。
 - [独立审查与整合记录](DUALMIC_NONDEVICE_V2_REVIEW.zh-CN.md)：保留 A 首次整阶段审查超预算、B/C 独立实际回读、CI 接线修正及 3ce5656 整合源码自身的 11 阶段执行。
 - [首次远端源码身份故障定位](DUALMIC_NONDEVICE_V2_CI_SOURCE_ORDER_RESULT.zh-CN.md)：保留 head1cf 的 A 失败，独立复现未忽略研究输出使 CMake 标记 `-dirty`；调整构建顺序与产物目录，严格身份和原质量门禁保持。
+- [下载原件隐藏来源文件遗漏](DUALMIC_NONDEVICE_V2_CI_ARTIFACT_RESULT.zh-CN.md)：保留 head083 的 648/650 原件完整性失败；仅修正 A 受控上传的隐藏文件设置，新提交须重新验证完整原件。
 
 SDK/DSP 仍为 2.3.63。各本地结果只对应自己的执行 SHA；PR #920 与新 main 必须取得
 各自完整门禁和实际产物。本轮没有真人听评、真实 WAN 或 SSC305 物理结果。

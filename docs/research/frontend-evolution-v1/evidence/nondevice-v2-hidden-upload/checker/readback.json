@@ -1,0 +1,24 @@
+{
+  "DSP_reexecuted": false,
+  "budget_seconds": 300.0,
+  "checker_sha256": "fd9f15eb867d2d37b4f2cddbe7750d9720cffd613a835e00214803c13d36f7ce",
+  "checks": 8276,
+  "elapsed_seconds": 0.10599412299779942,
+  "ended_at": "2026-11-06T14:27:41.213651+00:00",
+  "error": "ValueError: 650-file exact manifest mismatch",
+  "execution_source_revision": "5e5b70fb1f009b6f88b251040268bfc0956f85bc",
+  "execution_source_tree": "e2e2cbf0d36e3d922bd571a37f2eb758637dd14c",
+  "measurement_role": "readback_only_no_new_audio_or_parameters",
+  "new_artifact_label": "pr920-corrected-42230060500-attempt-1",
+  "original_archive": {
+    "bytes": 45180260,
+    "path": "/workspace/scratch/b74ab3415ba4/nondevice-v2-ci-pr920-corrected/A.zip",
+    "sha256": "8f0da48068e1af0c02d7ccab0d63a6b9c7aabdb6a7dbdfd21c7bf29fe5a66a5e"
+  },
+  "prior_failure_not_reclassified": true,
+  "prior_failure_sha256": "8adf3d9bfa9ba190cb956c77d204aa5ac29a8211c96d6b3479f99fa38b5b8f99",
+  "prior_review_status": "REVIEW_BUDGET_EXCEEDED",
+  "repository_files_modified": false,
+  "started_at": "2026-11-06T14:27:41.107677+00:00",
+  "status": "FAIL"
+}

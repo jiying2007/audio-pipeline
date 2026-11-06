@@ -1,0 +1,97 @@
+{
+  "DSP_reexecuted": false,
+  "budget_seconds": 300,
+  "checker_returncode": 1,
+  "checker_sha256": "fd9f15eb867d2d37b4f2cddbe7750d9720cffd613a835e00214803c13d36f7ce",
+  "command": [
+    "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+    "/workspace/scratch/b74ab3415ba4/dualmic-recorded-ci-independent-readback.py",
+    "--artifact-root",
+    "/workspace/scratch/b74ab3415ba4/nondevice-v2-ci-pr920-corrected/A",
+    "--checkout",
+    "/workspace/scratch/b74ab3415ba4/audio-dualmic-pr920-corrected-evidence",
+    "--execution-sha",
+    "5e5b70fb1f009b6f88b251040268bfc0956f85bc",
+    "--execution-tree",
+    "e2e2cbf0d36e3d922bd571a37f2eb758637dd14c",
+    "--label",
+    "pr920-corrected-42230060500-attempt-1",
+    "--archive",
+    "/workspace/scratch/b74ab3415ba4/nondevice-v2-ci-pr920-corrected/A.zip",
+    "--archive-sha256",
+    "8f0da48068e1af0c02d7ccab0d63a6b9c7aabdb6a7dbdfd21c7bf29fe5a66a5e",
+    "--output",
+    "/workspace/scratch/b74ab3415ba4/A-independent-pr920-corrected-42230060500/checker"
+  ],
+  "driver_sha256": "e4d03b9285cddc4ef713ae6e904f997d7cd5894e0e7573865d05e66efc50729a",
+  "early_build": {
+    "files": {
+      "build-identity.txt": {
+        "bytes": 350,
+        "sha256": "3bf27f26a864b164f7adc2aeb471df26ba0d939fe29b98b7e5be2a1e94a73006"
+      },
+      "checkout-sha.txt": {
+        "bytes": 41,
+        "sha256": "cd48b04fdd7accdb1332759954ad7aa37279db6de7374c41796c5b9f881df96c"
+      },
+      "prebuild-git-status.log": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    "identity": {
+      "aec_backend": "MDF",
+      "build_type": "Release",
+      "compiler_id": "GNU",
+      "compiler_version": "13.3.0",
+      "config_digest": "569d92f450c5a431aee273fcfe0f61df252ec6ba4924b2c87bdfa5421bf3b2ec",
+      "fast_math": "0",
+      "module_mask": "1023",
+      "ns_estimator": "EMA",
+      "resampler_mode": "BANDLIMITED",
+      "simd_backend": "SCALAR",
+      "source_revision": "5e5b70fb1f009b6f88b251040268bfc0956f85bc",
+      "target_triple": "x86_64-linux-gnu",
+      "version": "2.3.63"
+    },
+    "prebuild_git_status_empty": true,
+    "status": "VERIFIED_ACTUAL_ORIGINAL"
+  },
+  "elapsed_seconds": 0.16650927400041837,
+  "ended_at": "2026-11-06T14:27:41.235541+00:00",
+  "error": "ValueError: independent original-artifact checker failed; all original failures retained",
+  "execution_source": "5e5b70fb1f009b6f88b251040268bfc0956f85bc",
+  "execution_tree": "e2e2cbf0d36e3d922bd571a37f2eb758637dd14c",
+  "files": {
+    "checker-driver.log": {
+      "bytes": 195,
+      "sha256": "293d8e8d0f2d033f1e4a9dc4569348c987c0381f21aeb5a2e184f2dbc578f3ed"
+    },
+    "checker/phase.json": {
+      "bytes": 2090,
+      "sha256": "3923e7ec68907f803f2de9b749ee56303059c5c93b435b6d5bef8e9a67764a9a"
+    },
+    "checker/readback.json": {
+      "bytes": 1106,
+      "sha256": "c6f0946fe6be863f58b8478d874b49a15c95bdb8e1c8e229c3bbd7039fd2c0f0"
+    },
+    "checker/start.json": {
+      "bytes": 487,
+      "sha256": "b34debdfd400cc2b97ee0f8c0a83641c73277a3b9320cb89a322e5b9611ac7ad"
+    },
+    "checker/worker.log": {
+      "bytes": 843,
+      "sha256": "5923fbe2e45c65be0070b2f38ae1d1fd9a433278fc5a9f1de3b46759a3f16a32"
+    },
+    "start.json": {
+      "bytes": 572,
+      "sha256": "80dfce149916f262e1b3a40bbe936b03cc012de4e802ce35dfe59496d9657ecd"
+    }
+  },
+  "new_artifact_label": "pr920-corrected-42230060500-attempt-1",
+  "old_review_failure_unchanged": true,
+  "repo_files_modified": false,
+  "started_at": "2026-11-06T14:27:41.069049+00:00",
+  "status": "FAIL",
+  "timing_scope": "all early-build reads and unchanged automatic checker through sealed child receipts; excludes final outer receipt write"
+}

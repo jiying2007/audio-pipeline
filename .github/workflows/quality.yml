@@ -2697,6 +2697,7 @@ jobs:
         with:
           name: dualmic-recorded-speech-${{ github.run_id }}-attempt-${{ github.run_attempt }}
           path: /tmp/ap-dualmic-recorded-stage/
+          include-hidden-files: true
           if-no-files-found: warn
           retention-days: 30
       - name: Preserve recorded speech provenance and failures

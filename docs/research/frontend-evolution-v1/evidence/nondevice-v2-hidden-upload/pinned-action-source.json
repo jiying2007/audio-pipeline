@@ -1,0 +1,8 @@
+{
+  "url": "https://raw.githubusercontent.com/actions/upload-artifact/043fb46d1a93c77aae656e7c1c64a875d1fc6a0a/action.yml",
+  "retrieved_at": "2026-11-06T14:28:44.283172+00:00",
+  "bytes": 3603,
+  "sha256": "c5979822866a72362e609844b6ebe77d4b7e759af68cc1c2c425dcf51481fab4",
+  "path": "/workspace/scratch/b74ab3415ba4/upload-artifact-043fb46-action.yml",
+  "purpose": "Read-only primary-source verification of exact pinned action behavior after preserved failed artifact readback; not a new audio review."
+}

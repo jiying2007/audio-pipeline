@@ -1,0 +1,31 @@
+{
+  "status": "CONFIRMED_UPLOAD_OMISSION_ONLY",
+  "budget_seconds": 300,
+  "elapsed_seconds": 0.03428340199752711,
+  "source": "5e5b70fb1f009b6f88b251040268bfc0956f85bc",
+  "tree": "e2e2cbf0d36e3d922bd571a37f2eb758637dd14c",
+  "expected_result_files": 650,
+  "actual_result_files": 648,
+  "actual_stage_files": 793,
+  "extra_result_files": [],
+  "missing": [
+    {
+      "path": "source-tree/.github/research/frontend-evolution-v1/speech-admission-v1.json",
+      "size_bytes": 1219,
+      "sha256": "a9768d0cf83c7d9875d73a54b8dda7f59540346b3d60a2fd72336071914bbc9f",
+      "committed_source_matches": true
+    },
+    {
+      "path": "source-tree/.github/research/frontend-evolution-v1/speech-spatial-v1.json",
+      "size_bytes": 1498,
+      "sha256": "9cf0253c3e04e48ed98643c1bd39dcc94c9e8ac0bb0265fd90f5e645a13dc8da",
+      "committed_source_matches": true
+    }
+  ],
+  "hidden_manifest_paths": [
+    "source-tree/.github/research/frontend-evolution-v1/speech-admission-v1.json",
+    "source-tree/.github/research/frontend-evolution-v1/speech-spatial-v1.json"
+  ],
+  "old_artifact_modified": false,
+  "DSP_or_models_run": false
+}

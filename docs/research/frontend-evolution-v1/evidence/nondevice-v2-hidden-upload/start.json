@@ -1,0 +1,13 @@
+{
+  "DSP_reexecuted": false,
+  "budget_seconds": 300,
+  "checker_sha256": "fd9f15eb867d2d37b4f2cddbe7750d9720cffd613a835e00214803c13d36f7ce",
+  "driver_sha256": "e4d03b9285cddc4ef713ae6e904f997d7cd5894e0e7573865d05e66efc50729a",
+  "execution_source": "5e5b70fb1f009b6f88b251040268bfc0956f85bc",
+  "execution_tree": "e2e2cbf0d36e3d922bd571a37f2eb758637dd14c",
+  "new_artifact_label": "pr920-corrected-42230060500-attempt-1",
+  "old_review_failure_unchanged": true,
+  "repo_files_modified": false,
+  "started_at": "2026-11-06T14:27:41.069049+00:00",
+  "status": "RUNNING"
+}

@@ -1,0 +1,13 @@
+Traceback (most recent call last):
+  File "/workspace/scratch/b74ab3415ba4/dualmic-recorded-ci-independent-readback.py", line 278, in <module>
+    if __name__=='__main__':main()
+                            ^^^^^^
+  File "/workspace/scratch/b74ab3415ba4/dualmic-recorded-ci-independent-readback.py", line 247, in main
+    if a.worker:worker(a);return
+                ^^^^^^^^^
+  File "/workspace/scratch/b74ab3415ba4/dualmic-recorded-ci-independent-readback.py", line 124, in worker
+    need(len(files)==650 and set(files)==set(manifest['files'])|{'artifact-manifest.json'},'650-file exact manifest mismatch')
+  File "/workspace/scratch/b74ab3415ba4/dualmic-recorded-ci-independent-readback.py", line 52, in need
+    if not test: raise ValueError(message)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: 650-file exact manifest mismatch

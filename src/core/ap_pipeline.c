@@ -331,6 +331,16 @@ void ap_pipeline_reset(ap_pipeline_t *pipeline) {
 ap_status_t ap_pipeline_set_quality(ap_pipeline_t *pipeline, ap_quality_t quality) {
     if (!pipeline || quality < AP_QUALITY_SAFE || quality > AP_QUALITY_FULL)
         return AP_EINVAL;
+#if AP_BUILD_STAGE_BF
+    if (AP_HAS_STAGE(pipeline, AP_STAGE_BF) && pipeline->quality != quality &&
+        (pipeline->quality == AP_QUALITY_SAFE || quality == AP_QUALITY_SAFE)) {
+        /* SAFE bypasses BF: evidence on its two sides is not consecutive.
+         * Keep confirmed routing, but start a fresh observation epoch. */
+        pipeline->beamformer.fallback_hard_arm_count = 0u;
+        pipeline->beamformer.fallback_recovery_count = 0u;
+        pipeline->beamformer.fixed_health_counter = 3u;
+    }
+#endif
 #if AP_BUILD_STAGE_AEC
     if (AP_HAS_STAGE(pipeline, AP_STAGE_AEC)) {
         uint32_t tail_ms;

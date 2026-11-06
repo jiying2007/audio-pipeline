@@ -13,7 +13,7 @@
 
 static void usage(const char *argv0) {
     fprintf(stderr,
-            "usage: %s [--sample-rate HZ] [--mic-channels 1|2] "
+            "usage: %s [--profile call|assistant] [--sample-rate HZ] [--mic-channels 1|2] "
             "[--capture-only] [--capture-profile default|ns-isolated|vad-isolated|agc-isolated|bf-isolated] [--metrics-jsonl FILE] "
             "[--print-default-tuning] [--strict-capture-frames] "
             "[--aec-mu VALUE] [--ns-floor VALUE] [--agc-target-dbfs VALUE] [--limiter-dbfs VALUE] "
@@ -99,7 +99,20 @@ int main(int argc, char **argv) {
     tuning.api_version = AP_PIPELINE_CONTROL_API_VERSION;
 
     while (arg < argc && argv[arg][0] == '-') {
-        if (strcmp(argv[arg], "--sample-rate") == 0) {
+        if (strcmp(argv[arg], "--profile") == 0) {
+            if (++arg >= argc) {
+                usage(argv[0]);
+                return 2;
+            }
+            if (strcmp(argv[arg], "call") == 0)
+                cfg = ap_config_default(AP_PROFILE_CALL);
+            else if (strcmp(argv[arg], "assistant") == 0)
+                cfg = ap_config_default(AP_PROFILE_ASSISTANT);
+            else {
+                usage(argv[0]);
+                return 2;
+            }
+        } else if (strcmp(argv[arg], "--sample-rate") == 0) {
             if (++arg >= argc || !parse_u32(argv[arg], &sample_rate)) {
                 usage(argv[0]);
                 return 2;

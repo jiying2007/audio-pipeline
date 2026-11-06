@@ -1,3 +1,12 @@
+# 2.3.62
+
+- Normalize SYNC drift by elapsed capture samples between accepted acoustic delay observations, including low-confidence gaps; preserve the existing normal-cadence arithmetic, smoothing and correction policy.
+- Rebuild the drift observation basis after reset, timestamp alignment, disabled tracking/compensation, sample-rate changes and counter rollover so unrelated observation epochs cannot create a rate estimate.
+- Retain the existing narrow hard-contamination protection in fixed-direction dual-microphone processing, including LITE and builds without direction tracking. Preserve steady tracking behavior and keep health confirmation independent of steering updates.
+- Invalidate unfinished BF health confirmation/recovery across SAFE bypass intervals while preserving confirmed routing and repeated-quality cadence.
+- Add explicit `--profile call|assistant` selection to the existing offline processor, with CALL remaining the default and explicit tuning overrides retaining their semantics.
+- Add source-bound dual-use replay, complete-output checks and effective-configuration/PCM regressions in the existing Verify workflow. Keep descriptive acoustic observations distinct from quality approval and physical-device evidence.
+
 # 2.3.61
 
 - Make offline PCM processing fail visibly on incomplete S16 samples/channel groups and capture/render read errors, while preserving legitimate render EOF zero-padding.

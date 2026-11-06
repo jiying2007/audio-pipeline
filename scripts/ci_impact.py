@@ -739,6 +739,12 @@ def analyze(paths: list[str], force_full: bool = False, cmake_version_only_chang
             flags["bench"] = True
         elif p.startswith("examples/alsa"):
             flags["alsa"] = True
+        elif p == "examples/process_pcm.c":
+            # This executable is the canonical acoustic replay boundary.
+            # Keep its existing C/performance coverage and also run audio
+            # validation when the CLI is the only behavioral change.
+            flags["bench"] = True
+            flags["validation"] = True
         elif p == "tools/acoustic_upgrade_decision.py":
             flags["unknown"] = True
         elif p == "tools/runner_preflight.py":
@@ -992,6 +998,14 @@ def self_test() -> None:
     assert aec["run_aec_backend"] and aec["run_tuning"] and "composition-aec-only" in aec["compositions"]
     val = analyze(["validation/tools/run_validation.py"])
     assert val["run_audio"] and val["run_tuning"] and not val["run_ci"] and val["arm"] == [] and not val["run_lab"]
+    for pcm_paths, version_only_change in (
+        (["examples/process_pcm.c"], False),
+        (["CMakeLists.txt", "examples/process_pcm.c"], True),
+    ):
+        pcm = analyze(pcm_paths, cmake_version_only_change=version_only_change)
+        assert pcm["run_audio"] and pcm["run_ci"] and pcm["run_codeql"] and pcm["run_perf"]
+        assert not pcm["full"] and not pcm["docs_only"]
+    assert not analyze(["examples/build_info.c"])["run_audio"]
     tuning_val = analyze([
         "validation/tools/build_agc_tuning_corpus.py",
         "validation/policies/validation-agc-stage-tuning.json",

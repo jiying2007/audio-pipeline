@@ -1,0 +1,1542 @@
+{
+  "cases": [
+    {
+      "case_id": "seed-5107-near-only-call",
+      "clean_near_audio": "cases/seed-5107-near-only/clean-near.pcm",
+      "control": {},
+      "dimensions": {
+        "data_role": "regression",
+        "echo_tdoa_samples": 1.4139190265868387,
+        "frames": 600,
+        "mic_spacing_mm": 35.0,
+        "pipeline_profile": "call",
+        "seconds": 6,
+        "seed": 5107,
+        "synthetic_engineering_signal": true,
+        "target_tdoa_samples": 0.0
+      },
+      "echo_audio": null,
+      "expected": {},
+      "mic_audio": "cases/seed-5107-near-only/mic.pcm",
+      "mic_channels": 2,
+      "pipeline_profile": "call",
+      "processor_profile": "default",
+      "quality": {
+        "ground_truth": true,
+        "role": "descriptive-regression"
+      },
+      "render_audio": null,
+      "sample_rate_hz": 16000,
+      "scenario": "near-only",
+      "source": {
+        "dataset_id": "deterministic-generator",
+        "source_id": "seed-5107-near-only"
+      },
+      "split": "validation",
+      "vad_labels": "cases/seed-5107-near-only/vad.labels"
+    },
+    {
+      "case_id": "seed-5107-near-only-assistant",
+      "clean_near_audio": "cases/seed-5107-near-only/clean-near.pcm",
+      "control": {},
+      "dimensions": {
+        "data_role": "regression",
+        "echo_tdoa_samples": 1.4139190265868387,
+        "frames": 600,
+        "mic_spacing_mm": 35.0,
+        "pipeline_profile": "assistant",
+        "seconds": 6,
+        "seed": 5107,
+        "synthetic_engineering_signal": true,
+        "target_tdoa_samples": 0.0
+      },
+      "echo_audio": null,
+      "expected": {},
+      "mic_audio": "cases/seed-5107-near-only/mic.pcm",
+      "mic_channels": 2,
+      "pipeline_profile": "assistant",
+      "processor_profile": "default",
+      "quality": {
+        "ground_truth": true,
+        "role": "descriptive-regression"
+      },
+      "render_audio": null,
+      "sample_rate_hz": 16000,
+      "scenario": "near-only",
+      "source": {
+        "dataset_id": "deterministic-generator",
+        "source_id": "seed-5107-near-only"
+      },
+      "split": "validation",
+      "vad_labels": "cases/seed-5107-near-only/vad.labels"
+    },
+    {
+      "case_id": "seed-5107-silent-render-call",
+      "clean_near_audio": "cases/seed-5107-silent-render/clean-near.pcm",
+      "control": {},
+      "dimensions": {
+        "data_role": "regression",
+        "echo_tdoa_samples": 1.4139190265868387,
+        "frames": 600,
+        "mic_spacing_mm": 35.0,
+        "pipeline_profile": "call",
+        "seconds": 6,
+        "seed": 5107,
+        "synthetic_engineering_signal": true,
+        "target_tdoa_samples": 0.0
+      },
+      "echo_audio": null,
+      "expected": {},
+      "mic_audio": "cases/seed-5107-silent-render/mic.pcm",
+      "mic_channels": 2,
+      "pipeline_profile": "call",
+      "processor_profile": "default",
+      "quality": {
+        "ground_truth": true,
+        "role": "descriptive-regression"
+      },
+      "render_audio": "cases/seed-5107-silent-render/render.pcm",
+      "sample_rate_hz": 16000,
+      "scenario": "silent-render",
+      "source": {
+        "dataset_id": "deterministic-generator",
+        "source_id": "seed-5107-silent-render"
+      },
+      "split": "validation",
+      "vad_labels": "cases/seed-5107-silent-render/vad.labels"
+    },
+    {
+      "case_id": "seed-5107-silent-render-assistant",
+      "clean_near_audio": "cases/seed-5107-silent-render/clean-near.pcm",
+      "control": {},
+      "dimensions": {
+        "data_role": "regression",
+        "echo_tdoa_samples": 1.4139190265868387,
+        "frames": 600,
+        "mic_spacing_mm": 35.0,
+        "pipeline_profile": "assistant",
+        "seconds": 6,
+        "seed": 5107,
+        "synthetic_engineering_signal": true,
+        "target_tdoa_samples": 0.0
+      },
+      "echo_audio": null,
+      "expected": {},
+      "mic_audio": "cases/seed-5107-silent-render/mic.pcm",
+      "mic_channels": 2,
+      "pipeline_profile": "assistant",
+      "processor_profile": "default",
+      "quality": {
+        "ground_truth": true,
+        "role": "descriptive-regression"
+      },
+      "render_audio": "cases/seed-5107-silent-render/render.pcm",
+      "sample_rate_hz": 16000,
+      "scenario": "silent-render",
+      "source": {
+        "dataset_id": "deterministic-generator",
+        "source_id": "seed-5107-silent-render"
+      },
+      "split": "validation",
+      "vad_labels": "cases/seed-5107-silent-render/vad.labels"
+    },
+    {
+      "case_id": "seed-5107-far-only-call",
+      "clean_near_audio": null,
+      "control": {},
+      "dimensions": {
+        "data_role": "regression",
+        "echo_tdoa_samples": 1.4139190265868387,
+        "frames": 600,
+        "mic_spacing_mm": 35.0,
+        "pipeline_profile": "call",
+        "seconds": 6,
+        "seed": 5107,
+        "synthetic_engineering_signal": true,
+        "target_tdoa_samples": 0.0
+      },
+      "echo_audio": "cases/seed-5107-far-only/echo.pcm",
+      "expected": {},
+      "mic_audio": "cases/seed-5107-far-only/mic.pcm",
+      "mic_channels": 2,
+      "pipeline_profile": "call",
+      "processor_profile": "default",
+      "quality": {
+        "ground_truth": true,
+        "role": "descriptive-regression"
+      },
+      "render_audio": "cases/seed-5107-far-only/render.pcm",
+      "sample_rate_hz": 16000,
+      "scenario": "far-only",
+      "source": {
+        "dataset_id": "deterministic-generator",
+        "source_id": "seed-5107-far-only"
+      },
+      "split": "validation",
+      "vad_labels": null
+    },
+    {
+      "case_id": "seed-5107-far-only-assistant",
+      "clean_near_audio": null,
+      "control": {},
+      "dimensions": {
+        "data_role": "regression",
+        "echo_tdoa_samples": 1.4139190265868387,
+        "frames": 600,
+        "mic_spacing_mm": 35.0,
+        "pipeline_profile": "assistant",
+        "seconds": 6,
+        "seed": 5107,
+        "synthetic_engineering_signal": true,
+        "target_tdoa_samples": 0.0
+      },
+      "echo_audio": "cases/seed-5107-far-only/echo.pcm",
+      "expected": {},
+      "mic_audio": "cases/seed-5107-far-only/mic.pcm",
+      "mic_channels": 2,
+      "pipeline_profile": "assistant",
+      "processor_profile": "default",
+      "quality": {
+        "ground_truth": true,
+        "role": "descriptive-regression"
+      },
+      "render_audio": "cases/seed-5107-far-only/render.pcm",
+      "sample_rate_hz": 16000,
+      "scenario": "far-only",
+      "source": {
+        "dataset_id": "deterministic-generator",
+        "source_id": "seed-5107-far-only"
+      },
+      "split": "validation",
+      "vad_labels": null
+    },
+    {
+      "case_id": "seed-5107-doubletalk-nominal-call",
+      "clean_near_audio": "cases/seed-5107-doubletalk-nominal/clean-near.pcm",
+      "control": {},
+      "dimensions": {
+        "data_role": "regression",
+        "echo_tdoa_samples": 1.4139190265868387,
+        "frames": 600,
+        "mic_spacing_mm": 35.0,
+        "pipeline_profile": "call",
+        "seconds": 6,
+        "seed": 5107,
+        "synthetic_engineering_signal": true,
+        "target_tdoa_samples": 0.0
+      },
+      "echo_audio": null,
+      "expected": {},
+      "interference_audio": "cases/seed-5107-doubletalk-nominal/interference.pcm",
+      "mic_audio": "cases/seed-5107-doubletalk-nominal/mic.pcm",
+      "mic_channels": 2,
+      "pipeline_profile": "call",
+      "processor_profile": "default",
+      "quality": {
+        "ground_truth": true,
+        "role": "descriptive-regression"
+      },
+      "render_audio": "cases/seed-5107-doubletalk-nominal/render.pcm",
+      "sample_rate_hz": 16000,
+      "scenario": "doubletalk-nominal",
+      "source": {
+        "dataset_id": "deterministic-generator",
+        "source_id": "seed-5107-doubletalk-nominal"
+      },
+      "split": "validation",
+      "vad_labels": "cases/seed-5107-doubletalk-nominal/vad.labels"
+    },
+    {
+      "case_id": "seed-5107-doubletalk-nominal-assistant",
+      "clean_near_audio": "cases/seed-5107-doubletalk-nominal/clean-near.pcm",
+      "control": {},
+      "dimensions": {
+        "data_role": "regression",
+        "echo_tdoa_samples": 1.4139190265868387,
+        "frames": 600,
+        "mic_spacing_mm": 35.0,
+        "pipeline_profile": "assistant",
+        "seconds": 6,
+        "seed": 5107,
+        "synthetic_engineering_signal": true,
+        "target_tdoa_samples": 0.0
+      },
+      "echo_audio": null,
+      "expected": {},
+      "interference_audio": "cases/seed-5107-doubletalk-nominal/interference.pcm",
+      "mic_audio": "cases/seed-5107-doubletalk-nominal/mic.pcm",
+      "mic_channels": 2,
+      "pipeline_profile": "assistant",
+      "processor_profile": "default",
+      "quality": {
+        "ground_truth": true,
+        "role": "descriptive-regression"
+      },
+      "render_audio": "cases/seed-5107-doubletalk-nominal/render.pcm",
+      "sample_rate_hz": 16000,
+      "scenario": "doubletalk-nominal",
+      "source": {
+        "dataset_id": "deterministic-generator",
+        "source_id": "seed-5107-doubletalk-nominal"
+      },
+      "split": "validation",
+      "vad_labels": "cases/seed-5107-doubletalk-nominal/vad.labels"
+    },
+    {
+      "case_id": "seed-5107-doubletalk-weak-call",
+      "clean_near_audio": "cases/seed-5107-doubletalk-weak/clean-near.pcm",
+      "control": {},
+      "dimensions": {
+        "data_role": "regression",
+        "echo_tdoa_samples": 1.4139190265868387,
+        "frames": 600,
+        "mic_spacing_mm": 35.0,
+        "pipeline_profile": "call",
+        "seconds": 6,
+        "seed": 5107,
+        "synthetic_engineering_signal": true,
+        "target_tdoa_samples": 0.0
+      },
+      "echo_audio": null,
+      "expected": {},
+      "interference_audio": "cases/seed-5107-doubletalk-weak/interference.pcm",
+      "mic_audio": "cases/seed-5107-doubletalk-weak/mic.pcm",
+      "mic_channels": 2,
+      "pipeline_profile": "call",
+      "processor_profile": "default",
+      "quality": {
+        "ground_truth": true,
+        "role": "descriptive-regression"
+      },
+      "render_audio": "cases/seed-5107-doubletalk-weak/render.pcm",
+      "sample_rate_hz": 16000,
+      "scenario": "doubletalk-weak",
+      "source": {
+        "dataset_id": "deterministic-generator",
+        "source_id": "seed-5107-doubletalk-weak"
+      },
+      "split": "validation",
+      "vad_labels": "cases/seed-5107-doubletalk-weak/vad.labels"
+    },
+    {
+      "case_id": "seed-5107-doubletalk-weak-assistant",
+      "clean_near_audio": "cases/seed-5107-doubletalk-weak/clean-near.pcm",
+      "control": {},
+      "dimensions": {
+        "data_role": "regression",
+        "echo_tdoa_samples": 1.4139190265868387,
+        "frames": 600,
+        "mic_spacing_mm": 35.0,
+        "pipeline_profile": "assistant",
+        "seconds": 6,
+        "seed": 5107,
+        "synthetic_engineering_signal": true,
+        "target_tdoa_samples": 0.0
+      },
+      "echo_audio": null,
+      "expected": {},
+      "interference_audio": "cases/seed-5107-doubletalk-weak/interference.pcm",
+      "mic_audio": "cases/seed-5107-doubletalk-weak/mic.pcm",
+      "mic_channels": 2,
+      "pipeline_profile": "assistant",
+      "processor_profile": "default",
+      "quality": {
+        "ground_truth": true,
+        "role": "descriptive-regression"
+      },
+      "render_audio": "cases/seed-5107-doubletalk-weak/render.pcm",
+      "sample_rate_hz": 16000,
+      "scenario": "doubletalk-weak",
+      "source": {
+        "dataset_id": "deterministic-generator",
+        "source_id": "seed-5107-doubletalk-weak"
+      },
+      "split": "validation",
+      "vad_labels": "cases/seed-5107-doubletalk-weak/vad.labels"
+    },
+    {
+      "case_id": "seed-5107-path-change-call",
+      "clean_near_audio": null,
+      "control": {
+        "echo_path_change_frame": 300
+      },
+      "dimensions": {
+        "data_role": "regression",
+        "echo_tdoa_samples": 1.4139190265868387,
+        "frames": 600,
+        "mic_spacing_mm": 35.0,
+        "pipeline_profile": "call",
+        "seconds": 6,
+        "seed": 5107,
+        "synthetic_engineering_signal": true,
+        "target_tdoa_samples": 0.0
+      },
+      "echo_audio": "cases/seed-5107-path-change/echo.pcm",
+      "expected": {},
+      "mic_audio": "cases/seed-5107-path-change/mic.pcm",
+      "mic_channels": 2,
+      "pipeline_profile": "call",
+      "processor_profile": "default",
+      "quality": {
+        "ground_truth": true,
+        "role": "descriptive-regression"
+      },
+      "render_audio": "cases/seed-5107-path-change/render.pcm",
+      "sample_rate_hz": 16000,
+      "scenario": "path-change",
+      "source": {
+        "dataset_id": "deterministic-generator",
+        "source_id": "seed-5107-path-change"
+      },
+      "split": "validation",
+      "vad_labels": null
+    },
+    {
+      "case_id": "seed-5107-path-change-assistant",
+      "clean_near_audio": null,
+      "control": {
+        "echo_path_change_frame": 300
+      },
+      "dimensions": {
+        "data_role": "regression",
+        "echo_tdoa_samples": 1.4139190265868387,
+        "frames": 600,
+        "mic_spacing_mm": 35.0,
+        "pipeline_profile": "assistant",
+        "seconds": 6,
+        "seed": 5107,
+        "synthetic_engineering_signal": true,
+        "target_tdoa_samples": 0.0
+      },
+      "echo_audio": "cases/seed-5107-path-change/echo.pcm",
+      "expected": {},
+      "mic_audio": "cases/seed-5107-path-change/mic.pcm",
+      "mic_channels": 2,
+      "pipeline_profile": "assistant",
+      "processor_profile": "default",
+      "quality": {
+        "ground_truth": true,
+        "role": "descriptive-regression"
+      },
+      "render_audio": "cases/seed-5107-path-change/render.pcm",
+      "sample_rate_hz": 16000,
+      "scenario": "path-change",
+      "source": {
+        "dataset_id": "deterministic-generator",
+        "source_id": "seed-5107-path-change"
+      },
+      "split": "validation",
+      "vad_labels": null
+    },
+    {
+      "case_id": "seed-5107-render-gap-call",
+      "clean_near_audio": null,
+      "control": {
+        "discontinuity_flags": 2,
+        "discontinuity_frame": 300,
+        "discontinuity_lost_frames": 4
+      },
+      "dimensions": {
+        "data_role": "regression",
+        "echo_tdoa_samples": 1.4139190265868387,
+        "frames": 600,
+        "mic_spacing_mm": 35.0,
+        "pipeline_profile": "call",
+        "seconds": 6,
+        "seed": 5107,
+        "synthetic_engineering_signal": true,
+        "target_tdoa_samples": 0.0
+      },
+      "echo_audio": "cases/seed-5107-render-gap/echo.pcm",
+      "expected": {},
+      "mic_audio": "cases/seed-5107-render-gap/mic.pcm",
+      "mic_channels": 2,
+      "pipeline_profile": "call",
+      "processor_profile": "default",
+      "quality": {
+        "ground_truth": true,
+        "role": "descriptive-regression"
+      },
+      "render_audio": "cases/seed-5107-render-gap/render.pcm",
+      "sample_rate_hz": 16000,
+      "scenario": "render-gap",
+      "source": {
+        "dataset_id": "deterministic-generator",
+        "source_id": "seed-5107-render-gap"
+      },
+      "split": "validation",
+      "vad_labels": null
+    },
+    {
+      "case_id": "seed-5107-render-gap-assistant",
+      "clean_near_audio": null,
+      "control": {
+        "discontinuity_flags": 2,
+        "discontinuity_frame": 300,
+        "discontinuity_lost_frames": 4
+      },
+      "dimensions": {
+        "data_role": "regression",
+        "echo_tdoa_samples": 1.4139190265868387,
+        "frames": 600,
+        "mic_spacing_mm": 35.0,
+        "pipeline_profile": "assistant",
+        "seconds": 6,
+        "seed": 5107,
+        "synthetic_engineering_signal": true,
+        "target_tdoa_samples": 0.0
+      },
+      "echo_audio": "cases/seed-5107-render-gap/echo.pcm",
+      "expected": {},
+      "mic_audio": "cases/seed-5107-render-gap/mic.pcm",
+      "mic_channels": 2,
+      "pipeline_profile": "assistant",
+      "processor_profile": "default",
+      "quality": {
+        "ground_truth": true,
+        "role": "descriptive-regression"
+      },
+      "render_audio": "cases/seed-5107-render-gap/render.pcm",
+      "sample_rate_hz": 16000,
+      "scenario": "render-gap",
+      "source": {
+        "dataset_id": "deterministic-generator",
+        "source_id": "seed-5107-render-gap"
+      },
+      "split": "validation",
+      "vad_labels": null
+    },
+    {
+      "case_id": "seed-6107-near-only-call",
+      "clean_near_audio": "cases/seed-6107-near-only/clean-near.pcm",
+      "control": {},
+      "dimensions": {
+        "data_role": "regression",
+        "echo_tdoa_samples": 1.4139190265868387,
+        "frames": 600,
+        "mic_spacing_mm": 35.0,
+        "pipeline_profile": "call",
+        "seconds": 6,
+        "seed": 6107,
+        "synthetic_engineering_signal": true,
+        "target_tdoa_samples": 0.0
+      },
+      "echo_audio": null,
+      "expected": {},
+      "mic_audio": "cases/seed-6107-near-only/mic.pcm",
+      "mic_channels": 2,
+      "pipeline_profile": "call",
+      "processor_profile": "default",
+      "quality": {
+        "ground_truth": true,
+        "role": "descriptive-regression"
+      },
+      "render_audio": null,
+      "sample_rate_hz": 16000,
+      "scenario": "near-only",
+      "source": {
+        "dataset_id": "deterministic-generator",
+        "source_id": "seed-6107-near-only"
+      },
+      "split": "validation",
+      "vad_labels": "cases/seed-6107-near-only/vad.labels"
+    },
+    {
+      "case_id": "seed-6107-near-only-assistant",
+      "clean_near_audio": "cases/seed-6107-near-only/clean-near.pcm",
+      "control": {},
+      "dimensions": {
+        "data_role": "regression",
+        "echo_tdoa_samples": 1.4139190265868387,
+        "frames": 600,
+        "mic_spacing_mm": 35.0,
+        "pipeline_profile": "assistant",
+        "seconds": 6,
+        "seed": 6107,
+        "synthetic_engineering_signal": true,
+        "target_tdoa_samples": 0.0
+      },
+      "echo_audio": null,
+      "expected": {},
+      "mic_audio": "cases/seed-6107-near-only/mic.pcm",
+      "mic_channels": 2,
+      "pipeline_profile": "assistant",
+      "processor_profile": "default",
+      "quality": {
+        "ground_truth": true,
+        "role": "descriptive-regression"
+      },
+      "render_audio": null,
+      "sample_rate_hz": 16000,
+      "scenario": "near-only",
+      "source": {
+        "dataset_id": "deterministic-generator",
+        "source_id": "seed-6107-near-only"
+      },
+      "split": "validation",
+      "vad_labels": "cases/seed-6107-near-only/vad.labels"
+    },
+    {
+      "case_id": "seed-6107-silent-render-call",
+      "clean_near_audio": "cases/seed-6107-silent-render/clean-near.pcm",
+      "control": {},
+      "dimensions": {
+        "data_role": "regression",
+        "echo_tdoa_samples": 1.4139190265868387,
+        "frames": 600,
+        "mic_spacing_mm": 35.0,
+        "pipeline_profile": "call",
+        "seconds": 6,
+        "seed": 6107,
+        "synthetic_engineering_signal": true,
+        "target_tdoa_samples": 0.0
+      },
+      "echo_audio": null,
+      "expected": {},
+      "mic_audio": "cases/seed-6107-silent-render/mic.pcm",
+      "mic_channels": 2,
+      "pipeline_profile": "call",
+      "processor_profile": "default",
+      "quality": {
+        "ground_truth": true,
+        "role": "descriptive-regression"
+      },
+      "render_audio": "cases/seed-6107-silent-render/render.pcm",
+      "sample_rate_hz": 16000,
+      "scenario": "silent-render",
+      "source": {
+        "dataset_id": "deterministic-generator",
+        "source_id": "seed-6107-silent-render"
+      },
+      "split": "validation",
+      "vad_labels": "cases/seed-6107-silent-render/vad.labels"
+    },
+    {
+      "case_id": "seed-6107-silent-render-assistant",
+      "clean_near_audio": "cases/seed-6107-silent-render/clean-near.pcm",
+      "control": {},
+      "dimensions": {
+        "data_role": "regression",
+        "echo_tdoa_samples": 1.4139190265868387,
+        "frames": 600,
+        "mic_spacing_mm": 35.0,
+        "pipeline_profile": "assistant",
+        "seconds": 6,
+        "seed": 6107,
+        "synthetic_engineering_signal": true,
+        "target_tdoa_samples": 0.0
+      },
+      "echo_audio": null,
+      "expected": {},
+      "mic_audio": "cases/seed-6107-silent-render/mic.pcm",
+      "mic_channels": 2,
+      "pipeline_profile": "assistant",
+      "processor_profile": "default",
+      "quality": {
+        "ground_truth": true,
+        "role": "descriptive-regression"
+      },
+      "render_audio": "cases/seed-6107-silent-render/render.pcm",
+      "sample_rate_hz": 16000,
+      "scenario": "silent-render",
+      "source": {
+        "dataset_id": "deterministic-generator",
+        "source_id": "seed-6107-silent-render"
+      },
+      "split": "validation",
+      "vad_labels": "cases/seed-6107-silent-render/vad.labels"
+    },
+    {
+      "case_id": "seed-6107-far-only-call",
+      "clean_near_audio": null,
+      "control": {},
+      "dimensions": {
+        "data_role": "regression",
+        "echo_tdoa_samples": 1.4139190265868387,
+        "frames": 600,
+        "mic_spacing_mm": 35.0,
+        "pipeline_profile": "call",
+        "seconds": 6,
+        "seed": 6107,
+        "synthetic_engineering_signal": true,
+        "target_tdoa_samples": 0.0
+      },
+      "echo_audio": "cases/seed-6107-far-only/echo.pcm",
+      "expected": {},
+      "mic_audio": "cases/seed-6107-far-only/mic.pcm",
+      "mic_channels": 2,
+      "pipeline_profile": "call",
+      "processor_profile": "default",
+      "quality": {
+        "ground_truth": true,
+        "role": "descriptive-regression"
+      },
+      "render_audio": "cases/seed-6107-far-only/render.pcm",
+      "sample_rate_hz": 16000,
+      "scenario": "far-only",
+      "source": {
+        "dataset_id": "deterministic-generator",
+        "source_id": "seed-6107-far-only"
+      },
+      "split": "validation",
+      "vad_labels": null
+    },
+    {
+      "case_id": "seed-6107-far-only-assistant",
+      "clean_near_audio": null,
+      "control": {},
+      "dimensions": {
+        "data_role": "regression",
+        "echo_tdoa_samples": 1.4139190265868387,
+        "frames": 600,
+        "mic_spacing_mm": 35.0,
+        "pipeline_profile": "assistant",
+        "seconds": 6,
+        "seed": 6107,
+        "synthetic_engineering_signal": true,
+        "target_tdoa_samples": 0.0
+      },
+      "echo_audio": "cases/seed-6107-far-only/echo.pcm",
+      "expected": {},
+      "mic_audio": "cases/seed-6107-far-only/mic.pcm",
+      "mic_channels": 2,
+      "pipeline_profile": "assistant",
+      "processor_profile": "default",
+      "quality": {
+        "ground_truth": true,
+        "role": "descriptive-regression"
+      },
+      "render_audio": "cases/seed-6107-far-only/render.pcm",
+      "sample_rate_hz": 16000,
+      "scenario": "far-only",
+      "source": {
+        "dataset_id": "deterministic-generator",
+        "source_id": "seed-6107-far-only"
+      },
+      "split": "validation",
+      "vad_labels": null
+    },
+    {
+      "case_id": "seed-6107-doubletalk-nominal-call",
+      "clean_near_audio": "cases/seed-6107-doubletalk-nominal/clean-near.pcm",
+      "control": {},
+      "dimensions": {
+        "data_role": "regression",
+        "echo_tdoa_samples": 1.4139190265868387,
+        "frames": 600,
+        "mic_spacing_mm": 35.0,
+        "pipeline_profile": "call",
+        "seconds": 6,
+        "seed": 6107,
+        "synthetic_engineering_signal": true,
+        "target_tdoa_samples": 0.0
+      },
+      "echo_audio": null,
+      "expected": {},
+      "interference_audio": "cases/seed-6107-doubletalk-nominal/interference.pcm",
+      "mic_audio": "cases/seed-6107-doubletalk-nominal/mic.pcm",
+      "mic_channels": 2,
+      "pipeline_profile": "call",
+      "processor_profile": "default",
+      "quality": {
+        "ground_truth": true,
+        "role": "descriptive-regression"
+      },
+      "render_audio": "cases/seed-6107-doubletalk-nominal/render.pcm",
+      "sample_rate_hz": 16000,
+      "scenario": "doubletalk-nominal",
+      "source": {
+        "dataset_id": "deterministic-generator",
+        "source_id": "seed-6107-doubletalk-nominal"
+      },
+      "split": "validation",
+      "vad_labels": "cases/seed-6107-doubletalk-nominal/vad.labels"
+    },
+    {
+      "case_id": "seed-6107-doubletalk-nominal-assistant",
+      "clean_near_audio": "cases/seed-6107-doubletalk-nominal/clean-near.pcm",
+      "control": {},
+      "dimensions": {
+        "data_role": "regression",
+        "echo_tdoa_samples": 1.4139190265868387,
+        "frames": 600,
+        "mic_spacing_mm": 35.0,
+        "pipeline_profile": "assistant",
+        "seconds": 6,
+        "seed": 6107,
+        "synthetic_engineering_signal": true,
+        "target_tdoa_samples": 0.0
+      },
+      "echo_audio": null,
+      "expected": {},
+      "interference_audio": "cases/seed-6107-doubletalk-nominal/interference.pcm",
+      "mic_audio": "cases/seed-6107-doubletalk-nominal/mic.pcm",
+      "mic_channels": 2,
+      "pipeline_profile": "assistant",
+      "processor_profile": "default",
+      "quality": {
+        "ground_truth": true,
+        "role": "descriptive-regression"
+      },
+      "render_audio": "cases/seed-6107-doubletalk-nominal/render.pcm",
+      "sample_rate_hz": 16000,
+      "scenario": "doubletalk-nominal",
+      "source": {
+        "dataset_id": "deterministic-generator",
+        "source_id": "seed-6107-doubletalk-nominal"
+      },
+      "split": "validation",
+      "vad_labels": "cases/seed-6107-doubletalk-nominal/vad.labels"
+    },
+    {
+      "case_id": "seed-6107-doubletalk-weak-call",
+      "clean_near_audio": "cases/seed-6107-doubletalk-weak/clean-near.pcm",
+      "control": {},
+      "dimensions": {
+        "data_role": "regression",
+        "echo_tdoa_samples": 1.4139190265868387,
+        "frames": 600,
+        "mic_spacing_mm": 35.0,
+        "pipeline_profile": "call",
+        "seconds": 6,
+        "seed": 6107,
+        "synthetic_engineering_signal": true,
+        "target_tdoa_samples": 0.0
+      },
+      "echo_audio": null,
+      "expected": {},
+      "interference_audio": "cases/seed-6107-doubletalk-weak/interference.pcm",
+      "mic_audio": "cases/seed-6107-doubletalk-weak/mic.pcm",
+      "mic_channels": 2,
+      "pipeline_profile": "call",
+      "processor_profile": "default",
+      "quality": {
+        "ground_truth": true,
+        "role": "descriptive-regression"
+      },
+      "render_audio": "cases/seed-6107-doubletalk-weak/render.pcm",
+      "sample_rate_hz": 16000,
+      "scenario": "doubletalk-weak",
+      "source": {
+        "dataset_id": "deterministic-generator",
+        "source_id": "seed-6107-doubletalk-weak"
+      },
+      "split": "validation",
+      "vad_labels": "cases/seed-6107-doubletalk-weak/vad.labels"
+    },
+    {
+      "case_id": "seed-6107-doubletalk-weak-assistant",
+      "clean_near_audio": "cases/seed-6107-doubletalk-weak/clean-near.pcm",
+      "control": {},
+      "dimensions": {
+        "data_role": "regression",
+        "echo_tdoa_samples": 1.4139190265868387,
+        "frames": 600,
+        "mic_spacing_mm": 35.0,
+        "pipeline_profile": "assistant",
+        "seconds": 6,
+        "seed": 6107,
+        "synthetic_engineering_signal": true,
+        "target_tdoa_samples": 0.0
+      },
+      "echo_audio": null,
+      "expected": {},
+      "interference_audio": "cases/seed-6107-doubletalk-weak/interference.pcm",
+      "mic_audio": "cases/seed-6107-doubletalk-weak/mic.pcm",
+      "mic_channels": 2,
+      "pipeline_profile": "assistant",
+      "processor_profile": "default",
+      "quality": {
+        "ground_truth": true,
+        "role": "descriptive-regression"
+      },
+      "render_audio": "cases/seed-6107-doubletalk-weak/render.pcm",
+      "sample_rate_hz": 16000,
+      "scenario": "doubletalk-weak",
+      "source": {
+        "dataset_id": "deterministic-generator",
+        "source_id": "seed-6107-doubletalk-weak"
+      },
+      "split": "validation",
+      "vad_labels": "cases/seed-6107-doubletalk-weak/vad.labels"
+    },
+    {
+      "case_id": "seed-6107-path-change-call",
+      "clean_near_audio": null,
+      "control": {
+        "echo_path_change_frame": 300
+      },
+      "dimensions": {
+        "data_role": "regression",
+        "echo_tdoa_samples": 1.4139190265868387,
+        "frames": 600,
+        "mic_spacing_mm": 35.0,
+        "pipeline_profile": "call",
+        "seconds": 6,
+        "seed": 6107,
+        "synthetic_engineering_signal": true,
+        "target_tdoa_samples": 0.0
+      },
+      "echo_audio": "cases/seed-6107-path-change/echo.pcm",
+      "expected": {},
+      "mic_audio": "cases/seed-6107-path-change/mic.pcm",
+      "mic_channels": 2,
+      "pipeline_profile": "call",
+      "processor_profile": "default",
+      "quality": {
+        "ground_truth": true,
+        "role": "descriptive-regression"
+      },
+      "render_audio": "cases/seed-6107-path-change/render.pcm",
+      "sample_rate_hz": 16000,
+      "scenario": "path-change",
+      "source": {
+        "dataset_id": "deterministic-generator",
+        "source_id": "seed-6107-path-change"
+      },
+      "split": "validation",
+      "vad_labels": null
+    },
+    {
+      "case_id": "seed-6107-path-change-assistant",
+      "clean_near_audio": null,
+      "control": {
+        "echo_path_change_frame": 300
+      },
+      "dimensions": {
+        "data_role": "regression",
+        "echo_tdoa_samples": 1.4139190265868387,
+        "frames": 600,
+        "mic_spacing_mm": 35.0,
+        "pipeline_profile": "assistant",
+        "seconds": 6,
+        "seed": 6107,
+        "synthetic_engineering_signal": true,
+        "target_tdoa_samples": 0.0
+      },
+      "echo_audio": "cases/seed-6107-path-change/echo.pcm",
+      "expected": {},
+      "mic_audio": "cases/seed-6107-path-change/mic.pcm",
+      "mic_channels": 2,
+      "pipeline_profile": "assistant",
+      "processor_profile": "default",
+      "quality": {
+        "ground_truth": true,
+        "role": "descriptive-regression"
+      },
+      "render_audio": "cases/seed-6107-path-change/render.pcm",
+      "sample_rate_hz": 16000,
+      "scenario": "path-change",
+      "source": {
+        "dataset_id": "deterministic-generator",
+        "source_id": "seed-6107-path-change"
+      },
+      "split": "validation",
+      "vad_labels": null
+    },
+    {
+      "case_id": "seed-6107-render-gap-call",
+      "clean_near_audio": null,
+      "control": {
+        "discontinuity_flags": 2,
+        "discontinuity_frame": 300,
+        "discontinuity_lost_frames": 4
+      },
+      "dimensions": {
+        "data_role": "regression",
+        "echo_tdoa_samples": 1.4139190265868387,
+        "frames": 600,
+        "mic_spacing_mm": 35.0,
+        "pipeline_profile": "call",
+        "seconds": 6,
+        "seed": 6107,
+        "synthetic_engineering_signal": true,
+        "target_tdoa_samples": 0.0
+      },
+      "echo_audio": "cases/seed-6107-render-gap/echo.pcm",
+      "expected": {},
+      "mic_audio": "cases/seed-6107-render-gap/mic.pcm",
+      "mic_channels": 2,
+      "pipeline_profile": "call",
+      "processor_profile": "default",
+      "quality": {
+        "ground_truth": true,
+        "role": "descriptive-regression"
+      },
+      "render_audio": "cases/seed-6107-render-gap/render.pcm",
+      "sample_rate_hz": 16000,
+      "scenario": "render-gap",
+      "source": {
+        "dataset_id": "deterministic-generator",
+        "source_id": "seed-6107-render-gap"
+      },
+      "split": "validation",
+      "vad_labels": null
+    },
+    {
+      "case_id": "seed-6107-render-gap-assistant",
+      "clean_near_audio": null,
+      "control": {
+        "discontinuity_flags": 2,
+        "discontinuity_frame": 300,
+        "discontinuity_lost_frames": 4
+      },
+      "dimensions": {
+        "data_role": "regression",
+        "echo_tdoa_samples": 1.4139190265868387,
+        "frames": 600,
+        "mic_spacing_mm": 35.0,
+        "pipeline_profile": "assistant",
+        "seconds": 6,
+        "seed": 6107,
+        "synthetic_engineering_signal": true,
+        "target_tdoa_samples": 0.0
+      },
+      "echo_audio": "cases/seed-6107-render-gap/echo.pcm",
+      "expected": {},
+      "mic_audio": "cases/seed-6107-render-gap/mic.pcm",
+      "mic_channels": 2,
+      "pipeline_profile": "assistant",
+      "processor_profile": "default",
+      "quality": {
+        "ground_truth": true,
+        "role": "descriptive-regression"
+      },
+      "render_audio": "cases/seed-6107-render-gap/render.pcm",
+      "sample_rate_hz": 16000,
+      "scenario": "render-gap",
+      "source": {
+        "dataset_id": "deterministic-generator",
+        "source_id": "seed-6107-render-gap"
+      },
+      "split": "validation",
+      "vad_labels": null
+    },
+    {
+      "case_id": "seed-7107-near-only-call",
+      "clean_near_audio": "cases/seed-7107-near-only/clean-near.pcm",
+      "control": {},
+      "dimensions": {
+        "data_role": "regression",
+        "echo_tdoa_samples": 1.4139190265868387,
+        "frames": 600,
+        "mic_spacing_mm": 35.0,
+        "pipeline_profile": "call",
+        "seconds": 6,
+        "seed": 7107,
+        "synthetic_engineering_signal": true,
+        "target_tdoa_samples": 0.0
+      },
+      "echo_audio": null,
+      "expected": {},
+      "mic_audio": "cases/seed-7107-near-only/mic.pcm",
+      "mic_channels": 2,
+      "pipeline_profile": "call",
+      "processor_profile": "default",
+      "quality": {
+        "ground_truth": true,
+        "role": "descriptive-regression"
+      },
+      "render_audio": null,
+      "sample_rate_hz": 16000,
+      "scenario": "near-only",
+      "source": {
+        "dataset_id": "deterministic-generator",
+        "source_id": "seed-7107-near-only"
+      },
+      "split": "validation",
+      "vad_labels": "cases/seed-7107-near-only/vad.labels"
+    },
+    {
+      "case_id": "seed-7107-near-only-assistant",
+      "clean_near_audio": "cases/seed-7107-near-only/clean-near.pcm",
+      "control": {},
+      "dimensions": {
+        "data_role": "regression",
+        "echo_tdoa_samples": 1.4139190265868387,
+        "frames": 600,
+        "mic_spacing_mm": 35.0,
+        "pipeline_profile": "assistant",
+        "seconds": 6,
+        "seed": 7107,
+        "synthetic_engineering_signal": true,
+        "target_tdoa_samples": 0.0
+      },
+      "echo_audio": null,
+      "expected": {},
+      "mic_audio": "cases/seed-7107-near-only/mic.pcm",
+      "mic_channels": 2,
+      "pipeline_profile": "assistant",
+      "processor_profile": "default",
+      "quality": {
+        "ground_truth": true,
+        "role": "descriptive-regression"
+      },
+      "render_audio": null,
+      "sample_rate_hz": 16000,
+      "scenario": "near-only",
+      "source": {
+        "dataset_id": "deterministic-generator",
+        "source_id": "seed-7107-near-only"
+      },
+      "split": "validation",
+      "vad_labels": "cases/seed-7107-near-only/vad.labels"
+    },
+    {
+      "case_id": "seed-7107-silent-render-call",
+      "clean_near_audio": "cases/seed-7107-silent-render/clean-near.pcm",
+      "control": {},
+      "dimensions": {
+        "data_role": "regression",
+        "echo_tdoa_samples": 1.4139190265868387,
+        "frames": 600,
+        "mic_spacing_mm": 35.0,
+        "pipeline_profile": "call",
+        "seconds": 6,
+        "seed": 7107,
+        "synthetic_engineering_signal": true,
+        "target_tdoa_samples": 0.0
+      },
+      "echo_audio": null,
+      "expected": {},
+      "mic_audio": "cases/seed-7107-silent-render/mic.pcm",
+      "mic_channels": 2,
+      "pipeline_profile": "call",
+      "processor_profile": "default",
+      "quality": {
+        "ground_truth": true,
+        "role": "descriptive-regression"
+      },
+      "render_audio": "cases/seed-7107-silent-render/render.pcm",
+      "sample_rate_hz": 16000,
+      "scenario": "silent-render",
+      "source": {
+        "dataset_id": "deterministic-generator",
+        "source_id": "seed-7107-silent-render"
+      },
+      "split": "validation",
+      "vad_labels": "cases/seed-7107-silent-render/vad.labels"
+    },
+    {
+      "case_id": "seed-7107-silent-render-assistant",
+      "clean_near_audio": "cases/seed-7107-silent-render/clean-near.pcm",
+      "control": {},
+      "dimensions": {
+        "data_role": "regression",
+        "echo_tdoa_samples": 1.4139190265868387,
+        "frames": 600,
+        "mic_spacing_mm": 35.0,
+        "pipeline_profile": "assistant",
+        "seconds": 6,
+        "seed": 7107,
+        "synthetic_engineering_signal": true,
+        "target_tdoa_samples": 0.0
+      },
+      "echo_audio": null,
+      "expected": {},
+      "mic_audio": "cases/seed-7107-silent-render/mic.pcm",
+      "mic_channels": 2,
+      "pipeline_profile": "assistant",
+      "processor_profile": "default",
+      "quality": {
+        "ground_truth": true,
+        "role": "descriptive-regression"
+      },
+      "render_audio": "cases/seed-7107-silent-render/render.pcm",
+      "sample_rate_hz": 16000,
+      "scenario": "silent-render",
+      "source": {
+        "dataset_id": "deterministic-generator",
+        "source_id": "seed-7107-silent-render"
+      },
+      "split": "validation",
+      "vad_labels": "cases/seed-7107-silent-render/vad.labels"
+    },
+    {
+      "case_id": "seed-7107-far-only-call",
+      "clean_near_audio": null,
+      "control": {},
+      "dimensions": {
+        "data_role": "regression",
+        "echo_tdoa_samples": 1.4139190265868387,
+        "frames": 600,
+        "mic_spacing_mm": 35.0,
+        "pipeline_profile": "call",
+        "seconds": 6,
+        "seed": 7107,
+        "synthetic_engineering_signal": true,
+        "target_tdoa_samples": 0.0
+      },
+      "echo_audio": "cases/seed-7107-far-only/echo.pcm",
+      "expected": {},
+      "mic_audio": "cases/seed-7107-far-only/mic.pcm",
+      "mic_channels": 2,
+      "pipeline_profile": "call",
+      "processor_profile": "default",
+      "quality": {
+        "ground_truth": true,
+        "role": "descriptive-regression"
+      },
+      "render_audio": "cases/seed-7107-far-only/render.pcm",
+      "sample_rate_hz": 16000,
+      "scenario": "far-only",
+      "source": {
+        "dataset_id": "deterministic-generator",
+        "source_id": "seed-7107-far-only"
+      },
+      "split": "validation",
+      "vad_labels": null
+    },
+    {
+      "case_id": "seed-7107-far-only-assistant",
+      "clean_near_audio": null,
+      "control": {},
+      "dimensions": {
+        "data_role": "regression",
+        "echo_tdoa_samples": 1.4139190265868387,
+        "frames": 600,
+        "mic_spacing_mm": 35.0,
+        "pipeline_profile": "assistant",
+        "seconds": 6,
+        "seed": 7107,
+        "synthetic_engineering_signal": true,
+        "target_tdoa_samples": 0.0
+      },
+      "echo_audio": "cases/seed-7107-far-only/echo.pcm",
+      "expected": {},
+      "mic_audio": "cases/seed-7107-far-only/mic.pcm",
+      "mic_channels": 2,
+      "pipeline_profile": "assistant",
+      "processor_profile": "default",
+      "quality": {
+        "ground_truth": true,
+        "role": "descriptive-regression"
+      },
+      "render_audio": "cases/seed-7107-far-only/render.pcm",
+      "sample_rate_hz": 16000,
+      "scenario": "far-only",
+      "source": {
+        "dataset_id": "deterministic-generator",
+        "source_id": "seed-7107-far-only"
+      },
+      "split": "validation",
+      "vad_labels": null
+    },
+    {
+      "case_id": "seed-7107-doubletalk-nominal-call",
+      "clean_near_audio": "cases/seed-7107-doubletalk-nominal/clean-near.pcm",
+      "control": {},
+      "dimensions": {
+        "data_role": "regression",
+        "echo_tdoa_samples": 1.4139190265868387,
+        "frames": 600,
+        "mic_spacing_mm": 35.0,
+        "pipeline_profile": "call",
+        "seconds": 6,
+        "seed": 7107,
+        "synthetic_engineering_signal": true,
+        "target_tdoa_samples": 0.0
+      },
+      "echo_audio": null,
+      "expected": {},
+      "interference_audio": "cases/seed-7107-doubletalk-nominal/interference.pcm",
+      "mic_audio": "cases/seed-7107-doubletalk-nominal/mic.pcm",
+      "mic_channels": 2,
+      "pipeline_profile": "call",
+      "processor_profile": "default",
+      "quality": {
+        "ground_truth": true,
+        "role": "descriptive-regression"
+      },
+      "render_audio": "cases/seed-7107-doubletalk-nominal/render.pcm",
+      "sample_rate_hz": 16000,
+      "scenario": "doubletalk-nominal",
+      "source": {
+        "dataset_id": "deterministic-generator",
+        "source_id": "seed-7107-doubletalk-nominal"
+      },
+      "split": "validation",
+      "vad_labels": "cases/seed-7107-doubletalk-nominal/vad.labels"
+    },
+    {
+      "case_id": "seed-7107-doubletalk-nominal-assistant",
+      "clean_near_audio": "cases/seed-7107-doubletalk-nominal/clean-near.pcm",
+      "control": {},
+      "dimensions": {
+        "data_role": "regression",
+        "echo_tdoa_samples": 1.4139190265868387,
+        "frames": 600,
+        "mic_spacing_mm": 35.0,
+        "pipeline_profile": "assistant",
+        "seconds": 6,
+        "seed": 7107,
+        "synthetic_engineering_signal": true,
+        "target_tdoa_samples": 0.0
+      },
+      "echo_audio": null,
+      "expected": {},
+      "interference_audio": "cases/seed-7107-doubletalk-nominal/interference.pcm",
+      "mic_audio": "cases/seed-7107-doubletalk-nominal/mic.pcm",
+      "mic_channels": 2,
+      "pipeline_profile": "assistant",
+      "processor_profile": "default",
+      "quality": {
+        "ground_truth": true,
+        "role": "descriptive-regression"
+      },
+      "render_audio": "cases/seed-7107-doubletalk-nominal/render.pcm",
+      "sample_rate_hz": 16000,
+      "scenario": "doubletalk-nominal",
+      "source": {
+        "dataset_id": "deterministic-generator",
+        "source_id": "seed-7107-doubletalk-nominal"
+      },
+      "split": "validation",
+      "vad_labels": "cases/seed-7107-doubletalk-nominal/vad.labels"
+    },
+    {
+      "case_id": "seed-7107-doubletalk-weak-call",
+      "clean_near_audio": "cases/seed-7107-doubletalk-weak/clean-near.pcm",
+      "control": {},
+      "dimensions": {
+        "data_role": "regression",
+        "echo_tdoa_samples": 1.4139190265868387,
+        "frames": 600,
+        "mic_spacing_mm": 35.0,
+        "pipeline_profile": "call",
+        "seconds": 6,
+        "seed": 7107,
+        "synthetic_engineering_signal": true,
+        "target_tdoa_samples": 0.0
+      },
+      "echo_audio": null,
+      "expected": {},
+      "interference_audio": "cases/seed-7107-doubletalk-weak/interference.pcm",
+      "mic_audio": "cases/seed-7107-doubletalk-weak/mic.pcm",
+      "mic_channels": 2,
+      "pipeline_profile": "call",
+      "processor_profile": "default",
+      "quality": {
+        "ground_truth": true,
+        "role": "descriptive-regression"
+      },
+      "render_audio": "cases/seed-7107-doubletalk-weak/render.pcm",
+      "sample_rate_hz": 16000,
+      "scenario": "doubletalk-weak",
+      "source": {
+        "dataset_id": "deterministic-generator",
+        "source_id": "seed-7107-doubletalk-weak"
+      },
+      "split": "validation",
+      "vad_labels": "cases/seed-7107-doubletalk-weak/vad.labels"
+    },
+    {
+      "case_id": "seed-7107-doubletalk-weak-assistant",
+      "clean_near_audio": "cases/seed-7107-doubletalk-weak/clean-near.pcm",
+      "control": {},
+      "dimensions": {
+        "data_role": "regression",
+        "echo_tdoa_samples": 1.4139190265868387,
+        "frames": 600,
+        "mic_spacing_mm": 35.0,
+        "pipeline_profile": "assistant",
+        "seconds": 6,
+        "seed": 7107,
+        "synthetic_engineering_signal": true,
+        "target_tdoa_samples": 0.0
+      },
+      "echo_audio": null,
+      "expected": {},
+      "interference_audio": "cases/seed-7107-doubletalk-weak/interference.pcm",
+      "mic_audio": "cases/seed-7107-doubletalk-weak/mic.pcm",
+      "mic_channels": 2,
+      "pipeline_profile": "assistant",
+      "processor_profile": "default",
+      "quality": {
+        "ground_truth": true,
+        "role": "descriptive-regression"
+      },
+      "render_audio": "cases/seed-7107-doubletalk-weak/render.pcm",
+      "sample_rate_hz": 16000,
+      "scenario": "doubletalk-weak",
+      "source": {
+        "dataset_id": "deterministic-generator",
+        "source_id": "seed-7107-doubletalk-weak"
+      },
+      "split": "validation",
+      "vad_labels": "cases/seed-7107-doubletalk-weak/vad.labels"
+    },
+    {
+      "case_id": "seed-7107-path-change-call",
+      "clean_near_audio": null,
+      "control": {
+        "echo_path_change_frame": 300
+      },
+      "dimensions": {
+        "data_role": "regression",
+        "echo_tdoa_samples": 1.4139190265868387,
+        "frames": 600,
+        "mic_spacing_mm": 35.0,
+        "pipeline_profile": "call",
+        "seconds": 6,
+        "seed": 7107,
+        "synthetic_engineering_signal": true,
+        "target_tdoa_samples": 0.0
+      },
+      "echo_audio": "cases/seed-7107-path-change/echo.pcm",
+      "expected": {},
+      "mic_audio": "cases/seed-7107-path-change/mic.pcm",
+      "mic_channels": 2,
+      "pipeline_profile": "call",
+      "processor_profile": "default",
+      "quality": {
+        "ground_truth": true,
+        "role": "descriptive-regression"
+      },
+      "render_audio": "cases/seed-7107-path-change/render.pcm",
+      "sample_rate_hz": 16000,
+      "scenario": "path-change",
+      "source": {
+        "dataset_id": "deterministic-generator",
+        "source_id": "seed-7107-path-change"
+      },
+      "split": "validation",
+      "vad_labels": null
+    },
+    {
+      "case_id": "seed-7107-path-change-assistant",
+      "clean_near_audio": null,
+      "control": {
+        "echo_path_change_frame": 300
+      },
+      "dimensions": {
+        "data_role": "regression",
+        "echo_tdoa_samples": 1.4139190265868387,
+        "frames": 600,
+        "mic_spacing_mm": 35.0,
+        "pipeline_profile": "assistant",
+        "seconds": 6,
+        "seed": 7107,
+        "synthetic_engineering_signal": true,
+        "target_tdoa_samples": 0.0
+      },
+      "echo_audio": "cases/seed-7107-path-change/echo.pcm",
+      "expected": {},
+      "mic_audio": "cases/seed-7107-path-change/mic.pcm",
+      "mic_channels": 2,
+      "pipeline_profile": "assistant",
+      "processor_profile": "default",
+      "quality": {
+        "ground_truth": true,
+        "role": "descriptive-regression"
+      },
+      "render_audio": "cases/seed-7107-path-change/render.pcm",
+      "sample_rate_hz": 16000,
+      "scenario": "path-change",
+      "source": {
+        "dataset_id": "deterministic-generator",
+        "source_id": "seed-7107-path-change"
+      },
+      "split": "validation",
+      "vad_labels": null
+    },
+    {
+      "case_id": "seed-7107-render-gap-call",
+      "clean_near_audio": null,
+      "control": {
+        "discontinuity_flags": 2,
+        "discontinuity_frame": 300,
+        "discontinuity_lost_frames": 4
+      },
+      "dimensions": {
+        "data_role": "regression",
+        "echo_tdoa_samples": 1.4139190265868387,
+        "frames": 600,
+        "mic_spacing_mm": 35.0,
+        "pipeline_profile": "call",
+        "seconds": 6,
+        "seed": 7107,
+        "synthetic_engineering_signal": true,
+        "target_tdoa_samples": 0.0
+      },
+      "echo_audio": "cases/seed-7107-render-gap/echo.pcm",
+      "expected": {},
+      "mic_audio": "cases/seed-7107-render-gap/mic.pcm",
+      "mic_channels": 2,
+      "pipeline_profile": "call",
+      "processor_profile": "default",
+      "quality": {
+        "ground_truth": true,
+        "role": "descriptive-regression"
+      },
+      "render_audio": "cases/seed-7107-render-gap/render.pcm",
+      "sample_rate_hz": 16000,
+      "scenario": "render-gap",
+      "source": {
+        "dataset_id": "deterministic-generator",
+        "source_id": "seed-7107-render-gap"
+      },
+      "split": "validation",
+      "vad_labels": null
+    },
+    {
+      "case_id": "seed-7107-render-gap-assistant",
+      "clean_near_audio": null,
+      "control": {
+        "discontinuity_flags": 2,
+        "discontinuity_frame": 300,
+        "discontinuity_lost_frames": 4
+      },
+      "dimensions": {
+        "data_role": "regression",
+        "echo_tdoa_samples": 1.4139190265868387,
+        "frames": 600,
+        "mic_spacing_mm": 35.0,
+        "pipeline_profile": "assistant",
+        "seconds": 6,
+        "seed": 7107,
+        "synthetic_engineering_signal": true,
+        "target_tdoa_samples": 0.0
+      },
+      "echo_audio": "cases/seed-7107-render-gap/echo.pcm",
+      "expected": {},
+      "mic_audio": "cases/seed-7107-render-gap/mic.pcm",
+      "mic_channels": 2,
+      "pipeline_profile": "assistant",
+      "processor_profile": "default",
+      "quality": {
+        "ground_truth": true,
+        "role": "descriptive-regression"
+      },
+      "render_audio": "cases/seed-7107-render-gap/render.pcm",
+      "sample_rate_hz": 16000,
+      "scenario": "render-gap",
+      "source": {
+        "dataset_id": "deterministic-generator",
+        "source_id": "seed-7107-render-gap"
+      },
+      "split": "validation",
+      "vad_labels": null
+    }
+  ],
+  "corpus_id": "dualmic-profile-regression-v1",
+  "experiment": "FE-C2-DUAL-USE-PROFILE-REPLAY-V1",
+  "generator": {
+    "name": "build_dualmic_profile_corpus.py",
+    "seconds": 6,
+    "seeds": [
+      5107,
+      6107,
+      7107
+    ],
+    "source_sha256": "526d98a1c07d94c397364269460a01987089acd78eeff779219a7879cb4b4ca5"
+  },
+  "quality_decision": "DESCRIPTIVE_ONLY",
+  "schema_version": 1,
+  "sealed_data": false,
+  "source_manifest_sha256": "46e3dda9b9b9cd8a4d301068ee60eb41fd899d44731d6459b75d2def4353dab6",
+  "sources": [
+    "deterministic-generator"
+  ],
+  "tier": "regression"
+}

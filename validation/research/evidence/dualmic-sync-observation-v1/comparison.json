@@ -1,0 +1,10 @@
+{
+  "continuous_lines": 20,
+  "identical": true,
+  "baseline_module_bytes": 32816,
+  "candidate_module_bytes": 32840,
+  "module_delta_bytes": 24,
+  "baseline_pipeline_bytes": 78192,
+  "candidate_pipeline_bytes": 78216,
+  "pipeline_delta_bytes": 24
+}

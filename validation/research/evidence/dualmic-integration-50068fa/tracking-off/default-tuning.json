@@ -1,0 +1,14 @@
+{
+  "assistant": {
+    "aec_mu": 0.180000007,
+    "agc_target_dbfs": -18,
+    "limiter_dbfs": -2,
+    "ns_floor": 0.180000007
+  },
+  "call": {
+    "aec_mu": 0.219999999,
+    "agc_target_dbfs": -20,
+    "limiter_dbfs": -2,
+    "ns_floor": 0.119999997
+  }
+}

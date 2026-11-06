@@ -1,0 +1,28 @@
+[1/28] Building C object CMakeFiles/audio_pipeline.dir/src/modules/ap_hpf_module.c.o
+[2/28] Building C object CMakeFiles/audio_pipeline.dir/src/modules/ap_beamformer_module.c.o
+[3/28] Building C object CMakeFiles/audio_pipeline.dir/src/modules/ap_resampler_module.c.o
+[4/28] Building C object CMakeFiles/audio_pipeline.dir/src/modules/ap_sync_module.c.o
+[5/28] Building C object CMakeFiles/audio_pipeline.dir/src/modules/ap_activity_module.c.o
+[6/28] Building C object CMakeFiles/audio_pipeline.dir/src/modules/ap_res_module.c.o
+[7/28] Building C object CMakeFiles/audio_pipeline.dir/src/modules/ap_agc_module.c.o
+[8/28] Building C object CMakeFiles/audio_pipeline.dir/src/modules/ap_ns_module.c.o
+[9/28] Building C object CMakeFiles/audio_pipeline.dir/src/modules/ap_vad_module.c.o
+[10/28] Building C object CMakeFiles/audio_pipeline.dir/src/modules/ap_aec_module.c.o
+[11/28] Building C object CMakeFiles/ap_module_tests.dir/tests/test_modules.c.o
+[12/28] Building C object CMakeFiles/ap_contract_tests.dir/tests/test_contracts.c.o
+[13/28] Building C object CMakeFiles/ap_sync_observation_time_tests.dir/tests/test_sync_observation_time.c.o
+[14/28] Building C object CMakeFiles/ap_state_size.dir/tests/print_pipeline_state.c.o
+[15/28] Building C object CMakeFiles/ap_pipeline_control_tests.dir/tests/test_pipeline_controls.c.o
+[16/28] Building C object CMakeFiles/audio_pipeline_runtime.dir/src/platform/linux/ap_runtime.c.o
+[17/28] Building C object CMakeFiles/ap_drift_res_tests.dir/tests/test_drift_res.c.o
+[18/28] Building C object CMakeFiles/ap_runtime_tests.dir/tests/test_runtime.c.o
+[19/28] Building C object CMakeFiles/audio_pipeline.dir/Unity/unity_0_c.c.o
+[20/28] Linking C static library libaudio_pipeline.a
+[21/28] Linking C static library libaudio_pipeline_runtime.a
+[22/28] Linking C executable ap_contract_tests
+[23/28] Linking C executable ap_module_tests
+[24/28] Linking C executable ap_sync_observation_time_tests
+[25/28] Linking C executable ap_pipeline_control_tests
+[26/28] Linking C executable ap_state_size
+[27/28] Linking C executable ap_drift_res_tests
+[28/28] Linking C executable ap_runtime_tests

@@ -1,0 +1,10 @@
+[1/10] Building C object CMakeFiles/ap_sync_observation_time_tests.dir/tests/test_sync_observation_time.c.o
+[2/10] Building C object CMakeFiles/audio_pipeline.dir/Unity/unity_0_c.c.o
+[3/10] Linking C static library libaudio_pipeline.a
+[4/10] Linking C executable ap_pipeline_control_tests
+[5/10] Linking C executable ap_module_tests
+[6/10] Linking C executable ap_sync_observation_time_tests
+[7/10] Linking C executable ap_contract_tests
+[8/10] Linking C executable ap_state_size
+[9/10] Linking C executable ap_runtime_tests
+[10/10] Linking C executable ap_drift_res_tests

@@ -1,0 +1,14 @@
+Internal ctest changing into directory: /workspace/scratch/b74ab3415ba4/audio-dualmic-health-build/candidate
+Test project /workspace/scratch/b74ab3415ba4/audio-dualmic-health-build/candidate
+    Start  1: ap_module_tests
+1/4 Test  #1: ap_module_tests ..................   Passed    0.00 sec
+    Start  2: ap_beamformer_health_tests
+2/4 Test  #2: ap_beamformer_health_tests .......   Passed    0.12 sec
+    Start  6: ap_contract_tests
+3/4 Test  #6: ap_contract_tests ................   Passed    0.01 sec
+    Start 30: ap_realtime_tests
+4/4 Test #30: ap_realtime_tests ................   Passed    0.05 sec
+
+100% tests passed, 0 tests failed out of 4
+
+Total Test time (real) =   0.18 sec

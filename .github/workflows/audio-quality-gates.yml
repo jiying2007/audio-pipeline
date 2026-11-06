@@ -60,7 +60,25 @@ jobs:
           cmake -S . -B build-validation-smoke -DCMAKE_BUILD_TYPE=Release
           -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON
       - name: Build offline validation processor
-        run: cmake --build build-validation-smoke --target ap_process_pcm --parallel
+        run: cmake --build build-validation-smoke --target ap_process_pcm ap_build_info_dump ap_process_pcm_profile_tests --parallel
+      - name: Verify CALL and ASSISTANT configuration and complete dual-mic output
+        run: |
+          ctest --test-dir build-validation-smoke --output-on-failure -R '^ap_process_pcm_profile_tests$'
+          python3 tests/validation/test_dualmic_profile_replay.py
+          python3 tests/validation/build_dualmic_profile_corpus.py --output /tmp/ap-dualmic-profile-corpus
+          python3 tests/validation/run_dualmic_profile_replay.py \
+            --processor ./build-validation-smoke/ap_process_pcm \
+            --corpus /tmp/ap-dualmic-profile-corpus/corpus.json \
+            --output /tmp/ap-dualmic-profile-evidence \
+            --source-revision "$GITHUB_SHA"
+      - name: Retain dual-mic interaction and intercom replay evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: dualmic-call-assistant-${{ github.run_id }}
+          path: /tmp/ap-dualmic-profile-evidence/
+          retention-days: 30
+          if-no-files-found: warn
       - name: Verify deterministic corpus bytes
         run: |
           python3 validation/tools/build_validation_corpus.py --output /tmp/ap-validation-1307 --seed 1307

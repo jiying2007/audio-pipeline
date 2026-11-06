@@ -1,0 +1,454 @@
+{
+  "acoustic_thresholds_applied": false,
+  "artifact_integrity_total": {
+    "files": 758,
+    "size_bytes": 61268769
+  },
+  "builds": {
+    "tracking-off": {
+      "artifact_manifest": {
+        "bytes": 65798,
+        "sha256": "fd1bf5a60be9026aa009c5df80e0e94d653eaecfb0650f9d05470b53f5a7ec56"
+      },
+      "artifact_manifest_verified": {
+        "files": 379,
+        "result": "PASS",
+        "size_bytes": 30634096
+      },
+      "build_identity": {
+        "dump_sha256": "483cab0bb6e27b9ec480596a131d21b66b32566b740f13d6ecb0e3f6fdd5e1dd",
+        "processor_sha256": "acb334183075ae1ffecf527f92ddebe768f5b5ca80c471958d58b064b619c730",
+        "values": {
+          "aec_backend": "MDF",
+          "build_type": "Release",
+          "compiler_id": "GNU",
+          "compiler_version": "14.2.0",
+          "config_digest": "1ec2d08890fcdddd0c81fb02b3e9a7bed6598b53cd2a2da7dcbc09407e434f90",
+          "fast_math": "0",
+          "module_mask": "1023",
+          "ns_estimator": "EMA",
+          "resampler_mode": "BANDLIMITED",
+          "simd_backend": "SCALAR",
+          "source_revision": "50068fa285bfa7d209e635c63e86e36bec1bd3e1",
+          "target_triple": "x86_64-linux-gnu",
+          "version": "2.3.62"
+        }
+      },
+      "cases": 42,
+      "coverage": {
+        "frames_per_case": 600,
+        "mono_output_samples_per_case": 96000,
+        "profiles": [
+          "call",
+          "assistant"
+        ],
+        "scenarios": [
+          "doubletalk-nominal",
+          "doubletalk-weak",
+          "far-only",
+          "near-only",
+          "path-change",
+          "render-gap",
+          "silent-render"
+        ],
+        "seconds_per_case": 6,
+        "seeds": [
+          5107,
+          6107,
+          7107
+        ]
+      },
+      "ctest": {
+        "failed": 0,
+        "log": {
+          "bytes": 8655,
+          "sha256": "d83717ae84e03965d79c9c5efd26a1923cb114f5c0797bb786afdd42bcc95fdb"
+        },
+        "passed": 63,
+        "wall_seconds": 1.45
+      },
+      "default_tuning_readback": {
+        "assistant": {
+          "aec_mu": 0.180000007,
+          "agc_target_dbfs": -18,
+          "limiter_dbfs": -2,
+          "ns_floor": 0.180000007
+        },
+        "call": {
+          "aec_mu": 0.219999999,
+          "agc_target_dbfs": -20,
+          "limiter_dbfs": -2,
+          "ns_floor": 0.119999997
+        }
+      },
+      "effective_bf_direction_tracking": 0,
+      "full_local_evidence_root": "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-fixed",
+      "not_run": [
+        "KWS_FAR_FRR",
+        "ASR",
+        "subjective_intercom_quality",
+        "real_dualmic_room",
+        "physical_SSC305"
+      ],
+      "output_continuity_independently_verified": true,
+      "profile_summaries": {
+        "assistant": {
+          "cases": 21,
+          "dimension_values": {},
+          "max_output_clip_fraction": 0.0,
+          "max_output_dc_offset_dbfs": -90.27756928072273,
+          "max_vad_false_positive_rate": 0.18536585365853658,
+          "median_erle_db": 24.13057528340616,
+          "median_near_si_sdr_improvement_db": 4.639249799972244,
+          "median_output_render_corr_reduction": 0.5989530023673042,
+          "min_vad_f1": 0.8501362397820165,
+          "min_vad_recall": 0.789873417721519,
+          "near_si_sdr_improvement_applicable_cases": 6,
+          "p10_interference_corr_reduction": 0.5018058895677779,
+          "p10_interference_projection_attenuation_db": 34.807840885736255,
+          "p10_near_projection_gain_db": -5.115989502662989,
+          "p10_near_si_sdr_improvement_db": 2.057483755428016,
+          "p10_noise_only_attenuation_db": 25.487830340239636,
+          "p10_output_render_corr_reduction": 0.0,
+          "p90_erle_convergence_ms": 240.0,
+          "p90_erle_recovery_ms": 190.0,
+          "p90_vad_onset_delay_ms": 10.0,
+          "p90_vad_release_delay_ms": 87.2,
+          "pass_rate": 1.0,
+          "passed_cases": 21
+        },
+        "call": {
+          "cases": 21,
+          "dimension_values": {},
+          "max_output_clip_fraction": 0.0,
+          "max_output_dc_offset_dbfs": -93.82268467342966,
+          "max_vad_false_positive_rate": 0.18048780487804877,
+          "median_erle_db": 27.033823287739445,
+          "median_near_si_sdr_improvement_db": 3.9781415473769663,
+          "median_output_render_corr_reduction": 0.6094461828249522,
+          "min_vad_f1": 0.8528610354223434,
+          "min_vad_recall": 0.7924050632911392,
+          "near_si_sdr_improvement_applicable_cases": 6,
+          "p10_interference_corr_reduction": 0.5034236416481308,
+          "p10_interference_projection_attenuation_db": 34.95620475678756,
+          "p10_near_projection_gain_db": -5.079626657410206,
+          "p10_near_si_sdr_improvement_db": 1.383834340405543,
+          "p10_noise_only_attenuation_db": 28.32630384674495,
+          "p10_output_render_corr_reduction": 0.0,
+          "p90_erle_convergence_ms": 120.0,
+          "p90_erle_recovery_ms": 195.0,
+          "p90_vad_onset_delay_ms": 10.0,
+          "p90_vad_release_delay_ms": 87.2,
+          "pass_rate": 1.0,
+          "passed_cases": 21
+        }
+      },
+      "quality_decision": "DESCRIPTIVE_ONLY",
+      "replay_elapsed_seconds": 44.124180865997914,
+      "report": {
+        "bytes": 132648,
+        "sha256": "3cc734797569166631c9e8c10e5d931141633748a9fe2f1b68d09a24c1e397b4"
+      },
+      "source_revision": "50068fa285bfa7d209e635c63e86e36bec1bd3e1",
+      "status": "PRE_SAFE_FIX"
+    },
+    "tracking-on": {
+      "artifact_manifest": {
+        "bytes": 65798,
+        "sha256": "236877375d985f1eb7ef28f552be5afd470e95577ac9af8ce72fefa3e56eae03"
+      },
+      "artifact_manifest_verified": {
+        "files": 379,
+        "result": "PASS",
+        "size_bytes": 30634673
+      },
+      "build_identity": {
+        "dump_sha256": "f6ab74c8ce22ba7e72dac8ec17e2bad3354704309cded0f76bb2d1cec98e964f",
+        "processor_sha256": "e60729256ff123864c92db6ef1395f4fe915e1cc50e15882d52b235fa3347677",
+        "values": {
+          "aec_backend": "MDF",
+          "build_type": "Release",
+          "compiler_id": "GNU",
+          "compiler_version": "14.2.0",
+          "config_digest": "24aa581405ffa1c6e3c911631f0d39f5ea53fed0c393d27f234b17318745a23a",
+          "fast_math": "0",
+          "module_mask": "1023",
+          "ns_estimator": "EMA",
+          "resampler_mode": "BANDLIMITED",
+          "simd_backend": "SCALAR",
+          "source_revision": "50068fa285bfa7d209e635c63e86e36bec1bd3e1",
+          "target_triple": "x86_64-linux-gnu",
+          "version": "2.3.62"
+        }
+      },
+      "cases": 42,
+      "coverage": {
+        "frames_per_case": 600,
+        "mono_output_samples_per_case": 96000,
+        "profiles": [
+          "call",
+          "assistant"
+        ],
+        "scenarios": [
+          "doubletalk-nominal",
+          "doubletalk-weak",
+          "far-only",
+          "near-only",
+          "path-change",
+          "render-gap",
+          "silent-render"
+        ],
+        "seconds_per_case": 6,
+        "seeds": [
+          5107,
+          6107,
+          7107
+        ]
+      },
+      "ctest": {
+        "failed": 0,
+        "log": {
+          "bytes": 8663,
+          "sha256": "792261538f22777d1bf2ca7999d524eb251e902e184989c5311c18ab30795d90"
+        },
+        "passed": 63,
+        "wall_seconds": 1.43
+      },
+      "default_tuning_readback": {
+        "assistant": {
+          "aec_mu": 0.180000007,
+          "agc_target_dbfs": -18,
+          "limiter_dbfs": -2,
+          "ns_floor": 0.180000007
+        },
+        "call": {
+          "aec_mu": 0.219999999,
+          "agc_target_dbfs": -20,
+          "limiter_dbfs": -2,
+          "ns_floor": 0.119999997
+        }
+      },
+      "effective_bf_direction_tracking": 1,
+      "full_local_evidence_root": "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate",
+      "not_run": [
+        "KWS_FAR_FRR",
+        "ASR",
+        "subjective_intercom_quality",
+        "real_dualmic_room",
+        "physical_SSC305"
+      ],
+      "output_continuity_independently_verified": true,
+      "profile_summaries": {
+        "assistant": {
+          "cases": 21,
+          "dimension_values": {},
+          "max_output_clip_fraction": 0.0,
+          "max_output_dc_offset_dbfs": -89.8327220548719,
+          "max_vad_false_positive_rate": 0.18048780487804877,
+          "median_erle_db": 24.070640057353213,
+          "median_near_si_sdr_improvement_db": 4.673489223915331,
+          "median_output_render_corr_reduction": 0.5970386487956171,
+          "min_vad_f1": 0.8528610354223434,
+          "min_vad_recall": 0.7924050632911392,
+          "near_si_sdr_improvement_applicable_cases": 6,
+          "p10_interference_corr_reduction": 0.5016257709977184,
+          "p10_interference_projection_attenuation_db": 34.84622256383272,
+          "p10_near_projection_gain_db": -5.112903594026713,
+          "p10_near_si_sdr_improvement_db": 2.082129186758123,
+          "p10_noise_only_attenuation_db": 25.433009420854447,
+          "p10_output_render_corr_reduction": 0.0,
+          "p90_erle_convergence_ms": 240.0,
+          "p90_erle_recovery_ms": 195.0,
+          "p90_vad_onset_delay_ms": 10.0,
+          "p90_vad_release_delay_ms": 87.2,
+          "pass_rate": 1.0,
+          "passed_cases": 21
+        },
+        "call": {
+          "cases": 21,
+          "dimension_values": {},
+          "max_output_clip_fraction": 0.0,
+          "max_output_dc_offset_dbfs": -93.82268467342966,
+          "max_vad_false_positive_rate": 0.1902439024390244,
+          "median_erle_db": 26.987541262507545,
+          "median_near_si_sdr_improvement_db": 4.0517788131925645,
+          "median_output_render_corr_reduction": 0.6063342746052102,
+          "min_vad_f1": 0.845945945945946,
+          "min_vad_recall": 0.7924050632911392,
+          "near_si_sdr_improvement_applicable_cases": 6,
+          "p10_interference_corr_reduction": 0.5033942068109516,
+          "p10_interference_projection_attenuation_db": 35.08412872160143,
+          "p10_near_projection_gain_db": -5.085326128014328,
+          "p10_near_si_sdr_improvement_db": 1.4074328214817196,
+          "p10_noise_only_attenuation_db": 28.296762244979938,
+          "p10_output_render_corr_reduction": 0.0,
+          "p90_erle_convergence_ms": 120.0,
+          "p90_erle_recovery_ms": 190.0,
+          "p90_vad_onset_delay_ms": 10.0,
+          "p90_vad_release_delay_ms": 87.2,
+          "pass_rate": 1.0,
+          "passed_cases": 21
+        }
+      },
+      "quality_decision": "DESCRIPTIVE_ONLY",
+      "replay_elapsed_seconds": 43.89991745699808,
+      "report": {
+        "bytes": 132609,
+        "sha256": "560d07762a81e5244e6e742d4b4aca89d8d64a6288b64a01e982c4d89a136ac2"
+      },
+      "source_revision": "50068fa285bfa7d209e635c63e86e36bec1bd3e1",
+      "status": "PRE_SAFE_FIX"
+    }
+  },
+  "canonical_pass_rate_is_acoustic_pass": false,
+  "excluded_from_compact_archive": [
+    "full input/output PCM",
+    "per-frame metrics JSONL",
+    "local binaries"
+  ],
+  "experiment": "DUALMIC-INTEGRATION-V1",
+  "limitations": [
+    "PRE_SAFE_FIX source does not include later SAFE pending-epoch correction",
+    "The 42-case matrix contains no SAFE quality transition; its completion cannot establish that boundary correctness",
+    "Empty expected dictionaries provide no acoustic acceptance or profile winner decision",
+    "Engineering signals and exposed regression seeds are not real far-field Chinese or physical dual-microphone evidence",
+    "Host size bytes are configuration-specific structure sizes, not process RSS, stack, ROM, or SSC305 measurements"
+  ],
+  "promotion_allowed": false,
+  "quality_decision": "DESCRIPTIVE_ONLY",
+  "raw_copied_files": [
+    {
+      "bytes": 132609,
+      "path": "tracking-on/report.json",
+      "raw_bytes_copied": true,
+      "sha256": "560d07762a81e5244e6e742d4b4aca89d8d64a6288b64a01e982c4d89a136ac2",
+      "source": "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/report.json"
+    },
+    {
+      "bytes": 65798,
+      "path": "tracking-on/artifact-manifest.json",
+      "raw_bytes_copied": true,
+      "sha256": "236877375d985f1eb7ef28f552be5afd470e95577ac9af8ce72fefa3e56eae03",
+      "source": "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/artifact-manifest.json"
+    },
+    {
+      "bytes": 676,
+      "path": "tracking-on/build-identity.json",
+      "raw_bytes_copied": true,
+      "sha256": "5706954569d2cacc20ffd4c103663d5d46e7e6d6a56aad2660b6e7b887adcace",
+      "source": "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/build-identity.json"
+    },
+    {
+      "bytes": 256,
+      "path": "tracking-on/default-tuning.json",
+      "raw_bytes_copied": true,
+      "sha256": "d560e97d406bb2624d51632977de349ee19c8d76433eeb39357eabe0b456880b",
+      "source": "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/default-tuning.json"
+    },
+    {
+      "bytes": 2061,
+      "path": "tracking-on/input-bindings.json",
+      "raw_bytes_copied": true,
+      "sha256": "a4c5d7f9526140afe21748ca952bc9871aeb02a0d9f474a07b30fa3be5cd71d5",
+      "source": "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/input-bindings.json"
+    },
+    {
+      "bytes": 8663,
+      "path": "tracking-on/ctest.log",
+      "raw_bytes_copied": true,
+      "sha256": "792261538f22777d1bf2ca7999d524eb251e902e184989c5311c18ab30795d90",
+      "source": "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/ctest-candidate.log"
+    },
+    {
+      "bytes": 132648,
+      "path": "tracking-off/report.json",
+      "raw_bytes_copied": true,
+      "sha256": "3cc734797569166631c9e8c10e5d931141633748a9fe2f1b68d09a24c1e397b4",
+      "source": "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-fixed/report.json"
+    },
+    {
+      "bytes": 65798,
+      "path": "tracking-off/artifact-manifest.json",
+      "raw_bytes_copied": true,
+      "sha256": "fd1bf5a60be9026aa009c5df80e0e94d653eaecfb0650f9d05470b53f5a7ec56",
+      "source": "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-fixed/artifact-manifest.json"
+    },
+    {
+      "bytes": 676,
+      "path": "tracking-off/build-identity.json",
+      "raw_bytes_copied": true,
+      "sha256": "3be537fd0628f6ca83df3bcfaf2ff774ad7ecd457866f37cfbc51e2e1b77bbf8",
+      "source": "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-fixed/build-identity.json"
+    },
+    {
+      "bytes": 256,
+      "path": "tracking-off/default-tuning.json",
+      "raw_bytes_copied": true,
+      "sha256": "d560e97d406bb2624d51632977de349ee19c8d76433eeb39357eabe0b456880b",
+      "source": "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-fixed/default-tuning.json"
+    },
+    {
+      "bytes": 2061,
+      "path": "tracking-off/input-bindings.json",
+      "raw_bytes_copied": true,
+      "sha256": "fd866f336fcf41c0f8c68e3720eeca753e1ec8eae72faf46b55ad973bc4254f5",
+      "source": "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-fixed/input-bindings.json"
+    },
+    {
+      "bytes": 8655,
+      "path": "tracking-off/ctest.log",
+      "raw_bytes_copied": true,
+      "sha256": "d83717ae84e03965d79c9c5efd26a1923cb114f5c0797bb786afdd42bcc95fdb",
+      "source": "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/ctest-fixed.log"
+    },
+    {
+      "bytes": 49478,
+      "path": "input/corpus.json",
+      "raw_bytes_copied": true,
+      "sha256": "4097e7a0001d088a034b24fb3b63e32e21478ec6d0a43a4fcd653254b2815cad",
+      "source": "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/input/corpus.json"
+    },
+    {
+      "bytes": 13254,
+      "path": "input/source-manifest.json",
+      "raw_bytes_copied": true,
+      "sha256": "46e3dda9b9b9cd8a4d301068ee60eb41fd899d44731d6459b75d2def4353dab6",
+      "source": "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/input/source-manifest.json"
+    },
+    {
+      "bytes": 2354,
+      "path": "resources/resource-low.log",
+      "raw_bytes_copied": true,
+      "sha256": "48349448c7cb1d3722be2d3eda6bd7c1cd4636602e9580fd046a5d3ff189f6e9",
+      "source": "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/resource-low.log"
+    },
+    {
+      "bytes": 2904,
+      "path": "resources/resource-tiny.log",
+      "raw_bytes_copied": true,
+      "sha256": "b6c08021a122cc9300c4165c069b7a43e4eaadd0a62cb2e42a79f2a6c75dfdbd",
+      "source": "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/resource-tiny.log"
+    },
+    {
+      "bytes": 1393,
+      "path": "resources/resource-raw.log",
+      "raw_bytes_copied": true,
+      "sha256": "f572fb5a6ea523c5fafa7de629e20c13806a0d87fb46e5e537b7e94e5b583baf",
+      "source": "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/resource-raw.log"
+    }
+  ],
+  "resource_readback": "resources/resource-readback.json",
+  "same_input_corpus_and_source_manifest_for_both_builds": true,
+  "schema_version": 1,
+  "source_recovery": {
+    "bundle": "../dualmic-local-source-v1/source.bundle.b64",
+    "local_measurement_sha_is_remote_verify_sha": false,
+    "manifest": "../dualmic-local-source-v1/manifest.json",
+    "source_commit_present": true
+  },
+  "source_revision": "50068fa285bfa7d209e635c63e86e36bec1bd3e1",
+  "source_tree": "adfa31b50ae6d7977829a65b039eddb529068985",
+  "status": "PRE_SAFE_FIX",
+  "verification_scope": "Read back original local artifacts and existing size query binaries; no new acoustic or DSP experiment",
+  "verified_utc": "2026-11-06T07:18:59.453656+00:00"
+}

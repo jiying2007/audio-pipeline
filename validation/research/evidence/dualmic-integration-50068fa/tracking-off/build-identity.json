@@ -1,0 +1,19 @@
+{
+  "dump_sha256": "483cab0bb6e27b9ec480596a131d21b66b32566b740f13d6ecb0e3f6fdd5e1dd",
+  "processor_sha256": "acb334183075ae1ffecf527f92ddebe768f5b5ca80c471958d58b064b619c730",
+  "values": {
+    "aec_backend": "MDF",
+    "build_type": "Release",
+    "compiler_id": "GNU",
+    "compiler_version": "14.2.0",
+    "config_digest": "1ec2d08890fcdddd0c81fb02b3e9a7bed6598b53cd2a2da7dcbc09407e434f90",
+    "fast_math": "0",
+    "module_mask": "1023",
+    "ns_estimator": "EMA",
+    "resampler_mode": "BANDLIMITED",
+    "simd_backend": "SCALAR",
+    "source_revision": "50068fa285bfa7d209e635c63e86e36bec1bd3e1",
+    "target_triple": "x86_64-linux-gnu",
+    "version": "2.3.62"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "corpus_sha256": "4097e7a0001d088a034b24fb3b63e32e21478ec6d0a43a4fcd653254b2815cad",
+  "processor_sha256": "acb334183075ae1ffecf527f92ddebe768f5b5ca80c471958d58b064b619c730",
+  "source_files": {
+    "CMakeLists.txt": "28b7fb2c5232502cba2f0d10db8c08ab93ebdf1e1cccbabd3dddd50b5203e5f4",
+    "docs/research/frontend-evolution-v1/DUALMIC_PROFILE_REPLAY_V1_IMPLEMENTATION_FREEZE.zh-CN.md": "afafef2217dc340106c9bc389b1aa027d6bf8371c7974f88c7bed4f4ba261e95",
+    "examples/process_pcm.c": "534163d0ca9b5fa3a1d8ceb309d34270b47ead8f80deed6215e781f9e010111b",
+    "tests/test_process_pcm_profiles.c": "27b0cf8a725ef30bf6891fa357487708b19088032beee03a8ec39bed259244bd",
+    "tests/validation/build_dualmic_profile_corpus.py": "526d98a1c07d94c397364269460a01987089acd78eeff779219a7879cb4b4ca5",
+    "tests/validation/build_quality_validation_corpus.py": "bc71e5c9539ecf88a8f00ffbfb800f8936be352a43572ee427fef96a7b3ada33",
+    "tests/validation/dualmic_profile_support.py": "697e381bbee585cc6d2b42cc4fb038d7b6eb5086f26e02ca8d14d58c21da9dcb",
+    "tests/validation/quality_metric_support.py": "cc310f62c3a16dcee299fafd99abccb6427a9db34d46c57364b8a830b24bd7eb",
+    "tests/validation/run_dualmic_profile_replay.py": "1eac05b6bd1859c24bf1b7ec4ef83ef93c6e122be891ad0e5a0685ea5a8178c5",
+    "validation/research-authority.json": "ec9181d66842a18f08521b57d9c75416a68439fbe6b79b91076c1148772e46b3",
+    "validation/tools/build_validation_corpus.py": "136fddaaaa340f4d08116b93250f50c6c9d60adfdc002c054ba26983bb9d8bb9",
+    "validation/tools/render_corr_exact.py": "0a2f720e5b1eb29f7f4174bcadc8bca0d88bc5d0e34b9b19337c13d683127a81",
+    "validation/tools/run_validation.py": "b92f0f16b776356795b2ef9429f6408b279367e3f1008fb04d78eadaf6ac44f8",
+    "validation/tools/run_validation_engine.py": "9082b061e7e46aa1c48c82c0ec845524110e01e910aa51e5b83c2c9d9594789a",
+    "validation/tools/stage_profile_support.py": "8ad696c7e72d602cd8ea4ca9c14da1f6635111504426cf2d880f6638da7ee12b"
+  },
+  "source_manifest_sha256": "46e3dda9b9b9cd8a4d301068ee60eb41fd899d44731d6459b75d2def4353dab6"
+}

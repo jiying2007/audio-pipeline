@@ -1,0 +1,3706 @@
+{
+  "acoustic_thresholds_applied": false,
+  "bindings": {
+    "corpus_sha256": "4097e7a0001d088a034b24fb3b63e32e21478ec6d0a43a4fcd653254b2815cad",
+    "processor_sha256": "acb334183075ae1ffecf527f92ddebe768f5b5ca80c471958d58b064b619c730",
+    "render_corr_compiler": "cc (Debian 14.2.0-19) 14.2.0",
+    "render_corr_helper_binary_sha256": "bd591f8d10b8082c387ef22bed21e2f568de8c9bb93b69bd58be036198ed2c06",
+    "render_corr_helper_source_sha256": "19cbf9af3b3e36c5ca88546b4a6ab091af0292cbb2bffd69ac121eda70be90ac",
+    "render_corr_loader_sha256": "0a2f720e5b1eb29f7f4174bcadc8bca0d88bc5d0e34b9b19337c13d683127a81",
+    "render_corr_search": "exact-all-integer-lags-stride4-v1",
+    "source_files": {
+      "CMakeLists.txt": "28b7fb2c5232502cba2f0d10db8c08ab93ebdf1e1cccbabd3dddd50b5203e5f4",
+      "docs/research/frontend-evolution-v1/DUALMIC_PROFILE_REPLAY_V1_IMPLEMENTATION_FREEZE.zh-CN.md": "afafef2217dc340106c9bc389b1aa027d6bf8371c7974f88c7bed4f4ba261e95",
+      "examples/process_pcm.c": "534163d0ca9b5fa3a1d8ceb309d34270b47ead8f80deed6215e781f9e010111b",
+      "tests/test_process_pcm_profiles.c": "27b0cf8a725ef30bf6891fa357487708b19088032beee03a8ec39bed259244bd",
+      "tests/validation/build_dualmic_profile_corpus.py": "526d98a1c07d94c397364269460a01987089acd78eeff779219a7879cb4b4ca5",
+      "tests/validation/build_quality_validation_corpus.py": "bc71e5c9539ecf88a8f00ffbfb800f8936be352a43572ee427fef96a7b3ada33",
+      "tests/validation/dualmic_profile_support.py": "697e381bbee585cc6d2b42cc4fb038d7b6eb5086f26e02ca8d14d58c21da9dcb",
+      "tests/validation/quality_metric_support.py": "cc310f62c3a16dcee299fafd99abccb6427a9db34d46c57364b8a830b24bd7eb",
+      "tests/validation/run_dualmic_profile_replay.py": "1eac05b6bd1859c24bf1b7ec4ef83ef93c6e122be891ad0e5a0685ea5a8178c5",
+      "validation/research-authority.json": "ec9181d66842a18f08521b57d9c75416a68439fbe6b79b91076c1148772e46b3",
+      "validation/tools/build_validation_corpus.py": "136fddaaaa340f4d08116b93250f50c6c9d60adfdc002c054ba26983bb9d8bb9",
+      "validation/tools/render_corr_exact.py": "0a2f720e5b1eb29f7f4174bcadc8bca0d88bc5d0e34b9b19337c13d683127a81",
+      "validation/tools/run_validation.py": "b92f0f16b776356795b2ef9429f6408b279367e3f1008fb04d78eadaf6ac44f8",
+      "validation/tools/run_validation_engine.py": "9082b061e7e46aa1c48c82c0ec845524110e01e910aa51e5b83c2c9d9594789a",
+      "validation/tools/stage_profile_support.py": "8ad696c7e72d602cd8ea4ca9c14da1f6635111504426cf2d880f6638da7ee12b"
+    },
+    "source_manifest_sha256": "46e3dda9b9b9cd8a4d301068ee60eb41fd899d44731d6459b75d2def4353dab6",
+    "validation_evaluator_sha256": "9082b061e7e46aa1c48c82c0ec845524110e01e910aa51e5b83c2c9d9594789a"
+  },
+  "build_identity": {
+    "dump_sha256": "483cab0bb6e27b9ec480596a131d21b66b32566b740f13d6ecb0e3f6fdd5e1dd",
+    "processor_sha256": "acb334183075ae1ffecf527f92ddebe768f5b5ca80c471958d58b064b619c730",
+    "values": {
+      "aec_backend": "MDF",
+      "build_type": "Release",
+      "compiler_id": "GNU",
+      "compiler_version": "14.2.0",
+      "config_digest": "1ec2d08890fcdddd0c81fb02b3e9a7bed6598b53cd2a2da7dcbc09407e434f90",
+      "fast_math": "0",
+      "module_mask": "1023",
+      "ns_estimator": "EMA",
+      "resampler_mode": "BANDLIMITED",
+      "simd_backend": "SCALAR",
+      "source_revision": "50068fa285bfa7d209e635c63e86e36bec1bd3e1",
+      "target_triple": "x86_64-linux-gnu",
+      "version": "2.3.62"
+    }
+  },
+  "canonical_summary": {
+    "cases": 42,
+    "dimension_values": {},
+    "max_output_clip_fraction": 0.0,
+    "max_output_dc_offset_dbfs": -90.27756928072273,
+    "max_vad_false_positive_rate": 0.18536585365853658,
+    "median_erle_db": 25.602069820645887,
+    "median_near_si_sdr_improvement_db": 4.3074065171187,
+    "median_output_render_corr_reduction": 0.6012176064999485,
+    "min_vad_f1": 0.8501362397820165,
+    "min_vad_recall": 0.789873417721519,
+    "near_si_sdr_improvement_applicable_cases": 12,
+    "p10_interference_corr_reduction": 0.5026096028156951,
+    "p10_interference_projection_attenuation_db": 34.09205935757164,
+    "p10_near_projection_gain_db": -5.114863168460365,
+    "p10_near_si_sdr_improvement_db": 1.395916823574389,
+    "p10_noise_only_attenuation_db": 25.618761867500105,
+    "p10_output_render_corr_reduction": 0.0,
+    "p90_erle_convergence_ms": 233.0,
+    "p90_erle_recovery_ms": 198.0,
+    "p90_vad_onset_delay_ms": 10.0,
+    "p90_vad_release_delay_ms": 88.0,
+    "pass_rate": 1.0,
+    "passed_cases": 42,
+    "scenario_metrics": {
+      "doubletalk-nominal": {
+        "cases": 6,
+        "metrics": {
+          "near_si_sdr_improvement_db": {
+            "count": 6,
+            "max": 2.102673072799031,
+            "median": 1.741268848446826,
+            "min": 1.3771103360968278,
+            "p10": 1.383834340405543
+          },
+          "noise_only_attenuation_db": {
+            "count": 6,
+            "max": 28.774361353150297,
+            "median": 26.97969858104333,
+            "min": 25.36894413189442,
+            "p10": 25.487830340239636
+          },
+          "output_clip_fraction": {
+            "count": 6,
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p10": 0.0
+          },
+          "output_dc_offset_dbfs": {
+            "count": 6,
+            "max": -90.27756928072273,
+            "median": -97.61063245411384,
+            "min": -111.6696764046309,
+            "p10": -108.03046091986168
+          },
+          "output_render_corr_reduction": {
+            "count": 6,
+            "max": 0.4899140278694267,
+            "median": 0.48564101047991903,
+            "min": 0.4839797894259874,
+            "p10": 0.4840298379982657
+          },
+          "speech_active_attenuation_db": {
+            "count": 6,
+            "max": 4.643686196133996,
+            "median": 4.503431040463363,
+            "min": 4.4215639891348975,
+            "p10": 4.441812813929397
+          },
+          "vad_f1": {
+            "count": 6,
+            "max": 0.9118387909319899,
+            "median": 0.8758328488628155,
+            "min": 0.8676277850589779,
+            "p10": 0.8687132213885493
+          },
+          "vad_false_positive_rate": {
+            "count": 6,
+            "max": 0.18536585365853658,
+            "median": 0.17073170731707316,
+            "min": 0.11707317073170732,
+            "p10": 0.12195121951219512
+          },
+          "vad_recall": {
+            "count": 6,
+            "max": 0.9164556962025316,
+            "median": 0.8455696202531646,
+            "min": 0.8177215189873418,
+            "p10": 0.8189873417721519
+          }
+        },
+        "passed_cases": 6
+      },
+      "doubletalk-weak": {
+        "cases": 6,
+        "metrics": {
+          "near_si_sdr_improvement_db": {
+            "count": 6,
+            "max": 7.191284437635927,
+            "median": 6.9136863170625125,
+            "min": 6.512139961438369,
+            "p10": 6.550882659918404
+          },
+          "noise_only_attenuation_db": {
+            "count": 6,
+            "max": 29.132274674482392,
+            "median": 27.49844259750035,
+            "min": 25.943220069873973,
+            "p10": 26.03639941124002
+          },
+          "output_clip_fraction": {
+            "count": 6,
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p10": 0.0
+          },
+          "output_dc_offset_dbfs": {
+            "count": 6,
+            "max": -95.89719994852715,
+            "median": -102.84153795528702,
+            "min": -110.80227761878382,
+            "p10": -110.79749200417392
+          },
+          "output_render_corr_reduction": {
+            "count": 6,
+            "max": 0.6982821644165447,
+            "median": 0.6940234334402964,
+            "min": 0.6897242112334041,
+            "p10": 0.6901763095017662
+          },
+          "speech_active_attenuation_db": {
+            "count": 6,
+            "max": 6.810192860125293,
+            "median": 6.710091235405164,
+            "min": 6.588358406712173,
+            "p10": 6.596689030915206
+          },
+          "vad_f1": {
+            "count": 6,
+            "max": 0.896551724137931,
+            "median": 0.876689914351868,
+            "min": 0.8501362397820165,
+            "p10": 0.8514986376021799
+          },
+          "vad_false_positive_rate": {
+            "count": 6,
+            "max": 0.18048780487804877,
+            "median": 0.14390243902439026,
+            "min": 0.1024390243902439,
+            "p10": 0.1146341463414634
+          },
+          "vad_recall": {
+            "count": 6,
+            "max": 0.8886075949367088,
+            "median": 0.8367088607594937,
+            "min": 0.789873417721519,
+            "p10": 0.7911392405063291
+          }
+        },
+        "passed_cases": 6
+      },
+      "far-only": {
+        "cases": 6,
+        "metrics": {
+          "erle_db": {
+            "count": 6,
+            "max": 36.155759664922286,
+            "median": 35.65557757141927,
+            "min": 35.10458942620121,
+            "p10": 35.124424012331076
+          },
+          "output_clip_fraction": {
+            "count": 6,
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p10": 0.0
+          },
+          "output_dc_offset_dbfs": {
+            "count": 6,
+            "max": -114.18539921951661,
+            "median": -121.22568351035653,
+            "min": -143.84739597105326,
+            "p10": -139.8422725426803
+          },
+          "output_render_corr_reduction": {
+            "count": 6,
+            "max": 0.8185060301191556,
+            "median": 0.7984284966832356,
+            "min": 0.7795247837376443,
+            "p10": 0.7868166409833593
+          }
+        },
+        "passed_cases": 6
+      },
+      "near-only": {
+        "cases": 6,
+        "metrics": {
+          "output_clip_fraction": {
+            "count": 6,
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p10": 0.0
+          },
+          "output_dc_offset_dbfs": {
+            "count": 6,
+            "max": -93.82268467342966,
+            "median": -99.92834424467492,
+            "min": -126.041964488247,
+            "p10": -123.21252896817793
+          },
+          "speech_active_attenuation_db": {
+            "count": 6,
+            "max": -0.9693181863237943,
+            "median": -1.795835988264109,
+            "min": -2.6009166257926597,
+            "p10": -2.5995003096037443
+          },
+          "vad_f1": {
+            "count": 6,
+            "max": 0.9528662420382166,
+            "median": 0.9367591894227358,
+            "min": 0.9328063241106719,
+            "p10": 0.9328063241106719
+          },
+          "vad_false_positive_rate": {
+            "count": 6,
+            "max": 0.08780487804878048,
+            "median": 0.07804878048780488,
+            "min": 0.04878048780487805,
+            "p10": 0.04878048780487805
+          },
+          "vad_recall": {
+            "count": 6,
+            "max": 0.9468354430379747,
+            "median": 0.9189873417721519,
+            "min": 0.8962025316455696,
+            "p10": 0.8962025316455696
+          }
+        },
+        "passed_cases": 6
+      },
+      "path-change": {
+        "cases": 6,
+        "metrics": {
+          "erle_db": {
+            "count": 6,
+            "max": 18.093021044147655,
+            "median": 17.851045556271213,
+            "min": 17.553274831899653,
+            "p10": 17.63501558965013
+          },
+          "output_clip_fraction": {
+            "count": 6,
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p10": 0.0
+          },
+          "output_dc_offset_dbfs": {
+            "count": 6,
+            "max": -102.17393834471181,
+            "median": -109.79600797813276,
+            "min": -117.31338002586952,
+            "p10": -115.56871035212058
+          },
+          "output_render_corr_reduction": {
+            "count": 6,
+            "max": 0.5278602877167806,
+            "median": 0.523716847878479,
+            "min": 0.5196872386067677,
+            "p10": 0.5206971439807937
+          }
+        },
+        "passed_cases": 6
+      },
+      "render-gap": {
+        "cases": 6,
+        "metrics": {
+          "erle_db": {
+            "count": 6,
+            "max": 27.2812484090471,
+            "median": 25.602069820645887,
+            "min": 23.955400233164564,
+            "p10": 24.042987758285363
+          },
+          "output_clip_fraction": {
+            "count": 6,
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p10": 0.0
+          },
+          "output_dc_offset_dbfs": {
+            "count": 6,
+            "max": -107.91123969511203,
+            "median": -114.83427584068366,
+            "min": -137.55170226051058,
+            "p10": -132.2179629172398
+          },
+          "output_render_corr_reduction": {
+            "count": 6,
+            "max": 0.7201509678433823,
+            "median": 0.700309612017204,
+            "min": 0.6745749252831164,
+            "p10": 0.6828035016081202
+          }
+        },
+        "passed_cases": 6
+      },
+      "silent-render": {
+        "cases": 6,
+        "metrics": {
+          "output_clip_fraction": {
+            "count": 6,
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p10": 0.0
+          },
+          "output_dc_offset_dbfs": {
+            "count": 6,
+            "max": -93.82268467342966,
+            "median": -99.92834424467492,
+            "min": -126.041964488247,
+            "p10": -123.21252896817793
+          },
+          "output_render_corr_reduction": {
+            "count": 6,
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p10": 0.0
+          },
+          "speech_active_attenuation_db": {
+            "count": 6,
+            "max": -0.9693181863237943,
+            "median": -1.795835988264109,
+            "min": -2.6009166257926597,
+            "p10": -2.5995003096037443
+          },
+          "vad_f1": {
+            "count": 6,
+            "max": 0.9528662420382166,
+            "median": 0.9367591894227358,
+            "min": 0.9328063241106719,
+            "p10": 0.9328063241106719
+          },
+          "vad_false_positive_rate": {
+            "count": 6,
+            "max": 0.08780487804878048,
+            "median": 0.07804878048780488,
+            "min": 0.04878048780487805,
+            "p10": 0.04878048780487805
+          },
+          "vad_recall": {
+            "count": 6,
+            "max": 0.9468354430379747,
+            "median": 0.9189873417721519,
+            "min": 0.8962025316455696,
+            "p10": 0.8962025316455696
+          }
+        },
+        "passed_cases": 6
+      }
+    },
+    "scenario_pass_rate": {
+      "doubletalk-nominal": 1.0,
+      "doubletalk-weak": 1.0,
+      "far-only": 1.0,
+      "near-only": 1.0,
+      "path-change": 1.0,
+      "render-gap": 1.0,
+      "silent-render": 1.0
+    }
+  },
+  "cases": [
+    {
+      "case_id": "seed-5107-near-only-call",
+      "dimensions": {
+        "data_role": "regression",
+        "echo_tdoa_samples": 1.4139190265868387,
+        "frames": 600,
+        "mic_spacing_mm": 35.0,
+        "pipeline_profile": "call",
+        "seconds": 6,
+        "seed": 5107,
+        "synthetic_engineering_signal": true,
+        "target_tdoa_samples": 0.0
+      },
+      "metrics": {
+        "declared_algorithmic_latency_ms": 10,
+        "frames": 96000,
+        "input_alignment_samples": 0,
+        "input_clip_fraction": 0.0,
+        "input_dc_offset_dbfs": -94.07819674268809,
+        "input_near_reference_identical": true,
+        "input_near_si_sdr_db": 236.52956873362308,
+        "input_peak_dbfs": -11.353464529899593,
+        "input_rms_dbfs": -23.602142295966964,
+        "near_projection_gain_db": 0.06457792667266009,
+        "near_si_sdr_db": 4.267448347523121,
+        "near_si_sdr_improvement_db": -232.26212038609995,
+        "noise_only_attenuation_db": null,
+        "noise_only_frames": 197,
+        "output_alignment_samples": 158,
+        "output_clip_fraction": 0.0,
+        "output_dc_offset_dbfs": -93.82268467342966,
+        "output_peak_dbfs": -2.5051387986160947,
+        "output_rms_dbfs": -22.156652655665795,
+        "output_rms_delta_db": 1.4454896403011688,
+        "speech_active_attenuation_db": -1.0062508725314427,
+        "speech_active_frames": 389,
+        "vad_f1": 0.9328063241106719,
+        "vad_false_negative_rate": 0.10379746835443038,
+        "vad_false_positive_rate": 0.04878048780487805,
+        "vad_onset_delay_ms": 10.0,
+        "vad_precision": 0.9725274725274725,
+        "vad_recall": 0.8962025316455696,
+        "vad_release_delay_ms": 68.0
+      },
+      "output_contract": {
+        "capture_frames": 600,
+        "frame_indices_contiguous": true,
+        "frame_samples": 160,
+        "input_samples_per_channel": 96000,
+        "metrics_frames": 600,
+        "output_mono_samples": 96000
+      },
+      "passed": true,
+      "scenario": "near-only",
+      "source": {
+        "dataset_id": "deterministic-generator",
+        "source_id": "seed-5107-near-only"
+      },
+      "split": "validation",
+      "violations": []
+    },
+    {
+      "case_id": "seed-5107-near-only-assistant",
+      "dimensions": {
+        "data_role": "regression",
+        "echo_tdoa_samples": 1.4139190265868387,
+        "frames": 600,
+        "mic_spacing_mm": 35.0,
+        "pipeline_profile": "assistant",
+        "seconds": 6,
+        "seed": 5107,
+        "synthetic_engineering_signal": true,
+        "target_tdoa_samples": 0.0
+      },
+      "metrics": {
+        "declared_algorithmic_latency_ms": 10,
+        "frames": 96000,
+        "input_alignment_samples": 0,
+        "input_clip_fraction": 0.0,
+        "input_dc_offset_dbfs": -94.07819674268809,
+        "input_near_reference_identical": true,
+        "input_near_si_sdr_db": 236.52956873362308,
+        "input_peak_dbfs": -11.353464529899593,
+        "input_rms_dbfs": -23.602142295966964,
+        "near_projection_gain_db": 1.795913508578642,
+        "near_si_sdr_db": 5.256832851515202,
+        "near_si_sdr_improvement_db": -231.27273588210787,
+        "noise_only_attenuation_db": null,
+        "noise_only_frames": 197,
+        "output_alignment_samples": 158,
+        "output_clip_fraction": 0.0,
+        "output_dc_offset_dbfs": -94.04266189302446,
+        "output_peak_dbfs": -1.9998490310736532,
+        "output_rms_dbfs": -20.67325122332032,
+        "output_rms_delta_db": 2.9288910726466426,
+        "speech_active_attenuation_db": -2.5980839934148294,
+        "speech_active_frames": 389,
+        "vad_f1": 0.9328063241106719,
+        "vad_false_negative_rate": 0.10379746835443038,
+        "vad_false_positive_rate": 0.04878048780487805,
+        "vad_onset_delay_ms": 10.0,
+        "vad_precision": 0.9725274725274725,
+        "vad_recall": 0.8962025316455696,
+        "vad_release_delay_ms": 68.0
+      },
+      "output_contract": {
+        "capture_frames": 600,
+        "frame_indices_contiguous": true,
+        "frame_samples": 160,
+        "input_samples_per_channel": 96000,
+        "metrics_frames": 600,
+        "output_mono_samples": 96000
+      },
+      "passed": true,
+      "scenario": "near-only",
+      "source": {
+        "dataset_id": "deterministic-generator",
+        "source_id": "seed-5107-near-only"
+      },
+      "split": "validation",
+      "violations": []
+    },
+    {
+      "case_id": "seed-5107-silent-render-call",
+      "dimensions": {
+        "data_role": "regression",
+        "echo_tdoa_samples": 1.4139190265868387,
+        "frames": 600,
+        "mic_spacing_mm": 35.0,
+        "pipeline_profile": "call",
+        "seconds": 6,
+        "seed": 5107,
+        "synthetic_engineering_signal": true,
+        "target_tdoa_samples": 0.0
+      },
+      "metrics": {
+        "declared_algorithmic_latency_ms": 10,
+        "frames": 96000,
+        "input_alignment_samples": 0,
+        "input_clip_fraction": 0.0,
+        "input_dc_offset_dbfs": -94.07819674268809,
+        "input_near_reference_identical": true,
+        "input_near_si_sdr_db": 236.52956873362308,
+        "input_peak_dbfs": -11.353464529899593,
+        "input_render_max_abs_corr": 0.0,
+        "input_rms_dbfs": -23.602142295966964,
+        "near_projection_gain_db": 0.06457792667266009,
+        "near_si_sdr_db": 4.267448347523121,
+        "near_si_sdr_improvement_db": -232.26212038609995,
+        "noise_only_attenuation_db": null,
+        "noise_only_frames": 197,
+        "output_alignment_samples": 158,
+        "output_clip_fraction": 0.0,
+        "output_dc_offset_dbfs": -93.82268467342966,
+        "output_peak_dbfs": -2.5051387986160947,
+        "output_render_corr_ratio": 0.0,
+        "output_render_corr_reduction": 0.0,
+        "output_render_max_abs_corr": 0.0,
+        "output_rms_dbfs": -22.156652655665795,
+        "output_rms_delta_db": 1.4454896403011688,
+        "speech_active_attenuation_db": -1.0062508725314427,
+        "speech_active_frames": 389,
+        "vad_f1": 0.9328063241106719,
+        "vad_false_negative_rate": 0.10379746835443038,
+        "vad_false_positive_rate": 0.04878048780487805,
+        "vad_onset_delay_ms": 10.0,
+        "vad_precision": 0.9725274725274725,
+        "vad_recall": 0.8962025316455696,
+        "vad_release_delay_ms": 68.0
+      },
+      "output_contract": {
+        "capture_frames": 600,
+        "frame_indices_contiguous": true,
+        "frame_samples": 160,
+        "input_samples_per_channel": 96000,
+        "metrics_frames": 600,
+        "output_mono_samples": 96000
+      },
+      "passed": true,
+      "scenario": "silent-render",
+      "source": {
+        "dataset_id": "deterministic-generator",
+        "source_id": "seed-5107-silent-render"
+      },
+      "split": "validation",
+      "violations": []
+    },
+    {
+      "case_id": "seed-5107-silent-render-assistant",
+      "dimensions": {
+        "data_role": "regression",
+        "echo_tdoa_samples": 1.4139190265868387,
+        "frames": 600,
+        "mic_spacing_mm": 35.0,
+        "pipeline_profile": "assistant",
+        "seconds": 6,
+        "seed": 5107,
+        "synthetic_engineering_signal": true,
+        "target_tdoa_samples": 0.0
+      },
+      "metrics": {
+        "declared_algorithmic_latency_ms": 10,
+        "frames": 96000,
+        "input_alignment_samples": 0,
+        "input_clip_fraction": 0.0,
+        "input_dc_offset_dbfs": -94.07819674268809,
+        "input_near_reference_identical": true,
+        "input_near_si_sdr_db": 236.52956873362308,
+        "input_peak_dbfs": -11.353464529899593,
+        "input_render_max_abs_corr": 0.0,
+        "input_rms_dbfs": -23.602142295966964,
+        "near_projection_gain_db": 1.795913508578642,
+        "near_si_sdr_db": 5.256832851515202,
+        "near_si_sdr_improvement_db": -231.27273588210787,
+        "noise_only_attenuation_db": null,
+        "noise_only_frames": 197,
+        "output_alignment_samples": 158,
+        "output_clip_fraction": 0.0,
+        "output_dc_offset_dbfs": -94.04266189302446,
+        "output_peak_dbfs": -1.9998490310736532,
+        "output_render_corr_ratio": 0.0,
+        "output_render_corr_reduction": 0.0,
+        "output_render_max_abs_corr": 0.0,
+        "output_rms_dbfs": -20.67325122332032,
+        "output_rms_delta_db": 2.9288910726466426,
+        "speech_active_attenuation_db": -2.5980839934148294,
+        "speech_active_frames": 389,
+        "vad_f1": 0.9328063241106719,
+        "vad_false_negative_rate": 0.10379746835443038,
+        "vad_false_positive_rate": 0.04878048780487805,
+        "vad_onset_delay_ms": 10.0,
+        "vad_precision": 0.9725274725274725,
+        "vad_recall": 0.8962025316455696,
+        "vad_release_delay_ms": 68.0
+      },
+      "output_contract": {
+        "capture_frames": 600,
+        "frame_indices_contiguous": true,
+        "frame_samples": 160,
+        "input_samples_per_channel": 96000,
+        "metrics_frames": 600,
+        "output_mono_samples": 96000
+      },
+      "passed": true,
+      "scenario": "silent-render",
+      "source": {
+        "dataset_id": "deterministic-generator",
+        "source_id": "seed-5107-silent-render"
+      },
+      "split": "validation",
+      "violations": []
+    },
+    {
+      "case_id": "seed-5107-far-only-call",
+      "dimensions": {
+        "data_role": "regression",
+        "echo_tdoa_samples": 1.4139190265868387,
+        "frames": 600,
+        "mic_spacing_mm": 35.0,
+        "pipeline_profile": "call",
+        "seconds": 6,
+        "seed": 5107,
+        "synthetic_engineering_signal": true,
+        "target_tdoa_samples": 0.0
+      },
+      "metrics": {
+        "erle_convergence_ms": 70.0,
+        "erle_db": 36.15494800321685,
+        "frames": 96000,
+        "input_clip_fraction": 0.0,
+        "input_dc_offset_dbfs": -93.32457854102641,
+        "input_peak_dbfs": -18.07878095666123,
+        "input_render_max_abs_corr": 0.9589361424567179,
+        "input_rms_dbfs": -27.78695720794594,
+        "output_clip_fraction": 0.0,
+        "output_dc_offset_dbfs": -115.09207085569089,
+        "output_peak_dbfs": -33.557229934484134,
+        "output_render_corr_ratio": 0.14644365366998427,
+        "output_render_corr_reduction": 0.8185060301191556,
+        "output_render_max_abs_corr": 0.14043011233756228,
+        "output_rms_dbfs": -59.56598549233241,
+        "output_rms_delta_db": -31.77902828438647
+      },
+      "output_contract": {
+        "capture_frames": 600,
+        "frame_indices_contiguous": true,
+        "frame_samples": 160,
+        "input_samples_per_channel": 96000,
+        "metrics_frames": 600,
+        "output_mono_samples": 96000
+      },
+      "passed": true,
+      "scenario": "far-only",
+      "source": {
+        "dataset_id": "deterministic-generator",
+        "source_id": "seed-5107-far-only"
+      },
+      "split": "validation",
+      "violations": []
+    },
+    {
+      "case_id": "seed-5107-far-only-assistant",
+      "dimensions": {
+        "data_role": "regression",
+        "echo_tdoa_samples": 1.4139190265868387,
+        "frames": 600,
+        "mic_spacing_mm": 35.0,
+        "pipeline_profile": "assistant",
+        "seconds": 6,
+        "seed": 5107,
+        "synthetic_engineering_signal": true,
+        "target_tdoa_samples": 0.0
+      },
+      "metrics": {
+        "erle_convergence_ms": 80.0,
+        "erle_db": 35.14425859846094,
+        "frames": 96000,
+        "input_clip_fraction": 0.0,
+        "input_dc_offset_dbfs": -93.32457854102641,
+        "input_peak_dbfs": -18.07878095666123,
+        "input_render_max_abs_corr": 0.9589361424567179,
+        "input_rms_dbfs": -27.78695720794594,
+        "output_clip_fraction": 0.0,
+        "output_dc_offset_dbfs": -135.83714911430735,
+        "output_peak_dbfs": -30.043825393524028,
+        "output_render_corr_ratio": 0.17156673937235203,
+        "output_render_corr_reduction": 0.7944145952291175,
+        "output_render_max_abs_corr": 0.16452154722760035,
+        "output_rms_dbfs": -57.13369755934532,
+        "output_rms_delta_db": -29.346740351399383
+      },
+      "output_contract": {
+        "capture_frames": 600,
+        "frame_indices_contiguous": true,
+        "frame_samples": 160,
+        "input_samples_per_channel": 96000,
+        "metrics_frames": 600,
+        "output_mono_samples": 96000
+      },
+      "passed": true,
+      "scenario": "far-only",
+      "source": {
+        "dataset_id": "deterministic-generator",
+        "source_id": "seed-5107-far-only"
+      },
+      "split": "validation",
+      "violations": []
+    },
+    {
+      "case_id": "seed-5107-doubletalk-nominal-call",
+      "dimensions": {
+        "data_role": "regression",
+        "echo_tdoa_samples": 1.4139190265868387,
+        "frames": 600,
+        "mic_spacing_mm": 35.0,
+        "pipeline_profile": "call",
+        "seconds": 6,
+        "seed": 5107,
+        "synthetic_engineering_signal": true,
+        "target_tdoa_samples": 0.0
+      },
+      "metrics": {
+        "declared_algorithmic_latency_ms": 10,
+        "frames": 96000,
+        "input_alignment_samples": 0,
+        "input_clip_fraction": 0.0,
+        "input_dc_offset_dbfs": -114.93192192927407,
+        "input_interference_max_abs_corr": 0.526050014049886,
+        "input_interference_projection_gain_db": 0.012318302203828315,
+        "input_near_reference_identical": false,
+        "input_near_si_sdr_db": 4.189520002229495,
+        "input_peak_dbfs": -9.660653122538974,
+        "input_render_max_abs_corr": 0.5047161109867048,
+        "input_rms_dbfs": -22.195164314844355,
+        "interference_corr_reduction": 0.5027477519225723,
+        "interference_projection_attenuation_db": 33.80409655103128,
+        "near_projection_gain_db": -4.56799279791548,
+        "near_si_sdr_db": 5.580078346943753,
+        "near_si_sdr_improvement_db": 1.3905583447142584,
+        "noise_only_attenuation_db": 28.232227424349286,
+        "noise_only_frames": 197,
+        "output_alignment_samples": 158,
+        "output_clip_fraction": 0.0,
+        "output_dc_offset_dbfs": -104.39124543509246,
+        "output_interference_max_abs_corr": 0.023302262127313754,
+        "output_interference_projection_gain_db": -33.79177824882745,
+        "output_peak_dbfs": -12.52632757985988,
+        "output_render_corr_ratio": 0.03728648592110155,
+        "output_render_corr_reduction": 0.4858970208202459,
+        "output_render_max_abs_corr": 0.018819090166458895,
+        "output_rms_dbfs": -27.109283340340603,
+        "output_rms_delta_db": -4.914119025496248,
+        "speech_active_attenuation_db": 4.4215639891348975,
+        "speech_active_frames": 389,
+        "vad_f1": 0.8706199460916443,
+        "vad_false_negative_rate": 0.18227848101265823,
+        "vad_false_positive_rate": 0.11707317073170732,
+        "vad_onset_delay_ms": 10.0,
+        "vad_precision": 0.930835734870317,
+        "vad_recall": 0.8177215189873418,
+        "vad_release_delay_ms": 40.0
+      },
+      "output_contract": {
+        "capture_frames": 600,
+        "frame_indices_contiguous": true,
+        "frame_samples": 160,
+        "input_samples_per_channel": 96000,
+        "metrics_frames": 600,
+        "output_mono_samples": 96000
+      },
+      "passed": true,
+      "scenario": "doubletalk-nominal",
+      "source": {
+        "dataset_id": "deterministic-generator",
+        "source_id": "seed-5107-doubletalk-nominal"
+      },
+      "split": "validation",
+      "violations": []
+    },
+    {
+      "case_id": "seed-5107-doubletalk-nominal-assistant",
+      "dimensions": {
+        "data_role": "regression",
+        "echo_tdoa_samples": 1.4139190265868387,
+        "frames": 600,
+        "mic_spacing_mm": 35.0,
+        "pipeline_profile": "assistant",
+        "seconds": 6,
+        "seed": 5107,
+        "synthetic_engineering_signal": true,
+        "target_tdoa_samples": 0.0
+      },
+      "metrics": {
+        "declared_algorithmic_latency_ms": 10,
+        "frames": 96000,
+        "input_alignment_samples": 0,
+        "input_clip_fraction": 0.0,
+        "input_dc_offset_dbfs": -114.93192192927407,
+        "input_interference_max_abs_corr": 0.526050014049886,
+        "input_interference_projection_gain_db": 0.012318302203828315,
+        "input_near_reference_identical": false,
+        "input_near_si_sdr_db": 4.189520002229495,
+        "input_peak_dbfs": -9.660653122538974,
+        "input_render_max_abs_corr": 0.5047161109867048,
+        "input_rms_dbfs": -22.195164314844355,
+        "interference_corr_reduction": 0.5010175262206248,
+        "interference_projection_attenuation_db": 33.91311397553049,
+        "near_projection_gain_db": -4.568636883145175,
+        "near_si_sdr_db": 6.2660929495074384,
+        "near_si_sdr_improvement_db": 2.0765729472779437,
+        "noise_only_attenuation_db": 25.36894413189442,
+        "noise_only_frames": 197,
+        "output_alignment_samples": 158,
+        "output_clip_fraction": 0.0,
+        "output_dc_offset_dbfs": -90.27756928072273,
+        "output_interference_max_abs_corr": 0.02503248782926122,
+        "output_interference_projection_gain_db": -33.90079567332666,
+        "output_peak_dbfs": -12.63917689541576,
+        "output_render_corr_ratio": 0.040886795501371184,
+        "output_render_corr_reduction": 0.484079886570544,
+        "output_render_max_abs_corr": 0.02063622441616076,
+        "output_rms_dbfs": -27.249680037308146,
+        "output_rms_delta_db": -5.05451572246379,
+        "speech_active_attenuation_db": 4.564974653940085,
+        "speech_active_frames": 389,
+        "vad_f1": 0.8697986577181208,
+        "vad_false_negative_rate": 0.17974683544303796,
+        "vad_false_positive_rate": 0.12682926829268293,
+        "vad_onset_delay_ms": 10.0,
+        "vad_precision": 0.9257142857142857,
+        "vad_recall": 0.8202531645569621,
+        "vad_release_delay_ms": 40.0
+      },
+      "output_contract": {
+        "capture_frames": 600,
+        "frame_indices_contiguous": true,
+        "frame_samples": 160,
+        "input_samples_per_channel": 96000,
+        "metrics_frames": 600,
+        "output_mono_samples": 96000
+      },
+      "passed": true,
+      "scenario": "doubletalk-nominal",
+      "source": {
+        "dataset_id": "deterministic-generator",
+        "source_id": "seed-5107-doubletalk-nominal"
+      },
+      "split": "validation",
+      "violations": []
+    },
+    {
+      "case_id": "seed-5107-doubletalk-weak-call",
+      "dimensions": {
+        "data_role": "regression",
+        "echo_tdoa_samples": 1.4139190265868387,
+        "frames": 600,
+        "mic_spacing_mm": 35.0,
+        "pipeline_profile": "call",
+        "seconds": 6,
+        "seed": 5107,
+        "synthetic_engineering_signal": true,
+        "target_tdoa_samples": 0.0
+      },
+      "metrics": {
+        "declared_algorithmic_latency_ms": 10,
+        "frames": 96000,
+        "input_alignment_samples": 0,
+        "input_clip_fraction": 0.0,
+        "input_dc_offset_dbfs": -99.43746669880531,
+        "input_interference_max_abs_corr": 0.7470889694236154,
+        "input_interference_projection_gain_db": 0.006775260637357123,
+        "input_near_reference_identical": false,
+        "input_near_si_sdr_db": -0.9993198712503966,
+        "input_peak_dbfs": -12.868205339728632,
+        "input_render_max_abs_corr": 0.7166224320933556,
+        "input_rms_dbfs": -25.247640534571566,
+        "interference_corr_reduction": 0.720043587594842,
+        "interference_projection_attenuation_db": 39.649685077320655,
+        "near_projection_gain_db": -5.08039878051253,
+        "near_si_sdr_db": 5.590305487148042,
+        "near_si_sdr_improvement_db": 6.589625358398438,
+        "noise_only_attenuation_db": 29.132274674482392,
+        "noise_only_frames": 197,
+        "output_alignment_samples": 158,
+        "output_clip_fraction": 0.0,
+        "output_dc_offset_dbfs": -110.80227761878382,
+        "output_interference_max_abs_corr": 0.027045381828773366,
+        "output_interference_projection_gain_db": -39.6429098166833,
+        "output_peak_dbfs": -18.164188622559504,
+        "output_render_corr_ratio": 0.031692115957257155,
+        "output_render_corr_reduction": 0.6939111508778814,
+        "output_render_max_abs_corr": 0.022711281215474267,
+        "output_rms_dbfs": -32.81658600793647,
+        "output_rms_delta_db": -7.568945473364906,
+        "speech_active_attenuation_db": 6.588358406712173,
+        "speech_active_frames": 389,
+        "vad_f1": 0.8528610354223434,
+        "vad_false_negative_rate": 0.20759493670886076,
+        "vad_false_positive_rate": 0.12682926829268293,
+        "vad_onset_delay_ms": 10.0,
+        "vad_precision": 0.9233038348082596,
+        "vad_recall": 0.7924050632911392,
+        "vad_release_delay_ms": 44.0
+      },
+      "output_contract": {
+        "capture_frames": 600,
+        "frame_indices_contiguous": true,
+        "frame_samples": 160,
+        "input_samples_per_channel": 96000,
+        "metrics_frames": 600,
+        "output_mono_samples": 96000
+      },
+      "passed": true,
+      "scenario": "doubletalk-weak",
+      "source": {
+        "dataset_id": "deterministic-generator",
+        "source_id": "seed-5107-doubletalk-weak"
+      },
+      "split": "validation",
+      "violations": []
+    },
+    {
+      "case_id": "seed-5107-doubletalk-weak-assistant",
+      "dimensions": {
+        "data_role": "regression",
+        "echo_tdoa_samples": 1.4139190265868387,
+        "frames": 600,
+        "mic_spacing_mm": 35.0,
+        "pipeline_profile": "assistant",
+        "seconds": 6,
+        "seed": 5107,
+        "synthetic_engineering_signal": true,
+        "target_tdoa_samples": 0.0
+      },
+      "metrics": {
+        "declared_algorithmic_latency_ms": 10,
+        "frames": 96000,
+        "input_alignment_samples": 0,
+        "input_clip_fraction": 0.0,
+        "input_dc_offset_dbfs": -99.43746669880531,
+        "input_interference_max_abs_corr": 0.7470889694236154,
+        "input_interference_projection_gain_db": 0.006775260637357123,
+        "input_near_reference_identical": false,
+        "input_near_si_sdr_db": -0.9993198712503966,
+        "input_peak_dbfs": -12.868205339728632,
+        "input_render_max_abs_corr": 0.7166224320933556,
+        "input_rms_dbfs": -25.247640534571566,
+        "interference_corr_reduction": 0.7158769001253819,
+        "interference_projection_attenuation_db": 38.42843562795645,
+        "near_projection_gain_db": -5.116552669764301,
+        "near_si_sdr_db": 6.17650665589506,
+        "near_si_sdr_improvement_db": 7.175826527145457,
+        "noise_only_attenuation_db": 26.12957875260607,
+        "noise_only_frames": 197,
+        "output_alignment_samples": 158,
+        "output_clip_fraction": 0.0,
+        "output_dc_offset_dbfs": -96.90311504601503,
+        "output_interference_max_abs_corr": 0.031212069298233492,
+        "output_interference_projection_gain_db": -38.4216603673191,
+        "output_peak_dbfs": -18.306973585366542,
+        "output_render_corr_ratio": 0.03753471794258248,
+        "output_render_corr_reduction": 0.6897242112334041,
+        "output_render_max_abs_corr": 0.02689822085995157,
+        "output_rms_dbfs": -32.97301390854139,
+        "output_rms_delta_db": -7.725373373969823,
+        "speech_active_attenuation_db": 6.751867737034866,
+        "speech_active_frames": 389,
+        "vad_f1": 0.8501362397820165,
+        "vad_false_negative_rate": 0.21012658227848102,
+        "vad_false_positive_rate": 0.13170731707317074,
+        "vad_onset_delay_ms": 10.0,
+        "vad_precision": 0.9203539823008849,
+        "vad_recall": 0.789873417721519,
+        "vad_release_delay_ms": 42.0
+      },
+      "output_contract": {
+        "capture_frames": 600,
+        "frame_indices_contiguous": true,
+        "frame_samples": 160,
+        "input_samples_per_channel": 96000,
+        "metrics_frames": 600,
+        "output_mono_samples": 96000
+      },
+      "passed": true,
+      "scenario": "doubletalk-weak",
+      "source": {
+        "dataset_id": "deterministic-generator",
+        "source_id": "seed-5107-doubletalk-weak"
+      },
+      "split": "validation",
+      "violations": []
+    },
+    {
+      "case_id": "seed-5107-path-change-call",
+      "dimensions": {
+        "data_role": "regression",
+        "echo_tdoa_samples": 1.4139190265868387,
+        "frames": 600,
+        "mic_spacing_mm": 35.0,
+        "pipeline_profile": "call",
+        "seconds": 6,
+        "seed": 5107,
+        "synthetic_engineering_signal": true,
+        "target_tdoa_samples": 0.0
+      },
+      "metrics": {
+        "erle_convergence_ms": 100.0,
+        "erle_db": 18.093021044147655,
+        "erle_recovery_ms": 180.0,
+        "frames": 96000,
+        "input_clip_fraction": 0.0,
+        "input_dc_offset_dbfs": -94.32204409540992,
+        "input_peak_dbfs": -12.115738996113997,
+        "input_render_max_abs_corr": 0.6492908337249689,
+        "input_rms_dbfs": -22.896720196223054,
+        "output_clip_fraction": 0.0,
+        "output_dc_offset_dbfs": -102.17393834471181,
+        "output_peak_dbfs": -13.109429866353944,
+        "output_render_corr_ratio": 0.1870202684235407,
+        "output_render_corr_reduction": 0.5278602877167806,
+        "output_render_max_abs_corr": 0.1214305460081882,
+        "output_rms_dbfs": -41.6997330523207,
+        "output_rms_delta_db": -18.80301285609765
+      },
+      "output_contract": {
+        "capture_frames": 600,
+        "frame_indices_contiguous": true,
+        "frame_samples": 160,
+        "input_samples_per_channel": 96000,
+        "metrics_frames": 600,
+        "output_mono_samples": 96000
+      },
+      "passed": true,
+      "scenario": "path-change",
+      "source": {
+        "dataset_id": "deterministic-generator",
+        "source_id": "seed-5107-path-change"
+      },
+      "split": "validation",
+      "violations": []
+    },
+    {
+      "case_id": "seed-5107-path-change-assistant",
+      "dimensions": {
+        "data_role": "regression",
+        "echo_tdoa_samples": 1.4139190265868387,
+        "frames": 600,
+        "mic_spacing_mm": 35.0,
+        "pipeline_profile": "assistant",
+        "seconds": 6,
+        "seed": 5107,
+        "synthetic_engineering_signal": true,
+        "target_tdoa_samples": 0.0
+      },
+      "metrics": {
+        "erle_convergence_ms": 230.0,
+        "erle_db": 17.774923892627598,
+        "erle_recovery_ms": 180.0,
+        "frames": 96000,
+        "input_clip_fraction": 0.0,
+        "input_dc_offset_dbfs": -94.32204409540992,
+        "input_peak_dbfs": -12.115738996113997,
+        "input_render_max_abs_corr": 0.6492908337249689,
+        "input_rms_dbfs": -22.896720196223054,
+        "output_clip_fraction": 0.0,
+        "output_dc_offset_dbfs": -108.25860953182762,
+        "output_peak_dbfs": -12.708741931858924,
+        "output_render_corr_ratio": 0.19399589171904383,
+        "output_render_corr_reduction": 0.5233310794514922,
+        "output_render_max_abs_corr": 0.12595975427347675,
+        "output_rms_dbfs": -41.339565454448476,
+        "output_rms_delta_db": -18.44284525822542
+      },
+      "output_contract": {
+        "capture_frames": 600,
+        "frame_indices_contiguous": true,
+        "frame_samples": 160,
+        "input_samples_per_channel": 96000,
+        "metrics_frames": 600,
+        "output_mono_samples": 96000
+      },
+      "passed": true,
+      "scenario": "path-change",
+      "source": {
+        "dataset_id": "deterministic-generator",
+        "source_id": "seed-5107-path-change"
+      },
+      "split": "validation",
+      "violations": []
+    },
+    {
+      "case_id": "seed-5107-render-gap-call",
+      "dimensions": {
+        "data_role": "regression",
+        "echo_tdoa_samples": 1.4139190265868387,
+        "frames": 600,
+        "mic_spacing_mm": 35.0,
+        "pipeline_profile": "call",
+        "seconds": 6,
+        "seed": 5107,
+        "synthetic_engineering_signal": true,
+        "target_tdoa_samples": 0.0
+      },
+      "metrics": {
+        "erle_convergence_ms": 70.0,
+        "erle_db": 27.033823287739445,
+        "erle_recovery_ms": 120.0,
+        "frames": 96000,
+        "input_clip_fraction": 0.0,
+        "input_dc_offset_dbfs": -93.32457854102641,
+        "input_peak_dbfs": -18.07878095666123,
+        "input_render_max_abs_corr": 0.9540874646331458,
+        "input_rms_dbfs": -27.78695720794594,
+        "output_clip_fraction": 0.0,
+        "output_dc_offset_dbfs": -107.91123969511203,
+        "output_peak_dbfs": -33.557229934484134,
+        "output_render_corr_ratio": 0.2451939737828061,
+        "output_render_corr_reduction": 0.7201509678433823,
+        "output_render_max_abs_corr": 0.2339364967897635,
+        "output_rms_dbfs": -55.93273834589647,
+        "output_rms_delta_db": -28.14578113795053
+      },
+      "output_contract": {
+        "capture_frames": 600,
+        "frame_indices_contiguous": true,
+        "frame_samples": 160,
+        "input_samples_per_channel": 96000,
+        "metrics_frames": 600,
+        "output_mono_samples": 96000
+      },
+      "passed": true,
+      "scenario": "render-gap",
+      "source": {
+        "dataset_id": "deterministic-generator",
+        "source_id": "seed-5107-render-gap"
+      },
+      "split": "validation",
+      "violations": []
+    },
+    {
+      "case_id": "seed-5107-render-gap-assistant",
+      "dimensions": {
+        "data_role": "regression",
+        "echo_tdoa_samples": 1.4139190265868387,
+        "frames": 600,
+        "mic_spacing_mm": 35.0,
+        "pipeline_profile": "assistant",
+        "seconds": 6,
+        "seed": 5107,
+        "synthetic_engineering_signal": true,
+        "target_tdoa_samples": 0.0
+      },
+      "metrics": {
+        "erle_convergence_ms": 80.0,
+        "erle_db": 24.13057528340616,
+        "erle_recovery_ms": 130.0,
+        "frames": 96000,
+        "input_clip_fraction": 0.0,
+        "input_dc_offset_dbfs": -93.32457854102641,
+        "input_peak_dbfs": -18.07878095666123,
+        "input_render_max_abs_corr": 0.9540874646331458,
+        "input_rms_dbfs": -27.78695720794594,
+        "output_clip_fraction": 0.0,
+        "output_dc_offset_dbfs": -121.05480111822683,
+        "output_peak_dbfs": -30.043825393524028,
+        "output_render_corr_ratio": 0.2658360685418479,
+        "output_render_corr_reduction": 0.700456603990011,
+        "output_render_max_abs_corr": 0.2536308606431348,
+        "output_rms_dbfs": -53.102125063993604,
+        "output_rms_delta_db": -25.315167856047665
+      },
+      "output_contract": {
+        "capture_frames": 600,
+        "frame_indices_contiguous": true,
+        "frame_samples": 160,
+        "input_samples_per_channel": 96000,
+        "metrics_frames": 600,
+        "output_mono_samples": 96000
+      },
+      "passed": true,
+      "scenario": "render-gap",
+      "source": {
+        "dataset_id": "deterministic-generator",
+        "source_id": "seed-5107-render-gap"
+      },
+      "split": "validation",
+      "violations": []
+    },
+    {
+      "case_id": "seed-6107-near-only-call",
+      "dimensions": {
+        "data_role": "regression",
+        "echo_tdoa_samples": 1.4139190265868387,
+        "frames": 600,
+        "mic_spacing_mm": 35.0,
+        "pipeline_profile": "call",
+        "seconds": 6,
+        "seed": 6107,
+        "synthetic_engineering_signal": true,
+        "target_tdoa_samples": 0.0
+      },
+      "metrics": {
+        "declared_algorithmic_latency_ms": 10,
+        "frames": 96000,
+        "input_alignment_samples": 0,
+        "input_clip_fraction": 0.0,
+        "input_dc_offset_dbfs": -91.57851441228722,
+        "input_near_reference_identical": true,
+        "input_near_si_sdr_db": 236.52655087950143,
+        "input_peak_dbfs": -11.259930770733693,
+        "input_rms_dbfs": -23.6051601500886,
+        "near_projection_gain_db": -0.017811562392701062,
+        "near_si_sdr_db": 4.553034794739094,
+        "near_si_sdr_improvement_db": -231.97351608476234,
+        "noise_only_attenuation_db": null,
+        "noise_only_frames": 197,
+        "output_alignment_samples": 158,
+        "output_clip_fraction": 0.0,
+        "output_dc_offset_dbfs": -126.041964488247,
+        "output_peak_dbfs": -1.9998490310736532,
+        "output_rms_dbfs": -22.318003771349645,
+        "output_rms_delta_db": 1.2871563787389562,
+        "speech_active_attenuation_db": -1.008475141718058,
+        "speech_active_frames": 389,
+        "vad_f1": 0.9338521400778209,
+        "vad_false_negative_rate": 0.08860759493670886,
+        "vad_false_positive_rate": 0.07804878048780488,
+        "vad_onset_delay_ms": 10.0,
+        "vad_precision": 0.9574468085106383,
+        "vad_recall": 0.9113924050632911,
+        "vad_release_delay_ms": 80.0
+      },
+      "output_contract": {
+        "capture_frames": 600,
+        "frame_indices_contiguous": true,
+        "frame_samples": 160,
+        "input_samples_per_channel": 96000,
+        "metrics_frames": 600,
+        "output_mono_samples": 96000
+      },
+      "passed": true,
+      "scenario": "near-only",
+      "source": {
+        "dataset_id": "deterministic-generator",
+        "source_id": "seed-6107-near-only"
+      },
+      "split": "validation",
+      "violations": []
+    },
+    {
+      "case_id": "seed-6107-near-only-assistant",
+      "dimensions": {
+        "data_role": "regression",
+        "echo_tdoa_samples": 1.4139190265868387,
+        "frames": 600,
+        "mic_spacing_mm": 35.0,
+        "pipeline_profile": "assistant",
+        "seconds": 6,
+        "seed": 6107,
+        "synthetic_engineering_signal": true,
+        "target_tdoa_samples": 0.0
+      },
+      "metrics": {
+        "declared_algorithmic_latency_ms": 10,
+        "frames": 96000,
+        "input_alignment_samples": 0,
+        "input_clip_fraction": 0.0,
+        "input_dc_offset_dbfs": -91.57851441228722,
+        "input_near_reference_identical": true,
+        "input_near_si_sdr_db": 236.52655087950143,
+        "input_peak_dbfs": -11.259930770733693,
+        "input_rms_dbfs": -23.6051601500886,
+        "near_projection_gain_db": 1.7254751739873284,
+        "near_si_sdr_db": 5.57439733007604,
+        "near_si_sdr_improvement_db": -230.9521535494254,
+        "noise_only_attenuation_db": null,
+        "noise_only_frames": 197,
+        "output_alignment_samples": 158,
+        "output_clip_fraction": 0.0,
+        "output_dc_offset_dbfs": -120.38309344810885,
+        "output_peak_dbfs": -1.9998490310736532,
+        "output_rms_dbfs": -20.817601379000834,
+        "output_rms_delta_db": 2.7875587710877667,
+        "speech_active_attenuation_db": -2.6009166257926597,
+        "speech_active_frames": 389,
+        "vad_f1": 0.9528662420382166,
+        "vad_false_negative_rate": 0.053164556962025315,
+        "vad_false_positive_rate": 0.07804878048780488,
+        "vad_onset_delay_ms": 10.0,
+        "vad_precision": 0.958974358974359,
+        "vad_recall": 0.9468354430379747,
+        "vad_release_delay_ms": 80.0
+      },
+      "output_contract": {
+        "capture_frames": 600,
+        "frame_indices_contiguous": true,
+        "frame_samples": 160,
+        "input_samples_per_channel": 96000,
+        "metrics_frames": 600,
+        "output_mono_samples": 96000
+      },
+      "passed": true,
+      "scenario": "near-only",
+      "source": {
+        "dataset_id": "deterministic-generator",
+        "source_id": "seed-6107-near-only"
+      },
+      "split": "validation",
+      "violations": []
+    },
+    {
+      "case_id": "seed-6107-silent-render-call",
+      "dimensions": {
+        "data_role": "regression",
+        "echo_tdoa_samples": 1.4139190265868387,
+        "frames": 600,
+        "mic_spacing_mm": 35.0,
+        "pipeline_profile": "call",
+        "seconds": 6,
+        "seed": 6107,
+        "synthetic_engineering_signal": true,
+        "target_tdoa_samples": 0.0
+      },
+      "metrics": {
+        "declared_algorithmic_latency_ms": 10,
+        "frames": 96000,
+        "input_alignment_samples": 0,
+        "input_clip_fraction": 0.0,
+        "input_dc_offset_dbfs": -91.57851441228722,
+        "input_near_reference_identical": true,
+        "input_near_si_sdr_db": 236.52655087950143,
+        "input_peak_dbfs": -11.259930770733693,
+        "input_render_max_abs_corr": 0.0,
+        "input_rms_dbfs": -23.6051601500886,
+        "near_projection_gain_db": -0.017811562392701062,
+        "near_si_sdr_db": 4.553034794739094,
+        "near_si_sdr_improvement_db": -231.97351608476234,
+        "noise_only_attenuation_db": null,
+        "noise_only_frames": 197,
+        "output_alignment_samples": 158,
+        "output_clip_fraction": 0.0,
+        "output_dc_offset_dbfs": -126.041964488247,
+        "output_peak_dbfs": -1.9998490310736532,
+        "output_render_corr_ratio": 0.0,
+        "output_render_corr_reduction": 0.0,
+        "output_render_max_abs_corr": 0.0,
+        "output_rms_dbfs": -22.318003771349645,
+        "output_rms_delta_db": 1.2871563787389562,
+        "speech_active_attenuation_db": -1.008475141718058,
+        "speech_active_frames": 389,
+        "vad_f1": 0.9338521400778209,
+        "vad_false_negative_rate": 0.08860759493670886,
+        "vad_false_positive_rate": 0.07804878048780488,
+        "vad_onset_delay_ms": 10.0,
+        "vad_precision": 0.9574468085106383,
+        "vad_recall": 0.9113924050632911,
+        "vad_release_delay_ms": 80.0
+      },
+      "output_contract": {
+        "capture_frames": 600,
+        "frame_indices_contiguous": true,
+        "frame_samples": 160,
+        "input_samples_per_channel": 96000,
+        "metrics_frames": 600,
+        "output_mono_samples": 96000
+      },
+      "passed": true,
+      "scenario": "silent-render",
+      "source": {
+        "dataset_id": "deterministic-generator",
+        "source_id": "seed-6107-silent-render"
+      },
+      "split": "validation",
+      "violations": []
+    },
+    {
+      "case_id": "seed-6107-silent-render-assistant",
+      "dimensions": {
+        "data_role": "regression",
+        "echo_tdoa_samples": 1.4139190265868387,
+        "frames": 600,
+        "mic_spacing_mm": 35.0,
+        "pipeline_profile": "assistant",
+        "seconds": 6,
+        "seed": 6107,
+        "synthetic_engineering_signal": true,
+        "target_tdoa_samples": 0.0
+      },
+      "metrics": {
+        "declared_algorithmic_latency_ms": 10,
+        "frames": 96000,
+        "input_alignment_samples": 0,
+        "input_clip_fraction": 0.0,
+        "input_dc_offset_dbfs": -91.57851441228722,
+        "input_near_reference_identical": true,
+        "input_near_si_sdr_db": 236.52655087950143,
+        "input_peak_dbfs": -11.259930770733693,
+        "input_render_max_abs_corr": 0.0,
+        "input_rms_dbfs": -23.6051601500886,
+        "near_projection_gain_db": 1.7254751739873284,
+        "near_si_sdr_db": 5.57439733007604,
+        "near_si_sdr_improvement_db": -230.9521535494254,
+        "noise_only_attenuation_db": null,
+        "noise_only_frames": 197,
+        "output_alignment_samples": 158,
+        "output_clip_fraction": 0.0,
+        "output_dc_offset_dbfs": -120.38309344810885,
+        "output_peak_dbfs": -1.9998490310736532,
+        "output_render_corr_ratio": 0.0,
+        "output_render_corr_reduction": 0.0,
+        "output_render_max_abs_corr": 0.0,
+        "output_rms_dbfs": -20.817601379000834,
+        "output_rms_delta_db": 2.7875587710877667,
+        "speech_active_attenuation_db": -2.6009166257926597,
+        "speech_active_frames": 389,
+        "vad_f1": 0.9528662420382166,
+        "vad_false_negative_rate": 0.053164556962025315,
+        "vad_false_positive_rate": 0.07804878048780488,
+        "vad_onset_delay_ms": 10.0,
+        "vad_precision": 0.958974358974359,
+        "vad_recall": 0.9468354430379747,
+        "vad_release_delay_ms": 80.0
+      },
+      "output_contract": {
+        "capture_frames": 600,
+        "frame_indices_contiguous": true,
+        "frame_samples": 160,
+        "input_samples_per_channel": 96000,
+        "metrics_frames": 600,
+        "output_mono_samples": 96000
+      },
+      "passed": true,
+      "scenario": "silent-render",
+      "source": {
+        "dataset_id": "deterministic-generator",
+        "source_id": "seed-6107-silent-render"
+      },
+      "split": "validation",
+      "violations": []
+    },
+    {
+      "case_id": "seed-6107-far-only-call",
+      "dimensions": {
+        "data_role": "regression",
+        "echo_tdoa_samples": 1.4139190265868387,
+        "frames": 600,
+        "mic_spacing_mm": 35.0,
+        "pipeline_profile": "call",
+        "seconds": 6,
+        "seed": 6107,
+        "synthetic_engineering_signal": true,
+        "target_tdoa_samples": 0.0
+      },
+      "metrics": {
+        "erle_convergence_ms": 70.0,
+        "erle_db": 36.114419141993636,
+        "frames": 96000,
+        "input_clip_fraction": 0.0,
+        "input_dc_offset_dbfs": -101.68373427136288,
+        "input_peak_dbfs": -16.802599032408516,
+        "input_render_max_abs_corr": 0.9588655175218621,
+        "input_rms_dbfs": -27.786412735635267,
+        "output_clip_fraction": 0.0,
+        "output_dc_offset_dbfs": -122.12866238807977,
+        "output_peak_dbfs": -33.41945518428073,
+        "output_render_corr_ratio": 0.16313353283239956,
+        "output_render_corr_reduction": 0.8024423981373536,
+        "output_render_max_abs_corr": 0.15642311938450848,
+        "output_rms_dbfs": -59.440423542772066,
+        "output_rms_delta_db": -31.6540108071368
+      },
+      "output_contract": {
+        "capture_frames": 600,
+        "frame_indices_contiguous": true,
+        "frame_samples": 160,
+        "input_samples_per_channel": 96000,
+        "metrics_frames": 600,
+        "output_mono_samples": 96000
+      },
+      "passed": true,
+      "scenario": "far-only",
+      "source": {
+        "dataset_id": "deterministic-generator",
+        "source_id": "seed-6107-far-only"
+      },
+      "split": "validation",
+      "violations": []
+    },
+    {
+      "case_id": "seed-6107-far-only-assistant",
+      "dimensions": {
+        "data_role": "regression",
+        "echo_tdoa_samples": 1.4139190265868387,
+        "frames": 600,
+        "mic_spacing_mm": 35.0,
+        "pipeline_profile": "assistant",
+        "seconds": 6,
+        "seed": 6107,
+        "synthetic_engineering_signal": true,
+        "target_tdoa_samples": 0.0
+      },
+      "metrics": {
+        "erle_convergence_ms": 90.0,
+        "erle_db": 35.10458942620121,
+        "frames": 96000,
+        "input_clip_fraction": 0.0,
+        "input_dc_offset_dbfs": -101.68373427136288,
+        "input_peak_dbfs": -16.802599032408516,
+        "input_render_max_abs_corr": 0.9588655175218621,
+        "input_rms_dbfs": -27.786412735635267,
+        "output_clip_fraction": 0.0,
+        "output_dc_offset_dbfs": -120.32270463263329,
+        "output_peak_dbfs": -29.8934889353232,
+        "output_render_corr_ratio": 0.18703429261666907,
+        "output_render_corr_reduction": 0.7795247837376443,
+        "output_render_max_abs_corr": 0.17934073378421778,
+        "output_rms_dbfs": -56.98395536482789,
+        "output_rms_delta_db": -29.197542629192625
+      },
+      "output_contract": {
+        "capture_frames": 600,
+        "frame_indices_contiguous": true,
+        "frame_samples": 160,
+        "input_samples_per_channel": 96000,
+        "metrics_frames": 600,
+        "output_mono_samples": 96000
+      },
+      "passed": true,
+      "scenario": "far-only",
+      "source": {
+        "dataset_id": "deterministic-generator",
+        "source_id": "seed-6107-far-only"
+      },
+      "split": "validation",
+      "violations": []
+    },
+    {
+      "case_id": "seed-6107-doubletalk-nominal-call",
+      "dimensions": {
+        "data_role": "regression",
+        "echo_tdoa_samples": 1.4139190265868387,
+        "frames": 600,
+        "mic_spacing_mm": 35.0,
+        "pipeline_profile": "call",
+        "seconds": 6,
+        "seed": 6107,
+        "synthetic_engineering_signal": true,
+        "target_tdoa_samples": 0.0
+      },
+      "metrics": {
+        "declared_algorithmic_latency_ms": 10,
+        "frames": 96000,
+        "input_alignment_samples": 0,
+        "input_clip_fraction": 0.0,
+        "input_dc_offset_dbfs": -94.83205132588706,
+        "input_interference_max_abs_corr": 0.5260515494709991,
+        "input_interference_projection_gain_db": 0.009585210862869712,
+        "input_near_reference_identical": false,
+        "input_near_si_sdr_db": 4.184915816317047,
+        "input_peak_dbfs": -9.344825358711446,
+        "input_render_max_abs_corr": 0.5046616875643075,
+        "input_rms_dbfs": -22.197951729368683,
+        "interference_corr_reduction": 0.5040995313736893,
+        "interference_projection_attenuation_db": 36.108312962543835,
+        "near_projection_gain_db": -4.624282838535915,
+        "near_si_sdr_db": 5.562026152413875,
+        "near_si_sdr_improvement_db": 1.3771103360968278,
+        "noise_only_attenuation_db": 28.420380269140608,
+        "noise_only_frames": 197,
+        "output_alignment_samples": 158,
+        "output_clip_fraction": 0.0,
+        "output_dc_offset_dbfs": -99.22502216595271,
+        "output_interference_max_abs_corr": 0.021952018097309737,
+        "output_interference_projection_gain_db": -36.09872775168097,
+        "output_peak_dbfs": -12.185531426313386,
+        "output_render_corr_ratio": 0.038197247581349104,
+        "output_render_corr_reduction": 0.48538500013959224,
+        "output_render_max_abs_corr": 0.019276687424715302,
+        "output_rms_dbfs": -27.164672517490803,
+        "output_rms_delta_db": -4.966720788122121,
+        "speech_active_attenuation_db": 4.4797924753203215,
+        "speech_active_frames": 389,
+        "vad_f1": 0.8676277850589779,
+        "vad_false_negative_rate": 0.1620253164556962,
+        "vad_false_positive_rate": 0.18048780487804877,
+        "vad_onset_delay_ms": 10.0,
+        "vad_precision": 0.8994565217391305,
+        "vad_recall": 0.8379746835443038,
+        "vad_release_delay_ms": 64.0
+      },
+      "output_contract": {
+        "capture_frames": 600,
+        "frame_indices_contiguous": true,
+        "frame_samples": 160,
+        "input_samples_per_channel": 96000,
+        "metrics_frames": 600,
+        "output_mono_samples": 96000
+      },
+      "passed": true,
+      "scenario": "doubletalk-nominal",
+      "source": {
+        "dataset_id": "deterministic-generator",
+        "source_id": "seed-6107-doubletalk-nominal"
+      },
+      "split": "validation",
+      "violations": []
+    },
+    {
+      "case_id": "seed-6107-doubletalk-nominal-assistant",
+      "dimensions": {
+        "data_role": "regression",
+        "echo_tdoa_samples": 1.4139190265868387,
+        "frames": 600,
+        "mic_spacing_mm": 35.0,
+        "pipeline_profile": "assistant",
+        "seconds": 6,
+        "seed": 6107,
+        "synthetic_engineering_signal": true,
+        "target_tdoa_samples": 0.0
+      },
+      "metrics": {
+        "declared_algorithmic_latency_ms": 10,
+        "frames": 96000,
+        "input_alignment_samples": 0,
+        "input_clip_fraction": 0.0,
+        "input_dc_offset_dbfs": -94.83205132588706,
+        "input_interference_max_abs_corr": 0.5260515494709991,
+        "input_interference_projection_gain_db": 0.009585210862869712,
+        "input_near_reference_identical": false,
+        "input_near_si_sdr_db": 4.184915816317047,
+        "input_peak_dbfs": -9.344825358711446,
+        "input_render_max_abs_corr": 0.5046616875643075,
+        "input_rms_dbfs": -22.197951729368683,
+        "interference_corr_reduction": 0.502594252914931,
+        "interference_projection_attenuation_db": 35.70256779594202,
+        "near_projection_gain_db": -4.5202706185765935,
+        "near_si_sdr_db": 6.287588889116078,
+        "near_si_sdr_improvement_db": 2.102673072799031,
+        "noise_only_attenuation_db": 25.606716548584853,
+        "noise_only_frames": 197,
+        "output_alignment_samples": 158,
+        "output_clip_fraction": 0.0,
+        "output_dc_offset_dbfs": -111.6696764046309,
+        "output_interference_max_abs_corr": 0.02345729655606808,
+        "output_interference_projection_gain_db": -35.69298258507915,
+        "output_peak_dbfs": -12.435982359475087,
+        "output_render_corr_ratio": 0.04098170843548461,
+        "output_render_corr_reduction": 0.4839797894259874,
+        "output_render_max_abs_corr": 0.02068189813832008,
+        "output_rms_dbfs": -27.20843147572105,
+        "output_rms_delta_db": -5.010479746352367,
+        "speech_active_attenuation_db": 4.527069605606404,
+        "speech_active_frames": 389,
+        "vad_f1": 0.9118387909319899,
+        "vad_false_negative_rate": 0.08354430379746836,
+        "vad_false_positive_rate": 0.18048780487804877,
+        "vad_onset_delay_ms": 10.0,
+        "vad_precision": 0.9072681704260651,
+        "vad_recall": 0.9164556962025316,
+        "vad_release_delay_ms": 68.0
+      },
+      "output_contract": {
+        "capture_frames": 600,
+        "frame_indices_contiguous": true,
+        "frame_samples": 160,
+        "input_samples_per_channel": 96000,
+        "metrics_frames": 600,
+        "output_mono_samples": 96000
+      },
+      "passed": true,
+      "scenario": "doubletalk-nominal",
+      "source": {
+        "dataset_id": "deterministic-generator",
+        "source_id": "seed-6107-doubletalk-nominal"
+      },
+      "split": "validation",
+      "violations": []
+    },
+    {
+      "case_id": "seed-6107-doubletalk-weak-call",
+      "dimensions": {
+        "data_role": "regression",
+        "echo_tdoa_samples": 1.4139190265868387,
+        "frames": 600,
+        "mic_spacing_mm": 35.0,
+        "pipeline_profile": "call",
+        "seconds": 6,
+        "seed": 6107,
+        "synthetic_engineering_signal": true,
+        "target_tdoa_samples": 0.0
+      },
+      "metrics": {
+        "declared_algorithmic_latency_ms": 10,
+        "frames": 96000,
+        "input_alignment_samples": 0,
+        "input_clip_fraction": 0.0,
+        "input_dc_offset_dbfs": -104.06598069772606,
+        "input_interference_max_abs_corr": 0.7471492233740109,
+        "input_interference_projection_gain_db": 0.005269321855543706,
+        "input_near_reference_identical": false,
+        "input_near_si_sdr_db": -1.0047707723702162,
+        "input_peak_dbfs": -12.821681984593383,
+        "input_render_max_abs_corr": 0.716593929564114,
+        "input_rms_dbfs": -25.249507162860482,
+        "interference_corr_reduction": 0.722497138342099,
+        "interference_projection_attenuation_db": 41.5058120669521,
+        "near_projection_gain_db": -5.170777594589417,
+        "near_si_sdr_db": 5.507369189068153,
+        "near_si_sdr_improvement_db": 6.512139961438369,
+        "noise_only_attenuation_db": 28.73057369535646,
+        "noise_only_frames": 197,
+        "output_alignment_samples": 158,
+        "output_clip_fraction": 0.0,
+        "output_dc_offset_dbfs": -105.86659672159973,
+        "output_interference_max_abs_corr": 0.02465208503191183,
+        "output_interference_projection_gain_db": -41.50054274509656,
+        "output_peak_dbfs": -17.625501263942354,
+        "output_render_corr_ratio": 0.030685701487484084,
+        "output_render_corr_reduction": 0.6946047421537664,
+        "output_render_max_abs_corr": 0.0219891874103476,
+        "output_rms_dbfs": -32.89190052801382,
+        "output_rms_delta_db": -7.642393365153339,
+        "speech_active_attenuation_db": 6.668314733775461,
+        "speech_active_frames": 389,
+        "vad_f1": 0.8746736292428198,
+        "vad_false_negative_rate": 0.1518987341772152,
+        "vad_false_positive_rate": 0.17560975609756097,
+        "vad_onset_delay_ms": 10.0,
+        "vad_precision": 0.9029649595687331,
+        "vad_recall": 0.8481012658227848,
+        "vad_release_delay_ms": 44.0
+      },
+      "output_contract": {
+        "capture_frames": 600,
+        "frame_indices_contiguous": true,
+        "frame_samples": 160,
+        "input_samples_per_channel": 96000,
+        "metrics_frames": 600,
+        "output_mono_samples": 96000
+      },
+      "passed": true,
+      "scenario": "doubletalk-weak",
+      "source": {
+        "dataset_id": "deterministic-generator",
+        "source_id": "seed-6107-doubletalk-weak"
+      },
+      "split": "validation",
+      "violations": []
+    },
+    {
+      "case_id": "seed-6107-doubletalk-weak-assistant",
+      "dimensions": {
+        "data_role": "regression",
+        "echo_tdoa_samples": 1.4139190265868387,
+        "frames": 600,
+        "mic_spacing_mm": 35.0,
+        "pipeline_profile": "assistant",
+        "seconds": 6,
+        "seed": 6107,
+        "synthetic_engineering_signal": true,
+        "target_tdoa_samples": 0.0
+      },
+      "metrics": {
+        "declared_algorithmic_latency_ms": 10,
+        "frames": 96000,
+        "input_alignment_samples": 0,
+        "input_clip_fraction": 0.0,
+        "input_dc_offset_dbfs": -104.06598069772606,
+        "input_interference_max_abs_corr": 0.7471492233740109,
+        "input_interference_projection_gain_db": 0.005269321855543706,
+        "input_near_reference_identical": false,
+        "input_near_si_sdr_db": -1.0047707723702162,
+        "input_peak_dbfs": -12.821681984593383,
+        "input_render_max_abs_corr": 0.716593929564114,
+        "input_rms_dbfs": -25.249507162860482,
+        "interference_corr_reduction": 0.7181312061821058,
+        "interference_projection_attenuation_db": 40.05478676050927,
+        "near_projection_gain_db": -5.110920998751181,
+        "near_si_sdr_db": 6.178500240047082,
+        "near_si_sdr_improvement_db": 7.183271012417299,
+        "noise_only_attenuation_db": 25.943220069873973,
+        "noise_only_frames": 197,
+        "output_alignment_samples": 158,
+        "output_clip_fraction": 0.0,
+        "output_dc_offset_dbfs": -99.81647918897431,
+        "output_interference_max_abs_corr": 0.029018017191905086,
+        "output_interference_projection_gain_db": -40.04951743865373,
+        "output_peak_dbfs": -18.17277576081509,
+        "output_render_corr_ratio": 0.036234638227789405,
+        "output_render_corr_reduction": 0.6906284077701283,
+        "output_render_max_abs_corr": 0.025965521793985674,
+        "output_rms_dbfs": -32.970781150371295,
+        "output_rms_delta_db": -7.721273987510813,
+        "speech_active_attenuation_db": 6.755051366071019,
+        "speech_active_frames": 389,
+        "vad_f1": 0.896551724137931,
+        "vad_false_negative_rate": 0.11139240506329114,
+        "vad_false_positive_rate": 0.18048780487804877,
+        "vad_onset_delay_ms": 10.0,
+        "vad_precision": 0.904639175257732,
+        "vad_recall": 0.8886075949367088,
+        "vad_release_delay_ms": 68.0
+      },
+      "output_contract": {
+        "capture_frames": 600,
+        "frame_indices_contiguous": true,
+        "frame_samples": 160,
+        "input_samples_per_channel": 96000,
+        "metrics_frames": 600,
+        "output_mono_samples": 96000
+      },
+      "passed": true,
+      "scenario": "doubletalk-weak",
+      "source": {
+        "dataset_id": "deterministic-generator",
+        "source_id": "seed-6107-doubletalk-weak"
+      },
+      "split": "validation",
+      "violations": []
+    },
+    {
+      "case_id": "seed-6107-path-change-call",
+      "dimensions": {
+        "data_role": "regression",
+        "echo_tdoa_samples": 1.4139190265868387,
+        "frames": 600,
+        "mic_spacing_mm": 35.0,
+        "pipeline_profile": "call",
+        "seconds": 6,
+        "seed": 6107,
+        "synthetic_engineering_signal": true,
+        "target_tdoa_samples": 0.0
+      },
+      "metrics": {
+        "erle_convergence_ms": 120.0,
+        "erle_db": 17.92716721991483,
+        "erle_recovery_ms": 130.0,
+        "frames": 96000,
+        "input_clip_fraction": 0.0,
+        "input_dc_offset_dbfs": -100.02828725775835,
+        "input_peak_dbfs": -12.089044372981503,
+        "input_render_max_abs_corr": 0.6495842082527822,
+        "input_rms_dbfs": -22.89719075944788,
+        "output_clip_fraction": 0.0,
+        "output_dc_offset_dbfs": -113.82404067837163,
+        "output_peak_dbfs": -14.782240506790853,
+        "output_render_corr_ratio": 0.19317217129528133,
+        "output_render_corr_reduction": 0.5241026163054661,
+        "output_render_max_abs_corr": 0.12548159194731615,
+        "output_rms_dbfs": -41.53491015391545,
+        "output_rms_delta_db": -18.637719394467567
+      },
+      "output_contract": {
+        "capture_frames": 600,
+        "frame_indices_contiguous": true,
+        "frame_samples": 160,
+        "input_samples_per_channel": 96000,
+        "metrics_frames": 600,
+        "output_mono_samples": 96000
+      },
+      "passed": true,
+      "scenario": "path-change",
+      "source": {
+        "dataset_id": "deterministic-generator",
+        "source_id": "seed-6107-path-change"
+      },
+      "split": "validation",
+      "violations": []
+    },
+    {
+      "case_id": "seed-6107-path-change-assistant",
+      "dimensions": {
+        "data_role": "regression",
+        "echo_tdoa_samples": 1.4139190265868387,
+        "frames": 600,
+        "mic_spacing_mm": 35.0,
+        "pipeline_profile": "assistant",
+        "seconds": 6,
+        "seed": 6107,
+        "synthetic_engineering_signal": true,
+        "target_tdoa_samples": 0.0
+      },
+      "metrics": {
+        "erle_convergence_ms": 240.0,
+        "erle_db": 17.553274831899653,
+        "erle_recovery_ms": 160.0,
+        "frames": 96000,
+        "input_clip_fraction": 0.0,
+        "input_dc_offset_dbfs": -100.02828725775835,
+        "input_peak_dbfs": -12.089044372981503,
+        "input_render_max_abs_corr": 0.6495842082527822,
+        "input_rms_dbfs": -22.89719075944788,
+        "output_clip_fraction": 0.0,
+        "output_dc_offset_dbfs": -117.31338002586952,
+        "output_peak_dbfs": -14.31667460956438,
+        "output_render_corr_ratio": 0.19996940811631586,
+        "output_render_corr_reduction": 0.5196872386067677,
+        "output_render_max_abs_corr": 0.12989696964601452,
+        "output_rms_dbfs": -41.11991424143298,
+        "output_rms_delta_db": -18.2227234819851
+      },
+      "output_contract": {
+        "capture_frames": 600,
+        "frame_indices_contiguous": true,
+        "frame_samples": 160,
+        "input_samples_per_channel": 96000,
+        "metrics_frames": 600,
+        "output_mono_samples": 96000
+      },
+      "passed": true,
+      "scenario": "path-change",
+      "source": {
+        "dataset_id": "deterministic-generator",
+        "source_id": "seed-6107-path-change"
+      },
+      "split": "validation",
+      "violations": []
+    },
+    {
+      "case_id": "seed-6107-render-gap-call",
+      "dimensions": {
+        "data_role": "regression",
+        "echo_tdoa_samples": 1.4139190265868387,
+        "frames": 600,
+        "mic_spacing_mm": 35.0,
+        "pipeline_profile": "call",
+        "seconds": 6,
+        "seed": 6107,
+        "synthetic_engineering_signal": true,
+        "target_tdoa_samples": 0.0
+      },
+      "metrics": {
+        "erle_convergence_ms": 70.0,
+        "erle_db": 26.885967497625987,
+        "erle_recovery_ms": 120.0,
+        "frames": 96000,
+        "input_clip_fraction": 0.0,
+        "input_dc_offset_dbfs": -101.68373427136288,
+        "input_peak_dbfs": -16.802599032408516,
+        "input_render_max_abs_corr": 0.9539732296950703,
+        "input_rms_dbfs": -27.786412735635267,
+        "output_clip_fraction": 0.0,
+        "output_dc_offset_dbfs": -126.88422357396897,
+        "output_peak_dbfs": -31.782149766681258,
+        "output_render_corr_ratio": 0.2756273903472043,
+        "output_render_corr_reduction": 0.6910320779331239,
+        "output_render_max_abs_corr": 0.2629411517619463,
+        "output_rms_dbfs": -55.7860773621475,
+        "output_rms_delta_db": -27.999664626512235
+      },
+      "output_contract": {
+        "capture_frames": 600,
+        "frame_indices_contiguous": true,
+        "frame_samples": 160,
+        "input_samples_per_channel": 96000,
+        "metrics_frames": 600,
+        "output_mono_samples": 96000
+      },
+      "passed": true,
+      "scenario": "render-gap",
+      "source": {
+        "dataset_id": "deterministic-generator",
+        "source_id": "seed-6107-render-gap"
+      },
+      "split": "validation",
+      "violations": []
+    },
+    {
+      "case_id": "seed-6107-render-gap-assistant",
+      "dimensions": {
+        "data_role": "regression",
+        "echo_tdoa_samples": 1.4139190265868387,
+        "frames": 600,
+        "mic_spacing_mm": 35.0,
+        "pipeline_profile": "assistant",
+        "seconds": 6,
+        "seed": 6107,
+        "synthetic_engineering_signal": true,
+        "target_tdoa_samples": 0.0
+      },
+      "metrics": {
+        "erle_convergence_ms": 90.0,
+        "erle_db": 23.955400233164564,
+        "erle_recovery_ms": 130.0,
+        "frames": 96000,
+        "input_clip_fraction": 0.0,
+        "input_dc_offset_dbfs": -101.68373427136288,
+        "input_peak_dbfs": -16.802599032408516,
+        "input_render_max_abs_corr": 0.9539732296950703,
+        "input_rms_dbfs": -27.786412735635267,
+        "output_clip_fraction": 0.0,
+        "output_dc_offset_dbfs": -107.96426348542641,
+        "output_peak_dbfs": -28.260324585567634,
+        "output_render_corr_ratio": 0.29287855855374617,
+        "output_render_corr_reduction": 0.6745749252831164,
+        "output_render_max_abs_corr": 0.27939830441195396,
+        "output_rms_dbfs": -52.929976384749054,
+        "output_rms_delta_db": -25.143563649113787
+      },
+      "output_contract": {
+        "capture_frames": 600,
+        "frame_indices_contiguous": true,
+        "frame_samples": 160,
+        "input_samples_per_channel": 96000,
+        "metrics_frames": 600,
+        "output_mono_samples": 96000
+      },
+      "passed": true,
+      "scenario": "render-gap",
+      "source": {
+        "dataset_id": "deterministic-generator",
+        "source_id": "seed-6107-render-gap"
+      },
+      "split": "validation",
+      "violations": []
+    },
+    {
+      "case_id": "seed-7107-near-only-call",
+      "dimensions": {
+        "data_role": "regression",
+        "echo_tdoa_samples": 1.4139190265868387,
+        "frames": 600,
+        "mic_spacing_mm": 35.0,
+        "pipeline_profile": "call",
+        "seconds": 6,
+        "seed": 7107,
+        "synthetic_engineering_signal": true,
+        "target_tdoa_samples": 0.0
+      },
+      "metrics": {
+        "declared_algorithmic_latency_ms": 10,
+        "frames": 96000,
+        "input_alignment_samples": 0,
+        "input_clip_fraction": 0.0,
+        "input_dc_offset_dbfs": -87.0896293538975,
+        "input_near_reference_identical": true,
+        "input_near_si_sdr_db": 236.5284513500833,
+        "input_peak_dbfs": -11.605909754870991,
+        "input_rms_dbfs": -23.603259679506785,
+        "near_projection_gain_db": 0.008380459705372222,
+        "near_si_sdr_db": 4.3337336039475005,
+        "near_si_sdr_improvement_db": -232.19471774613578,
+        "noise_only_attenuation_db": null,
+        "noise_only_frames": 197,
+        "output_alignment_samples": 158,
+        "output_clip_fraction": 0.0,
+        "output_dc_offset_dbfs": -102.3313994565165,
+        "output_peak_dbfs": -1.9998490310736532,
+        "output_rms_dbfs": -22.231921798521114,
+        "output_rms_delta_db": 1.3713378809856707,
+        "speech_active_attenuation_db": -0.9693181863237943,
+        "speech_active_frames": 389,
+        "vad_f1": 0.9396662387676509,
+        "vad_false_negative_rate": 0.07341772151898734,
+        "vad_false_positive_rate": 0.08780487804878048,
+        "vad_onset_delay_ms": 10.0,
+        "vad_precision": 0.953125,
+        "vad_recall": 0.9265822784810127,
+        "vad_release_delay_ms": 88.0
+      },
+      "output_contract": {
+        "capture_frames": 600,
+        "frame_indices_contiguous": true,
+        "frame_samples": 160,
+        "input_samples_per_channel": 96000,
+        "metrics_frames": 600,
+        "output_mono_samples": 96000
+      },
+      "passed": true,
+      "scenario": "near-only",
+      "source": {
+        "dataset_id": "deterministic-generator",
+        "source_id": "seed-7107-near-only"
+      },
+      "split": "validation",
+      "violations": []
+    },
+    {
+      "case_id": "seed-7107-near-only-assistant",
+      "dimensions": {
+        "data_role": "regression",
+        "echo_tdoa_samples": 1.4139190265868387,
+        "frames": 600,
+        "mic_spacing_mm": 35.0,
+        "pipeline_profile": "assistant",
+        "seconds": 6,
+        "seed": 7107,
+        "synthetic_engineering_signal": true,
+        "target_tdoa_samples": 0.0
+      },
+      "metrics": {
+        "declared_algorithmic_latency_ms": 10,
+        "frames": 96000,
+        "input_alignment_samples": 0,
+        "input_clip_fraction": 0.0,
+        "input_dc_offset_dbfs": -87.0896293538975,
+        "input_near_reference_identical": true,
+        "input_near_si_sdr_db": 236.5284513500833,
+        "input_peak_dbfs": -11.605909754870991,
+        "input_rms_dbfs": -23.603259679506785,
+        "near_projection_gain_db": 1.750566275594057,
+        "near_si_sdr_db": 5.391289184533912,
+        "near_si_sdr_improvement_db": -231.13716216554937,
+        "noise_only_attenuation_db": null,
+        "noise_only_frames": 197,
+        "output_alignment_samples": 158,
+        "output_clip_fraction": 0.0,
+        "output_dc_offset_dbfs": -97.52528903283336,
+        "output_peak_dbfs": -1.9998490310736532,
+        "output_rms_dbfs": -20.750224228864468,
+        "output_rms_delta_db": 2.8530354506423166,
+        "speech_active_attenuation_db": -2.58319683481016,
+        "speech_active_frames": 389,
+        "vad_f1": 0.9491094147582697,
+        "vad_false_negative_rate": 0.05569620253164557,
+        "vad_false_positive_rate": 0.08780487804878048,
+        "vad_onset_delay_ms": 10.0,
+        "vad_precision": 0.9539641943734015,
+        "vad_recall": 0.9443037974683545,
+        "vad_release_delay_ms": 88.0
+      },
+      "output_contract": {
+        "capture_frames": 600,
+        "frame_indices_contiguous": true,
+        "frame_samples": 160,
+        "input_samples_per_channel": 96000,
+        "metrics_frames": 600,
+        "output_mono_samples": 96000
+      },
+      "passed": true,
+      "scenario": "near-only",
+      "source": {
+        "dataset_id": "deterministic-generator",
+        "source_id": "seed-7107-near-only"
+      },
+      "split": "validation",
+      "violations": []
+    },
+    {
+      "case_id": "seed-7107-silent-render-call",
+      "dimensions": {
+        "data_role": "regression",
+        "echo_tdoa_samples": 1.4139190265868387,
+        "frames": 600,
+        "mic_spacing_mm": 35.0,
+        "pipeline_profile": "call",
+        "seconds": 6,
+        "seed": 7107,
+        "synthetic_engineering_signal": true,
+        "target_tdoa_samples": 0.0
+      },
+      "metrics": {
+        "declared_algorithmic_latency_ms": 10,
+        "frames": 96000,
+        "input_alignment_samples": 0,
+        "input_clip_fraction": 0.0,
+        "input_dc_offset_dbfs": -87.0896293538975,
+        "input_near_reference_identical": true,
+        "input_near_si_sdr_db": 236.5284513500833,
+        "input_peak_dbfs": -11.605909754870991,
+        "input_render_max_abs_corr": 0.0,
+        "input_rms_dbfs": -23.603259679506785,
+        "near_projection_gain_db": 0.008380459705372222,
+        "near_si_sdr_db": 4.3337336039475005,
+        "near_si_sdr_improvement_db": -232.19471774613578,
+        "noise_only_attenuation_db": null,
+        "noise_only_frames": 197,
+        "output_alignment_samples": 158,
+        "output_clip_fraction": 0.0,
+        "output_dc_offset_dbfs": -102.3313994565165,
+        "output_peak_dbfs": -1.9998490310736532,
+        "output_render_corr_ratio": 0.0,
+        "output_render_corr_reduction": 0.0,
+        "output_render_max_abs_corr": 0.0,
+        "output_rms_dbfs": -22.231921798521114,
+        "output_rms_delta_db": 1.3713378809856707,
+        "speech_active_attenuation_db": -0.9693181863237943,
+        "speech_active_frames": 389,
+        "vad_f1": 0.9396662387676509,
+        "vad_false_negative_rate": 0.07341772151898734,
+        "vad_false_positive_rate": 0.08780487804878048,
+        "vad_onset_delay_ms": 10.0,
+        "vad_precision": 0.953125,
+        "vad_recall": 0.9265822784810127,
+        "vad_release_delay_ms": 88.0
+      },
+      "output_contract": {
+        "capture_frames": 600,
+        "frame_indices_contiguous": true,
+        "frame_samples": 160,
+        "input_samples_per_channel": 96000,
+        "metrics_frames": 600,
+        "output_mono_samples": 96000
+      },
+      "passed": true,
+      "scenario": "silent-render",
+      "source": {
+        "dataset_id": "deterministic-generator",
+        "source_id": "seed-7107-silent-render"
+      },
+      "split": "validation",
+      "violations": []
+    },
+    {
+      "case_id": "seed-7107-silent-render-assistant",
+      "dimensions": {
+        "data_role": "regression",
+        "echo_tdoa_samples": 1.4139190265868387,
+        "frames": 600,
+        "mic_spacing_mm": 35.0,
+        "pipeline_profile": "assistant",
+        "seconds": 6,
+        "seed": 7107,
+        "synthetic_engineering_signal": true,
+        "target_tdoa_samples": 0.0
+      },
+      "metrics": {
+        "declared_algorithmic_latency_ms": 10,
+        "frames": 96000,
+        "input_alignment_samples": 0,
+        "input_clip_fraction": 0.0,
+        "input_dc_offset_dbfs": -87.0896293538975,
+        "input_near_reference_identical": true,
+        "input_near_si_sdr_db": 236.5284513500833,
+        "input_peak_dbfs": -11.605909754870991,
+        "input_render_max_abs_corr": 0.0,
+        "input_rms_dbfs": -23.603259679506785,
+        "near_projection_gain_db": 1.750566275594057,
+        "near_si_sdr_db": 5.391289184533912,
+        "near_si_sdr_improvement_db": -231.13716216554937,
+        "noise_only_attenuation_db": null,
+        "noise_only_frames": 197,
+        "output_alignment_samples": 158,
+        "output_clip_fraction": 0.0,
+        "output_dc_offset_dbfs": -97.52528903283336,
+        "output_peak_dbfs": -1.9998490310736532,
+        "output_render_corr_ratio": 0.0,
+        "output_render_corr_reduction": 0.0,
+        "output_render_max_abs_corr": 0.0,
+        "output_rms_dbfs": -20.750224228864468,
+        "output_rms_delta_db": 2.8530354506423166,
+        "speech_active_attenuation_db": -2.58319683481016,
+        "speech_active_frames": 389,
+        "vad_f1": 0.9491094147582697,
+        "vad_false_negative_rate": 0.05569620253164557,
+        "vad_false_positive_rate": 0.08780487804878048,
+        "vad_onset_delay_ms": 10.0,
+        "vad_precision": 0.9539641943734015,
+        "vad_recall": 0.9443037974683545,
+        "vad_release_delay_ms": 88.0
+      },
+      "output_contract": {
+        "capture_frames": 600,
+        "frame_indices_contiguous": true,
+        "frame_samples": 160,
+        "input_samples_per_channel": 96000,
+        "metrics_frames": 600,
+        "output_mono_samples": 96000
+      },
+      "passed": true,
+      "scenario": "silent-render",
+      "source": {
+        "dataset_id": "deterministic-generator",
+        "source_id": "seed-7107-silent-render"
+      },
+      "split": "validation",
+      "violations": []
+    },
+    {
+      "case_id": "seed-7107-far-only-call",
+      "dimensions": {
+        "data_role": "regression",
+        "echo_tdoa_samples": 1.4139190265868387,
+        "frames": 600,
+        "mic_spacing_mm": 35.0,
+        "pipeline_profile": "call",
+        "seconds": 6,
+        "seed": 7107,
+        "synthetic_engineering_signal": true,
+        "target_tdoa_samples": 0.0
+      },
+      "metrics": {
+        "erle_convergence_ms": 70.0,
+        "erle_db": 36.155759664922286,
+        "frames": 96000,
+        "input_clip_fraction": 0.0,
+        "input_dc_offset_dbfs": -93.91332323643306,
+        "input_peak_dbfs": -16.734989999228272,
+        "input_render_max_abs_corr": 0.9589683133558936,
+        "input_rms_dbfs": -27.786628240966785,
+        "output_clip_fraction": 0.0,
+        "output_dc_offset_dbfs": -114.18539921951661,
+        "output_peak_dbfs": -32.995077500872945,
+        "output_render_corr_ratio": 0.14730525567217134,
+        "output_render_corr_reduction": 0.8177072407754928,
+        "output_render_max_abs_corr": 0.14126107258040083,
+        "output_rms_dbfs": -59.87961407695053,
+        "output_rms_delta_db": -32.09298583598375
+      },
+      "output_contract": {
+        "capture_frames": 600,
+        "frame_indices_contiguous": true,
+        "frame_samples": 160,
+        "input_samples_per_channel": 96000,
+        "metrics_frames": 600,
+        "output_mono_samples": 96000
+      },
+      "passed": true,
+      "scenario": "far-only",
+      "source": {
+        "dataset_id": "deterministic-generator",
+        "source_id": "seed-7107-far-only"
+      },
+      "split": "validation",
+      "violations": []
+    },
+    {
+      "case_id": "seed-7107-far-only-assistant",
+      "dimensions": {
+        "data_role": "regression",
+        "echo_tdoa_samples": 1.4139190265868387,
+        "frames": 600,
+        "mic_spacing_mm": 35.0,
+        "pipeline_profile": "assistant",
+        "seconds": 6,
+        "seed": 7107,
+        "synthetic_engineering_signal": true,
+        "target_tdoa_samples": 0.0
+      },
+      "metrics": {
+        "erle_convergence_ms": 90.0,
+        "erle_db": 35.1967360008449,
+        "frames": 96000,
+        "input_clip_fraction": 0.0,
+        "input_dc_offset_dbfs": -93.91332323643306,
+        "input_peak_dbfs": -16.734989999228272,
+        "input_render_max_abs_corr": 0.9589683133558936,
+        "input_rms_dbfs": -27.786628240966785,
+        "output_clip_fraction": 0.0,
+        "output_dc_offset_dbfs": -143.84739597105326,
+        "output_peak_dbfs": -29.473252319759325,
+        "output_render_corr_ratio": 0.17191372523028953,
+        "output_render_corr_reduction": 0.7941084982290744,
+        "output_render_max_abs_corr": 0.16485981512681927,
+        "output_rms_dbfs": -57.3746682635154,
+        "output_rms_delta_db": -29.58804002254862
+      },
+      "output_contract": {
+        "capture_frames": 600,
+        "frame_indices_contiguous": true,
+        "frame_samples": 160,
+        "input_samples_per_channel": 96000,
+        "metrics_frames": 600,
+        "output_mono_samples": 96000
+      },
+      "passed": true,
+      "scenario": "far-only",
+      "source": {
+        "dataset_id": "deterministic-generator",
+        "source_id": "seed-7107-far-only"
+      },
+      "split": "validation",
+      "violations": []
+    },
+    {
+      "case_id": "seed-7107-doubletalk-nominal-call",
+      "dimensions": {
+        "data_role": "regression",
+        "echo_tdoa_samples": 1.4139190265868387,
+        "frames": 600,
+        "mic_spacing_mm": 35.0,
+        "pipeline_profile": "call",
+        "seconds": 6,
+        "seed": 7107,
+        "synthetic_engineering_signal": true,
+        "target_tdoa_samples": 0.0
+      },
+      "metrics": {
+        "declared_algorithmic_latency_ms": 10,
+        "frames": 96000,
+        "input_alignment_samples": 0,
+        "input_clip_fraction": 0.0,
+        "input_dc_offset_dbfs": -83.82733840263117,
+        "input_interference_max_abs_corr": 0.524896995403436,
+        "input_interference_projection_gain_db": -0.015699006565590153,
+        "input_near_reference_identical": false,
+        "input_near_si_sdr_db": 4.177385817304226,
+        "input_peak_dbfs": -9.209846778946229,
+        "input_render_max_abs_corr": 0.5031688491183479,
+        "input_rms_dbfs": -22.203619860945118,
+        "interference_corr_reduction": 0.5095156967515646,
+        "interference_projection_attenuation_db": 40.83823390368593,
+        "near_projection_gain_db": -4.588476382915025,
+        "near_si_sdr_db": 5.62152895061979,
+        "near_si_sdr_improvement_db": 1.4441431333155634,
+        "noise_only_attenuation_db": 28.774361353150297,
+        "noise_only_frames": 197,
+        "output_alignment_samples": 158,
+        "output_clip_fraction": 0.0,
+        "output_dc_offset_dbfs": -95.99624274227496,
+        "output_interference_max_abs_corr": 0.015381298651871421,
+        "output_interference_projection_gain_db": -40.85393291025152,
+        "output_peak_dbfs": -12.329013281398577,
+        "output_render_corr_ratio": 0.026342690474869965,
+        "output_render_corr_reduction": 0.4899140278694267,
+        "output_render_max_abs_corr": 0.013254821248921186,
+        "output_rms_dbfs": -27.139834130559212,
+        "output_rms_delta_db": -4.936214269614094,
+        "speech_active_attenuation_db": 4.462061638723896,
+        "speech_active_frames": 389,
+        "vad_f1": 0.8810457516339869,
+        "vad_false_negative_rate": 0.1468354430379747,
+        "vad_false_positive_rate": 0.16097560975609757,
+        "vad_onset_delay_ms": 10.0,
+        "vad_precision": 0.9108108108108108,
+        "vad_recall": 0.8531645569620253,
+        "vad_release_delay_ms": 44.0
+      },
+      "output_contract": {
+        "capture_frames": 600,
+        "frame_indices_contiguous": true,
+        "frame_samples": 160,
+        "input_samples_per_channel": 96000,
+        "metrics_frames": 600,
+        "output_mono_samples": 96000
+      },
+      "passed": true,
+      "scenario": "doubletalk-nominal",
+      "source": {
+        "dataset_id": "deterministic-generator",
+        "source_id": "seed-7107-doubletalk-nominal"
+      },
+      "split": "validation",
+      "violations": []
+    },
+    {
+      "case_id": "seed-7107-doubletalk-nominal-assistant",
+      "dimensions": {
+        "data_role": "regression",
+        "echo_tdoa_samples": 1.4139190265868387,
+        "frames": 600,
+        "mic_spacing_mm": 35.0,
+        "pipeline_profile": "assistant",
+        "seconds": 6,
+        "seed": 7107,
+        "synthetic_engineering_signal": true,
+        "target_tdoa_samples": 0.0
+      },
+      "metrics": {
+        "declared_algorithmic_latency_ms": 10,
+        "frames": 96000,
+        "input_alignment_samples": 0,
+        "input_clip_fraction": 0.0,
+        "input_dc_offset_dbfs": -83.82733840263117,
+        "input_interference_max_abs_corr": 0.524896995403436,
+        "input_interference_projection_gain_db": -0.015699006565590153,
+        "input_near_reference_identical": false,
+        "input_near_si_sdr_db": 4.177385817304226,
+        "input_peak_dbfs": -9.209846778946229,
+        "input_render_max_abs_corr": 0.5031688491183479,
+        "input_rms_dbfs": -22.203619860945118,
+        "interference_corr_reduction": 0.5071475963173664,
+        "interference_projection_attenuation_db": 40.22787737949631,
+        "near_projection_gain_db": -4.6447695480853,
+        "near_si_sdr_db": 6.215780380882315,
+        "near_si_sdr_improvement_db": 2.0383945635780885,
+        "noise_only_attenuation_db": 25.72716973773737,
+        "noise_only_frames": 197,
+        "output_alignment_samples": 158,
+        "output_clip_fraction": 0.0,
+        "output_dc_offset_dbfs": -92.34055189446926,
+        "output_interference_max_abs_corr": 0.01774939908606964,
+        "output_interference_projection_gain_db": -40.2435763860619,
+        "output_peak_dbfs": -12.67560054575313,
+        "output_render_corr_ratio": 0.030299274286443842,
+        "output_render_corr_reduction": 0.4879231981465168,
+        "output_render_max_abs_corr": 0.0152456509718311,
+        "output_rms_dbfs": -27.317269749796914,
+        "output_rms_delta_db": -5.113649888851796,
+        "speech_active_attenuation_db": 4.643686196133996,
+        "speech_active_frames": 389,
+        "vad_f1": 0.8840206185567011,
+        "vad_false_negative_rate": 0.13164556962025317,
+        "vad_false_positive_rate": 0.18536585365853658,
+        "vad_onset_delay_ms": 10.0,
+        "vad_precision": 0.9002624671916011,
+        "vad_recall": 0.8683544303797468,
+        "vad_release_delay_ms": 68.0
+      },
+      "output_contract": {
+        "capture_frames": 600,
+        "frame_indices_contiguous": true,
+        "frame_samples": 160,
+        "input_samples_per_channel": 96000,
+        "metrics_frames": 600,
+        "output_mono_samples": 96000
+      },
+      "passed": true,
+      "scenario": "doubletalk-nominal",
+      "source": {
+        "dataset_id": "deterministic-generator",
+        "source_id": "seed-7107-doubletalk-nominal"
+      },
+      "split": "validation",
+      "violations": []
+    },
+    {
+      "case_id": "seed-7107-doubletalk-weak-call",
+      "dimensions": {
+        "data_role": "regression",
+        "echo_tdoa_samples": 1.4139190265868387,
+        "frames": 600,
+        "mic_spacing_mm": 35.0,
+        "pipeline_profile": "call",
+        "seconds": 6,
+        "seed": 7107,
+        "synthetic_engineering_signal": true,
+        "target_tdoa_samples": 0.0
+      },
+      "metrics": {
+        "declared_algorithmic_latency_ms": 10,
+        "frames": 96000,
+        "input_alignment_samples": 0,
+        "input_clip_fraction": 0.0,
+        "input_dc_offset_dbfs": -87.03664119994463,
+        "input_interference_max_abs_corr": 0.7465633895606774,
+        "input_interference_projection_gain_db": -0.008620364254525953,
+        "input_near_reference_identical": false,
+        "input_near_si_sdr_db": -1.0201868051144252,
+        "input_peak_dbfs": -12.35425819228581,
+        "input_render_max_abs_corr": 0.7157917853441679,
+        "input_rms_dbfs": -25.256539612950306,
+        "interference_corr_reduction": 0.7270525197220232,
+        "interference_projection_attenuation_db": 44.359572248509224,
+        "near_projection_gain_db": -5.072677549489287,
+        "near_si_sdr_db": 5.631359301865143,
+        "near_si_sdr_improvement_db": 6.651546106979568,
+        "noise_only_attenuation_db": 29.126359594517922,
+        "noise_only_frames": 197,
+        "output_alignment_samples": 158,
+        "output_clip_fraction": 0.0,
+        "output_dc_offset_dbfs": -110.79270638956402,
+        "output_interference_max_abs_corr": 0.019510869838654115,
+        "output_interference_projection_gain_db": -44.36819261276375,
+        "output_peak_dbfs": -17.92087048145881,
+        "output_render_corr_ratio": 0.02446189141330288,
+        "output_render_corr_reduction": 0.6982821644165447,
+        "output_render_max_abs_corr": 0.01750962092762324,
+        "output_rms_dbfs": -32.81883165613974,
+        "output_rms_delta_db": -7.562292043189437,
+        "speech_active_attenuation_db": 6.605019655118239,
+        "speech_active_frames": 389,
+        "vad_f1": 0.8787061994609164,
+        "vad_false_negative_rate": 0.17468354430379746,
+        "vad_false_positive_rate": 0.1024390243902439,
+        "vad_onset_delay_ms": 10.0,
+        "vad_precision": 0.9394812680115274,
+        "vad_recall": 0.8253164556962025,
+        "vad_release_delay_ms": 8.0
+      },
+      "output_contract": {
+        "capture_frames": 600,
+        "frame_indices_contiguous": true,
+        "frame_samples": 160,
+        "input_samples_per_channel": 96000,
+        "metrics_frames": 600,
+        "output_mono_samples": 96000
+      },
+      "passed": true,
+      "scenario": "doubletalk-weak",
+      "source": {
+        "dataset_id": "deterministic-generator",
+        "source_id": "seed-7107-doubletalk-weak"
+      },
+      "split": "validation",
+      "violations": []
+    },
+    {
+      "case_id": "seed-7107-doubletalk-weak-assistant",
+      "dimensions": {
+        "data_role": "regression",
+        "echo_tdoa_samples": 1.4139190265868387,
+        "frames": 600,
+        "mic_spacing_mm": 35.0,
+        "pipeline_profile": "assistant",
+        "seconds": 6,
+        "seed": 7107,
+        "synthetic_engineering_signal": true,
+        "target_tdoa_samples": 0.0
+      },
+      "metrics": {
+        "declared_algorithmic_latency_ms": 10,
+        "frames": 96000,
+        "input_alignment_samples": 0,
+        "input_clip_fraction": 0.0,
+        "input_dc_offset_dbfs": -87.03664119994463,
+        "input_interference_max_abs_corr": 0.7465633895606774,
+        "input_interference_projection_gain_db": -0.008620364254525953,
+        "input_near_reference_identical": false,
+        "input_near_si_sdr_db": -1.0201868051144252,
+        "input_peak_dbfs": -12.35425819228581,
+        "input_render_max_abs_corr": 0.7157917853441679,
+        "input_rms_dbfs": -25.256539612950306,
+        "interference_corr_reduction": 0.7227064201701536,
+        "interference_projection_attenuation_db": 42.55416883507306,
+        "near_projection_gain_db": -5.159521238442771,
+        "near_si_sdr_db": 6.1710976325215015,
+        "near_si_sdr_improvement_db": 7.191284437635927,
+        "noise_only_attenuation_db": 26.266311499644246,
+        "noise_only_frames": 197,
+        "output_alignment_samples": 158,
+        "output_clip_fraction": 0.0,
+        "output_dc_offset_dbfs": -95.89719994852715,
+        "output_interference_max_abs_corr": 0.023856969390523734,
+        "output_interference_projection_gain_db": -42.56278919932758,
+        "output_peak_dbfs": -18.12778770059262,
+        "output_render_corr_ratio": 0.030254705048122162,
+        "output_render_corr_reduction": 0.6941357160027113,
+        "output_render_max_abs_corr": 0.02165606934145657,
+        "output_rms_dbfs": -33.01604964884212,
+        "output_rms_delta_db": -7.7595100358918145,
+        "speech_active_attenuation_db": 6.810192860125293,
+        "speech_active_frames": 389,
+        "vad_f1": 0.8865710560625816,
+        "vad_false_negative_rate": 0.13924050632911392,
+        "vad_false_positive_rate": 0.15609756097560976,
+        "vad_onset_delay_ms": 10.0,
+        "vad_precision": 0.9139784946236559,
+        "vad_recall": 0.8607594936708861,
+        "vad_release_delay_ms": 68.0
+      },
+      "output_contract": {
+        "capture_frames": 600,
+        "frame_indices_contiguous": true,
+        "frame_samples": 160,
+        "input_samples_per_channel": 96000,
+        "metrics_frames": 600,
+        "output_mono_samples": 96000
+      },
+      "passed": true,
+      "scenario": "doubletalk-weak",
+      "source": {
+        "dataset_id": "deterministic-generator",
+        "source_id": "seed-7107-doubletalk-weak"
+      },
+      "split": "validation",
+      "violations": []
+    },
+    {
+      "case_id": "seed-7107-path-change-call",
+      "dimensions": {
+        "data_role": "regression",
+        "echo_tdoa_samples": 1.4139190265868387,
+        "frames": 600,
+        "mic_spacing_mm": 35.0,
+        "pipeline_profile": "call",
+        "seconds": 6,
+        "seed": 7107,
+        "synthetic_engineering_signal": true,
+        "target_tdoa_samples": 0.0
+      },
+      "metrics": {
+        "erle_convergence_ms": 120.0,
+        "erle_db": 18.017474712767672,
+        "erle_recovery_ms": 210.0,
+        "frames": 96000,
+        "input_clip_fraction": 0.0,
+        "input_dc_offset_dbfs": -94.89886207485219,
+        "input_peak_dbfs": -12.142515913670778,
+        "input_render_max_abs_corr": 0.6493658628989006,
+        "input_rms_dbfs": -22.89671274116465,
+        "output_clip_fraction": 0.0,
+        "output_dc_offset_dbfs": -103.11228905239659,
+        "output_peak_dbfs": -13.168382733741879,
+        "output_render_corr_ratio": 0.19099795373366432,
+        "output_render_corr_reduction": 0.5253383118607154,
+        "output_render_max_abs_corr": 0.12402755103818523,
+        "output_rms_dbfs": -41.630147072408114,
+        "output_rms_delta_db": -18.733434331243465
+      },
+      "output_contract": {
+        "capture_frames": 600,
+        "frame_indices_contiguous": true,
+        "frame_samples": 160,
+        "input_samples_per_channel": 96000,
+        "metrics_frames": 600,
+        "output_mono_samples": 96000
+      },
+      "passed": true,
+      "scenario": "path-change",
+      "source": {
+        "dataset_id": "deterministic-generator",
+        "source_id": "seed-7107-path-change"
+      },
+      "split": "validation",
+      "violations": []
+    },
+    {
+      "case_id": "seed-7107-path-change-assistant",
+      "dimensions": {
+        "data_role": "regression",
+        "echo_tdoa_samples": 1.4139190265868387,
+        "frames": 600,
+        "mic_spacing_mm": 35.0,
+        "pipeline_profile": "assistant",
+        "seconds": 6,
+        "seed": 7107,
+        "synthetic_engineering_signal": true,
+        "target_tdoa_samples": 0.0
+      },
+      "metrics": {
+        "erle_convergence_ms": 240.0,
+        "erle_db": 17.71675634740061,
+        "erle_recovery_ms": 200.0,
+        "frames": 96000,
+        "input_clip_fraction": 0.0,
+        "input_dc_offset_dbfs": -94.89886207485219,
+        "input_peak_dbfs": -12.142515913670778,
+        "input_render_max_abs_corr": 0.6493658628989006,
+        "input_rms_dbfs": -22.89671274116465,
+        "output_clip_fraction": 0.0,
+        "output_dc_offset_dbfs": -111.33340642443791,
+        "output_peak_dbfs": -12.825162605612936,
+        "output_render_corr_ratio": 0.1965899669782243,
+        "output_render_corr_reduction": 0.5217070493548196,
+        "output_render_max_abs_corr": 0.127658813544081,
+        "output_rms_dbfs": -41.28873600267923,
+        "output_rms_delta_db": -18.39202326151458
+      },
+      "output_contract": {
+        "capture_frames": 600,
+        "frame_indices_contiguous": true,
+        "frame_samples": 160,
+        "input_samples_per_channel": 96000,
+        "metrics_frames": 600,
+        "output_mono_samples": 96000
+      },
+      "passed": true,
+      "scenario": "path-change",
+      "source": {
+        "dataset_id": "deterministic-generator",
+        "source_id": "seed-7107-path-change"
+      },
+      "split": "validation",
+      "violations": []
+    },
+    {
+      "case_id": "seed-7107-render-gap-call",
+      "dimensions": {
+        "data_role": "regression",
+        "echo_tdoa_samples": 1.4139190265868387,
+        "frames": 600,
+        "mic_spacing_mm": 35.0,
+        "pipeline_profile": "call",
+        "seconds": 6,
+        "seed": 7107,
+        "synthetic_engineering_signal": true,
+        "target_tdoa_samples": 0.0
+      },
+      "metrics": {
+        "erle_convergence_ms": 70.0,
+        "erle_db": 27.2812484090471,
+        "erle_recovery_ms": 110.0,
+        "frames": 96000,
+        "input_clip_fraction": 0.0,
+        "input_dc_offset_dbfs": -93.91332323643306,
+        "input_peak_dbfs": -16.734989999228272,
+        "input_render_max_abs_corr": 0.9541017261822704,
+        "input_rms_dbfs": -27.786628240966785,
+        "output_clip_fraction": 0.0,
+        "output_dc_offset_dbfs": -108.61375056314048,
+        "output_peak_dbfs": -32.345469029240824,
+        "output_render_corr_ratio": 0.24689661831460719,
+        "output_render_corr_reduction": 0.7185372364597385,
+        "output_render_max_abs_corr": 0.23556448972253188,
+        "output_rms_dbfs": -56.22890569931822,
+        "output_rms_delta_db": -28.442277458351434
+      },
+      "output_contract": {
+        "capture_frames": 600,
+        "frame_indices_contiguous": true,
+        "frame_samples": 160,
+        "input_samples_per_channel": 96000,
+        "metrics_frames": 600,
+        "output_mono_samples": 96000
+      },
+      "passed": true,
+      "scenario": "render-gap",
+      "source": {
+        "dataset_id": "deterministic-generator",
+        "source_id": "seed-7107-render-gap"
+      },
+      "split": "validation",
+      "violations": []
+    },
+    {
+      "case_id": "seed-7107-render-gap-assistant",
+      "dimensions": {
+        "data_role": "regression",
+        "echo_tdoa_samples": 1.4139190265868387,
+        "frames": 600,
+        "mic_spacing_mm": 35.0,
+        "pipeline_profile": "assistant",
+        "seconds": 6,
+        "seed": 7107,
+        "synthetic_engineering_signal": true,
+        "target_tdoa_samples": 0.0
+      },
+      "metrics": {
+        "erle_convergence_ms": 90.0,
+        "erle_db": 24.31817214366579,
+        "erle_recovery_ms": 120.0,
+        "frames": 96000,
+        "input_clip_fraction": 0.0,
+        "input_dc_offset_dbfs": -93.91332323643306,
+        "input_peak_dbfs": -16.734989999228272,
+        "input_render_max_abs_corr": 0.9541017261822704,
+        "input_rms_dbfs": -27.786628240966785,
+        "output_clip_fraction": 0.0,
+        "output_dc_offset_dbfs": -137.55170226051058,
+        "output_peak_dbfs": -28.819984320102535,
+        "output_render_corr_ratio": 0.26615516896084224,
+        "output_render_corr_reduction": 0.700162620044397,
+        "output_render_max_abs_corr": 0.2539391061378734,
+        "output_rms_dbfs": -53.31785485765369,
+        "output_rms_delta_db": -25.531226616686908
+      },
+      "output_contract": {
+        "capture_frames": 600,
+        "frame_indices_contiguous": true,
+        "frame_samples": 160,
+        "input_samples_per_channel": 96000,
+        "metrics_frames": 600,
+        "output_mono_samples": 96000
+      },
+      "passed": true,
+      "scenario": "render-gap",
+      "source": {
+        "dataset_id": "deterministic-generator",
+        "source_id": "seed-7107-render-gap"
+      },
+      "split": "validation",
+      "violations": []
+    }
+  ],
+  "cli_only_baseline_comparisons": [],
+  "data_role": "regression",
+  "default_tuning_readback": {
+    "assistant": {
+      "aec_mu": 0.180000007,
+      "agc_target_dbfs": -18,
+      "limiter_dbfs": -2,
+      "ns_floor": 0.180000007
+    },
+    "call": {
+      "aec_mu": 0.219999999,
+      "agc_target_dbfs": -20,
+      "limiter_dbfs": -2,
+      "ns_floor": 0.119999997
+    }
+  },
+  "elapsed_seconds": 44.124180865997914,
+  "experiment": "FE-C2-DUAL-USE-PROFILE-REPLAY-V1",
+  "failures": [],
+  "not_run": [
+    "KWS_FAR_FRR",
+    "ASR",
+    "subjective_intercom_quality",
+    "real_dualmic_room",
+    "physical_SSC305"
+  ],
+  "profile_summaries": {
+    "assistant": {
+      "cases": 21,
+      "dimension_values": {},
+      "max_output_clip_fraction": 0.0,
+      "max_output_dc_offset_dbfs": -90.27756928072273,
+      "max_vad_false_positive_rate": 0.18536585365853658,
+      "median_erle_db": 24.13057528340616,
+      "median_near_si_sdr_improvement_db": 4.639249799972244,
+      "median_output_render_corr_reduction": 0.5989530023673042,
+      "min_vad_f1": 0.8501362397820165,
+      "min_vad_recall": 0.789873417721519,
+      "near_si_sdr_improvement_applicable_cases": 6,
+      "p10_interference_corr_reduction": 0.5018058895677779,
+      "p10_interference_projection_attenuation_db": 34.807840885736255,
+      "p10_near_projection_gain_db": -5.115989502662989,
+      "p10_near_si_sdr_improvement_db": 2.057483755428016,
+      "p10_noise_only_attenuation_db": 25.487830340239636,
+      "p10_output_render_corr_reduction": 0.0,
+      "p90_erle_convergence_ms": 240.0,
+      "p90_erle_recovery_ms": 190.0,
+      "p90_vad_onset_delay_ms": 10.0,
+      "p90_vad_release_delay_ms": 87.2,
+      "pass_rate": 1.0,
+      "passed_cases": 21,
+      "scenario_metrics": {
+        "doubletalk-nominal": {
+          "cases": 3,
+          "metrics": {
+            "near_si_sdr_improvement_db": {
+              "count": 3,
+              "max": 2.102673072799031,
+              "median": 2.0765729472779437,
+              "min": 2.0383945635780885,
+              "p10": 2.0460302403180597
+            },
+            "noise_only_attenuation_db": {
+              "count": 3,
+              "max": 25.72716973773737,
+              "median": 25.606716548584853,
+              "min": 25.36894413189442,
+              "p10": 25.416498615232506
+            },
+            "output_clip_fraction": {
+              "count": 3,
+              "max": 0.0,
+              "median": 0.0,
+              "min": 0.0,
+              "p10": 0.0
+            },
+            "output_dc_offset_dbfs": {
+              "count": 3,
+              "max": -90.27756928072273,
+              "median": -92.34055189446926,
+              "min": -111.6696764046309,
+              "p10": -107.80385150259859
+            },
+            "output_render_corr_reduction": {
+              "count": 3,
+              "max": 0.4879231981465168,
+              "median": 0.484079886570544,
+              "min": 0.4839797894259874,
+              "p10": 0.48399980885489874
+            },
+            "speech_active_attenuation_db": {
+              "count": 3,
+              "max": 4.643686196133996,
+              "median": 4.564974653940085,
+              "min": 4.527069605606404,
+              "p10": 4.53465061527314
+            },
+            "vad_f1": {
+              "count": 3,
+              "max": 0.9118387909319899,
+              "median": 0.8840206185567011,
+              "min": 0.8697986577181208,
+              "p10": 0.872643049885837
+            },
+            "vad_false_positive_rate": {
+              "count": 3,
+              "max": 0.18536585365853658,
+              "median": 0.18048780487804877,
+              "min": 0.12682926829268293,
+              "p10": 0.1375609756097561
+            },
+            "vad_recall": {
+              "count": 3,
+              "max": 0.9164556962025316,
+              "median": 0.8683544303797468,
+              "min": 0.8202531645569621,
+              "p10": 0.8298734177215191
+            }
+          },
+          "passed_cases": 3
+        },
+        "doubletalk-weak": {
+          "cases": 3,
+          "metrics": {
+            "near_si_sdr_improvement_db": {
+              "count": 3,
+              "max": 7.191284437635927,
+              "median": 7.183271012417299,
+              "min": 7.175826527145457,
+              "p10": 7.177315424199826
+            },
+            "noise_only_attenuation_db": {
+              "count": 3,
+              "max": 26.266311499644246,
+              "median": 26.12957875260607,
+              "min": 25.943220069873973,
+              "p10": 25.980491806420392
+            },
+            "output_clip_fraction": {
+              "count": 3,
+              "max": 0.0,
+              "median": 0.0,
+              "min": 0.0,
+              "p10": 0.0
+            },
+            "output_dc_offset_dbfs": {
+              "count": 3,
+              "max": -95.89719994852715,
+              "median": -96.90311504601503,
+              "min": -99.81647918897431,
+              "p10": -99.23380636038246
+            },
+            "output_render_corr_reduction": {
+              "count": 3,
+              "max": 0.6941357160027113,
+              "median": 0.6906284077701283,
+              "min": 0.6897242112334041,
+              "p10": 0.689905050540749
+            },
+            "speech_active_attenuation_db": {
+              "count": 3,
+              "max": 6.810192860125293,
+              "median": 6.755051366071019,
+              "min": 6.751867737034866,
+              "p10": 6.752504462842097
+            },
+            "vad_f1": {
+              "count": 3,
+              "max": 0.896551724137931,
+              "median": 0.8865710560625816,
+              "min": 0.8501362397820165,
+              "p10": 0.8574232030381296
+            },
+            "vad_false_positive_rate": {
+              "count": 3,
+              "max": 0.18048780487804877,
+              "median": 0.15609756097560976,
+              "min": 0.13170731707317074,
+              "p10": 0.13658536585365855
+            },
+            "vad_recall": {
+              "count": 3,
+              "max": 0.8886075949367088,
+              "median": 0.8607594936708861,
+              "min": 0.789873417721519,
+              "p10": 0.8040506329113924
+            }
+          },
+          "passed_cases": 3
+        },
+        "far-only": {
+          "cases": 3,
+          "metrics": {
+            "erle_db": {
+              "count": 3,
+              "max": 35.1967360008449,
+              "median": 35.14425859846094,
+              "min": 35.10458942620121,
+              "p10": 35.112523260653155
+            },
+            "output_clip_fraction": {
+              "count": 3,
+              "max": 0.0,
+              "median": 0.0,
+              "min": 0.0,
+              "p10": 0.0
+            },
+            "output_dc_offset_dbfs": {
+              "count": 3,
+              "max": -120.32270463263329,
+              "median": -135.83714911430735,
+              "min": -143.84739597105326,
+              "p10": -142.24534659970408
+            },
+            "output_render_corr_reduction": {
+              "count": 3,
+              "max": 0.7944145952291175,
+              "median": 0.7941084982290744,
+              "min": 0.7795247837376443,
+              "p10": 0.7824415266359304
+            }
+          },
+          "passed_cases": 3
+        },
+        "near-only": {
+          "cases": 3,
+          "metrics": {
+            "output_clip_fraction": {
+              "count": 3,
+              "max": 0.0,
+              "median": 0.0,
+              "min": 0.0,
+              "p10": 0.0
+            },
+            "output_dc_offset_dbfs": {
+              "count": 3,
+              "max": -94.04266189302446,
+              "median": -97.52528903283336,
+              "min": -120.38309344810885,
+              "p10": -115.81153256505375
+            },
+            "speech_active_attenuation_db": {
+              "count": 3,
+              "max": -2.58319683481016,
+              "median": -2.5980839934148294,
+              "min": -2.6009166257926597,
+              "p10": -2.600350099317094
+            },
+            "vad_f1": {
+              "count": 3,
+              "max": 0.9528662420382166,
+              "median": 0.9491094147582697,
+              "min": 0.9328063241106719,
+              "p10": 0.9360669422401915
+            },
+            "vad_false_positive_rate": {
+              "count": 3,
+              "max": 0.08780487804878048,
+              "median": 0.07804878048780488,
+              "min": 0.04878048780487805,
+              "p10": 0.05463414634146342
+            },
+            "vad_recall": {
+              "count": 3,
+              "max": 0.9468354430379747,
+              "median": 0.9443037974683545,
+              "min": 0.8962025316455696,
+              "p10": 0.9058227848101266
+            }
+          },
+          "passed_cases": 3
+        },
+        "path-change": {
+          "cases": 3,
+          "metrics": {
+            "erle_db": {
+              "count": 3,
+              "max": 17.774923892627598,
+              "median": 17.71675634740061,
+              "min": 17.553274831899653,
+              "p10": 17.585971134999845
+            },
+            "output_clip_fraction": {
+              "count": 3,
+              "max": 0.0,
+              "median": 0.0,
+              "min": 0.0,
+              "p10": 0.0
+            },
+            "output_dc_offset_dbfs": {
+              "count": 3,
+              "max": -108.25860953182762,
+              "median": -111.33340642443791,
+              "min": -117.31338002586952,
+              "p10": -116.1173853055832
+            },
+            "output_render_corr_reduction": {
+              "count": 3,
+              "max": 0.5233310794514922,
+              "median": 0.5217070493548196,
+              "min": 0.5196872386067677,
+              "p10": 0.5200912007563782
+            }
+          },
+          "passed_cases": 3
+        },
+        "render-gap": {
+          "cases": 3,
+          "metrics": {
+            "erle_db": {
+              "count": 3,
+              "max": 24.31817214366579,
+              "median": 24.13057528340616,
+              "min": 23.955400233164564,
+              "p10": 23.990435243212882
+            },
+            "output_clip_fraction": {
+              "count": 3,
+              "max": 0.0,
+              "median": 0.0,
+              "min": 0.0,
+              "p10": 0.0
+            },
+            "output_dc_offset_dbfs": {
+              "count": 3,
+              "max": -107.96426348542641,
+              "median": -121.05480111822683,
+              "min": -137.55170226051058,
+              "p10": -134.25232203205383
+            },
+            "output_render_corr_reduction": {
+              "count": 3,
+              "max": 0.700456603990011,
+              "median": 0.700162620044397,
+              "min": 0.6745749252831164,
+              "p10": 0.6796924642353726
+            }
+          },
+          "passed_cases": 3
+        },
+        "silent-render": {
+          "cases": 3,
+          "metrics": {
+            "output_clip_fraction": {
+              "count": 3,
+              "max": 0.0,
+              "median": 0.0,
+              "min": 0.0,
+              "p10": 0.0
+            },
+            "output_dc_offset_dbfs": {
+              "count": 3,
+              "max": -94.04266189302446,
+              "median": -97.52528903283336,
+              "min": -120.38309344810885,
+              "p10": -115.81153256505375
+            },
+            "output_render_corr_reduction": {
+              "count": 3,
+              "max": 0.0,
+              "median": 0.0,
+              "min": 0.0,
+              "p10": 0.0
+            },
+            "speech_active_attenuation_db": {
+              "count": 3,
+              "max": -2.58319683481016,
+              "median": -2.5980839934148294,
+              "min": -2.6009166257926597,
+              "p10": -2.600350099317094
+            },
+            "vad_f1": {
+              "count": 3,
+              "max": 0.9528662420382166,
+              "median": 0.9491094147582697,
+              "min": 0.9328063241106719,
+              "p10": 0.9360669422401915
+            },
+            "vad_false_positive_rate": {
+              "count": 3,
+              "max": 0.08780487804878048,
+              "median": 0.07804878048780488,
+              "min": 0.04878048780487805,
+              "p10": 0.05463414634146342
+            },
+            "vad_recall": {
+              "count": 3,
+              "max": 0.9468354430379747,
+              "median": 0.9443037974683545,
+              "min": 0.8962025316455696,
+              "p10": 0.9058227848101266
+            }
+          },
+          "passed_cases": 3
+        }
+      },
+      "scenario_pass_rate": {
+        "doubletalk-nominal": 1.0,
+        "doubletalk-weak": 1.0,
+        "far-only": 1.0,
+        "near-only": 1.0,
+        "path-change": 1.0,
+        "render-gap": 1.0,
+        "silent-render": 1.0
+      }
+    },
+    "call": {
+      "cases": 21,
+      "dimension_values": {},
+      "max_output_clip_fraction": 0.0,
+      "max_output_dc_offset_dbfs": -93.82268467342966,
+      "max_vad_false_positive_rate": 0.18048780487804877,
+      "median_erle_db": 27.033823287739445,
+      "median_near_si_sdr_improvement_db": 3.9781415473769663,
+      "median_output_render_corr_reduction": 0.6094461828249522,
+      "min_vad_f1": 0.8528610354223434,
+      "min_vad_recall": 0.7924050632911392,
+      "near_si_sdr_improvement_applicable_cases": 6,
+      "p10_interference_corr_reduction": 0.5034236416481308,
+      "p10_interference_projection_attenuation_db": 34.95620475678756,
+      "p10_near_projection_gain_db": -5.079626657410206,
+      "p10_near_si_sdr_improvement_db": 1.383834340405543,
+      "p10_noise_only_attenuation_db": 28.32630384674495,
+      "p10_output_render_corr_reduction": 0.0,
+      "p90_erle_convergence_ms": 120.0,
+      "p90_erle_recovery_ms": 195.0,
+      "p90_vad_onset_delay_ms": 10.0,
+      "p90_vad_release_delay_ms": 87.2,
+      "pass_rate": 1.0,
+      "passed_cases": 21,
+      "scenario_metrics": {
+        "doubletalk-nominal": {
+          "cases": 3,
+          "metrics": {
+            "near_si_sdr_improvement_db": {
+              "count": 3,
+              "max": 1.4441431333155634,
+              "median": 1.3905583447142584,
+              "min": 1.3771103360968278,
+              "p10": 1.379799937820314
+            },
+            "noise_only_attenuation_db": {
+              "count": 3,
+              "max": 28.774361353150297,
+              "median": 28.420380269140608,
+              "min": 28.232227424349286,
+              "p10": 28.269857993307554
+            },
+            "output_clip_fraction": {
+              "count": 3,
+              "max": 0.0,
+              "median": 0.0,
+              "min": 0.0,
+              "p10": 0.0
+            },
+            "output_dc_offset_dbfs": {
+              "count": 3,
+              "max": -95.99624274227496,
+              "median": -99.22502216595271,
+              "min": -104.39124543509246,
+              "p10": -103.35800078126451
+            },
+            "output_render_corr_reduction": {
+              "count": 3,
+              "max": 0.4899140278694267,
+              "median": 0.4858970208202459,
+              "min": 0.48538500013959224,
+              "p10": 0.485487404275723
+            },
+            "speech_active_attenuation_db": {
+              "count": 3,
+              "max": 4.4797924753203215,
+              "median": 4.462061638723896,
+              "min": 4.4215639891348975,
+              "p10": 4.429663519052697
+            },
+            "vad_f1": {
+              "count": 3,
+              "max": 0.8810457516339869,
+              "median": 0.8706199460916443,
+              "min": 0.8676277850589779,
+              "p10": 0.8682262172655112
+            },
+            "vad_false_positive_rate": {
+              "count": 3,
+              "max": 0.18048780487804877,
+              "median": 0.16097560975609757,
+              "min": 0.11707317073170732,
+              "p10": 0.12585365853658537
+            },
+            "vad_recall": {
+              "count": 3,
+              "max": 0.8531645569620253,
+              "median": 0.8379746835443038,
+              "min": 0.8177215189873418,
+              "p10": 0.8217721518987342
+            }
+          },
+          "passed_cases": 3
+        },
+        "doubletalk-weak": {
+          "cases": 3,
+          "metrics": {
+            "near_si_sdr_improvement_db": {
+              "count": 3,
+              "max": 6.651546106979568,
+              "median": 6.589625358398438,
+              "min": 6.512139961438369,
+              "p10": 6.527637040830384
+            },
+            "noise_only_attenuation_db": {
+              "count": 3,
+              "max": 29.132274674482392,
+              "median": 29.126359594517922,
+              "min": 28.73057369535646,
+              "p10": 28.80973087518875
+            },
+            "output_clip_fraction": {
+              "count": 3,
+              "max": 0.0,
+              "median": 0.0,
+              "min": 0.0,
+              "p10": 0.0
+            },
+            "output_dc_offset_dbfs": {
+              "count": 3,
+              "max": -105.86659672159973,
+              "median": -110.79270638956402,
+              "min": -110.80227761878382,
+              "p10": -110.80036337293987
+            },
+            "output_render_corr_reduction": {
+              "count": 3,
+              "max": 0.6982821644165447,
+              "median": 0.6946047421537664,
+              "min": 0.6939111508778814,
+              "p10": 0.6940498691330584
+            },
+            "speech_active_attenuation_db": {
+              "count": 3,
+              "max": 6.668314733775461,
+              "median": 6.605019655118239,
+              "min": 6.588358406712173,
+              "p10": 6.591690656393387
+            },
+            "vad_f1": {
+              "count": 3,
+              "max": 0.8787061994609164,
+              "median": 0.8746736292428198,
+              "min": 0.8528610354223434,
+              "p10": 0.8572235541864387
+            },
+            "vad_false_positive_rate": {
+              "count": 3,
+              "max": 0.17560975609756097,
+              "median": 0.12682926829268293,
+              "min": 0.1024390243902439,
+              "p10": 0.10731707317073172
+            },
+            "vad_recall": {
+              "count": 3,
+              "max": 0.8481012658227848,
+              "median": 0.8253164556962025,
+              "min": 0.7924050632911392,
+              "p10": 0.798987341772152
+            }
+          },
+          "passed_cases": 3
+        },
+        "far-only": {
+          "cases": 3,
+          "metrics": {
+            "erle_db": {
+              "count": 3,
+              "max": 36.155759664922286,
+              "median": 36.15494800321685,
+              "min": 36.114419141993636,
+              "p10": 36.122524914238284
+            },
+            "output_clip_fraction": {
+              "count": 3,
+              "max": 0.0,
+              "median": 0.0,
+              "min": 0.0,
+              "p10": 0.0
+            },
+            "output_dc_offset_dbfs": {
+              "count": 3,
+              "max": -114.18539921951661,
+              "median": -115.09207085569089,
+              "min": -122.12866238807977,
+              "p10": -120.721344081602
+            },
+            "output_render_corr_reduction": {
+              "count": 3,
+              "max": 0.8185060301191556,
+              "median": 0.8177072407754928,
+              "min": 0.8024423981373536,
+              "p10": 0.8054953666649816
+            }
+          },
+          "passed_cases": 3
+        },
+        "near-only": {
+          "cases": 3,
+          "metrics": {
+            "output_clip_fraction": {
+              "count": 3,
+              "max": 0.0,
+              "median": 0.0,
+              "min": 0.0,
+              "p10": 0.0
+            },
+            "output_dc_offset_dbfs": {
+              "count": 3,
+              "max": -93.82268467342966,
+              "median": -102.3313994565165,
+              "min": -126.041964488247,
+              "p10": -121.29985148190092
+            },
+            "speech_active_attenuation_db": {
+              "count": 3,
+              "max": -0.9693181863237943,
+              "median": -1.0062508725314427,
+              "min": -1.008475141718058,
+              "p10": -1.008030287880735
+            },
+            "vad_f1": {
+              "count": 3,
+              "max": 0.9396662387676509,
+              "median": 0.9338521400778209,
+              "min": 0.9328063241106719,
+              "p10": 0.9330154873041018
+            },
+            "vad_false_positive_rate": {
+              "count": 3,
+              "max": 0.08780487804878048,
+              "median": 0.07804878048780488,
+              "min": 0.04878048780487805,
+              "p10": 0.05463414634146342
+            },
+            "vad_recall": {
+              "count": 3,
+              "max": 0.9265822784810127,
+              "median": 0.9113924050632911,
+              "min": 0.8962025316455696,
+              "p10": 0.8992405063291139
+            }
+          },
+          "passed_cases": 3
+        },
+        "path-change": {
+          "cases": 3,
+          "metrics": {
+            "erle_db": {
+              "count": 3,
+              "max": 18.093021044147655,
+              "median": 18.017474712767672,
+              "min": 17.92716721991483,
+              "p10": 17.9452287184854
+            },
+            "output_clip_fraction": {
+              "count": 3,
+              "max": 0.0,
+              "median": 0.0,
+              "min": 0.0,
+              "p10": 0.0
+            },
+            "output_dc_offset_dbfs": {
+              "count": 3,
+              "max": -102.17393834471181,
+              "median": -103.11228905239659,
+              "min": -113.82404067837163,
+              "p10": -111.68169035317663
+            },
+            "output_render_corr_reduction": {
+              "count": 3,
+              "max": 0.5278602877167806,
+              "median": 0.5253383118607154,
+              "min": 0.5241026163054661,
+              "p10": 0.524349755416516
+            }
+          },
+          "passed_cases": 3
+        },
+        "render-gap": {
+          "cases": 3,
+          "metrics": {
+            "erle_db": {
+              "count": 3,
+              "max": 27.2812484090471,
+              "median": 27.033823287739445,
+              "min": 26.885967497625987,
+              "p10": 26.91553865564868
+            },
+            "output_clip_fraction": {
+              "count": 3,
+              "max": 0.0,
+              "median": 0.0,
+              "min": 0.0,
+              "p10": 0.0
+            },
+            "output_dc_offset_dbfs": {
+              "count": 3,
+              "max": -107.91123969511203,
+              "median": -108.61375056314048,
+              "min": -126.88422357396897,
+              "p10": -123.23012897180328
+            },
+            "output_render_corr_reduction": {
+              "count": 3,
+              "max": 0.7201509678433823,
+              "median": 0.7185372364597385,
+              "min": 0.6910320779331239,
+              "p10": 0.696533109638447
+            }
+          },
+          "passed_cases": 3
+        },
+        "silent-render": {
+          "cases": 3,
+          "metrics": {
+            "output_clip_fraction": {
+              "count": 3,
+              "max": 0.0,
+              "median": 0.0,
+              "min": 0.0,
+              "p10": 0.0
+            },
+            "output_dc_offset_dbfs": {
+              "count": 3,
+              "max": -93.82268467342966,
+              "median": -102.3313994565165,
+              "min": -126.041964488247,
+              "p10": -121.29985148190092
+            },
+            "output_render_corr_reduction": {
+              "count": 3,
+              "max": 0.0,
+              "median": 0.0,
+              "min": 0.0,
+              "p10": 0.0
+            },
+            "speech_active_attenuation_db": {
+              "count": 3,
+              "max": -0.9693181863237943,
+              "median": -1.0062508725314427,
+              "min": -1.008475141718058,
+              "p10": -1.008030287880735
+            },
+            "vad_f1": {
+              "count": 3,
+              "max": 0.9396662387676509,
+              "median": 0.9338521400778209,
+              "min": 0.9328063241106719,
+              "p10": 0.9330154873041018
+            },
+            "vad_false_positive_rate": {
+              "count": 3,
+              "max": 0.08780487804878048,
+              "median": 0.07804878048780488,
+              "min": 0.04878048780487805,
+              "p10": 0.05463414634146342
+            },
+            "vad_recall": {
+              "count": 3,
+              "max": 0.9265822784810127,
+              "median": 0.9113924050632911,
+              "min": 0.8962025316455696,
+              "p10": 0.8992405063291139
+            }
+          },
+          "passed_cases": 3
+        }
+      },
+      "scenario_pass_rate": {
+        "doubletalk-nominal": 1.0,
+        "doubletalk-weak": 1.0,
+        "far-only": 1.0,
+        "near-only": 1.0,
+        "path-change": 1.0,
+        "render-gap": 1.0,
+        "silent-render": 1.0
+      }
+    }
+  },
+  "promotion_allowed": false,
+  "quality_decision": "DESCRIPTIVE_ONLY",
+  "result": "REGRESSION_REPLAY_COMPLETE",
+  "schema_version": 1,
+  "source_revision": "50068fa285bfa7d209e635c63e86e36bec1bd3e1"
+}

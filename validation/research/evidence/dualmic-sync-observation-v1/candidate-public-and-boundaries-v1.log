@@ -1,0 +1,35 @@
+elapsed rate=16000 100ms_delta1=31.25 1s_delta1=3.125 1s_delta4=12.5 PASS
+continuous rate=16000 update=1 ppm=0x1.f4p+4 delay=128 slips=0
+continuous rate=16000 update=2 ppm=0x1.e78p+5 delay=128 slips=0
+continuous rate=16000 update=3 ppm=0x1.649p+6 delay=128 slips=0
+continuous rate=16000 update=4 ppm=0x1.cfbcp+6 delay=128 slips=0
+continuous rate=16000 update=5 ppm=0x1.1ac618p+7 delay=128 slips=0
+continuous rate=16000 update=6 ppm=0x1.4b2296p+7 delay=129 slips=1
+continuous rate=16000 update=7 ppm=0x1.79140ep+7 delay=130 slips=1
+continuous rate=16000 update=8 ppm=0x1.a4b974p+7 delay=130 slips=0
+continuous rate=16000 update=9 ppm=0x1.ce302ep+7 delay=131 slips=1
+continuous rate=16000 update=10 ppm=0x1.f5942cp+7 delay=132 slips=1
+reset/timestamp rate=16000 PASS
+atomic rejection rate=16000 PASS
+disable/reenable rate=16000 PASS
+route anchor rate=16000 PASS
+internal counter boundaries rate=16000 PASS
+elapsed rate=8000 100ms_delta1=62.5 1s_delta1=6.25 1s_delta4=25 PASS
+continuous rate=8000 update=1 ppm=0x1.f4p+5 delay=64 slips=0
+continuous rate=8000 update=2 ppm=-0x1.9p+1 delay=64 slips=0
+continuous rate=8000 update=3 ppm=0x1.dc4p+5 delay=64 slips=0
+continuous rate=8000 update=4 ppm=-0x1.7c8p+2 delay=64 slips=0
+continuous rate=8000 update=5 ppm=0x1.c6d0ccp+5 delay=64 slips=0
+continuous rate=8000 update=6 ppm=-0x1.0fb36p+3 delay=64 slips=0
+continuous rate=8000 update=7 ppm=0x1.b3789ap+5 delay=64 slips=0
+continuous rate=8000 update=8 ppm=-0x1.5935b8p+3 delay=64 slips=0
+continuous rate=8000 update=9 ppm=0x1.a2033ep+5 delay=64 slips=0
+continuous rate=8000 update=10 ppm=-0x1.9b8d48p+3 delay=64 slips=0
+reset/timestamp rate=8000 PASS
+atomic rejection rate=8000 PASS
+disable/reenable rate=8000 PASS
+route anchor rate=8000 PASS
+internal counter boundaries rate=8000 PASS
+rate basis 8000->16000 PASS (not acoustic rate-switch qualification)
+rate basis 16000->8000 PASS (not acoustic rate-switch qualification)
+SYNC_OBSERVATION_TIME_PASS state_bytes=32840

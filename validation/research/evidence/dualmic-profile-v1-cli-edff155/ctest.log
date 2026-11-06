@@ -1,0 +1,50 @@
+Internal ctest changing into directory: /workspace/scratch/b74ab3415ba4/dual-use-build-candidate
+Test project /workspace/scratch/b74ab3415ba4/dual-use-build-candidate
+      Start  8: ap_process_pcm_clean-capture_tests
+ 1/22 Test  #8: ap_process_pcm_clean-capture_tests .............   Passed    0.00 sec
+      Start  9: ap_process_pcm_clean-duplex_tests
+ 2/22 Test  #9: ap_process_pcm_clean-duplex_tests ..............   Passed    0.00 sec
+      Start 10: ap_process_pcm_render-short_tests
+ 3/22 Test #10: ap_process_pcm_render-short_tests ..............   Passed    0.00 sec
+      Start 11: ap_process_pcm_render-empty_tests
+ 4/22 Test #11: ap_process_pcm_render-empty_tests ..............   Passed    0.00 sec
+      Start 12: ap_process_pcm_capture-empty_tests
+ 5/22 Test #12: ap_process_pcm_capture-empty_tests .............   Passed    0.00 sec
+      Start 13: ap_process_pcm_capture-odd_tests
+ 6/22 Test #13: ap_process_pcm_capture-odd_tests ...............   Passed    0.00 sec
+      Start 14: ap_process_pcm_capture-partial-frame_tests
+ 7/22 Test #14: ap_process_pcm_capture-partial-frame_tests .....   Passed    0.00 sec
+      Start 15: ap_process_pcm_capture-partial-channel_tests
+ 8/22 Test #15: ap_process_pcm_capture-partial-channel_tests ...   Passed    0.00 sec
+      Start 16: ap_process_pcm_render-odd_tests
+ 9/22 Test #16: ap_process_pcm_render-odd_tests ................   Passed    0.00 sec
+      Start 17: ap_process_pcm_capture-read-error_tests
+10/22 Test #17: ap_process_pcm_capture-read-error_tests ........   Passed    0.00 sec
+      Start 18: ap_process_pcm_render-read-error_tests
+11/22 Test #18: ap_process_pcm_render-read-error_tests .........   Passed    0.00 sec
+      Start 19: ap_process_pcm_output-write-error_tests
+12/22 Test #19: ap_process_pcm_output-write-error_tests ........   Passed    0.00 sec
+      Start 20: ap_process_pcm_output-close-error_tests
+13/22 Test #20: ap_process_pcm_output-close-error_tests ........   Passed    0.00 sec
+      Start 21: ap_process_pcm_metrics-write-error_tests
+14/22 Test #21: ap_process_pcm_metrics-write-error_tests .......   Passed    0.00 sec
+      Start 22: ap_process_pcm_metrics-close-error_tests
+15/22 Test #22: ap_process_pcm_metrics-close-error_tests .......   Passed    0.00 sec
+      Start 23: ap_process_pcm_input-close-error_tests
+16/22 Test #23: ap_process_pcm_input-close-error_tests .........   Passed    0.00 sec
+      Start 24: ap_process_pcm_capture-open-error_tests
+17/22 Test #24: ap_process_pcm_capture-open-error_tests ........   Passed    0.00 sec
+      Start 25: ap_process_pcm_render-open-error_tests
+18/22 Test #25: ap_process_pcm_render-open-error_tests .........   Passed    0.00 sec
+      Start 26: ap_process_pcm_output-open-error_tests
+19/22 Test #26: ap_process_pcm_output-open-error_tests .........   Passed    0.00 sec
+      Start 27: ap_process_pcm_metrics-open-error_tests
+20/22 Test #27: ap_process_pcm_metrics-open-error_tests ........   Passed    0.00 sec
+      Start 28: ap_process_pcm_invalid-tuning_tests
+21/22 Test #28: ap_process_pcm_invalid-tuning_tests ............   Passed    0.00 sec
+      Start 29: ap_process_pcm_profile_tests
+22/22 Test #29: ap_process_pcm_profile_tests ...................   Passed    0.06 sec
+
+100% tests passed, 0 tests failed out of 22
+
+Total Test time (real) =   0.09 sec

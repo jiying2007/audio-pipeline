@@ -1,0 +1,14 @@
+Internal ctest changing into directory: /workspace/scratch/b74ab3415ba4/audio-dualmic-health-build/base-low-host
+Test project /workspace/scratch/b74ab3415ba4/audio-dualmic-health-build/base-low-host
+    Start 5: ap_contract_tests
+1/1 Test #5: ap_contract_tests ................Subprocess aborted***Exception:   0.00 sec
+ap_contract_tests: /workspace/scratch/b74ab3415ba4/audio-dualmic-base/tests/test_contracts.c:328: test_timestamp_and_route_contract: Assertion `ap_pipeline_observe_io_timestamps(p, 1100000000ull, 1000000000ull) == AP_OK' failed.
+
+
+0% tests passed, 1 tests failed out of 1
+
+Total Test time (real) =   0.01 sec
+
+The following tests FAILED:
+	  5 - ap_contract_tests (Subprocess aborted)
+Errors while running CTest

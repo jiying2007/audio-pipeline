@@ -8,9 +8,9 @@ These values are hosted build-contract measurements. They are **not ABI constant
 
 | Build envelope | Bytes |
 | --- | ---: |
-| FULL | 78,192 |
-| LOW | 47,024 |
-| TINY | 25,408 |
+| FULL | 78,224 |
+| LOW | 47,056 |
+| TINY | 25,432 |
 | RAW / resampler-only | 1,064 |
 
 ## Linux runtime state

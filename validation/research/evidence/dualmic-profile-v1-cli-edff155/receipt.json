@@ -1,0 +1,22 @@
+{
+  "baseline_revision": "438fe09d79ff768306c00573849517bcd91cbc6e",
+  "evidence_scope": "host engineering regression and descriptive synthetic quality only",
+  "experiment": "FE-C2-DUAL-USE-PROFILE-REPLAY-V1",
+  "full_artifact_manifest_verified": {
+    "files": 464,
+    "result": "PASS",
+    "size_bytes": 44364069
+  },
+  "full_local_evidence_root": "/workspace/scratch/b74ab3415ba4/dualmic-profile-evidence/cli-only-edff155/replay",
+  "full_pcm_in_git": false,
+  "schema_version": 1,
+  "source_revision": "edff155ce9541dc42feb1660e6b7a30d8e9fa63a",
+  "source_tree_compact_files": {
+    "artifact-manifest.json": "4988ccfd4d4e6e7406d05403c6ef39e671bfcf11c1b9ca62132760b4965714e0",
+    "build.log": "29c405dfccb5062db3f92f54dfa4600843116839915e6bcf9463dbf4ca7f2e41",
+    "configure.log": "a56d3f72bf5cbccdfbec1a207830883c91839659b823ba51c357241fd6b66e46",
+    "ctest.log": "070c30624797b82e8b5d2039b996522532a68edb45c943e0423e944fbc153264",
+    "python-tests.log": "120cb44aa82dda9a79f008993c6de0969e32640fd6753721418735a181f8c1c0",
+    "report.json": "b1b0336797900ebcb3477606498f603074e96cad6f628d52da1364a4ba6d6f04"
+  }
+}

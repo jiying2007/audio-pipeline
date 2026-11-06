@@ -1,0 +1,12 @@
+CMake Error at CMakeLists.txt:2 (project):
+  Running
+
+   '/workspace/scratch/b74ab3415ba4/build-tools/ninja/data/bin/ninja' '--version'
+
+  failed with:
+
+   no such file or directory
+
+
+CMake Error: CMAKE_C_COMPILER not set, after EnableLanguage
+-- Configuring incomplete, errors occurred!

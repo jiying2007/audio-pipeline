@@ -1,0 +1,2 @@
+no such file or directory
+CMake Error: Generator: execution of make failed. Make command was: /workspace/scratch/b74ab3415ba4/build-tools/ninja/data/bin/ninja -j 4 ap_sync_observation_time_tests ap_module_tests ap_contract_tests ap_drift_res_tests ap_pipeline_control_tests ap_runtime_tests ap_state_size

@@ -4,6 +4,14 @@
       "bytes": 3944,
       "sha256": "f49ffc813b7f243ebe3b524098f8428dbedcc932f2fa2e35f28c81461921e290"
     },
+    "TRANSPORT.md": {
+      "bytes": 2171,
+      "sha256": "a8ab257cd7b1406ac5353fe1e14d1c88466182cdbd616b0d9c94307f2a34cb83"
+    },
+    "decode_original.py": {
+      "bytes": 3185,
+      "sha256": "194c4ce8bd3e84a8726f76e6ac5ff8aac1e3106e4eabece4fc14a9032d7ec67e"
+    },
     "measured-source-manifest.json": {
       "bytes": 16702,
       "sha256": "ffa548e17e894c805e8d73a2d62caaafc0e307bca3d9f1ebd8dd2654e6152c9f"
@@ -36,9 +44,9 @@
       "bytes": 1446,
       "sha256": "589f1c61ed0387eb3281fae06a754961d15d16b3db71ccc50edb7a54d82007d2"
     },
-    "original/base-size.log": {
-      "bytes": 1071,
-      "sha256": "23bf6be4614b4eaab9f306f0d9744c34a7c9752b28dc7f395eb40dfdae01ee73"
+    "original/base-size.log.b64": {
+      "bytes": 1429,
+      "sha256": "4df5f6af0e6c87639be7e161df9488c37570d37cfb5f762820185df4d03600ca"
     },
     "original/candidate-ap_pipeline_state_size.log": {
       "bytes": 7660,
@@ -64,9 +72,9 @@
       "bytes": 1451,
       "sha256": "ba15a48c169a52e0f22973496e5815fd4ee2cc66e3e95a865c1bb374f0b8a2a2"
     },
-    "original/candidate-size.log": {
-      "bytes": 1076,
-      "sha256": "5b33a19907f39a0d193f8d9a35038c3705c484e4fb612e879b272fee706adfb3"
+    "original/candidate-size.log.b64": {
+      "bytes": 1437,
+      "sha256": "f055233c133b89d6b89bee948e8fbeb0d1cc1762ee51a4cb034ba35be3a78d8b"
     },
     "original/evidence-manifest.json": {
       "bytes": 2639,
@@ -95,8 +103,20 @@
     "source-continuation.bundle.b64": {
       "bytes": 525105,
       "sha256": "4c2f965246f0232a49921ba9bfe91ff0e08337fd81a91551152554e035e8a12b"
+    },
+    "transport-receipt.json": {
+      "bytes": 1455,
+      "sha256": "55f3accd500781ded4da716e301249beeda85fe2f95dd6a9fa8303f441585272"
+    },
+    "transport/original-artifact-manifest.json": {
+      "bytes": 3690,
+      "sha256": "b7b8b07c7206c01904dcae1c2c6e7f89959d2d611dd6acc67670a11e98adbdf6"
+    },
+    "transport/verify-42185156796-impact.log.b64": {
+      "bytes": 66301,
+      "sha256": "60238d9b4de0abad24f1eb0090ff1379233e87c9483bd1af07ddb43292fd2684"
     }
   },
   "schema_version": 1,
-  "scope": "evidence preservation only, total original budget failed"
+  "scope": "physical lossless-transport members; original scientific snapshot defined by transport/original-artifact-manifest.json; original total budget failed"
 }

@@ -1,0 +1,248 @@
+{
+  "schema_version": 1,
+  "observed_at": "2026-11-06T13:51:41.779Z",
+  "reviewer": "independent acoustic agent",
+  "repository": "jiying2007/audio-pipeline",
+  "pull_request": 920,
+  "result": "NOT_QUALIFIED",
+  "reason": "Required applicable frontend-speech job failed its linked build/source identity guard before the 56-case matrix; required summary is not successful.",
+  "expected": {
+    "head": "1cf071600bfc396aa478ec31e3109fcb4504836d",
+    "base": "2d93c9ddf74355c7e5ac0bc18c9a6fe3ae53cbd3",
+    "tree": "2805a3b7363c53f53b662b70e838a7b887ba749b"
+  },
+  "live": {
+    "head": "1cf071600bfc396aa478ec31e3109fcb4504836d",
+    "base": "2d93c9ddf74355c7e5ac0bc18c9a6fe3ae53cbd3",
+    "head_tree": "2805a3b7363c53f53b662b70e838a7b887ba749b",
+    "draft": false,
+    "state": "open",
+    "mergeable": true,
+    "mergeable_state": "blocked"
+  },
+  "tested_checkout": {
+    "merge_sha": "74765cfb8678f41e11166dd37316a66a2f131977",
+    "tree": "2805a3b7363c53f53b662b70e838a7b887ba749b",
+    "parents": [
+      "2d93c9ddf74355c7e5ac0bc18c9a6fe3ae53cbd3",
+      "1cf071600bfc396aa478ec31e3109fcb4504836d"
+    ],
+    "head_tree_equal": true,
+    "evidence_logs": [
+      "initial-impact-log.json",
+      "validation-smoke-127925628901.log",
+      "failed-speech-127925628653.log"
+    ],
+    "note": "GITHUB_SHA is the synthetic merge in the default PR checkout; workflow/check-run head_sha remains the PR head. Explicit head checkout exceptions include hosted-real-smoke and lab-user-mode."
+  },
+  "ruleset": {
+    "id": 21804005,
+    "enforcement": "active",
+    "bypass_actors": [],
+    "current_user_can_bypass": "never",
+    "required_status_checks": {
+      "strict_required_status_checks_policy": true,
+      "do_not_enforce_on_create": false,
+      "required_status_checks": [
+        {
+          "context": "summary",
+          "integration_id": 15368
+        }
+      ]
+    },
+    "pull_request": {
+      "required_approving_review_count": 0,
+      "dismiss_stale_reviews_on_push": false,
+      "required_reviewers": [],
+      "require_code_owner_review": false,
+      "require_last_push_approval": false,
+      "required_review_thread_resolution": true,
+      "require_extra_approval_for_unattributed_changes": true,
+      "allowed_merge_methods": [
+        "squash"
+      ]
+    }
+  },
+  "applicable_workflows": [
+    {
+      "id": 42227371302,
+      "name": "Verify",
+      "head": "1cf071600bfc396aa478ec31e3109fcb4504836d",
+      "attempt": 1,
+      "status": "in_progress",
+      "conclusion": null
+    },
+    {
+      "id": 42227371303,
+      "name": "I015 Evidence Finalization Contract",
+      "attempt": 1,
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 42227371431,
+      "name": "DSP Stage Validation",
+      "attempt": 1,
+      "status": "completed",
+      "conclusion": "success"
+    }
+  ],
+  "current_head_checks": {
+    "total": 71,
+    "counts": {
+      "success": 66,
+      "in_progress": 3,
+      "failure": 1,
+      "skipped": 1
+    },
+    "required_summary": [],
+    "required_summary_qualified": false,
+    "additional_codeql_app57789": [
+      {
+        "id": 127926226893,
+        "name": "CodeQL",
+        "status": "completed",
+        "conclusion": "success"
+      }
+    ]
+  },
+  "verify_jobs": {
+    "total": 68,
+    "counts": {
+      "success": 63,
+      "skipped": 1,
+      "in_progress": 3,
+      "failure": 1
+    },
+    "failed": [
+      {
+        "id": 127925628653,
+        "name": "quality / frontend-speech",
+        "attempt": 1,
+        "failed_steps": [
+          {
+            "name": "Replay the admitted recordings through both complete dual-mic profiles",
+            "status": "completed",
+            "conclusion": "failure",
+            "number": 5,
+            "started_at": "2026-11-06T13:48:10Z",
+            "completed_at": "2026-11-06T13:49:16Z"
+          }
+        ]
+      }
+    ],
+    "pending": [
+      {
+        "id": 127925628608,
+        "name": "quality / frontend-reference",
+        "status": "in_progress"
+      },
+      {
+        "id": 127925628656,
+        "name": "quality / frontend-s3-t3s2b1ba2",
+        "status": "in_progress"
+      },
+      {
+        "id": 127925628819,
+        "name": "quality / frontend-spatial-effects",
+        "status": "in_progress"
+      }
+    ],
+    "note": "Snapshot retained without waiting for unrelated pending jobs; this head is already disqualified."
+  },
+  "blocking_artifact": {
+    "id": 13506623029,
+    "node_id": "MDg6QXJ0aWZhY3QxMzUwNjYyMzAyOQ==",
+    "name": "dualmic-recorded-speech-42227371302-attempt-1",
+    "size_in_bytes": 15296596,
+    "url": "https://api.github.com/repos/jiying2007/audio-pipeline/actions/artifacts/13506623029",
+    "archive_download_url": "https://api.github.com/repos/jiying2007/audio-pipeline/actions/artifacts/13506623029/zip",
+    "expired": false,
+    "digest": "sha256:d63cc5c2a32ae7f784e47d304be9d2495d86003a7065d414c0403de73b6b14fb",
+    "created_at": "2026-11-06T13:49:19Z",
+    "updated_at": "2026-11-06T13:49:19Z",
+    "expires_at": "2026-12-06T13:49:17Z",
+    "workflow_run": {
+      "id": 42227371302,
+      "repository_id": 1347377137,
+      "head_repository_id": 1347377137,
+      "head_branch": "research/dualmic-nondevice-v2",
+      "head_sha": "1cf071600bfc396aa478ec31e3109fcb4504836d"
+    }
+  },
+  "blocking_raw_error": {
+    "path": "/workspace/scratch/b74ab3415ba4/nondevice-v2-ci-pr920/A/result/execution.log",
+    "message": "ValueError: linked build source does not match --source-revision",
+    "phase_elapsed_seconds": 3.9741710270000112,
+    "status": "FAIL",
+    "returncode": 1,
+    "quality_result": "56-case recorded speech matrix did not execute"
+  },
+  "historical_pr_runs": [
+    {
+      "id": 42222417053,
+      "head": "7f486b6f48e2ecfe33310f589c2dd98595d324a5",
+      "attempt": 1,
+      "conclusion": "success",
+      "note": "Prior frozen-plan docs-only Verify; not qualifying for current implementation head"
+    }
+  ],
+  "review_threads": {
+    "unresolved": 0,
+    "total": 0,
+    "observation": {
+      "review_threads": []
+    }
+  },
+  "reviews": [],
+  "pagination": {
+    "head_runs": {
+      "page1_total": 3,
+      "page1_count": 3,
+      "page2_count": 0
+    },
+    "branch_runs": {
+      "page1_total": 4,
+      "page1_count": 4,
+      "page2_count": 0
+    },
+    "head_checks": {
+      "page1_total": 71,
+      "page1_count": 71,
+      "page2_count": 0
+    },
+    "verify_all_attempt_jobs": {
+      "page1_total": 68,
+      "page1_count": 68,
+      "page2_count": 0
+    },
+    "artifacts": {
+      "page1_total": 38,
+      "page1_count": 38,
+      "page2_count": 0
+    },
+    "pr_commits": {
+      "page1_count": 2,
+      "page2_count": 0
+    },
+    "pr_reviews": {
+      "page1_count": 0,
+      "page2_count": 0
+    },
+    "plan_jobs": {
+      "page1_count": 12,
+      "page2_count": 0
+    },
+    "i015_jobs": {
+      "page1_count": 1,
+      "page2_count": 0
+    },
+    "stage_jobs": {
+      "page1_count": 1,
+      "page2_count": 0
+    },
+    "attempts": "Explicit /attempts/1 snapshots preserved for all four branch runs; latest run_attempt=1"
+  },
+  "remote_mutations_performed": false,
+  "merge_performed": false
+}

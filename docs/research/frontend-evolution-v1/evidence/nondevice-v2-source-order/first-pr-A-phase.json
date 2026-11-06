@@ -1,0 +1,22 @@
+{
+  "budget_seconds": 300,
+  "child_pid": 4831,
+  "command": [
+    "/usr/bin/python3",
+    "/home/runner/work/audio-pipeline/audio-pipeline/tests/validation/run_dualmic_recorded_replay.py",
+    "--worker",
+    "--processor",
+    "/home/runner/work/audio-pipeline/audio-pipeline/build-dualmic-recorded/ap_process_pcm",
+    "--corpus",
+    "/home/runner/work/audio-pipeline/audio-pipeline/fe-speech/dualmic-stage/corpus/corpus.json",
+    "--output",
+    "/home/runner/work/audio-pipeline/audio-pipeline/fe-speech/dualmic-stage/result",
+    "--source-revision",
+    "74765cfb8678f41e11166dd37316a66a2f131977"
+  ],
+  "elapsed_seconds": 3.9741710270000112,
+  "error": null,
+  "returncode": 1,
+  "status": "FAIL",
+  "terminal": true
+}

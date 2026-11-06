@@ -1,0 +1,16 @@
+{
+  "status": "SOURCE_EXTRACTION_FAILED_PRESERVED",
+  "observed_tool_chunk": "a01840",
+  "error": "Python 3.12 tarfile r:* could not open the selected compressed data archive",
+  "ar_members": [
+    "debian-binary",
+    "control.tar.zst",
+    "data.tar.zst"
+  ],
+  "deb_sha256": "6d8da32a832e655c9603543b47a0bc90c6f60bdee0c00fe7499bd50acad566cf",
+  "deb_bytes": 208122,
+  "elapsed_seconds": null,
+  "duration_note": "initial inline failed before its success receipt; no fabricated duration",
+  "model_or_DSP_executed": false,
+  "correction": "Use installed dpkg-deb --fsys-tarfile on the same package bytes; extract only two ordinary selected members, then require exact CI native hash."
+}

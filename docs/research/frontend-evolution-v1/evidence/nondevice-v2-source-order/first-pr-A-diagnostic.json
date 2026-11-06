@@ -1,0 +1,53 @@
+{
+  "DSP_reexecuted": false,
+  "artifact_file_count_observed": 144,
+  "artifact_id": 13506623029,
+  "attempt": 1,
+  "bound_observation_files": {
+    "/workspace/scratch/b74ab3415ba4/audio-dualmic-pr920-evidence/.github/workflows/quality.yml": "46b28cde3bb90966bd0f2ad8ec2a6f238046c29148644f55e6a552194ba30cc6",
+    "/workspace/scratch/b74ab3415ba4/audio-dualmic-pr920-evidence/.gitignore": "65a538c89e106be7ab1ceb6f07f0bc2fd53d7e9d5886ca723645a2c00737c897",
+    "/workspace/scratch/b74ab3415ba4/audio-dualmic-pr920-evidence/CMakeLists.txt": "97f1e98a766a98c36cfa3e72ebb2d3bd2b75208470582a3abb3b7928d8774316",
+    "/workspace/scratch/b74ab3415ba4/nondevice-v2-ci-pr920/A/configure.log": "6cf02c648e79d79661b8ca2126a72df357acf151b2e85238daea5eed13dfc109",
+    "/workspace/scratch/b74ab3415ba4/nondevice-v2-ci-pr920/A/result/execution-phase.json": "cff3c59ca24e4e510cd378ec6d37c5ec6f3d68a7a31db1279b7cf01432b378c7",
+    "/workspace/scratch/b74ab3415ba4/nondevice-v2-ci-pr920/A/result/execution.log": "06bfc343f71deace9c40ab0e060a81e554bef540013f9f4eeca6c6d7157bd956"
+  },
+  "execution_source": "74765cfb8678f41e11166dd37316a66a2f131977",
+  "formal_success_readback_started": false,
+  "inference": "The linked revision was likely actual SHA plus -dirty. Original artifact did not retain the build-info output; this exact string is inferred from fixed code/known filesystem, not directly observed.",
+  "minimal_remedy": "Configure/build immediately after clean checkout; retain logs in ignored build*/ or RUNNER_TEMP until after configure. Preserve exact SHA comparisons and source hashing; do not force a clean source revision over a dirty tree.",
+  "observations": [
+    "Actual failure is build_identity rejecting source_revision before any 56-case replay.",
+    "A configure follows earlier fe-speech output generation.",
+    "A tee opens fe-speech/dualmic-stage/configure.log before configure; git check-ignore reports no rule for it or source-transfer.json.",
+    "CMake appends -dirty whenever git status --porcelain is nonempty; build-dualmic-recorded/configure.log is ignored by build-*/."
+  ],
+  "original_archive_sha256_from_root": "d63cc5c2a32ae7f784e47d304be9d2495d86003a7065d414c0403de73b6b14fb",
+  "phase_observed": {
+    "budget_seconds": 300,
+    "child_pid": 4831,
+    "command": [
+      "/usr/bin/python3",
+      "/home/runner/work/audio-pipeline/audio-pipeline/tests/validation/run_dualmic_recorded_replay.py",
+      "--worker",
+      "--processor",
+      "/home/runner/work/audio-pipeline/audio-pipeline/build-dualmic-recorded/ap_process_pcm",
+      "--corpus",
+      "/home/runner/work/audio-pipeline/audio-pipeline/fe-speech/dualmic-stage/corpus/corpus.json",
+      "--output",
+      "/home/runner/work/audio-pipeline/audio-pipeline/fe-speech/dualmic-stage/result",
+      "--source-revision",
+      "74765cfb8678f41e11166dd37316a66a2f131977"
+    ],
+    "elapsed_seconds": 3.9741710270000112,
+    "error": null,
+    "returncode": 1,
+    "status": "FAIL",
+    "terminal": true
+  },
+  "prior_review_failure_unchanged": true,
+  "repo_files_modified": false,
+  "run_id": 42227371302,
+  "saved_at_is_not_a_review_timer": true,
+  "saved_at_utc": "2026-11-06T13:51:34.827105+00:00",
+  "status": "FAILED_ARTIFACT_STATIC_DIAGNOSIS"
+}

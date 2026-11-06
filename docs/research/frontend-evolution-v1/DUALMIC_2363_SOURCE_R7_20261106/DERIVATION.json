@@ -1,0 +1,417 @@
+{
+  "dependencies": {
+    "docs/research/frontend-evolution-v1/DUALMIC_2363_SOURCE_R7_20261106/PREREGISTRATION.json": {
+      "bytes": 14831,
+      "git_blob_sha1": "9986532f2b2b32167989705ed9456ade76a67ecf",
+      "sha256": "3486635106f865a069b4241515db7bb00ac84a38fa7f5059305d11e27db3fb87"
+    },
+    "docs/research/frontend-evolution-v1/DUALMIC_2363_SOURCE_R7_20261106/README.md": {
+      "bytes": 1107,
+      "git_blob_sha1": "edf1aa12b3b969cf05ff432627502310b8efae32",
+      "sha256": "92b942e359ec20c9ec8adcaf14eff8ac87891d0970ec14c769c89bd53a9c6bc3"
+    },
+    "tests/validation/frontend_evolution/fe09_b3_f0_r7_source_admission.py": {
+      "bytes": 14445,
+      "git_blob_sha1": "b274890a4d24184a99a804b109ff6387bca05496",
+      "sha256": "dc284b520d38538d9fa9d9b9bab249d7451eb08bb10f69e4c93879e8ad6b584e"
+    },
+    "tests/validation/frontend_evolution/fe09_b3_f0_r7_source_delta_2_3_63.patch.b64": {
+      "bytes": 62457,
+      "git_blob_sha1": "707020a2f3b7df53dda1c2223b8c4b11a1bd6e44",
+      "sha256": "558868113b1062016beb012dcfb35906ad837fe9a1e5c1e492a0f9cdba704305"
+    },
+    "tests/validation/frontend_evolution/fe09_dualmic_r6_derivation_contract.py": {
+      "bytes": 18191,
+      "git_blob_sha1": "d22e901afb12a51c585e39de68ba7d6c808eef62",
+      "sha256": "ee9daf792cdc2f686f4870bdc98d50a17994f2ad6b75d745967e5a9b0df60822"
+    }
+  },
+  "identity": "FE09-DUALMIC-2363-IDENTITY-DERIVATION-V1",
+  "identity_only_functions": 2,
+  "pairs": [
+    {
+      "changed_nodes": [
+        "assignment:BLOCKED",
+        "assignment:COLLECTOR_IDENTITY",
+        "assignment:FAILED",
+        "assignment:INCONCLUSIVE",
+        "assignment:LOCAL",
+        "assignment:OWN_FILES",
+        "assignment:QUALIFIED",
+        "docstring",
+        "function:main",
+        "function:self_test",
+        "function:source_preflight",
+        "import:import fe09_b3_f0_r6_source_admission as forward_source"
+      ],
+      "child_identity": {
+        "bytes": 71249,
+        "git_blob_sha1": "ff41eeea0fe0d68f1838afb35bd6cd93a090b7fe",
+        "sha256": "1177e5cf3ec692afa0cf7973f9a42ec881abb4f911fb7acc8b99b2f1d6d4e726"
+      },
+      "child_path": "tests/validation/frontend_evolution/fe09_b3_f0_deadline_r7_qualification.py",
+      "identity_assignments": [
+        "COLLECTOR_IDENTITY",
+        "QUALIFIED",
+        "LOCAL",
+        "INCONCLUSIVE",
+        "FAILED",
+        "BLOCKED",
+        "OWN_FILES"
+      ],
+      "identity_imports": [
+        "import fe09_b3_f0_r6_source_admission as forward_source"
+      ],
+      "identity_only_functions": 0,
+      "kind": "B3",
+      "literal_identity_functions": [],
+      "metadata_functions": [
+        "source_preflight",
+        "self_test",
+        "main"
+      ],
+      "parent_identity": {
+        "bytes": 71249,
+        "git_blob_sha1": "bbcd013e27006d5da2e16581dda0d19645f46540",
+        "sha256": "a25263b4c7c47545c265eb4cb953af6fd05d9c6b130bb1931959b630f9bf5fb5"
+      },
+      "parent_path": "tests/validation/frontend_evolution/fe09_b3_f0_deadline_r6_qualification.py",
+      "replacements": [
+        {
+          "after": "R7",
+          "before": "R6",
+          "occurrences": 19
+        },
+        {
+          "after": "r7",
+          "before": "r6",
+          "occurrences": 7
+        },
+        {
+          "after": "2363",
+          "before": "2362",
+          "occurrences": 3
+        },
+        {
+          "after": "2.3.63",
+          "before": "2.3.62",
+          "occurrences": 3
+        },
+        {
+          "after": "2_3_63",
+          "before": "2_3_62",
+          "occurrences": 1
+        }
+      ],
+      "unchanged_classes": 3,
+      "unchanged_functions": 39
+    },
+    {
+      "changed_nodes": [
+        "assignment:DECISION",
+        "assignment:FAILED",
+        "assignment:IDENTITY",
+        "assignment:OWN",
+        "assignment:PARTIAL",
+        "docstring",
+        "function:main",
+        "function:self_test",
+        "function:source_record",
+        "import:import fe09_b3_f0_r6_source_admission as forward_source"
+      ],
+      "child_identity": {
+        "bytes": 65647,
+        "git_blob_sha1": "37cafd3cf3fc6b583abbb5a4aedf22cfcfc6cac2",
+        "sha256": "b8e8808729bca25a9d1f16c9fd3966a82ca00b9d1eab01688fc127bafa7e1093"
+      },
+      "child_path": "tests/validation/frontend_evolution/fe09_t3s3_f0_call_resource_r7_qualification.py",
+      "identity_assignments": [
+        "IDENTITY",
+        "DECISION",
+        "PARTIAL",
+        "FAILED",
+        "OWN"
+      ],
+      "identity_imports": [
+        "import fe09_b3_f0_r6_source_admission as forward_source"
+      ],
+      "identity_only_functions": 0,
+      "kind": "F0",
+      "literal_identity_functions": [],
+      "metadata_functions": [
+        "source_record",
+        "self_test",
+        "main"
+      ],
+      "parent_identity": {
+        "bytes": 65647,
+        "git_blob_sha1": "518aad3202c0453ae6bff59aaa16b585e3d9d601",
+        "sha256": "0777bd38cb54b613cf6552f71c83c196e93a8a3815b6c526f9d552682c515a88"
+      },
+      "parent_path": "tests/validation/frontend_evolution/fe09_t3s3_f0_call_resource_r6_qualification.py",
+      "replacements": [
+        {
+          "after": "R7",
+          "before": "R6",
+          "occurrences": 16
+        },
+        {
+          "after": "r7",
+          "before": "r6",
+          "occurrences": 7
+        },
+        {
+          "after": "2363",
+          "before": "2362",
+          "occurrences": 3
+        },
+        {
+          "after": "2.3.63",
+          "before": "2.3.62",
+          "occurrences": 2
+        },
+        {
+          "after": "2_3_63",
+          "before": "2_3_62",
+          "occurrences": 1
+        }
+      ],
+      "unchanged_classes": 1,
+      "unchanged_functions": 33
+    },
+    {
+      "changed_nodes": [
+        "assignment:CURRENT",
+        "assignment:R5",
+        "assignment:R5_BLOB",
+        "assignment:SELF",
+        "assignment:STATUS",
+        "docstring",
+        "function:check",
+        "function:main",
+        "function:reconcile"
+      ],
+      "child_identity": {
+        "bytes": 17278,
+        "git_blob_sha1": "e4e463b6f48b5861b6d267f7c46b569cd94f7a97",
+        "sha256": "de69e036df61250c5ff7b07274f9f703bb992952a3f1f23b59a58d636c5d08b0"
+      },
+      "child_path": "tests/validation/frontend_evolution/fe09_f1_r4_source_bridge.py",
+      "identity_assignments": [
+        "SELF",
+        "R5",
+        "R5_BLOB",
+        "STATUS",
+        "CURRENT"
+      ],
+      "identity_imports": [],
+      "identity_only_functions": 0,
+      "kind": "F1 source",
+      "literal_identity_functions": [],
+      "metadata_functions": [
+        "reconcile",
+        "check",
+        "main"
+      ],
+      "parent_identity": {
+        "bytes": 17255,
+        "git_blob_sha1": "635ff6fcd0e4c35197402d7f78c366425f918486",
+        "sha256": "f40190accac6b386bac26772195cff8d5cd533f70fda78d03b0a1c8eec820335"
+      },
+      "parent_path": "tests/validation/frontend_evolution/fe09_f1_r3_source_bridge.py",
+      "replacements": [
+        {
+          "after": "F1-R4-T0",
+          "before": "F1-R3-T0",
+          "occurrences": 1
+        },
+        {
+          "after": "F1_R4_T0_",
+          "before": "F1_R3_T0_",
+          "occurrences": 2
+        },
+        {
+          "after": "fe09_f1_r4_source_bridge.py",
+          "before": "fe09_f1_r3_source_bridge.py",
+          "occurrences": 1
+        },
+        {
+          "after": "R7",
+          "before": "R6",
+          "occurrences": 3
+        },
+        {
+          "after": "r7",
+          "before": "r6",
+          "occurrences": 3
+        },
+        {
+          "after": "2.3.63",
+          "before": "2.3.62",
+          "occurrences": 2
+        },
+        {
+          "after": "b274890a4d24184a99a804b109ff6387bca05496",
+          "before": "d5588fe605c21b3cf8000be3c9c006bc888b782d",
+          "occurrences": 1
+        },
+        {
+          "after": "CURRENT = {'CMakeLists.txt': '4e70b751262cdb3bd96448bf21e5800c194b36d3', 'cmake/audio-pipeline-runtime.pc.in': '079ee9edf1fb9e13bfa0936355556b48ca408155', 'cmake/audio-pipeline.pc.in': '29fbd3746b65e54c438e375815a44f076f3b255c', 'include/audio_pipeline/audio_modules.h': '8123829eabea5988b29f1d16c2dd177bc6bdb39f', 'include/audio_pipeline/audio_runtime.h': 'ad72e40b5b343aee4589ee50dfd07fe1a85e0ea9', 'src/core/ap_pipeline.c': '9bbd0fd15fcec7b9624f5bc69b550db91e789167', 'src/frontend/ap_beamformer.c': '9839cf6943172cd3b5aa7757e31d29e43288588b', 'src/frontend/ap_frontend.h': '0026d060ed79b1501314a95a94e7b02480a6adf2', 'src/modules/ap_beamformer_module.c': 'c55cca0d5352b6d27066ea4a447ccaa583109411', 'src/modules/ap_resampler_module.c': '3edc2730f7641ff7242e2666492c993e6b068439', 'src/platform/linux/ap_runtime.c': 'b6c36e195c1ac967e450a1e32506e0b6859a581b', 'src/sync/ap_sync.c': '417fdb1e996d2c8ad64af0548dd57e73c37567c0', 'src/sync/ap_sync.h': '4ca32de066b10c510ffb81d5f460d5a430bf5f8a'}",
+          "before": "CURRENT = {'CMakeLists.txt': '17a7f69f366feac924b08ddc282dbdf296218d69', 'cmake/audio-pipeline-runtime.pc.in': '079ee9edf1fb9e13bfa0936355556b48ca408155', 'cmake/audio-pipeline.pc.in': '29fbd3746b65e54c438e375815a44f076f3b255c', 'include/audio_pipeline/audio_modules.h': '8123829eabea5988b29f1d16c2dd177bc6bdb39f', 'include/audio_pipeline/audio_runtime.h': 'ad72e40b5b343aee4589ee50dfd07fe1a85e0ea9', 'src/core/ap_pipeline.c': '9bbd0fd15fcec7b9624f5bc69b550db91e789167', 'src/frontend/ap_beamformer.c': '9839cf6943172cd3b5aa7757e31d29e43288588b', 'src/frontend/ap_frontend.h': '0026d060ed79b1501314a95a94e7b02480a6adf2', 'src/modules/ap_beamformer_module.c': 'c55cca0d5352b6d27066ea4a447ccaa583109411', 'src/modules/ap_resampler_module.c': '3edc2730f7641ff7242e2666492c993e6b068439', 'src/platform/linux/ap_runtime.c': 'b6c36e195c1ac967e450a1e32506e0b6859a581b', 'src/sync/ap_sync.c': 'c0595a9f99330afc023c6f8bdbe270e112f51df7', 'src/sync/ap_sync.h': '4ca32de066b10c510ffb81d5f460d5a430bf5f8a'}",
+          "occurrences": 1
+        },
+        {
+          "after": "\"r4_result_inherited\", \"r5_result_inherited\", \"r6_result_inherited\"",
+          "before": "\"r4_result_inherited\", \"r5_result_inherited\"",
+          "occurrences": 1
+        }
+      ],
+      "unchanged_classes": 2,
+      "unchanged_functions": 6
+    },
+    {
+      "changed_nodes": [
+        "assignment:BRIDGE",
+        "assignment:BRIDGE_BLOB",
+        "assignment:SELF",
+        "assignment:STATUS",
+        "docstring",
+        "function:main",
+        "function:source_check",
+        "literal_identity_function:build_only"
+      ],
+      "child_identity": {
+        "bytes": 16199,
+        "git_blob_sha1": "5de39917a837422e259c4c9808f1f28d4f47d9e7",
+        "sha256": "4cc11a4e56aba1fdb991d7d81f8f0b783f3fd2f40e921ad62fd2a5247edae1d9"
+      },
+      "child_path": "tests/validation/frontend_evolution/fe09_f1_r4_build.py",
+      "identity_assignments": [
+        "SELF",
+        "BRIDGE",
+        "BRIDGE_BLOB",
+        "STATUS"
+      ],
+      "identity_imports": [],
+      "identity_only_functions": 1,
+      "kind": "F1 build",
+      "literal_identity_functions": [
+        {
+          "after": "F1_R4_T1_BUILD_REJECTED",
+          "assignment": "report",
+          "before": "F1_R3_T1_BUILD_REJECTED",
+          "function": "build_only",
+          "key": "status",
+          "occurrences": 1
+        }
+      ],
+      "metadata_functions": [
+        "source_check",
+        "main"
+      ],
+      "parent_identity": {
+        "bytes": 16199,
+        "git_blob_sha1": "9374e93eebe2dc44a6bad3736dbf8157f0fade18",
+        "sha256": "01b01f0272bca51c60e93adaa5ffbefce7945fbe018e30698b44d9324cc3c9df"
+      },
+      "parent_path": "tests/validation/frontend_evolution/fe09_f1_r3_build.py",
+      "replacements": [
+        {
+          "after": "F1-R4-T1",
+          "before": "F1-R3-T1",
+          "occurrences": 1
+        },
+        {
+          "after": "F1_R4_T1_",
+          "before": "F1_R3_T1_",
+          "occurrences": 3
+        },
+        {
+          "after": "F1_R4_T0_SOURCE_BRIDGE_VERIFIED_NO_EXECUTION",
+          "before": "F1_R3_T0_SOURCE_BRIDGE_VERIFIED_NO_EXECUTION",
+          "occurrences": 1
+        },
+        {
+          "after": "fe09_f1_r4_build.py",
+          "before": "fe09_f1_r3_build.py",
+          "occurrences": 1
+        },
+        {
+          "after": "fe09_f1_r4_source_bridge.py",
+          "before": "fe09_f1_r3_source_bridge.py",
+          "occurrences": 1
+        },
+        {
+          "after": "e4e463b6f48b5861b6d267f7c46b569cd94f7a97",
+          "before": "635ff6fcd0e4c35197402d7f78c366425f918486",
+          "occurrences": 1
+        }
+      ],
+      "unchanged_classes": 1,
+      "unchanged_functions": 17
+    },
+    {
+      "changed_nodes": [
+        "assignment:STATUS",
+        "docstring",
+        "function:generated_config",
+        "function:main",
+        "literal_identity_function:build_only"
+      ],
+      "child_identity": {
+        "bytes": 11864,
+        "git_blob_sha1": "f48261a6ec1b0547594eba5cd10af71e7663ec6e",
+        "sha256": "767efc4ddf93ca78450b55340cedd2f6565fd6ac581eab0d8840ab91973dc26d"
+      },
+      "child_path": "tests/validation/frontend_evolution/fe09_a3_r4_static_build.py",
+      "identity_assignments": [
+        "STATUS"
+      ],
+      "identity_imports": [],
+      "identity_only_functions": 1,
+      "kind": "A3 static",
+      "literal_identity_functions": [
+        {
+          "after": "A3_R4_T1_STATIC_BUILD_REJECTED",
+          "assignment": "receipt",
+          "before": "A3_R3_T1_STATIC_BUILD_REJECTED",
+          "function": "build_only",
+          "key": "status",
+          "occurrences": 1
+        }
+      ],
+      "metadata_functions": [
+        "generated_config",
+        "main"
+      ],
+      "parent_identity": {
+        "bytes": 11864,
+        "git_blob_sha1": "6b0042ddc7c413b5d4408fcae22ed31b412f4e63",
+        "sha256": "3cc1af1b58b376b0c8adf7c7adff21095b3082cfd7428bcfcc7d77bc5127f058"
+      },
+      "parent_path": "tests/validation/frontend_evolution/fe09_a3_r3_static_build.py",
+      "replacements": [
+        {
+          "after": "A3-R4-T1:",
+          "before": "A3-R3-T1:",
+          "occurrences": 1
+        },
+        {
+          "after": "A3_R4_T1_",
+          "before": "A3_R3_T1_",
+          "occurrences": 3
+        },
+        {
+          "after": "2.3.63",
+          "before": "2.3.62",
+          "occurrences": 2
+        }
+      ],
+      "unchanged_classes": 1,
+      "unchanged_functions": 7
+    }
+  ],
+  "quality_thresholds_or_budgets_relaxed": false,
+  "schema_version": 1,
+  "science_executed": false
+}

@@ -1,12 +1,13 @@
 # SSC305 conservative SDK delivery
 
+> **Current research scope:** This is a technical-research guide. [RESEARCH_ONLY_EXECUTION.md](RESEARCH_ONLY_EXECUTION.md) owns current execution policy. GitHub Releases, shipping SKU approval and product certification are not research prerequisites. Missing device evidence limits only device claims, not independent software/acoustic experiments. Source rights, measurement integrity and blind-data isolation remain required.
+
 [简体中文](SSC305_DELIVERY.zh-CN.md)
 
-The governed software release has three distinct identities. The ordinary SDK
-is the native hosted build; `reference-armhf-sdk` is the exact
-`ssc305-cortex-a32-low` preset built with the pinned CI reference toolchain;
-a shipping BSP SDK must instead use the approved product compiler/sysroot and
-complete the existing product certification path. A reference SDK is not proof
+Research builds have distinct identities. The ordinary SDK is the native hosted
+build; `reference-armhf-sdk` is the exact `ssc305-cortex-a32-low` preset built
+with the pinned CI reference toolchain. A real-device BSP experiment must use
+the actual vendor compiler/sysroot and independently validate link/load/runtime behavior. A reference SDK is not proof
 that its libc/loader/ABI matches an SSC305 firmware image.
 
 ## One build, multiple bound proofs
@@ -28,7 +29,7 @@ case assertions. Every case is additionally processed twice and the actual PCM
 SHA-256 values must match. The QEMU launcher hash in canonical reports and the
 actual processor ELF hash are both bound in the delivery manifest. Case-level
 metrics and failures are retained. No parameter, threshold, corpus selection or
-shipping DSP change is selected by these reports.
+runtime DSP change is selected by these reports.
 
 This is **regression evidence**, not public-data or real-enclosure quality
 certification. Cases outside the conservative physical envelope remain stress
@@ -42,8 +43,8 @@ existing authorities. Missing dimensions are explicitly unmeasured.
 pipeline and runtime caller-owned state must be at most **50,000 bytes** in
 addition to the separate public limits. This sum does not include thread stacks,
 application/libc RSS, ALSA/kernel buffers, external PCM queues or optional Flight
-Recorder memory. Those remain separate product budget items. The effect-first
-profile stays research-only and does not inherit conservative shipping authority.
+Recorder memory. Those remain separate research resource budget items. The effect-first
+profile stays research-only and does not inherit measured device evidence.
 
 Resource-probe `qemu_probe_repeat_identical` means raw metadata stdout is
 identical; only the acoustic snapshot claims PCM repeat equality. Resource spec
@@ -70,27 +71,27 @@ executable, selected tests, configuration, sanitizer log and hashes are retained
 Failure artifacts are uploaded; a failed or incomplete result cannot be sealed
 as passing delivery evidence. Other full CI sanitizers and TSan remain required.
 
-## Release consumption
+## Research artifact consumption
 
-Beginning with v2.3.55, Release downloads only its triggering exact-main Verify
-run's resource and engineering artifacts, checks complete file/hash sets and
-source identities, then includes reference SDK, SPDX and sealed evidence in the
-ordinary release manifest/checksums/attestations. Existing immutable releases
-before v2.3.55 retain their historical eight-asset contract; new releases require
-twelve assets and cannot fall back to the old set. Actions artifacts are
-transport; accepted release evidence survives in the immutable release.
+Use the resource/engineering artifact from an explicitly selected successful
+Verify run, and bind its exact source SHA, complete file/hash set and build
+identity. Actions artifacts are transport, not an independent acoustic verdict
+or permanent archive. Historical v2.3.55 Release packaging remains provenance
+only; the current research path has no automatic Release publisher. Retain
+accepted source-bound evidence in the experiment record before transport expires.
 
 After extracting `reference-armhf-evidence.tar.gz` into a clean directory,
 verification from the matching source checkout is:
 
 ```bash
 python3 scripts/ssc305_delivery.py verify --output extracted-reference \
-  --source-revision <exact-40-hex-release-source> \
+  --source-revision <exact-40-hex-source-commit> \
   --artifact-class reference-armhf-sdk-not-shipping-bsp
 ```
 
 The same command accepts the extracted engineering evidence with
 `--artifact-class host-engineering-not-product-soak`. Build with the official
 BSP before device deployment; never copy a native hosted library into an Arm
-image. CPU/p99/RSS/stack/thermal/power and Product Certification remain governed
-by [PERFORMANCE](PERFORMANCE.md), [PORTING](PORTING.md) and `certification/`.
+image. CPU/p99/RSS/stack/thermal/power require independent measurements under
+[PERFORMANCE](PERFORMANCE.md) and [PORTING](PORTING.md); historical
+`certification/` records impose no current research admission requirement.

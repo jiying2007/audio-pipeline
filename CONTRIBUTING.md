@@ -2,7 +2,7 @@
 
 [简体中文](CONTRIBUTING.zh-CN.md)
 
-`audio-pipeline` is in a **software-commercial-ready maintenance state**. Contributions are welcome when they address a concrete defect, regression, integration need, measured performance/resource problem, or a verified gap in the validation/release/certification control plane. Do not add complexity merely to make the repository appear “more complete”.
+`audio-pipeline` is **technical research only**. Contributions address concrete defects, reproducibility, acoustic experiments, embedded integration and measured performance/resource problems. The current execution policy is `docs/RESEARCH_ONLY_EXECUTION.md`; commercial publication and certification are not research prerequisites. Do not add complexity merely to make the repository appear “more complete”.
 
 ## Before changing code
 
@@ -11,8 +11,8 @@ Read:
 1. `docs/DEVELOPMENT.md` — normative engineering rules;
 2. `docs/ARCHITECTURE.md` — dependency and ownership boundaries;
 3. `docs/API_CONTRACT.md` for public API/lifecycle changes;
-4. `validation/authority.json` for data/search/validation authority;
-5. `docs/PRODUCT_ASSURANCE.md` for release or certification changes.
+4. `validation/research-authority.json` for data/search/validation authority;
+5. `docs/RESEARCH_ONLY_EXECUTION.md` for research scope, source rights and evidence boundaries.
 
 Chinese contributors can start from `docs/README.zh-CN.md` and `docs/DEVELOPMENT.zh-CN.md`.
 
@@ -22,8 +22,8 @@ Chinese contributors can start from `docs/README.zh-CN.md` and `docs/DEVELOPMENT
 - State scope and non-goals.
 - Freeze measurement rules, data roles and acceptance thresholds before tuning.
 - Never relax a gate, threshold or timeout merely to obtain green CI.
-- Do not fabricate target, HIL, thermal, power, acoustic, toolchain, soak or Product Qualification evidence.
-- Keep release-neutral maintenance release-neutral; release-bearing behavior follows SemVer/CHANGELOG/release governance.
+- Do not fabricate target, HIL, thermal, power, acoustic, toolchain, soak or independent research evidence.
+- Document runtime/API changes and preserve applicable SemVer/CHANGELOG and compatibility checks; no commercial Release or SKU approval is required for research.
 
 ## Realtime and ownership rules
 
@@ -45,13 +45,13 @@ A PR is not merge-ready until the exact PR head has the required `summary=succes
 
 ## Data and tuning
 
-Development/search data may select candidates. `validation-grade` is validation/shadow only; `validation-grade-blind` never enters optimizer feedback. Preserve exact source/data/hash/seed identity and all failed candidates. A tuning result may become an `ACOUSTIC_CANDIDATE`; it cannot silently change shipping defaults or grant Product Certification authority.
+Development/search data may select candidates. `validation-grade` is validation/shadow only; `validation-grade-blind` never enters optimizer feedback. Preserve exact source/data/hash/seed identity and all failed candidates. A tuning result may become an `ACOUSTIC_CANDIDATE`; it cannot silently change runtime defaults or establish independent target-board results.
 
 ## Documentation
 
-Update documentation in the same PR when changing API/lifecycle, build options/product presets, ownership/data flow, validation authority, release/certification behavior, diagnostic/privacy behavior or operator commands.
+Update documentation in the same PR when changing API/lifecycle, build options/research presets, ownership/data flow, validation authority, research execution behavior, diagnostic/privacy behavior or operator commands.
 
-Critical commercial/integration changes must also update the Chinese entry layer under `docs/*.zh-CN.md` where applicable. Machine schemas and explicitly canonical low-level English specifications remain the single source of truth.
+Critical research/integration changes must also update the Chinese entry layer under `docs/*.zh-CN.md` where applicable. Machine schemas and explicitly canonical low-level English specifications remain the single source of truth.
 
 ## Pull requests
 
@@ -64,4 +64,4 @@ Critical commercial/integration changes must also update the Chinese entry layer
 
 ## Definition of Done
 
-A change is complete when its root cause/need is documented, targeted and negative tests exist, exact-head required checks pass, relevant docs are updated, protected merge succeeds, exact-main verification succeeds, release behavior matches the change class, and no unclassified branch/evidence debt remains.
+A change is complete when its root cause/need is documented, targeted and negative tests exist, exact-head required checks pass, relevant docs are updated, protected merge succeeds, exact-main verification succeeds, research behavior matches the stated scope, and no unclassified branch/evidence debt remains.

@@ -142,17 +142,13 @@ python3 .github/program/workflow_pin_only_scope.py --self-test
 python3 .github/program/workflow_pin_only_replay_t1.py --self-test
 python3 .github/program/workflow_pin_only_actual_tree_t1m1.py --self-test
 python3 .github/program/bot714_metadata_observation_d1.py --self-test
-# PR833 observation controls are offline; never spend its protocol/live-request budget here.
-python3 .github/program/test_pr833_metadata_observation_d1.py
-python3 -O .github/program/test_pr833_metadata_observation_d1.py
-python3 -OO .github/program/test_pr833_metadata_observation_d1.py
+# Retired PR833/dEchorate release-governance protocols are replayed only from
+# their exact historical Git tree. No live observer, credential or Release API.
+python3 tests/test_archived_governance.py
+python3 -O tests/test_archived_governance.py
+python3 -OO tests/test_archived_governance.py
+python3 scripts/run_archived_governance_tests.py
 python3 .github/program/workflow_pin_pr_consumer.py --self-test
-python3 .github/program/test_dechorate_event_source_t1m3.py --self-test
-python3 .github/program/test_dechorate_governance_v2.py
-# Exact production receipt routing; offline fixtures only, no protocol retry.
-python3 .github/program/test_dechorate_consumer_receipt.py
-python3 -O .github/program/test_dechorate_consumer_receipt.py
-python3 -OO .github/program/test_dechorate_consumer_receipt.py
 # Live GitHub bot Git-object probe only when this very qualifier is modified
 # in a PR. Avoid an external network dependency for unrelated Verify runs.
 if [ "${GITHUB_EVENT_NAME:-}" = pull_request ]; then

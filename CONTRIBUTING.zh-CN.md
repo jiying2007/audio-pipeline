@@ -2,15 +2,15 @@
 
 [English](CONTRIBUTING.md)
 
-`audio-pipeline` 当前处于 **software-commercial-ready 的稳定维护状态**。欢迎解决明确缺陷、回归、产品集成问题、可测资源/性能问题，或 validation/release/certification 控制面的真实缺口；不为了“显得更完整”而主动堆复杂度。
+`audio-pipeline` 当前定位为 **纯技术研究**。欢迎解决明确缺陷、回归、声学实验、嵌入式集成与可测资源/性能问题；执行边界以 `docs/RESEARCH_ONLY_EXECUTION.md` 为准，商业发布与认证不是研究前提；不为了“显得更完整”而主动堆复杂度。
 
 ## 修改前必读
 
 1. [`docs/DEVELOPMENT.zh-CN.md`](docs/DEVELOPMENT.zh-CN.md)：中文开发/代码规范；
 2. [`docs/ARCHITECTURE.zh-CN.md`](docs/ARCHITECTURE.zh-CN.md)：架构、依赖、线程所有权；
 3. `docs/API_CONTRACT.md`：public API/lifecycle 的 canonical contract；
-4. `validation/authority.json`：数据搜索/验证权限真相源；
-5. [`docs/PRODUCT_ASSURANCE.zh-CN.md`](docs/PRODUCT_ASSURANCE.zh-CN.md)：Release/产品认证边界；
+4. `validation/research-authority.json`：数据搜索/验证权限真相源；
+5. [`docs/RESEARCH_ONLY_EXECUTION.md`](docs/RESEARCH_ONLY_EXECUTION.md)：研究范围、来源权利与证据边界；
 6. [`docs/FLOWS.zh-CN.md`](docs/FLOWS.zh-CN.md)：关键流程图。
 
 ## Scope 纪律
@@ -19,8 +19,8 @@
 - PR 写清 scope 与 non-goals；
 - 调参前冻结 measurement、数据角色、接受阈值和预算；
 - 禁止为了 CI 变绿而放宽 gate、阈值、timeout 或 allow-failure；
-- 禁止伪造 target/HIL/thermal/power/acoustic/toolchain/soak/PQ 证据；
-- release-neutral 维护保持 release-neutral；改变 shipping behavior 的变更遵循 SemVer/CHANGELOG/Release 治理。
+- 禁止伪造 target/HIL/thermal/power/acoustic/toolchain/soak 证据；
+- 运行时/API 变更保留适用的 SemVer/CHANGELOG 与兼容性检查；研究不要求商业 Release 或 SKU 批准。
 
 ## Realtime / ownership
 
@@ -51,13 +51,13 @@ Linux Runtime started 后，live Pipeline 由单 DSP worker 独占。ownership�
 - `validation-grade` 只能 validation/shadow；
 - `validation-grade-blind` 永远不能反馈 optimizer；
 - 保存 source/data/hash/seed identity 和失败候选；
-- tuning 只能形成 `ACOUSTIC_CANDIDATE`，不能静默写 shipping default，更不能产生 Product Certification authority。
+- tuning 只能形成 `ACOUSTIC_CANDIDATE`，不能静默改运行时默认参数，也不能替代独立目标板实测。
 
 ## 文档同步
 
-以下变化必须同 PR 更新文档：API/lifecycle、build option/product preset、ownership/data flow、validation authority、release/certification、diagnostics/privacy、操作命令/路径。
+以下变化必须同 PR 更新文档：API/lifecycle、build option/research preset、ownership/data flow、validation authority、research execution、diagnostics/privacy、操作命令/路径。
 
-影响商用集成的关键变化还必须检查 `docs/*.zh-CN.md` 中文入口。低层机器 schema 和明确标记为 canonical 的英文协议继续作为唯一真相源，中文层不得另造第二套标准。
+影响研究/集成的关键变化还必须检查 `docs/*.zh-CN.md` 中文入口。低层机器 schema 和明确标记为 canonical 的英文协议继续作为唯一真相源，中文层不得另造第二套标准。
 
 ## PR 与合并
 
@@ -70,4 +70,4 @@ Linux Runtime started 后，live Pipeline 由单 DSP worker 独占。ownership�
 
 ## 完成定义
 
-一个变更只有在以下全部完成后才算 Done：需求/根因明确、targeted+negative test、exact-head required checks PASS、相关中英文文档同步、protected merge、exact-main 再验证、Release 行为符合变更类别、且没有未分类 branch/evidence 债务。
+一个变更只有在以下全部完成后才算 Done：需求/根因明确、targeted+negative test、exact-head required checks PASS、相关中英文文档同步、protected merge、exact-main 再验证、研究行为符合声明范围、且没有未分类 branch/evidence 债务。

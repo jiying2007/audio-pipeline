@@ -50,6 +50,39 @@ def live_publication_violations(source):
 
 
 class ResearchCIBoundaryTests(unittest.TestCase):
+    def test_extended_research_guides_match_current_profile_names(self):
+        names = ("docs/EXTENDED_REAL_VALIDATION.md", "docs/EXTENDED_REAL_VALIDATION.zh-CN.md",
+                 "docs/TESTING.md", "docs/TESTING.zh-CN.md")
+        for name in names:
+            text = (ROOT / name).read_text(encoding="utf-8")
+            with self.subTest(path=name):
+                for profile in ("research-attribution-core", "research-attribution-extended", "research"):
+                    self.assertIn(profile, text)
+                self.assertIn("workflow_dispatch", text)
+                self.assertIn("source_sha", text)
+                for retired in ("--profile commercial-core", "EXTENDED_REAL_ENABLED=true",
+                                "Published releases automatically request", "Release published 自动申请"):
+                    self.assertNotIn(retired, text)
+
+    def test_current_research_guides_do_not_restore_retired_approval(self):
+        for name in ('docs/ARCHITECTURE.md', 'docs/AUDIO_QUALITY_EVALUATION.md', 'docs/EXTENDED_REAL_VALIDATION.zh-CN.md', 'docs/PERFORMANCE.md', 'docs/PLATFORM_SUPPORT.md', 'docs/PORTING.md', 'docs/SSC305_DELIVERY.md', 'docs/SSC305_DELIVERY.zh-CN.md', 'docs/TRUSTED_AUDIO_VALIDATION_BLIND_RUNNER.md', 'docs/TUNING.md'):
+            with self.subTest(path=name):
+                text = (ROOT / name).read_text(encoding="utf-8")
+                self.assertTrue("Current research scope" in text or "当前研究范围" in text)
+                self.assertIn("RESEARCH_ONLY_EXECUTION.md", text)
+        for name, required in (("CONTRIBUTING.md", "technical research only"),
+                               ("CONTRIBUTING.zh-CN.md", "纯技术研究")):
+            text = (ROOT / name).read_text(encoding="utf-8")
+            self.assertIn(required, text)
+            self.assertIn("validation/research-authority.json", text)
+            self.assertNotIn("software-commercial-ready", text)
+            self.assertNotIn("validation/authority.json", text)
+        for name, retired in (("docs/PERFORMANCE.md", "The checked-in Cortex-A32 LOW shipping policy requires 72 hours"),
+                              ("docs/PORTING.md", "Formal shipping acceptance uses schema-v4"),
+                              ("docs/SSC305_DELIVERY.md", "Beginning with v2.3.55, Release downloads"),
+                              ("docs/EXTENDED_REAL_VALIDATION.zh-CN.md", "EXTENDED_REAL_ENABLED=true")):
+            self.assertNotIn(retired, (ROOT / name).read_text(encoding="utf-8"))
+
     def test_all_active_workflows_exclude_product_publication_commands(self):
         workflows = sorted((ROOT / ".github/workflows").glob("*.yml"))
         self.assertGreaterEqual(len(workflows), 60)
@@ -132,7 +165,8 @@ class ResearchCIBoundaryTests(unittest.TestCase):
             live = current.read_text(encoding="utf-8")
             self.assertIn("scripts/research_github_governance.py", live)
             self.assertNotIn("python3 scripts/github_governance.py", live)
-        self.assertTrue((ROOT / "scripts/github_governance.py").is_file())
+        self.assertFalse((ROOT / "scripts/github_governance.py").exists())
+        self.assertTrue((ROOT / "scripts/run_archived_governance_tests.py").is_file())
         self.assertNotIn("When a new project version reaches `main`", docs)
 
     def test_required_verify_has_no_product_release_authority(self):

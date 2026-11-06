@@ -1,10 +1,12 @@
 # SSC305 保守档交付与证据
 
+> **当前研究范围**：本页仅定义技术研究与实测方法。当前准入以 [RESEARCH_ONLY_EXECUTION.md](RESEARCH_ONLY_EXECUTION.md) 为准，不依赖 GitHub Release、SKU 商用批准或产品认证；缺失真机证据只限制相应结论，不阻断独立软件/声学实验。原始许可、测量和盲测隔离要求保持不变。
+
 [English / canonical contract](SSC305_DELIVERY.md)
 
-发布包必须区分三个身份：普通 SDK 是 hosted 原生构建；`reference-armhf-sdk`
-是固定 CI 工具链编译的 `ssc305-cortex-a32-low`；正式 BSP 包必须使用产品批准的
-编译器、sysroot 和 ABI。参考包不能证明其 libc/loader 与产品固件一致，不能直接
+研究构建必须区分不同身份：普通 SDK 是 hosted 原生构建；`reference-armhf-sdk`
+是固定 CI 工具链编译的 `ssc305-cortex-a32-low`；实际 BSP 实验必须固定真实使用的
+编译器、sysroot 和 ABI，并独立验证链接、加载和运行。参考包不能证明其 libc/loader 与产品固件一致，不能直接
 把参考包或主机 SDK 当成板端量产包。
 
 ## 已接入的自动验证
@@ -41,14 +43,13 @@ FNV-1a 指纹只用于长流循环诊断比较；真正的声学 PCM 证据使�
 处理了多少秒音频与主机实际运行时间分开记录，均不是真机 72 小时 route soak。
 失败保留，未通过不能写成合格证据。
 
-## 如何使用发布物
+## 如何使用研究构建产物
 
-从 v2.3.55 开始，Release 只消费触发它的 exact-main Verify 产物；参考 SDK、SPDX、
-配置/编译器/库哈希、声学回归和工程长稳证据进入相同的 manifest、SHA256SUMS 与
-attestation，再由 immutable Release 保留。历史发布不重写，新发布不得降回旧的
-八资产集合。完整目录校验方法见英文契约；参考包不是正式 BSP 包，也不产生
-Product Certification 权威。
+从明确选择且成功的 Verify 运行取回研究资源/工程产物，固定 source SHA、完整文件清单、
+哈希与构建身份。Actions artifact 只是传输，不是独立声学结论或永久归档；需在失效前
+保留实验原始证据。旧 v2.3.55 Release 打包协议仅是历史记录，不再是活动发布路径。
+完整目录校验方法见英文契约；参考包不能替代真实 BSP 链接、加载和运行验证。
 
 仍需产品侧确认 PCM 几何、真正播放后的 render reference、统一时间域、路由变化、
-背压/丢帧处理、线程调度和完整资源预算。正式板端性能与量产认证保持独立待办，
+背压/丢帧处理、线程调度和完整资源预算。实际板端性能保持独立待测，
 不因软件 CI 全绿而关闭。

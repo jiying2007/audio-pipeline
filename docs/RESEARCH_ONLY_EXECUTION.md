@@ -1,6 +1,6 @@
 # Technical-research execution boundary
 
-**Status: active research CI/publication boundary detached; historical vocabulary and lab evidence-policy migration continues.** See [issue #882](https://github.com/jiying2007/audio-pipeline/issues/882) for the live dependency audit and retirement checklist. This document deliberately does not claim that historical certification and commercial publication entrypoints have all been removed.
+**Status: research execution is separated from retired publication and governance protocols.** [Issue #882](https://github.com/jiying2007/audio-pipeline/issues/882) is the completed migration record, not an open research-admission gate. Exact commit and CI evidence determine each subsequent cleanup result; historical words, license conditions and receipts are not new commercial authority.
 
 ## Active research authority
 
@@ -49,9 +49,9 @@ Physical HIL/readiness, exact real elapsed duration and immutable experimental
 source evidence continue through separate research controls. This cleanup
 does not claim real device qualification or rewrite historical release results.
 
-## Pending cleanup, not claimed complete
+## Scope of completion and retained history
 
-Source-root product certificates, VAD shipping-policy naming, lab and SKU-specific tools, other EN/ZH guides, test helpers and archived product-doc terminology still need separate atomic migration. Remove consumers before deleting their old files, preserve applicable third-party licenses (including noncommercial conditions), and verify exact-head CI plus fresh protected main. Retain Python 3.8 compatibility where used.
+Active research commands, required CI, data preparation and algorithm evaluation must not require commercial publication, SKU approval or hypothetical commercial licensing. Legacy certificates and documents are explicit historical records, not new research authority. Original source rights, including noncommercial conditions, still apply. Frozen experiment bytes and release/attestation schemas are not renamed or re-signed to satisfy a text search. Retain Python 3.8 compatibility where used; require exact-head CI and fresh protected-main verification for each change.
 
 ## Protected research-main governance (2026-11-05)
 
@@ -68,11 +68,7 @@ GitHub Release and product-certification entrypoints are retired. A successful
 Verify `summary` establishes source/quality coverage at that SHA, **not**
 commercial release approval or a physical target performance claim.
 
-Some laboratory `commercial-core` catalogs, `product-certified` policy
-records, release-named tooling and previous certification documents still exist
-to preserve original source/evidence identity and need dependency-aware
-research migration under #882. Their presence must not block lawful research;
-they cannot grant new license rights or be relabeled as new measurements.
+Current laboratory routes use research validation and target-measurement profiles. Historical `commercial-core` names and `product-certified` records may remain inside original evidence or explicit archive replay. They do not authorize current research, grant new license rights or constitute newly collected measurements. Reviewed unattended dataset permissions are not broadened by retiring product terminology.
 
 ## Research acoustic decision — no product policy (2026-11-05)
 
@@ -159,3 +155,11 @@ Required C API/ABI compatibility, source SHA identity, integrity of historical
 `CHANGELOG.md` and existing protected-main quality gates are unchanged.
 Actual SSC305/HIL or real human recordings remain separately measured or
 `NOT_RUN`/`BLOCKED`; an archived release never supplies new acoustic truth.
+
+## Historical governance execution isolated (2026-11-06)
+
+The automatic `ci-dechorate-governance-evidence.yml` workflow-run observer and its dormant PR833/M3/V2 command chain are retired from the active tree, together with `scripts/github_governance.py`. The current scientific dEchorate diagnostic workflow and algorithm/source/data manifests are unchanged; that workflow does not consume the withdrawn observer. The current main-only governance tool remains `scripts/research_github_governance.py`.
+
+All eleven removed paths remain byte-exact in Git commit `e504368662f41d0a731f7ca777f4d62af7f92754`, tree `e720700b4f4f83f242eeab8d137b61276371f937`, with per-file hashes in `tests/fixtures/archived-governance.json`. Required CI runs `scripts/run_archived_governance_tests.py`: it makes a disposable local checkout of that fixed tree, validates every retained member, and runs the same eight historical test/mode invocations with explicit fake HTTP fixtures. It cannot select a new revision or live operation, does not fetch Git objects, strips credentials/Actions context, blocks the GitHub CLI and bounds total test time. This is offline regression, not a general network sandbox or a new observation.
+
+New negative tests reject restored active legacy paths, modified archive members, substituted history, credential inheritance and omitted test entries. Existing source/measurement failures and real attempt budgets remain unchanged. No old receipt is relabeled as a new scientific or hardware PASS.

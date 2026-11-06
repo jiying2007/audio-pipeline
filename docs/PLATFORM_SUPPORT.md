@@ -1,31 +1,33 @@
-# Platform Support and Certification
+# Platform Support and Research Evidence
+
+> **Current research scope:** This is a technical-research guide. [RESEARCH_ONLY_EXECUTION.md](RESEARCH_ONLY_EXECUTION.md) owns current execution policy. GitHub Releases, shipping SKU approval and product certification are not research prerequisites. Missing device evidence limits only device claims, not independent software/acoustic experiments. Source rights, measurement integrity and blind-data isolation remain required.
 
 ## Support levels
 
 - **Build-supported**: continuously compiled for the stated ABI/SIMD profile.
 - **Emulation-executed**: selected executable contracts run under QEMU for that architecture class.
 - **Board-validated**: benchmark + functional/acoustic corpus pass on a named real board/kernel/compiler/audio route.
-- **Product-certified**: exact shipping build/deploy/execute identity plus approved SKU policy, real acoustic/thermal/power evidence, required route soak, attested evidence and lifecycle archive all pass.
+- **Independent device evidence**: the named study retains exact build/deploy/execute identity, real acoustic/resource/thermal/power observations and its preregistered endurance interval. No commercial certificate is issued.
 
 Cross-build/QEMU are never reported as target-board performance.
 
 ## Current platform matrix
 
-| Platform class | ABI | SIMD | Repository signal | Product certification |
+| Platform class | ABI | SIMD | Repository signal | Independent physical evidence |
 |---|---|---|---|---|
-| generic ARMv7-A | armhf | scalar/VFP | build-supported | pending per SKU |
-| Cortex-A7 | armhf | scalar/VFPv4 | build-supported | pending per SKU |
-| Cortex-A7 | armhf | NEON/VFPv4 | build + QEMU executed contracts | pending per SKU |
-| Cortex-A32 | armhf | NEON/FP-Armv8 | build-supported | pending per SKU |
-| SigmaStar SSC305 `ssc305-cortex-a32-low` | armhf | NEON/FP-Armv8 | exact preset build/install identity + QEMU consumer contract | real-board/Product Certification pending |
-| generic AArch64 | LP64 | NEON/ASIMD | build + QEMU executed contracts | pending per SKU |
+| generic ARMv7-A | armhf | scalar/VFP | build-supported | NOT_RUN for a specific target |
+| Cortex-A7 | armhf | scalar/VFPv4 | build-supported | NOT_RUN for a specific target |
+| Cortex-A7 | armhf | NEON/VFPv4 | build + QEMU executed contracts | NOT_RUN for a specific target |
+| Cortex-A32 | armhf | NEON/FP-Armv8 | build-supported | NOT_RUN for a specific target |
+| SigmaStar SSC305 `ssc305-cortex-a32-low` | armhf | NEON/FP-Armv8 | exact preset build/install identity + QEMU consumer contract | SSC305 physical measurements NOT_RUN |
+| generic AArch64 | LP64 | NEON/ASIMD | build + QEMU executed contracts | NOT_RUN for a specific target |
 | Arm without hardware floating point | varies | none | unsupported by this profile | separate fixed-point profile required |
 
-Portable DSP code is CPU-model agnostic. CPU names appear only in presets, emulation/certification records and product build configuration. The SSC305 repository signal proves the exact software build envelope and SDK consumption path only; it does not claim silicon timing, acoustic performance, power, thermal or route qualification.
+Portable DSP code is CPU-model agnostic. CPU names appear only in presets, emulation/measurement records and build configuration. The SSC305 repository signal proves the exact software build envelope and SDK consumption path only; it does not claim silicon timing, acoustic performance, power, thermal or route qualification.
 
-## Compile-time SKU envelope
+## Compile-time research envelope
 
-Products can reduce physical memory/ROM with:
+Research builds can reduce physical memory/ROM with:
 
 ```text
 AP_MODULES
@@ -37,7 +39,7 @@ AP_BUILD_MAX_AEC_TAIL_MS
 AP_RUNTIME_QUEUE_DEPTH
 ```
 
-These settings are part of the artifact fingerprint and must be captured in certification. A smaller envelope is a product capability decision, not a runtime overload response.
+These settings are part of the artifact fingerprint and must be captured in the research report. A smaller envelope is an explicit capability decision, not a runtime overload response.
 
 Hosted pruning measurements have one source of truth: [`ci/resource-baseline.json`](../ci/resource-baseline.json), rendered in [`docs/generated/RESOURCE_BASELINE.md`](generated/RESOURCE_BASELINE.md). Resource-gate CI regenerates both views and fails on drift. Hosted values are regression/build evidence only, not target RAM or product-certification claims.
 
@@ -47,42 +49,23 @@ Resource class is independent of CPU model:
 
 | Class | Default internal rate | CALL AEC tail | BF tracking | Intended envelope |
 |---|---:|---:|---|---|
-| `TINY` | 8 kHz | 48 ms | off | very constrained SKU / reserve headroom |
-| `LOW` | 16 kHz | 64 ms | on | constrained voice product |
+| `TINY` | 8 kHz | 48 ms | off | very constrained target / reserve headroom |
+| `LOW` | 16 kHz | 64 ms | on | constrained voice target |
 | `STANDARD` | 16 kHz | 96 ms | on | highest built-in classical quality |
 
 Compile-time caps may further restrict these defaults. `ap_config_for_resource()` clamps to the binary envelope rather than promising unsupported geometry.
 
-## Required certification record
+## Independent target research record
 
-For each shipping SoC/SKU capture at least:
+For each measured target, retain the actual board/SoC identity; exact source revision; compiler, sysroot, flags and `ap_build_info()`; build/deployed/executed binary hashes; kernel/DVFS/cpuset/IRQ configuration; PCM/ALSA geometry and timestamp domain; module and backend configuration; CPU/frame latency/RSS/XRUN/queue metrics; acoustic corpus identity; thermal/power readings; and the actual bounded endurance interval. Keep raw evidence and failure classifications.
 
-- product/SKU/board identifier and date;
-- immutable release tag/id plus exact release source revision and approved shipping policy hash;
-- CPU model/revision/core count and online cpuset;
-- exact shipping compiler executable hash/version, sysroot hash, toolchain-root hash and C flags;
-- `ap_build_info()` exact source/compiler/target/config identity and certification binary SHA-256 values;
-- builder runner and distinct DUT runner identity;
-- build, deployed and executed binary SHA-256 equality;
-- kernel, governor/DVFS, cpuset and IRQ affinity;
-- codec/ALSA period/buffer geometry;
-- capture/playback hardware timestamp clock domains and integration mode;
-- selected use case/resource class/stage subset;
-- AEC/NS/resampler backend selection;
-- active/idle CPU, p95/p99 frame time, RSS, cache misses and context switches;
-- XRUN, input-full, output-drop and DSP-overrun counters;
-- ERLE/convergence, double-talk, path-change and noise corpus results;
-- thermal and product power measurements;
-- policy-required real route soak; the checked-in Cortex-A32 LOW shipping policy requires 72 hours;
-- attested certification bundle and immutable `product-lifecycle` archive receipt.
+Neither an approved SKU policy, a GitHub Release, a product-lifecycle receipt nor an arbitrary 72-hour duration is a research prerequisite. Original certification schemas remain historical records; they do not admit current experiments. Unmeasured fields stay NOT_RUN or unknown, and QEMU is never relabeled as silicon timing.
 
-`certification/record.schema.json` is the only current machine-readable certification record contract and accepts **schema v4 only**. Older record schemas are non-authoritative for current certification and require migration/re-certification rather than acceptance by the current validator.
+## Independent acoustic validation
 
-## Acoustic certification
+Use the canonical repository [`validation/`](../validation/) framework and its machine-readable `validation/research-authority.json` for public/approved acoustic validation. Real/private WAV corpora remain outside the public repository. The retired `eval/` path is not an authority source. A release is not acoustically certified just because a hosted/public validation or evaluator self-test passes.
 
-Use the canonical repository [`validation/`](../validation/) framework and its machine-readable `validation/authority.json` for public/approved acoustic validation. Real/private WAV corpora remain outside the public repository. The retired `eval/` path is not an authority source. A release is not acoustically certified just because a hosted/public validation or evaluator self-test passes.
-
-Advanced BF/SYNC/wind/microphone-health complexity remains evidence-triggered: if the real shipping corpus meets the approved SKU policy, retain the lower-cost implementation; if it fails, the failed gate becomes evidence for a scoped algorithm upgrade.
+Advanced BF/SYNC/wind/microphone-health complexity remains evidence-triggered: compare independent target-corpus results against preregistered research criteria. Retain a lower-cost implementation when measured results support it; report failures as evidence for a scoped algorithm experiment.
 
 ## Unsupported assumptions
 

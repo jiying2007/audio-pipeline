@@ -16,7 +16,7 @@ FULL includes paired performance comparison: pull requests compare `origin/main 
 
 The current 2.x compatibility line has one public API/ABI surface. The gate requires the current public build-info/runtime symbols, rejects retired public names and exported symbols, and compares current ABI/symbols against the required published `v2.0.0` compatibility baseline.
 
-The baseline is mandatory evidence, not an optional optimization. If the baseline tag cannot be fetched or resolved to a commit, the gate fails closed. Current certification schema must remain v4-only.
+The baseline is mandatory evidence, not an optional optimization. If the baseline tag cannot be fetched or resolved to a commit, the gate fails closed. The historical certification format stays v4-only for offline replay; it grants no current research admission.
 
 ## Change-aware test selection
 
@@ -103,11 +103,11 @@ This 81-case generated suite is regression evidence only. Public validation rema
 
 ### Extended Real validation
 
-v2.1.0 adds an independent Extended Real family; it does not mutate Compact100/Full160. `commercial-core` covers RealMAN real far-field/moving sources plus measured BUT RIR, MUSAN and Mini LibriSpeech combinations. `commercial-plus` adds VOiCES, AMI and ICSI. AISHELL-4, filtered FSD50K and WHAM are research-only/conditional and cannot satisfy commercial gates. Selected source files are SHA-256 bound before corpus construction.
+Extended Real is an independent research family; it does not mutate Compact100/Full160. Current profiles are `research-attribution-core`, `research-attribution-extended` and `research`, with exact source rosters and usage classes in `validation/extended.datasets.lock.json`. Selected source files are SHA-256 bound before corpus construction. Preserve actual source-use restrictions; no commercial authorization is a research prerequisite.
 
-Extended Real adds p10 tail metrics, clipping/DC/level gates, VAD precision/recall/FPR/FNR, speech/noise attenuation, per-scenario sample/pass-rate requirements and dimension coverage. Blind holdout is scenario-stratified. Published releases automatically request commercial-core and the weekly schedule requests commercial-plus only after `EXTENDED_REAL_ENABLED=true`; otherwise automation fails visibly before allocating a self-hosted runner. See `EXTENDED_REAL_VALIDATION.md`.
+Extended Real retains p10 tail metrics, clipping/DC/level checks, VAD precision/recall/FPR/FNR, speech/noise attenuation, per-scenario sample/pass-rate requirements and dimension coverage. Its current `workflow_dispatch` entry requires exact `source_sha`; it does not run from Release events or a product schedule. Attribution-profile blind holdout is independently HMAC scenario-stratified. See `EXTENDED_REAL_VALIDATION.md`.
 
-Product certification remains a still higher trust tier.
+Actual device/route measurements are a distinct research evidence class, not a commercial certification prerequisite.
 
 ## Failure taxonomy and reproducer artifacts
 

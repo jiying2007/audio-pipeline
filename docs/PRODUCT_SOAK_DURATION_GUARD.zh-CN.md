@@ -1,5 +1,7 @@
 # 正式产品认证：实测 Soak 时长双来源守卫
 
+> **历史协议记录，非当前执行入口。** 本页保留退役产品流程的设计背景，不要求或启动商业认证、Release、72 小时测试。当前研究仅遵循 [RESEARCH_ONLY_EXECUTION.md](RESEARCH_ONLY_EXECUTION.md)；保留原始证据，不把旧流程作为科研前提。
+
 本阶段是 **Product Certification 工作流的认证证据加固**，**不**代表已运行 SSC305、72 小时测试或已取得产品认证。预注册与真实原代码证据见 [Issue #58](https://github.com/jiying2007/audio-pipeline/issues/58#issuecomment-6581164729)。
 
 ## 风险与来源

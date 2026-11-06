@@ -1,8 +1,10 @@
 # Performance and Release Gates
 
+> **Current research scope:** This is a technical-research guide. [RESEARCH_ONLY_EXECUTION.md](RESEARCH_ONLY_EXECUTION.md) owns current execution policy. GitHub Releases, shipping SKU approval and product certification are not research prerequisites. Missing device evidence limits only device claims, not independent software/acoustic experiments. Source rights, measurement integrity and blind-data isolation remain required.
+
 ## Principle
 
-Hosted x86 CI, QEMU and Arm cross-builds are regression/correctness signals only. Product performance is certified on the shipping SoC, kernel, compiler, DVFS policy, memory system and audio route.
+Hosted x86 CI, QEMU and Arm cross-builds are regression/correctness signals only. Device performance must be measured on the actual SoC, kernel, compiler, DVFS policy, memory system and audio route.
 
 Optimization is evidence-driven. Additional SIMD or algorithmic complexity is accepted only when target-board/acoustic evidence demonstrates a policy failure or material benefit and the relevant contracts remain valid.
 
@@ -41,7 +43,7 @@ PR verification uses `origin/main` as the paired base. Main push verification us
 
 These behaviors still require target-board measurement; hosted timing does not prove Cortex-A7/A32 savings.
 
-## SKU memory/ROM gates
+## Build-envelope memory/ROM gates
 
 Quality CI verifies physical pruning, not only runtime bypass. Hosted state-size values have one machine source of truth: [`ci/resource-baseline.json`](../ci/resource-baseline.json), with [`docs/generated/RESOURCE_BASELINE.md`](generated/RESOURCE_BASELINE.md) generated from it.
 
@@ -53,7 +55,7 @@ CI also links final consumer executables with section GC and verifies pruning re
 
 `BANDLIMITED` is default. Supported downsampling ratios have automated tone contracts for passband preservation and stopband attenuation. `FAST` is a separate explicit lightweight implementation and is independently measured; it is not a compatibility alias.
 
-## Product resource/build classes
+## Research resource/build classes
 
 Runtime resource classes remain tuning envelopes:
 
@@ -67,7 +69,7 @@ Compile-time SKU envelopes can additionally cap max I/O/internal rate, mic count
 
 Repository CI has two explicit Cortex-A32 delivery profiles:
 
-- `conservative`: exact `ssc305-cortex-a32-low` preset; shipping-default build contract, low-resource/stability first.
+- `conservative`: exact `ssc305-cortex-a32-low` preset; conservative research build contract, low-resource/stability first.
 - `effect-first`: exact `cortex-a32-neon` full graph; research-only envelope for determining whether extra resources later buy repeatable acoustic benefit.
 
 The resource gate produces a machine-readable qualification artifact for both profiles. It proves exact AArch32 build identity, pipeline/runtime caller-owned state sizes, linked `.text/.rodata`, final ELF size, absence of direct `malloc/calloc/realloc/free` references from the linked core/runtime libraries, algorithmic latency, and byte-identical repeated QEMU resource-probe stdout (`qemu_probe_repeat_identical`). This probe does not process PCM; audio replay has a separate exact-build evidence record.
@@ -83,7 +85,7 @@ Machine-readable policy: [`ci/ssc305-resource-profiles.json`](../ci/ssc305-resou
 | DSP p99 | <9 ms preferred, <10 ms hard |
 | DSP p95 | <7 ms |
 | 10 ms deadline misses | 0 nominal |
-| Average CPU | product target <=35-40%, lower preferred |
+| Average CPU | initial research target <=35-40%, lower preferred |
 | Data-plane heap growth | 0 |
 | Pipeline state | <=80,000 B public hard ceiling |
 | Runtime state | <=64 KiB public hard ceiling |
@@ -92,9 +94,9 @@ Machine-readable policy: [`ci/ssc305-resource-profiles.json`](../ci/ssc305-resou
 | FULL residence | >=99.9% nominal |
 | Route soak | policy-defined; no XRUN/queue/deadline regression |
 
-Board validation may use shorter engineering soaks; formal shipping certification follows the approved SKU policy. The checked-in Cortex-A32 LOW shipping policy requires 72 hours.
+Choose and record an endurance duration appropriate to the research question before running it. No universal 72-hour commercial certification requirement applies. Report actual elapsed time and audio duration separately; an unperformed target study is NOT_RUN, not a reason to block unrelated software experiments.
 
-## Target certification collectors
+## Target research measurement collectors
 
 ```bash
 python3 tools/target_evidence.py benchmark \
@@ -106,12 +108,12 @@ python3 tools/target_evidence.py benchmark \
 python3 tools/target_evidence.py route-soak \
   --binary /deployed/exact/ap_alsa_runtime_duplex \
   --output soak.json --capture-device hw:0,0 --playback-device hw:0,0 \
-  --farend /path/to/farend.pcm --seconds 259200 --dsp-cpu 1 \
+  --farend /path/to/farend.pcm --seconds 3600 --dsp-cpu 1 \
   --sample-rate 16000 --mic-channels 2 --max-xruns 0 --max-overruns 0 \
   --power-input /path/to/live_power --power-scale 1000000
 ```
 
-`ap_runtime_bench` is a synthetic runtime regression tool and is not accepted as product-route soak evidence. Product Certification builds on `audio-builder`, deploys the exact artifact to `audio-target`, and requires build/deployed/executed SHA-256 equality.
+`ap_runtime_bench` is a synthetic runtime regression tool, not real audio-route endurance evidence. A physical study must bind the actual build, deployed and executed binary SHA-256 values and actual device identity. The one-hour command above is an example, not an acceptance minimum or a measured result.
 
 ## Realtime correctness gates
 
@@ -145,21 +147,19 @@ This proves tooling/format interoperability, not acoustic quality.
 
 ## CI quality matrix
 
-Required repository signals include architecture boundary lint; GCC/Clang strict builds; MDF/NLMS, EMA/MCRA, precise/fast-math and BANDLIMITED/FAST variants; ASan/UBSan, TSan and fuzz smoke; hosted source coverage; static analysis; SKU composition/RAM/ELF pruning; ARM cross-build/QEMU execution; installed SDK consumers; acoustic evaluation contracts; dump/replay; certification semantic/provenance validation; and Nightly longer fuzz/history tracking.
+Required repository signals include architecture boundary lint; GCC/Clang strict builds; MDF/NLMS, EMA/MCRA, precise/fast-math and BANDLIMITED/FAST variants; ASan/UBSan, TSan and fuzz smoke; hosted source coverage; static analysis; SKU composition/RAM/ELF pruning; ARM cross-build/QEMU execution; installed SDK consumers; acoustic evaluation contracts; dump/replay; historical evidence semantic/provenance regression; and Nightly longer fuzz/history tracking.
 
-## Acoustic/product corpus
+## Acoustic research corpus
 
-A real certification corpus should include far-end-only at several playback levels, near-end speech at multiple distances/angles, true double-talk, music/content echo, enclosure/path and gain changes, injected delay and independent clock mismatch, stationary/non-stationary robot noise, quiet speech and CPU/DDR/IRQ contention.
+A real evaluation corpus should include far-end-only at several playback levels, near-end speech at multiple distances/angles, true double-talk, music/content echo, enclosure/path and gain changes, injected delay and independent clock mismatch, stationary/non-stationary robot noise, quiet speech and CPU/DDR/IRQ contention.
 
 Record ERLE/residual echo, convergence time, SI-SDR or segmental SNR, STOI/PESQ/POLQA where licensing permits, VAD precision/recall, CPU/RSS/cache/context switches, thermal zones, power and XRUN/backpressure counters.
 
-Algorithm escalation is corpus-driven. A passing shipping corpus is evidence to retain the lower-cost baseline.
+Algorithm escalation is corpus-driven. Repeatable target-corpus results can justify retaining the lower-cost baseline; the scope and comparison rules must be reported.
 
-## Certification semantics
+## Historical certification records
 
-`certification/record.schema.json` and `certification/validate_record.py` accept schema v4 only. A `product-certified` record requires an approved shipping SKU policy, exact shipping toolchain identity, build/deployed/executed binary SHA-256 equality, target performance evidence, real corpus results, thermal/power evidence, a policy-duration passing route soak, artifacts/checksums and deployment provenance.
-
-The certification bundle is attested and final acceptance requires an immutable `product-lifecycle` archive receipt. A hosted CI release can never manufacture these target-board measurements.
+Former `certification/` schemas and lifecycle receipts are historical provenance, not active research gates. Preserve their original hashes and failure states. Current independent research uses actual source/build/data/measurement evidence; hosted CI cannot manufacture target-board measurements or a new license.
 
 ## Conservative integration budget and delivery
 
@@ -169,8 +169,9 @@ thread stacks, application/ALSA PCM buffering and optional Flight Recorder memor
 separately. Effect-first remains research-only; passing its resource envelope
 never establishes a quality improvement.
 
-The governed release additionally publishes an explicitly named **reference armhf
-SDK**, built with the pinned CI cross-toolchain and exact conservative preset.
+Resource Gates produce an explicitly named **reference armhf SDK**, built with
+the pinned CI cross-toolchain and exact conservative preset. Research artifact
+verification does not depend on publishing a GitHub Release.
 It is not the SigmaStar BSP/sysroot SDK and cannot substitute for actual BSP
 link/loader compatibility or silicon performance qualification. See
 [`SSC305_DELIVERY.md`](SSC305_DELIVERY.md) for identity and evidence semantics.

@@ -26,11 +26,11 @@ token 或 URL；身份冲突立即失败，不重试。保留原失败并根据�
 
 当前 2.x 兼容线只有一套 public API/ABI surface。门禁要求当前 `ap_build_info()`、`ap_runtime_open()`、`ap_runtime_submit_frame()`、`ap_runtime_read_metrics()` 等公开 symbol 存在，持续禁止已退役 public name/exported symbol 复活，并以已发布 `v2.0.0` 作为 required same-major compatibility baseline。
 
-baseline 是强制证据而不是可选优化：tag 无法 fetch 或无法 resolve 到 commit 时必须 fail closed。Certification 当前只接受 schema v4。
+baseline 是强制证据而不是可选优化：tag 无法 fetch 或无法 resolve 到 commit 时必须 fail closed。历史 Certification 格式只接受 schema v4 用于离线回放，不授予当前研究准入。
 
 ## 变更感知测试选择
 
-`scripts/ci_impact.py` 维护 composition、Arm profile、alternate backend、performance、ALSA、ABI、sanitizer、QEMU、resource 与 validation/certification 的显式依赖。无法识别的输入直接回退 FULL，不允许为了节省 CI 猜测跳过。
+`scripts/ci_impact.py` 维护 composition、Arm profile、alternate backend、performance、ALSA、ABI、sanitizer、QEMU、resource 与科研 validation/历史格式回归的显式依赖。无法识别的输入直接回退 FULL，不允许为了节省 CI 猜测跳过。
 
 ## 可复现 CI 与资源单一真相源
 
@@ -105,11 +105,11 @@ PR/main 音频 regression 使用 generator **v3** 与 seeds `1307 / 2307 / 3307`
 
 ### Extended Real 验证
 
-v2.1.0 增加独立 Extended Real family，不修改 Compact100/Full160 历史基线。`commercial-core` 使用 RealMAN 真实远场/移动声源以及 BUT measured RIR、MUSAN、Mini LibriSpeech；`commercial-plus` 增加 VOiCES、AMI、ICSI。AISHELL-4、过滤后的 FSD50K、WHAM 只能进入 research/conditional 路径，不能满足 commercial gate。所有实际选择的 source file 在构建 corpus 前逐文件 SHA-256 绑定。
+Extended Real 是独立研究 family，不修改 Compact100/Full160 历史基线。当前 profile 为 `research-attribution-core`、`research-attribution-extended` 和 `research`，实际来源与用途分类由 `validation/extended.datasets.lock.json` 固定。所有选择的 source file 在构建 corpus 前逐文件 SHA-256 绑定；保留实际来源使用限制，不要求与研究无关的商业许可。
 
-Extended Real 增加 P10 tail、clipping/DC/level、VAD precision/recall/FPR/FNR、speech/noise attenuation、scenario 样本数/通过率和维度覆盖；blind 按 scenario 分层。Release published 自动申请 commercial-core，每周申请 commercial-plus；只有 `EXTENDED_REAL_ENABLED=true` 才进入 self-hosted，否则 hosted availability 必须 fail-visible。详见 `EXTENDED_REAL_VALIDATION.zh-CN.md`。
+Extended Real 保留 P10 tail、clipping/DC/level、VAD precision/recall/FPR/FNR、speech/noise attenuation、scenario 样本数/通过率和维度覆盖。当前只有要求精确 `source_sha` 的 `workflow_dispatch` 入口，不根据 Release 或产品定时计划触发；归属审阅 profile 使用独立 HMAC 按 scenario 分层盲测。详见 `EXTENDED_REAL_VALIDATION.zh-CN.md`。
 
-Product Certification 仍是更高一级的真实发货硬件证据。
+真实设备/route 测量是独立科研证据类型，不是其他研究的商业认证前提。
 
 ## 失败分类与可复现包
 

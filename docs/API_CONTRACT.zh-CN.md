@@ -40,6 +40,14 @@ Pipeline、standalone module 与 Linux Runtime 的持久内存由调用方提供
 
 同步数据面内部不执行 heap、文件 I/O、网络、RPC 或格式化日志。
 
+## 双麦固定方向与健康保护
+
+`AP_BUILD_BF_DIRECTION_TRACKING=0` 只关闭方向跟踪。Standalone BF 的非零 `track_direction` 请求仍以 `AP_ESTATE` 原子拒绝；`track_direction=0` 与 Pipeline LITE 保留既有狭义 hard-contamination 保护。
+
+固定方向每四个实际 BF 帧在当前 lag 上观察，不更新方向、lag score 或旧 tracking counter。两个通道的观察能量须严格高于 normalized S16 的 1 LSB RMS；连续两次支持同一可信麦才确认保护，连续八次有效恢复观察才退出。无效或安静观察清未完成确认/恢复计数，保留已确认 hard 路由；fixed/tracking 切换也使未完成证据失效。进入或离开 SAFE 时清除未完成的 BF 确认/恢复计数并重新开始观察节拍；重复设置同一质量模式不重启证据计数。已确认的 hard 路由跨 SAFE 保留，供 BF 恢复后继续使用。该路径不启用 tracking soft fallback，不把任意断麦、削波或反相当作已覆盖故障。SAFE 旁路 BF，仍使用 mic0。
+
+路由变化不增加缓存或前瞻，仍输出完整帧，但没有 crossfade，HPF 尾迹也可能推迟恢复资格。因此不能从帧连续性宣称对讲无点击；实际切换幅度、恢复时间和首次失败见[双麦健康验证记录](research/frontend-evolution-v1/DUALMIC_FIXED_HEALTH_V1_RESULT.zh-CN.md)。
+
 ## Linux Runtime lifecycle
 
 推荐顺序：
@@ -106,6 +114,10 @@ Standalone resampler 固定转换完整 10 ms 帧：`input_s16()` 从受支持�
 时间戳/断流/XRUN/clock reset/codec reopen/lost frame 是系统事实，不应让 DSP 通过音频波形猜测。Route/path reset 会建立新的收敛 epoch；AEC/同步 telemetry 的解释必须尊重该 epoch。
 
 时间戳差保持按最近采样点舍入；非法或超范围观察返回 `AP_EINVAL`，不得因整数回绕被误接受。拒绝后原有对齐、观察计数和 AEC 收敛 epoch 不变。绝对时间戳很大但差值有效时仍可使用；standalone SYNC 使用同一验证规则。
+
+相关性漂移估计按相邻成功声学延迟观察之间实际处理的 capture 样点数归一化，包含因低相关或非唯一峰而拒绝的帧；render 入队次数不是这一时间基准。前一条声学基准有效时，reference drift credit 也按同一实际 capture 间隔累计，不能因中间观察被拒绝就缩成 100 ms。正常 100 ms 的速率及 credit 运算顺序、0.95/0.05 平滑、ppm 限幅、对齐误差反馈、每次观察的 slip 上限和插值规则保持。已失效的基准不提供跨段积分间隔；重新锚定的第一条有效观察沿用原名义 credit 更新，并为下一间隔建立起点。
+
+关闭 delay tracking 或 drift compensation 会使旧声学速率基准失效；重新启用后的第一条有效相关观察只建立新基准，不跨关闭区间做差。合法硬件时间戳仍立即校准对齐并清零漂移，下一条声学观察重新建立速率基准。确认后的相关 route jump 在启用漂移补偿时以当前 capture 位置建立新锚点。Stream reset 清空计时；采样率变化或 capture 计数回绕前先使旧基准失效。该边界保护不代表无 reset 的采样率切换已获声学验证，也不能代替已有断流/reset 通知。非法公开调用不推进或重置计时。
 
 Metadata 的 capture/render 丢帧数独立计入对应计数；有断流 flag 而丢帧数为零的方向按 1 帧计入，未置 flag 的方向不计入。双向断流仍只对该边界重置一次。断流事件的单个 `arg1` 保持为已置 flag 方向丢帧数的最大值；显式断流 command 的共享 `lost_frames` 分别用于每个已置 flag 的方向。
 

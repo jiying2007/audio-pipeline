@@ -66,7 +66,9 @@ ap_status_t ap_module_beamformer_init(void *memory, size_t memory_size,
                                       ap_beamformer_module_t **out);
 void ap_module_beamformer_reset(ap_beamformer_module_t *module);
 /* A nonzero track_direction requires AP_BUILD_BF_DIRECTION_TRACKING.
- * An unavailable request returns AP_ESTATE without changing state or output. */
+ * An unavailable request returns AP_ESTATE without changing state or output.
+ * Fixed direction retains the existing narrow hard-contamination observer;
+ * it does not update steering or enable the tracking soft fallback. */
 ap_status_t ap_module_beamformer_process(ap_beamformer_module_t *module,
                                          int track_direction,
                                          float *mic0, float *mic1,

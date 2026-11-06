@@ -1,0 +1,39 @@
+test_actual_archive_source_content_positive (__main__.StaticBuildTests.test_actual_archive_source_content_positive) ... ok
+test_archive_source_tree_identity_mismatch_rejected (__main__.StaticBuildTests.test_archive_source_tree_identity_mismatch_rejected) ... ok
+test_cli_rejects_without_promoting_any_authority (__main__.StaticBuildTests.test_cli_rejects_without_promoting_any_authority) ... ok
+test_compile_failure_receipt_stays_denied (__main__.StaticBuildTests.test_compile_failure_receipt_stays_denied) ... {"log_tails": {}, "rejected_receipt": {"a3_dsp_executed": false, "a3_generated_executions": 0, "a3_worker_executed": false, "compilers": {}, "configured_headers": {}, "external_freeze_verified": false, "formal_controls_qualified": false, "modes": {}, "provider_qualified": false, "public_sdk_qualified": false, "reason": "A3_REQUIRED_PINNED_COMPILER_MISSING", "rolling_33_49_qualified": false, "rss_measured": false, "schema_version": 1, "shipping_authority": false, "source": {"current_tree_is_original_tree": false, "status": "A3_R2_T1_STATIC_OBJECTS_ONLY_NO_EXECUTION"}, "source_admission_granted": false, "ssc305_hil_qualified": false, "status": "A3_R2_T1_STATIC_BUILD_REJECTED"}}
+ok
+test_compile_only_never_links_or_runs (__main__.StaticBuildTests.test_compile_only_never_links_or_runs) ... ok
+test_elf_executable_or_different_architecture_rejected (__main__.StaticBuildTests.test_elf_executable_or_different_architecture_rejected) ... ok
+test_elf_truncated_oversized_and_random_rejected (__main__.StaticBuildTests.test_elf_truncated_oversized_and_random_rejected) ... ok
+test_fake_full_pipeline_records_eight_not_executed_objects (__main__.StaticBuildTests.test_fake_full_pipeline_records_eight_not_executed_objects) ... {"log_tails": {}, "rejected_receipt": {"a3_dsp_executed": false, "a3_generated_executions": 0, "a3_worker_executed": false, "compilers": {}, "configured_headers": {}, "external_freeze_verified": false, "formal_controls_qualified": false, "modes": {}, "provider_qualified": false, "public_sdk_qualified": false, "reason": "A3_REQUIRED_PINNED_COMPILER_MISSING", "rolling_33_49_qualified": false, "rss_measured": false, "schema_version": 1, "shipping_authority": false, "source": {"current_tree_is_original_tree": false, "status": "A3_R2_T1_STATIC_OBJECTS_ONLY_NO_EXECUTION"}, "source_admission_granted": false, "ssc305_hil_qualified": false, "status": "A3_R2_T1_STATIC_BUILD_REJECTED"}}
+ERROR
+test_four_modes_eight_objects (__main__.StaticBuildTests.test_four_modes_eight_objects) ... ok
+test_modes_distinguish_sanitizers_and_arm32 (__main__.StaticBuildTests.test_modes_distinguish_sanitizers_and_arm32) ... ok
+test_no_target_or_scientific_permission_is_returned (__main__.StaticBuildTests.test_no_target_or_scientific_permission_is_returned) ... ok
+test_original_88_source_proof_required (__main__.StaticBuildTests.test_original_88_source_proof_required) ... ok
+test_pinned_module_rejects_symlink (__main__.StaticBuildTests.test_pinned_module_rejects_symlink) ... ok
+test_pinned_module_rejects_untrusted_bytes_before_compile (__main__.StaticBuildTests.test_pinned_module_rejects_untrusted_bytes_before_compile) ... ok
+test_real_cmake_configuration_never_runs_generated_targets (__main__.StaticBuildTests.test_real_cmake_configuration_never_runs_generated_targets) ... ok
+test_real_elf_object_header_positive_for_each_mode (__main__.StaticBuildTests.test_real_elf_object_header_positive_for_each_mode) ... ok
+test_real_generated_header_required_not_synthetic_promotion (__main__.StaticBuildTests.test_real_generated_header_required_not_synthetic_promotion) ... ok
+test_unregistered_mode_or_translation_unit_rejected (__main__.StaticBuildTests.test_unregistered_mode_or_translation_unit_rejected) ... ok
+test_worktree_source_changed_rejected (__main__.StaticBuildTests.test_worktree_source_changed_rejected) ... ok
+
+======================================================================
+ERROR: test_fake_full_pipeline_records_eight_not_executed_objects (__main__.StaticBuildTests.test_fake_full_pipeline_records_eight_not_executed_objects)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/b74ab3415ba4/audio-dualmic-source-preparation/tests/validation/frontend_evolution/test_fe09_a3_r2_static_build.py", line 261, in test_fake_full_pipeline_records_eight_not_executed_objects
+    report = M.build_only(self.root, self.out)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/b74ab3415ba4/audio-dualmic-source-preparation/tests/validation/frontend_evolution/fe09_a3_r2_static_build.py", line 173, in build_only
+    need(path is not None and path.startswith(("/usr/bin/", "/bin/")),
+  File "/workspace/scratch/b74ab3415ba4/audio-dualmic-source-preparation/tests/validation/frontend_evolution/fe09_a3_r2_static_build.py", line 47, in need
+    raise Rejected(reason)
+a3_r2_static.Rejected: A3_REQUIRED_PINNED_COMPILER_MISSING
+
+----------------------------------------------------------------------
+Ran 19 tests in 0.017s
+
+FAILED (errors=1)

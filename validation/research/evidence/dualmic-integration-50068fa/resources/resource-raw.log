@@ -1,0 +1,32 @@
+$ /workspace/scratch/b74ab3415ba4/build-tools/cmake/data/bin/cmake --preset composition-raw -B /workspace/scratch/b74ab3415ba4/build-dualmic-resource-raw
+Preset CMake variables:
+
+  AP_BUILD_BENCH="OFF"
+  AP_BUILD_EXAMPLES="OFF"
+  AP_BUILD_PIPELINE="ON"
+  AP_BUILD_TESTS="ON"
+  AP_ENABLE_LINUX_RUNTIME="OFF"
+  AP_MODULES="RESAMPLER"
+  AP_STRICT_WARNINGS="ON"
+  CMAKE_BUILD_TYPE="Release"
+
+-- The C compiler identification is GNU 14.2.0
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: /usr/bin/cc - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Configuring done (0.1s)
+-- Generating done (0.0s)
+-- Build files have been written to: /workspace/scratch/b74ab3415ba4/build-dualmic-resource-raw
+
+$ /workspace/scratch/b74ab3415ba4/build-tools/cmake/data/bin/cmake --build /workspace/scratch/b74ab3415ba4/build-dualmic-resource-raw --parallel 2 --target ap_state_size
+[ 20%] Building C object CMakeFiles/audio_pipeline.dir/Unity/unity_0_c.c.o
+[ 40%] Building C object CMakeFiles/audio_pipeline.dir/src/modules/ap_resampler_module.c.o
+[ 60%] Linking C static library libaudio_pipeline.a
+[ 60%] Built target audio_pipeline
+[ 80%] Building C object CMakeFiles/ap_state_size.dir/tests/print_pipeline_state.c.o
+[100%] Linking C executable ap_state_size
+[100%] Built target ap_state_size
+
+{"ap_state_size": 1064}

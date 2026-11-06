@@ -1,0 +1,36 @@
+{
+  "all_24_byte_identical_to_failed_candidate": true,
+  "budget_passed_at_validation": false,
+  "budget_seconds": 300,
+  "decoded_snapshot": "/tmp/arm-transport-original-xcewovwb",
+  "elapsed_from_root_approximate_start_seconds": 316.123273,
+  "finished_utc": "2026-11-06T08:11:31.123273+00:00",
+  "negative_controls": [
+    {
+      "changed": "original/base-size.log.b64",
+      "outer_manifest_recomputed": true,
+      "reason": "identity mismatch: original/base-size.log",
+      "rejected": true
+    },
+    {
+      "changed": "original/report.json",
+      "outer_manifest_recomputed": true,
+      "reason": "identity mismatch: original/report.json",
+      "rejected": true
+    }
+  ],
+  "original_diagnostics": "validation/research/evidence/dualmic-arm-static-9a9202e/original/base-size.log:30: new blank line at EOF.\nvalidation/research/evidence/dualmic-arm-static-9a9202e/original/candidate-size.log:30: new blank line at EOF.\n",
+  "original_failure": "unregistered or reordered whitespace diagnostics",
+  "original_manifest_byte_identical": true,
+  "original_members_restored": 24,
+  "original_report_sha256": "825e51db18c0e43d70e17595d3bdf32505b0e5da21ad0069be154ac7a84fbf79",
+  "protected_base_guard": {
+    "exceptions": 0,
+    "original_exit": 0,
+    "status": "STRICT_PASS"
+  },
+  "root_supplied_approximate_start_utc": "2026-11-06T08:06:15+00:00",
+  "source_workflow_gate_unchanged": true,
+  "transport_commit": "642a7bfc19ffa7bb10f3a53a2729d371d0197a89",
+  "worktree_elapsed_seconds": 189.82396054267883
+}

@@ -1,0 +1,92 @@
+{
+  "schema_version": 1,
+  "task_started_utc": "2026-11-06T08:45:28+00:00",
+  "verification_completed_utc": "2026-11-06T08:46:50.307806+00:00",
+  "elapsed_seconds": 82.307806,
+  "budget_seconds": 180,
+  "budget_passed_at_verification": true,
+  "captured_head": "f3f4d7247e77fcc54a05924a84a1f93e2b9e4a3b",
+  "public_seed_commits": [
+    "a920beed8e2c66ea9d90442d31af9632f5c75a23",
+    "b1f40864fb0fc941561950a656041ade6e8b9b89"
+  ],
+  "bundle_prerequisites": [
+    "b1f40864fb0fc941561950a656041ade6e8b9b89",
+    "a920beed8e2c66ea9d90442d31af9632f5c75a23"
+  ],
+  "bundle_header": "# v2 git bundle\n-b1f40864fb0fc941561950a656041ade6e8b9b89 fix(evidence): preserve ARM raw logs through verified lossless transport\n-a920beed8e2c66ea9d90442d31af9632f5c75a23 test(research): prepare exact source gates for dual-mic 2.3.62 (#916)\nf3f4d7247e77fcc54a05924a84a1f93e2b9e4a3b refs/heads/work/dualmic-sync-credit",
+  "bundle": {
+    "path": "source-continuation.bundle.b64",
+    "decoded_bytes": 243273,
+    "decoded_sha256": "6fd44ae1daacd2ec3d0dd9f72248ed4a47a651b7e2674667f83add7d256c4fe5",
+    "encoded_bytes": 324365,
+    "encoded_sha256": "c7d7a2abdfab2eeb31479dc29e429df8a58cb0d019aacffcc251107cd099d393"
+  },
+  "isolated_restore": {
+    "no_alternates": true,
+    "merge_absent_after_public_seed": true,
+    "commits": [
+      {
+        "commit": "5728a4f1b43d9d66f6cea8467ac3443efe14297e",
+        "tree": "e142c99b6305e4da1f09386ebbf3935cea97339b",
+        "raw_commit_byte_equal": true
+      },
+      {
+        "commit": "86c96af3fb8754eb7451f8bca2f83c3d003493f9",
+        "tree": "3a52169f91b564ed61adbcc36f77cbf83135af46",
+        "raw_commit_byte_equal": true
+      },
+      {
+        "commit": "a64090d73dd4206fffc9f1f69d7f139e9c158996",
+        "tree": "f189455f836ad80006a676a99ef1dbdf41132f3b",
+        "raw_commit_byte_equal": true
+      },
+      {
+        "commit": "85f998b984fa4147c24f7122be750318da432fd4",
+        "tree": "d400f2f7cfcbadb92f54c05ec4e139e199c34416",
+        "raw_commit_byte_equal": true
+      },
+      {
+        "commit": "0ef16a767e0cc7efd73dd42da5237a397167e24e",
+        "tree": "6777748cd0cef43a139d9a11e245e6b117fcd820",
+        "raw_commit_byte_equal": true
+      },
+      {
+        "commit": "f3f4d7247e77fcc54a05924a84a1f93e2b9e4a3b",
+        "tree": "a255e6b096adecc8abdf4230797582c2d049305a",
+        "raw_commit_byte_equal": true
+      }
+    ],
+    "measured_checkout_files": {
+      "src/sync/ap_sync.c": {
+        "bytes": 15316,
+        "sha256": "6580e9c482d01020f82acfb83dce37eeb7254cd25936a6a72d1da9a8739de6c1"
+      },
+      "src/sync/ap_sync.h": {
+        "bytes": 2411,
+        "sha256": "e855c8a517d7030be90ca4190cad75e84f8764fc35cebef9032cc001b7b47630"
+      },
+      "tests/test_sync_observation_time.c": {
+        "bytes": 24871,
+        "sha256": "6e1b73296d213bd7053e0902bdd820b6f0211a9ec4f654a49d5c952aea27598a"
+      },
+      "tests/test_drift_res.c": {
+        "bytes": 8381,
+        "sha256": "b2018a9dee2843347f45986f90db9d1043a648ab49601011d34b7040feb44b58"
+      },
+      "CMakeLists.txt": {
+        "bytes": 33269,
+        "sha256": "28b7fb2c5232502cba2f0d10db8c08ab93ebdf1e1cccbabd3dddd50b5203e5f4"
+      }
+    },
+    "original_604_second_budget_failure_preserved": true,
+    "fsck_exit": 0
+  },
+  "not_run": [
+    "DSP",
+    "CMake",
+    "CTest",
+    "ARM",
+    "R7 preparation"
+  ]
+}

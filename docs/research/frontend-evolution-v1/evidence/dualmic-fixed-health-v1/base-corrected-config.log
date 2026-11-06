@@ -1,0 +1,58 @@
+FAIL tests/test_beamformer_health.c:261 sustained hard signature confirms within eight frames
+FAIL tests/test_beamformer_health.c:262 eight recovery observations within 32 frames
+FAIL tests/test_beamformer_health.c:261 sustained hard signature confirms within eight frames
+FAIL tests/test_beamformer_health.c:262 eight recovery observations within 32 frames
+FAIL tests/test_beamformer_health.c:261 sustained hard signature confirms within eight frames
+FAIL tests/test_beamformer_health.c:262 eight recovery observations within 32 frames
+FAIL tests/test_beamformer_health.c:261 sustained hard signature confirms within eight frames
+FAIL tests/test_beamformer_health.c:262 eight recovery observations within 32 frames
+FAIL tests/test_beamformer_health.c:261 sustained hard signature confirms within eight frames
+FAIL tests/test_beamformer_health.c:262 eight recovery observations within 32 frames
+FAIL tests/test_beamformer_health.c:261 sustained hard signature confirms within eight frames
+FAIL tests/test_beamformer_health.c:262 eight recovery observations within 32 frames
+FAIL tests/test_beamformer_health.c:261 sustained hard signature confirms within eight frames
+FAIL tests/test_beamformer_health.c:262 eight recovery observations within 32 frames
+FAIL tests/test_beamformer_health.c:261 sustained hard signature confirms within eight frames
+FAIL tests/test_beamformer_health.c:262 eight recovery observations within 32 frames
+FAIL tests/test_beamformer_health.c:261 sustained hard signature confirms within eight frames
+FAIL tests/test_beamformer_health.c:262 eight recovery observations within 32 frames
+FAIL tests/test_beamformer_health.c:261 sustained hard signature confirms within eight frames
+FAIL tests/test_beamformer_health.c:262 eight recovery observations within 32 frames
+FAIL tests/test_beamformer_health.c:261 sustained hard signature confirms within eight frames
+FAIL tests/test_beamformer_health.c:262 eight recovery observations within 32 frames
+FAIL tests/test_beamformer_health.c:261 sustained hard signature confirms within eight frames
+FAIL tests/test_beamformer_health.c:262 eight recovery observations within 32 frames
+FAIL tests/test_beamformer_health.c:280 fixed-mode hard setup reached confirmation
+FAIL tests/test_beamformer_health.c:354 one-LSB RMS is ineligible; above-floor signature may confirm
+FAIL tests/test_beamformer_health.c:375 turning tracking off retains confirmed hard state
+FAIL tests/test_beamformer_health.c:375 turning tracking off retains confirmed hard state
+FAIL tests/test_beamformer_health.c:375 turning tracking off retains confirmed hard state
+FAIL tests/test_beamformer_health.c:375 turning tracking off retains confirmed hard state
+FAIL tests/test_beamformer_health.c:375 turning tracking off retains confirmed hard state
+FAIL tests/test_beamformer_health.c:375 turning tracking off retains confirmed hard state
+BF state=176 module=184 legacy_fields=176 pipeline=78192 tracking_capability=1
+hard rate=8000 hpf=0 bad=0 lag=-1 entry=4294967295 recovery=4294967295 entry_added_step=0 recovery_added_step=0 entry_boundary=0 recovery_boundary=0 fault_rms=0.0867203669 recovered_rms=0.028861936
+hard rate=8000 hpf=0 bad=0 lag=0 entry=4294967295 recovery=4294967295 entry_added_step=0 recovery_added_step=0 entry_boundary=0 recovery_boundary=0 fault_rms=0.0868338436 recovered_rms=0.035531676
+hard rate=8000 hpf=0 bad=0 lag=1 entry=4294967295 recovery=4294967295 entry_added_step=0 recovery_added_step=0 entry_boundary=0 recovery_boundary=0 fault_rms=0.0867016285 recovered_rms=0.028861936
+hard rate=8000 hpf=0 bad=1 lag=-1 entry=4294967295 recovery=4294967295 entry_added_step=0 recovery_added_step=0 entry_boundary=0 recovery_boundary=0 fault_rms=0.0867016285 recovered_rms=0.028861936
+hard rate=8000 hpf=0 bad=1 lag=0 entry=4294967295 recovery=4294967295 entry_added_step=0 recovery_added_step=0 entry_boundary=0 recovery_boundary=0 fault_rms=0.0868338436 recovered_rms=0.035531676
+hard rate=8000 hpf=0 bad=1 lag=1 entry=4294967295 recovery=4294967295 entry_added_step=0 recovery_added_step=0 entry_boundary=0 recovery_boundary=0 fault_rms=0.0867203669 recovered_rms=0.028861936
+hard rate=8000 hpf=1 bad=0 lag=-1 entry=4294967295 recovery=4294967295 entry_added_step=0 recovery_added_step=0 entry_boundary=0 recovery_boundary=0 fault_rms=0.0751256912 recovered_rms=0.029732492
+hard rate=8000 hpf=1 bad=0 lag=0 entry=4294967295 recovery=4294967295 entry_added_step=0 recovery_added_step=0 entry_boundary=0 recovery_boundary=0 fault_rms=0.0752792857 recovered_rms=0.0366065312
+hard rate=8000 hpf=1 bad=0 lag=1 entry=4294967295 recovery=4294967295 entry_added_step=0 recovery_added_step=0 entry_boundary=0 recovery_boundary=0 fault_rms=0.0751322784 recovered_rms=0.029732492
+hard rate=8000 hpf=1 bad=1 lag=-1 entry=4294967295 recovery=4294967295 entry_added_step=0 recovery_added_step=0 entry_boundary=0 recovery_boundary=0 fault_rms=0.0751322784 recovered_rms=0.029732492
+hard rate=8000 hpf=1 bad=1 lag=0 entry=4294967295 recovery=4294967295 entry_added_step=0 recovery_added_step=0 entry_boundary=0 recovery_boundary=0 fault_rms=0.0752792857 recovered_rms=0.0366065312
+hard rate=8000 hpf=1 bad=1 lag=1 entry=4294967295 recovery=4294967295 entry_added_step=0 recovery_added_step=0 entry_boundary=0 recovery_boundary=0 fault_rms=0.0751256912 recovered_rms=0.029732492
+hard rate=16000 hpf=0 bad=0 lag=-1 entry=4294967295 recovery=4294967295 entry_added_step=0 recovery_added_step=0 entry_boundary=0 recovery_boundary=0 fault_rms=0.0868018414 recovered_rms=0.0337417336
+hard rate=16000 hpf=0 bad=0 lag=0 entry=4294967295 recovery=4294967295 entry_added_step=0 recovery_added_step=0 entry_boundary=0 recovery_boundary=0 fault_rms=0.0868326552 recovered_rms=0.0355316759
+hard rate=16000 hpf=0 bad=0 lag=1 entry=4294967295 recovery=4294967295 entry_added_step=0 recovery_added_step=0 entry_boundary=0 recovery_boundary=0 fault_rms=0.0867935725 recovered_rms=0.0337417336
+hard rate=16000 hpf=0 bad=1 lag=-1 entry=4294967295 recovery=4294967295 entry_added_step=0 recovery_added_step=0 entry_boundary=0 recovery_boundary=0 fault_rms=0.0867935725 recovered_rms=0.0337417336
+hard rate=16000 hpf=0 bad=1 lag=0 entry=4294967295 recovery=4294967295 entry_added_step=0 recovery_added_step=0 entry_boundary=0 recovery_boundary=0 fault_rms=0.0868326552 recovered_rms=0.0355316759
+hard rate=16000 hpf=0 bad=1 lag=1 entry=4294967295 recovery=4294967295 entry_added_step=0 recovery_added_step=0 entry_boundary=0 recovery_boundary=0 fault_rms=0.0868018414 recovered_rms=0.0337417336
+hard rate=16000 hpf=1 bad=0 lag=-1 entry=4294967295 recovery=4294967295 entry_added_step=0 recovery_added_step=0 entry_boundary=0 recovery_boundary=0 fault_rms=0.0740714753 recovered_rms=0.0342245402
+hard rate=16000 hpf=1 bad=0 lag=0 entry=4294967295 recovery=4294967295 entry_added_step=0 recovery_added_step=0 entry_boundary=0 recovery_boundary=0 fault_rms=0.0741159003 recovered_rms=0.0360409669
+hard rate=16000 hpf=1 bad=0 lag=1 entry=4294967295 recovery=4294967295 entry_added_step=0 recovery_added_step=0 entry_boundary=0 recovery_boundary=0 fault_rms=0.0740740607 recovered_rms=0.0342245402
+hard rate=16000 hpf=1 bad=1 lag=-1 entry=4294967295 recovery=4294967295 entry_added_step=0 recovery_added_step=0 entry_boundary=0 recovery_boundary=0 fault_rms=0.0740740607 recovered_rms=0.0342245402
+hard rate=16000 hpf=1 bad=1 lag=0 entry=4294967295 recovery=4294967295 entry_added_step=0 recovery_added_step=0 entry_boundary=0 recovery_boundary=0 fault_rms=0.0741159003 recovered_rms=0.0360409669
+hard rate=16000 hpf=1 bad=1 lag=1 entry=4294967295 recovery=4294967295 entry_added_step=0 recovery_added_step=0 entry_boundary=0 recovery_boundary=0 fault_rms=0.0740714753 recovered_rms=0.0342245402
+beamformer fixed-health checks=5502342 failures=21138

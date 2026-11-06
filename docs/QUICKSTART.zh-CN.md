@@ -204,6 +204,26 @@ python3 tools/apreplay.py failure.apd \
 
 ## 离线 PCM 工具的文件完整性
 
+离线入口现可用 `--profile call|assistant` 选择既有 SDK 配置，省略时仍为 CALL。
+识别交互使用 ASSISTANT 时，可在无播放参考的采集场景添加 `--capture-only`；
+有播放参考时仍可把双麦 capture 与 mono render 一并输入完整管线。
+对讲使用 CALL。两者都连续输出 PCM，VAD 只提供遥测，不删除静音帧。
+
+```sh
+./build/ap_process_pcm --profile assistant --mic-channels 2 \
+  --capture-only mic.pcm interaction.pcm
+./build/ap_process_pcm --profile call --mic-channels 2 \
+  mic.pcm render.pcm intercom.pcm
+```
+
+`--capture-profile` 仍表示单 stage 隔离，与 `--profile` 不同；
+显式 tuning 参数只覆盖所选 preset 的对应字段，参数先后顺序不影响覆盖语义。
+`--profile assistant --print-default-tuning` 可读取该 preset 的四项默认 tuning。
+完整配置读回与直接 API 的 PCM 一致性由实际 CLI 回归测试验证。
+双麦双用途的冻结回放见
+[实施矩阵](research/frontend-evolution-v1/DUALMIC_PROFILE_REPLAY_V1_IMPLEMENTATION_FREEZE.zh-CN.md)；
+生成信号的描述指标不等于真人对讲、中文 KWS 或物理设备结果。
+
 `ap_process_pcm` 的 capture 输入须包含完整 S16 样本及完整交织通道组；
 空 capture 是零帧输入，半个样本、通道组缺失或读取失败均非零退出。
 

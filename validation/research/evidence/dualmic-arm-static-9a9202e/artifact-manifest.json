@@ -1,0 +1,122 @@
+{
+  "files": {
+    "README.md": {
+      "bytes": 3944,
+      "sha256": "f49ffc813b7f243ebe3b524098f8428dbedcc932f2fa2e35f28c81461921e290"
+    },
+    "TRANSPORT.md": {
+      "bytes": 2171,
+      "sha256": "a8ab257cd7b1406ac5353fe1e14d1c88466182cdbd616b0d9c94307f2a34cb83"
+    },
+    "decode_original.py": {
+      "bytes": 3185,
+      "sha256": "194c4ce8bd3e84a8726f76e6ac5ff8aac1e3106e4eabece4fc14a9032d7ec67e"
+    },
+    "measured-source-manifest.json": {
+      "bytes": 16702,
+      "sha256": "ffa548e17e894c805e8d73a2d62caaafc0e307bca3d9f1ebd8dd2654e6152c9f"
+    },
+    "original/README.md": {
+      "bytes": 3129,
+      "sha256": "252d51d1db8be4bcbc92291dcc97e23e83192aadbdcda5fb10c6bd74c441dd1a"
+    },
+    "original/base-ap_pipeline_state_size.log": {
+      "bytes": 7655,
+      "sha256": "d2d68f38525d5e732b26e74790426a9dc4825d9c5dfa84a224cd36f0fb038e35"
+    },
+    "original/base-ap_runtime_state_size.log": {
+      "bytes": 2047,
+      "sha256": "07f46bc5bb13665774b6d009601bce6da19e4f883faeb84f4105cda998486a4b"
+    },
+    "original/base-build.log": {
+      "bytes": 1230,
+      "sha256": "1b90272895634366c59d9518fae693b3ddf02ededbc70cdb36cf3ee70ba282eb"
+    },
+    "original/base-configure.log": {
+      "bytes": 1527,
+      "sha256": "f84833bf33eb1134a1fadb8a83e3ab568ca79f5964183f6a0dc774a3c24da68a"
+    },
+    "original/base-link.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "original/base-result.json": {
+      "bytes": 1446,
+      "sha256": "589f1c61ed0387eb3281fae06a754961d15d16b3db71ccc50edb7a54d82007d2"
+    },
+    "original/base-size.log.b64": {
+      "bytes": 1429,
+      "sha256": "4df5f6af0e6c87639be7e161df9488c37570d37cfb5f762820185df4d03600ca"
+    },
+    "original/candidate-ap_pipeline_state_size.log": {
+      "bytes": 7660,
+      "sha256": "d4bb3bde818a39abdd86554d19f861aedaea858209a9ee510f1230d1a3e30fe2"
+    },
+    "original/candidate-ap_runtime_state_size.log": {
+      "bytes": 2052,
+      "sha256": "56208450f00964a024dbf9b02c9c45260f1966120ffdc40fbd5b12319e995945"
+    },
+    "original/candidate-build.log": {
+      "bytes": 1230,
+      "sha256": "7d6f96eb46bd44f823f730b9f51d1fcf433fdc2a0ce8d549237dee08c2295766"
+    },
+    "original/candidate-configure.log": {
+      "bytes": 1537,
+      "sha256": "cb8f70bed4c4afdb8d9de1c76c687c50d2c87e56dd89ebfb2744b09b85807bda"
+    },
+    "original/candidate-link.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "original/candidate-result.json": {
+      "bytes": 1451,
+      "sha256": "ba15a48c169a52e0f22973496e5815fd4ee2cc66e3e95a865c1bb374f0b8a2a2"
+    },
+    "original/candidate-size.log.b64": {
+      "bytes": 1437,
+      "sha256": "f055233c133b89d6b89bee948e8fbeb0d1cc1762ee51a4cb034ba35be3a78d8b"
+    },
+    "original/evidence-manifest.json": {
+      "bytes": 2639,
+      "sha256": "4ebba28d26e210504572ebbb454967f9f54d3e7a0ec10242839b257570c96928"
+    },
+    "original/report.json": {
+      "bytes": 26112,
+      "sha256": "825e51db18c0e43d70e17595d3bdf32505b0e5da21ad0069be154ac7a84fbf79"
+    },
+    "original/sources.json": {
+      "bytes": 116,
+      "sha256": "92d24a3520b2b200b2597bb539e7ff382fc62265a6bc78df5837869e7bd5d134"
+    },
+    "original/toolchain-packages.json": {
+      "bytes": 2355,
+      "sha256": "266e1e10c878e1ceb30c31c92fefb738b8013912799ad93ad64e46442791aa96"
+    },
+    "resource-receipt.json": {
+      "bytes": 2167,
+      "sha256": "a55c72fc67d2a07f566147d182de3e1140e5759833fad7b4f4669d90418c1170"
+    },
+    "source-continuation-manifest.json": {
+      "bytes": 2054,
+      "sha256": "c337a4e32e48b0654c75f6ee132ccc091d92a95623839558a64d562a0a00e258"
+    },
+    "source-continuation.bundle.b64": {
+      "bytes": 525105,
+      "sha256": "4c2f965246f0232a49921ba9bfe91ff0e08337fd81a91551152554e035e8a12b"
+    },
+    "transport-receipt.json": {
+      "bytes": 1455,
+      "sha256": "55f3accd500781ded4da716e301249beeda85fe2f95dd6a9fa8303f441585272"
+    },
+    "transport/original-artifact-manifest.json": {
+      "bytes": 3690,
+      "sha256": "b7b8b07c7206c01904dcae1c2c6e7f89959d2d611dd6acc67670a11e98adbdf6"
+    },
+    "transport/verify-42185156796-impact.log.b64": {
+      "bytes": 66301,
+      "sha256": "60238d9b4de0abad24f1eb0090ff1379233e87c9483bd1af07ddb43292fd2684"
+    }
+  },
+  "schema_version": 1,
+  "scope": "physical lossless-transport members; original scientific snapshot defined by transport/original-artifact-manifest.json; original total budget failed"
+}

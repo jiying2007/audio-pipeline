@@ -1,0 +1,346 @@
+{
+  "bundle": {
+    "bytes": 115740,
+    "decoded_name": "source.bundle",
+    "encoded_bytes": 154321,
+    "encoded_path": "source.bundle.b64",
+    "encoded_sha256": "17c5c9a3c169e14fee324c930489820da29f59cc439da0435a89deff2820872f",
+    "encoding": "RFC4648 base64, one line and exactly one terminal LF",
+    "format": "git-bundle-v2",
+    "header": [
+      "# v2 git bundle",
+      "-6056682486c1a2a2c84d77135de8118e07fc8cf3 docs(research): freeze dual-mic interaction and intercom implementation",
+      "fdcea684300f4f6846fbe130cd567ab7f412158b refs/dualmic-local/sync",
+      "a38662fd6df11a1a8a99202220a5556fe4e05b1c refs/dualmic-local/health",
+      "d55edf6e34e717b2dfc2e257d898a0854d504923 refs/dualmic-local/profiles",
+      "be45d8127b3f9b986fc7280a8208b09c560eece2 refs/dualmic-local/integration"
+    ],
+    "sha256": "3ce088c0b631083c585f5b5f1b5a87bebf6800f1de4ef8d3288adca70ca7093b"
+  },
+  "bundled_commit_count": 22,
+  "bundled_commits": [
+    "be45d8127b3f9b986fc7280a8208b09c560eece2",
+    "84d5601a2401b622fde9dc29e524f72d9ac1a7d1",
+    "50068fa285bfa7d209e635c63e86e36bec1bd3e1",
+    "645f0a0d60b5596b913be3426a7d8736370395b5",
+    "6da7a6295d7d8c68301a62101adce9d4a4217d43",
+    "2b9938187be1c16b6cd8810bfb702397128c3eb1",
+    "b3e48e2ad6ba5efb58c799a04f87558ca64e9f0a",
+    "a85d387ea14740cea30957105b6e1dba3bccce15",
+    "e9745a696b7cbccd64da648576fdc882eaf9aa10",
+    "07a9c207f360312ad36a1b5a1f92b50ec92b2e3d",
+    "0e14d01254058ae30d07c977299a5b57ea1820b3",
+    "d0c4bf9b9690e120906c2a99a5107a9385cbfa91",
+    "0bbb19ba748637fff9c840b3ec6a81c60d97c232",
+    "a38662fd6df11a1a8a99202220a5556fe4e05b1c",
+    "4f2a1c63455736c42ce72f8c7103b35b3b0f9893",
+    "1dae740367a47fad553ce2d459a228fc23119788",
+    "b6174c764229ad453668881d70acb5abbed5a54b",
+    "f62ab668c315a30d395bfd14682f2c38826008c2",
+    "fdcea684300f4f6846fbe130cd567ab7f412158b",
+    "d55edf6e34e717b2dfc2e257d898a0854d504923",
+    "edff155ce9541dc42feb1660e6b7a30d8e9fa63a",
+    "96f892baebe189ae976b12751f960caeffb22467"
+  ],
+  "capture": {
+    "health": {
+      "bundle_ref": "refs/dualmic-local/health",
+      "commit": "a38662fd6df11a1a8a99202220a5556fe4e05b1c",
+      "observed_ref": "work/dualmic-health",
+      "tree": "0a6adc3f166ef31e7c9b692120ec0ea4af667b0c"
+    },
+    "integration": {
+      "bundle_ref": "refs/dualmic-local/integration",
+      "commit": "be45d8127b3f9b986fc7280a8208b09c560eece2",
+      "observed_ref": "HEAD at initial capture; deliberately fixed thereafter",
+      "tree": "4de1f61a1ea7d9a7b3885826f89a354c4723719e"
+    },
+    "profiles": {
+      "bundle_ref": "refs/dualmic-local/profiles",
+      "commit": "d55edf6e34e717b2dfc2e257d898a0854d504923",
+      "observed_ref": "work/dualmic-profiles",
+      "tree": "5364802f5fc884a1797b14dda39d6a6339e356d3"
+    },
+    "sync": {
+      "bundle_ref": "refs/dualmic-local/sync",
+      "commit": "fdcea684300f4f6846fbe130cd567ab7f412158b",
+      "observed_ref": "work/dualmic-sync",
+      "tree": "993fde2190a4e887b1f2fcf63668baad69e190a3"
+    }
+  },
+  "created_utc": "2026-11-06T07:12:12.532666+00:00",
+  "exclusions": [
+    "No baseline ancestors are packaged; fetch the exact prerequisite before import.",
+    "Root commits made after the fixed integration capture are excluded, including later SAFE correction work.",
+    "Untracked local binaries, full replay PCM, and external raw SYNC logs are not packaged.",
+    "This archive does not claim local commit IDs equal GitHub connector-created IDs or remote Verify IDs.",
+    "Import and source identity checks do not rerun DSP, acoustic metrics, device tests, or CI."
+  ],
+  "identity": "DUALMIC-LOCAL-MEASUREMENT-SOURCE-RECOVERY-V1",
+  "prerequisite": {
+    "baseline_history_in_bundle": false,
+    "commit": "6056682486c1a2a2c84d77135de8118e07fc8cf3",
+    "public_repository": "https://github.com/jiying2007/audio-pipeline.git",
+    "tree": "ae6f4cb62755271cd30b3745e0a4a1fa4cab9d4f"
+  },
+  "schema_version": 1,
+  "scope": "Original local measurement commits and their source/evidence history; not remote Verify or acoustic qualification",
+  "verification": {
+    "commit_objects_after_bundle_import": 23,
+    "commit_objects_before_bundle_import": 1,
+    "git_bundle_verify_returncode": 0,
+    "git_fsck_returncode": 0,
+    "git_fsck_stderr": "notice: HEAD points to an unborn branch (master)\n",
+    "git_fsck_stdout": "",
+    "integration_bf_and_health_test_bytes_equal_measured_health_commit": true,
+    "isolated_recovery": true,
+    "key_commits": [
+      {
+        "commit": "edff155ce9541dc42feb1660e6b7a30d8e9fa63a",
+        "include_tree": "2e4ea65e172c6b18399de1b29199354a22860b3b",
+        "restored_bytes_equal": true,
+        "source_files": 49,
+        "src_include_inventory": {
+          "bytes": 3909,
+          "sha256": "0ad5a9f28030e38366cc8d383f87eebd3052d1e25767890d40d7066caf5c4e0e"
+        },
+        "src_include_tar": {
+          "bytes": 327680,
+          "sha256": "b4e394f6e2f8a9f245fcafe5c9dcc68e845f4157fe1c91d0e6355fa32d5ef1d4"
+        },
+        "src_tree": "aa09d87960cdda189d3fad518a6714bb6232741f",
+        "tree": "e0b0edcf78d7abc732ddf8f127549ef15cd9d8cd"
+      },
+      {
+        "commit": "fdcea684300f4f6846fbe130cd567ab7f412158b",
+        "include_tree": "2e4ea65e172c6b18399de1b29199354a22860b3b",
+        "restored_bytes_equal": true,
+        "source_files": 49,
+        "src_include_inventory": {
+          "bytes": 3909,
+          "sha256": "20b5fede6e51942080892373e4f94058ed84f0c74b9fab01cc0c8510599a9afa"
+        },
+        "src_include_tar": {
+          "bytes": 337920,
+          "sha256": "292499494bb66b0a27bd2421e425c16bf8dae37eb29f65ea468cd9c9f6e8512b"
+        },
+        "src_tree": "3898eb45112a56781cec72c89c015626301bd0f2",
+        "tree": "993fde2190a4e887b1f2fcf63668baad69e190a3"
+      },
+      {
+        "commit": "4f2a1c63455736c42ce72f8c7103b35b3b0f9893",
+        "include_tree": "2e4ea65e172c6b18399de1b29199354a22860b3b",
+        "restored_bytes_equal": true,
+        "source_files": 49,
+        "src_include_inventory": {
+          "bytes": 3909,
+          "sha256": "615f1b4de5c3c0548959f909cdb4027ad87d8590df23e1df5b5a321baabc0369"
+        },
+        "src_include_tar": {
+          "bytes": 337920,
+          "sha256": "5f885351abcc919ec63327ebbb5c13239de2565227f9987560cce13b4c1deddf"
+        },
+        "src_tree": "a7fe283774146031ab7a4827acb341bfcbff5a11",
+        "tree": "b1d449ec06f19458245129e5b2708799f1e92f7f"
+      },
+      {
+        "commit": "50068fa285bfa7d209e635c63e86e36bec1bd3e1",
+        "include_tree": "2e4ea65e172c6b18399de1b29199354a22860b3b",
+        "restored_bytes_equal": true,
+        "source_files": 49,
+        "src_include_inventory": {
+          "bytes": 3909,
+          "sha256": "dec7bf3d512a2ccc58f7795c43d7a205e1f622d9dbc4b21682b8372724c9b617"
+        },
+        "src_include_tar": {
+          "bytes": 337920,
+          "sha256": "4b8d133167e52cb09b765d9493c74d2a380b7c7c26763944e02bd20f562f3b04"
+        },
+        "src_tree": "365920f87b33cbb8f546d6d8e0012f9410109ba9",
+        "tree": "adfa31b50ae6d7977829a65b039eddb529068985"
+      }
+    ],
+    "key_commits_absent_before_import": true,
+    "prerequisite_fetch_depth": 1,
+    "producer_uses_fixed_nonbranch_refs": true,
+    "recovered_commits_equal_exact_expected_set": true,
+    "result": "PASS",
+    "retained_evidence_files": [
+      {
+        "bytes": 81284,
+        "measurement_source_commit": "edff155ce9541dc42feb1660e6b7a30d8e9fa63a",
+        "owner_commit": "d55edf6e34e717b2dfc2e257d898a0854d504923",
+        "path": "validation/research/evidence/dualmic-profile-v1-cli-edff155/artifact-manifest.json",
+        "sha256": "4988ccfd4d4e6e7406d05403c6ef39e671bfcf11c1b9ca62132760b4965714e0"
+      },
+      {
+        "bytes": 1606,
+        "measurement_source_commit": "edff155ce9541dc42feb1660e6b7a30d8e9fa63a",
+        "owner_commit": "d55edf6e34e717b2dfc2e257d898a0854d504923",
+        "path": "validation/research/evidence/dualmic-profile-v1-cli-edff155/build.log",
+        "sha256": "29c405dfccb5062db3f92f54dfa4600843116839915e6bcf9463dbf4ca7f2e41"
+      },
+      {
+        "bytes": 147,
+        "measurement_source_commit": "edff155ce9541dc42feb1660e6b7a30d8e9fa63a",
+        "owner_commit": "d55edf6e34e717b2dfc2e257d898a0854d504923",
+        "path": "validation/research/evidence/dualmic-profile-v1-cli-edff155/configure.log",
+        "sha256": "a56d3f72bf5cbccdfbec1a207830883c91839659b823ba51c357241fd6b66e46"
+      },
+      {
+        "bytes": 3321,
+        "measurement_source_commit": "edff155ce9541dc42feb1660e6b7a30d8e9fa63a",
+        "owner_commit": "d55edf6e34e717b2dfc2e257d898a0854d504923",
+        "path": "validation/research/evidence/dualmic-profile-v1-cli-edff155/ctest.log",
+        "sha256": "070c30624797b82e8b5d2039b996522532a68edb45c943e0423e944fbc153264"
+      },
+      {
+        "bytes": 107,
+        "measurement_source_commit": "edff155ce9541dc42feb1660e6b7a30d8e9fa63a",
+        "owner_commit": "d55edf6e34e717b2dfc2e257d898a0854d504923",
+        "path": "validation/research/evidence/dualmic-profile-v1-cli-edff155/python-tests.log",
+        "sha256": "120cb44aa82dda9a79f008993c6de0969e32640fd6753721418735a181f8c1c0"
+      },
+      {
+        "bytes": 158175,
+        "measurement_source_commit": "edff155ce9541dc42feb1660e6b7a30d8e9fa63a",
+        "owner_commit": "d55edf6e34e717b2dfc2e257d898a0854d504923",
+        "path": "validation/research/evidence/dualmic-profile-v1-cli-edff155/report.json",
+        "sha256": "b1b0336797900ebcb3477606498f603074e96cad6f628d52da1364a4ba6d6f04"
+      },
+      {
+        "bytes": 1126,
+        "measurement_source_commit": "edff155ce9541dc42feb1660e6b7a30d8e9fa63a",
+        "owner_commit": "d55edf6e34e717b2dfc2e257d898a0854d504923",
+        "path": "validation/research/evidence/dualmic-profile-v1-cli-edff155/receipt.json",
+        "sha256": "ba578d0188ac2fec844eb1178ed95e0f90f2434c7540a1dc93e4dabc030dfda4"
+      },
+      {
+        "bytes": 118,
+        "measurement_source_commit": "4f2a1c63455736c42ce72f8c7103b35b3b0f9893",
+        "owner_commit": "a38662fd6df11a1a8a99202220a5556fe4e05b1c",
+        "path": "docs/research/frontend-evolution-v1/evidence/dualmic-fixed-health-v1/allocator-symbol-check.json",
+        "sha256": "7f402e69d3c48510041857e355e29d2283be9c9a9b27b14b9542c0c8fddbf432"
+      },
+      {
+        "bytes": 687,
+        "measurement_source_commit": "4f2a1c63455736c42ce72f8c7103b35b3b0f9893",
+        "owner_commit": "a38662fd6df11a1a8a99202220a5556fe4e05b1c",
+        "path": "docs/research/frontend-evolution-v1/evidence/dualmic-fixed-health-v1/asan-ubsan-no-lsan-ctest.log",
+        "sha256": "c0fec9537e204073004b65eb701fd61cce936b44d0cb0693585917183d1654d8"
+      },
+      {
+        "bytes": 298,
+        "measurement_source_commit": "4f2a1c63455736c42ce72f8c7103b35b3b0f9893",
+        "owner_commit": "a38662fd6df11a1a8a99202220a5556fe4e05b1c",
+        "path": "docs/research/frontend-evolution-v1/evidence/dualmic-fixed-health-v1/base-abi.log",
+        "sha256": "19781b1b5f5c05e97fe642d0654bdd5e8355f98a455364aed7662b9f7d2d5107"
+      },
+      {
+        "bytes": 7767,
+        "measurement_source_commit": "4f2a1c63455736c42ce72f8c7103b35b3b0f9893",
+        "owner_commit": "a38662fd6df11a1a8a99202220a5556fe4e05b1c",
+        "path": "docs/research/frontend-evolution-v1/evidence/dualmic-fixed-health-v1/base-corrected-config.log",
+        "sha256": "16af329fb4c3a3ba2c2b885998a1efef5fdab75cc06c199ac73d9d8026eee4bf"
+      },
+      {
+        "bytes": 9552,
+        "measurement_source_commit": "4f2a1c63455736c42ce72f8c7103b35b3b0f9893",
+        "owner_commit": "a38662fd6df11a1a8a99202220a5556fe4e05b1c",
+        "path": "docs/research/frontend-evolution-v1/evidence/dualmic-fixed-health-v1/base-final-behavior.log",
+        "sha256": "0f8b9bcf06e003a065e8c5413db4db9bfd5a809bb839ee234ba512079407061c"
+      },
+      {
+        "bytes": 7764,
+        "measurement_source_commit": "4f2a1c63455736c42ce72f8c7103b35b3b0f9893",
+        "owner_commit": "a38662fd6df11a1a8a99202220a5556fe4e05b1c",
+        "path": "docs/research/frontend-evolution-v1/evidence/dualmic-fixed-health-v1/base-initial-config-rejected.log",
+        "sha256": "5e26fa47181028bbd0bb0f56921624849f4f0a55894a5bf9e53e80af1becbe1b"
+      },
+      {
+        "bytes": 731,
+        "measurement_source_commit": "4f2a1c63455736c42ce72f8c7103b35b3b0f9893",
+        "owner_commit": "a38662fd6df11a1a8a99202220a5556fe4e05b1c",
+        "path": "docs/research/frontend-evolution-v1/evidence/dualmic-fixed-health-v1/base-low-host-contract.log",
+        "sha256": "0ebcea714eae16c0fb045e193ff38d26fc1c374f5e1a926bdb19d996ba2217af"
+      },
+      {
+        "bytes": 298,
+        "measurement_source_commit": "4f2a1c63455736c42ce72f8c7103b35b3b0f9893",
+        "owner_commit": "a38662fd6df11a1a8a99202220a5556fe4e05b1c",
+        "path": "docs/research/frontend-evolution-v1/evidence/dualmic-fixed-health-v1/candidate-abi.log",
+        "sha256": "19781b1b5f5c05e97fe642d0654bdd5e8355f98a455364aed7662b9f7d2d5107"
+      },
+      {
+        "bytes": 6607,
+        "measurement_source_commit": "4f2a1c63455736c42ce72f8c7103b35b3b0f9893",
+        "owner_commit": "a38662fd6df11a1a8a99202220a5556fe4e05b1c",
+        "path": "docs/research/frontend-evolution-v1/evidence/dualmic-fixed-health-v1/candidate-final-behavior.log",
+        "sha256": "c7c95d154827b7ac295ab3fce45680744e7f9767ae2c0b07bb7089eca4b2a6cf"
+      },
+      {
+        "bytes": 7136,
+        "measurement_source_commit": "4f2a1c63455736c42ce72f8c7103b35b3b0f9893",
+        "owner_commit": "a38662fd6df11a1a8a99202220a5556fe4e05b1c",
+        "path": "docs/research/frontend-evolution-v1/evidence/dualmic-fixed-health-v1/candidate-initial-recovery-fail.log",
+        "sha256": "176facd5d6e35df29fb50bc1bff4d1dcb6078c11d2437367b1f49bb8499a0593"
+      },
+      {
+        "bytes": 3672,
+        "measurement_source_commit": "4f2a1c63455736c42ce72f8c7103b35b3b0f9893",
+        "owner_commit": "a38662fd6df11a1a8a99202220a5556fe4e05b1c",
+        "path": "docs/research/frontend-evolution-v1/evidence/dualmic-fixed-health-v1/candidate-pending-mode-fail.log",
+        "sha256": "be71306d8f4a8750fb74ab80b7212db3b6b418685f62676b9a485cbea6da5716"
+      },
+      {
+        "bytes": 687,
+        "measurement_source_commit": "4f2a1c63455736c42ce72f8c7103b35b3b0f9893",
+        "owner_commit": "a38662fd6df11a1a8a99202220a5556fe4e05b1c",
+        "path": "docs/research/frontend-evolution-v1/evidence/dualmic-fixed-health-v1/exact-4f2a1c6-ctest.log",
+        "sha256": "6f6671b4dcf768642c8d7cbf4912f11fa925a485880fef0f41730cc4963c7adf"
+      },
+      {
+        "bytes": 928,
+        "measurement_source_commit": "4f2a1c63455736c42ce72f8c7103b35b3b0f9893",
+        "owner_commit": "a38662fd6df11a1a8a99202220a5556fe4e05b1c",
+        "path": "docs/research/frontend-evolution-v1/evidence/dualmic-fixed-health-v1/low-host-ctest.log",
+        "sha256": "e8ea40bd7aa80245f37f048617abd6f632f86c7f4a2dcd47eba21531a1f50ee4"
+      },
+      {
+        "bytes": 6607,
+        "measurement_source_commit": "4f2a1c63455736c42ce72f8c7103b35b3b0f9893",
+        "owner_commit": "a38662fd6df11a1a8a99202220a5556fe4e05b1c",
+        "path": "docs/research/frontend-evolution-v1/evidence/dualmic-fixed-health-v1/low-host-final-behavior.log",
+        "sha256": "89f4bad35cdd122588d773a13caa83205574c3eb9879b5a12405c305ad6e478a"
+      },
+      {
+        "bytes": 5872,
+        "measurement_source_commit": "4f2a1c63455736c42ce72f8c7103b35b3b0f9893",
+        "owner_commit": "a38662fd6df11a1a8a99202220a5556fe4e05b1c",
+        "path": "docs/research/frontend-evolution-v1/evidence/dualmic-fixed-health-v1/sanitizer-ctest.log",
+        "sha256": "27c3de8f491e3d41bec7d56b2f23f17aeb972dd9c608aaae0c08b61b27f5a769"
+      },
+      {
+        "bytes": 5775,
+        "measurement_source_commit": "4f2a1c63455736c42ce72f8c7103b35b3b0f9893",
+        "owner_commit": "a38662fd6df11a1a8a99202220a5556fe4e05b1c",
+        "path": "docs/research/frontend-evolution-v1/evidence/dualmic-fixed-health-v1/summary.json",
+        "sha256": "00a45b9613522d830ded85a1ac9f755fe45eebc85eb6d4f6bdcd6ca4b0c9a8f6"
+      },
+      {
+        "binding_kind": "retained result document and three exact source SHA256 values; external raw SYNC logs are not bundled",
+        "bytes": 7453,
+        "measurement_source_commit": "fdcea684300f4f6846fbe130cd567ab7f412158b",
+        "owner_commit": "fdcea684300f4f6846fbe130cd567ab7f412158b",
+        "path": "docs/research/frontend-evolution-v1/SYNC_OBSERVATION_TIME_V1_RESULT.zh-CN.md",
+        "sha256": "f3e322787c5b81d1fbbbf4bac132b77e603d0164e8ab6f13e1e8c559d4511714"
+      }
+    ],
+    "root_refs_index_and_worktree_sources_changed": false,
+    "source_git_log": {
+      "bytes": 6967,
+      "sha256": "5b3be134ded5199de1d501778c3775854db0dee439ae81922cf7ddf8353547af"
+    },
+    "source_log_bytes_equal": true
+  }
+}

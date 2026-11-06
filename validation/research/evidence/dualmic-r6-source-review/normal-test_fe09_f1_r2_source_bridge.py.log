@@ -1,0 +1,40 @@
+test_all_87_other_changes_reject (__main__.BridgeTests.test_all_87_other_changes_reject) ... ok
+test_duplicate_and_nonfinite_lock_json_reject (__main__.BridgeTests.test_duplicate_and_nonfinite_lock_json_reject) ... ok
+test_duplicate_or_missing_original_rows_reject (__main__.BridgeTests.test_duplicate_or_missing_original_rows_reject) ... ok
+test_each_reviewed_current_member_drift_rejects (__main__.BridgeTests.test_each_reviewed_current_member_drift_rejects) ... ok
+test_each_reviewed_current_rollback_rejects (__main__.BridgeTests.test_each_reviewed_current_rollback_rejects) ... ok
+test_every_historical_member_change_rejects (__main__.BridgeTests.test_every_historical_member_change_rejects) ... ok
+test_exact_partition_and_byte_roles (__main__.BridgeTests.test_exact_partition_and_byte_roles) ... ok
+test_finite_extra_json_does_not_change_partition (__main__.BridgeTests.test_finite_extra_json_does_not_change_partition) ... ok
+test_invalid_current_identity_rejects (__main__.BridgeTests.test_invalid_current_identity_rejects) ... ok
+test_lock_anchor_identity_count_and_authority_reject (__main__.BridgeTests.test_lock_anchor_identity_count_and_authority_reject) ... ok
+test_lock_duplicate_paths_reject (__main__.BridgeTests.test_lock_duplicate_paths_reject) ... ok
+test_lock_fixture_structure (__main__.BridgeTests.test_lock_fixture_structure) ... ok
+test_lock_row_invalid_identities_reject (__main__.BridgeTests.test_lock_row_invalid_identities_reject) ... ok
+test_member_bytes_bounds (__main__.BridgeTests.test_member_bytes_bounds) ... ok
+test_missing_and_promoting_proof_flags_reject (__main__.BridgeTests.test_missing_and_promoting_proof_flags_reject) ... ok
+test_missing_extra_and_renamed_paths_reject (__main__.BridgeTests.test_missing_extra_and_renamed_paths_reject) ... ok
+test_original_row_hash_size_and_blob_checked (__main__.BridgeTests.test_original_row_hash_size_and_blob_checked) ... ok
+test_real_outer_lock_pin_not_replaceable (__main__.BridgeTests.test_real_outer_lock_pin_not_replaceable) ... ok
+test_unsafe_paths_and_quoting_reject (__main__.BridgeTests.test_unsafe_paths_and_quoting_reject) ... ok
+test_untrusted_receipt_identity_rejects (__main__.BridgeTests.test_untrusted_receipt_identity_rejects) ... ok
+test_executable_git_mode_rejects (__main__.LocalGitTests.test_executable_git_mode_rejects) ... ok
+test_external_context_refused_before_subprocess (__main__.LocalGitTests.test_external_context_refused_before_subprocess) ... ok
+test_missing_git_object_fails_without_fetch (__main__.LocalGitTests.test_missing_git_object_fails_without_fetch) ... ok
+test_missing_member_rejects (__main__.LocalGitTests.test_missing_member_rejects) ... ok
+test_r5_source_must_match_before_import (__main__.LocalGitTests.test_r5_source_must_match_before_import) ... ok
+test_real_local_blob_and_worktree_match (__main__.LocalGitTests.test_real_local_blob_and_worktree_match) ... ok
+test_same_size_dirty_worktree_rejects (__main__.LocalGitTests.test_same_size_dirty_worktree_rejects) ... ok
+test_symlink_git_mode_rejects (__main__.LocalGitTests.test_symlink_git_mode_rejects) ... ok
+test_unreviewed_command_and_excess_output_reject (__main__.LocalGitTests.test_unreviewed_command_and_excess_output_reject) ... ok
+test_worktree_symlink_and_mode_change_reject (__main__.LocalGitTests.test_worktree_symlink_and_mode_change_reject) ... ok
+test_complete_source_only_receipt (__main__.ReceiptTests.test_complete_source_only_receipt) ... ok
+test_error_has_no_positive_flags_or_raw_exception (__main__.ReceiptTests.test_error_has_no_positive_flags_or_raw_exception) ... ok
+test_existing_receipt_is_never_overwritten (__main__.ReceiptTests.test_existing_receipt_is_never_overwritten) ... ok
+test_oversize_receipt_is_rejected (__main__.ReceiptTests.test_oversize_receipt_is_rejected) ... ok
+test_short_write_and_close_failure_reject (__main__.ReceiptTests.test_short_write_and_close_failure_reject) ... ok
+
+----------------------------------------------------------------------
+Ran 35 tests in 0.371s
+
+OK

@@ -10,6 +10,9 @@ typedef struct ap_sync_state {
     float render_ring[AP_RENDER_CAP];
     uint64_t render_total;
     uint64_t last_render_capture_frame;
+    uint64_t capture_total;
+    uint64_t last_best_capture_total;
+    uint32_t capture_sample_rate_hz;
     uint32_t delay_samples;
     uint32_t initial_delay_samples;
     uint32_t delay_update_counter;

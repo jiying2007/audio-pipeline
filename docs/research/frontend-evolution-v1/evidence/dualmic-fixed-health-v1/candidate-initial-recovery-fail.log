@@ -1,0 +1,38 @@
+FAIL /workspace/scratch/b74ab3415ba4/audio-dualmic-health/tests/test_beamformer_health.c:262 eight recovery observations within 32 frames
+FAIL /workspace/scratch/b74ab3415ba4/audio-dualmic-health/tests/test_beamformer_health.c:262 eight recovery observations within 32 frames
+FAIL /workspace/scratch/b74ab3415ba4/audio-dualmic-health/tests/test_beamformer_health.c:262 eight recovery observations within 32 frames
+FAIL /workspace/scratch/b74ab3415ba4/audio-dualmic-health/tests/test_beamformer_health.c:262 eight recovery observations within 32 frames
+FAIL /workspace/scratch/b74ab3415ba4/audio-dualmic-health/tests/test_beamformer_health.c:262 eight recovery observations within 32 frames
+FAIL /workspace/scratch/b74ab3415ba4/audio-dualmic-health/tests/test_beamformer_health.c:262 eight recovery observations within 32 frames
+FAIL /workspace/scratch/b74ab3415ba4/audio-dualmic-health/tests/test_beamformer_health.c:262 eight recovery observations within 32 frames
+BF state=180 module=188 legacy_fields=176 pipeline=78200 tracking_capability=1
+hard rate=8000 hpf=0 bad=0 lag=-1 entry=24 recovery=108 entry_added_step=0.118757799 recovery_added_step=-0.0329557471 entry_boundary=0.152603671 recovery_boundary=0.0329557471 fault_rms=0.035531676 recovered_rms=0.028861936
+hard rate=8000 hpf=0 bad=0 lag=0 entry=24 recovery=108 entry_added_step=0.114126779 recovery_added_step=0 entry_boundary=0.15171355 recovery_boundary=0.0659114942 fault_rms=0.035531676 recovered_rms=0.035531676
+hard rate=8000 hpf=0 bad=0 lag=1 entry=24 recovery=108 entry_added_step=0.0811710283 recovery_added_step=0.0329557471 entry_boundary=0.0647295639 recovery_boundary=-0.00918923691 fault_rms=0.035531676 recovered_rms=0.028861936
+hard rate=8000 hpf=0 bad=1 lag=-1 entry=24 recovery=108 entry_added_step=0.0811710283 recovery_added_step=0.0329557471 entry_boundary=0.0647295639 recovery_boundary=-0.00918923691 fault_rms=0.035531676 recovered_rms=0.028861936
+hard rate=8000 hpf=0 bad=1 lag=0 entry=24 recovery=108 entry_added_step=0.114126779 recovery_added_step=0 entry_boundary=0.15171355 recovery_boundary=0.0659114942 fault_rms=0.035531676 recovered_rms=0.035531676
+hard rate=8000 hpf=0 bad=1 lag=1 entry=24 recovery=108 entry_added_step=0.118757799 recovery_added_step=-0.0329557471 entry_boundary=0.152603671 recovery_boundary=0.0329557471 fault_rms=0.035531676 recovered_rms=0.028861936
+hard rate=8000 hpf=1 bad=0 lag=-1 entry=24 recovery=112 entry_added_step=0.074432075 recovery_added_step=-0.0349931195 entry_boundary=0.115100063 recovery_boundary=0.0349931195 fault_rms=0.0366065312 recovered_rms=0.029732492
+hard rate=8000 hpf=1 bad=0 lag=0 entry=24 recovery=112 entry_added_step=0.0653619021 recovery_added_step=0 entry_boundary=0.109425195 recovery_boundary=0.0699862391 fault_rms=0.0366065312 recovered_rms=0.0366065312
+hard rate=8000 hpf=1 bad=0 lag=1 entry=24 recovery=112 entry_added_step=0.0303687826 recovery_added_step=0.0349931195 entry_boundary=0.0191694498 recovery_boundary=-0.00554588996 fault_rms=0.0366065312 recovered_rms=0.029732492
+hard rate=8000 hpf=1 bad=1 lag=-1 entry=24 recovery=112 entry_added_step=0.0303687826 recovery_added_step=0.0349931195 entry_boundary=0.0191694498 recovery_boundary=-0.00554588996 fault_rms=0.0366065312 recovered_rms=0.029732492
+hard rate=8000 hpf=1 bad=1 lag=0 entry=24 recovery=112 entry_added_step=0.0653619021 recovery_added_step=0 entry_boundary=0.109425195 recovery_boundary=0.0699862391 fault_rms=0.0366065312 recovered_rms=0.0366065312
+hard rate=8000 hpf=1 bad=1 lag=1 entry=24 recovery=112 entry_added_step=0.074432075 recovery_added_step=-0.0349931195 entry_boundary=0.115100063 recovery_boundary=0.0349931195 fault_rms=0.0366065312 recovered_rms=0.029732492
+hard rate=16000 hpf=0 bad=0 lag=-1 entry=24 recovery=108 entry_added_step=0.116939627 recovery_added_step=-0.0238547251 entry_boundary=0.142612517 recovery_boundary=0.0238547251 fault_rms=0.0355316759 recovered_rms=0.0337417336
+hard rate=16000 hpf=0 bad=0 lag=0 entry=24 recovery=108 entry_added_step=0.114126779 recovery_added_step=0 entry_boundary=0.140794352 recovery_boundary=0.0477094501 fault_rms=0.0355316759 recovered_rms=0.0355316759
+hard rate=16000 hpf=0 bad=0 lag=1 entry=24 recovery=108 entry_added_step=0.0902720541 recovery_added_step=0.0238547251 entry_boundary=0.10218592 recovery_boundary=0.0420567691 fault_rms=0.0355316759 recovered_rms=0.0337417336
+hard rate=16000 hpf=0 bad=1 lag=-1 entry=24 recovery=108 entry_added_step=0.0902720541 recovery_added_step=0.0238547251 entry_boundary=0.10218592 recovery_boundary=0.0420567691 fault_rms=0.0355316759 recovered_rms=0.0337417336
+hard rate=16000 hpf=0 bad=1 lag=0 entry=24 recovery=108 entry_added_step=0.114126779 recovery_added_step=0 entry_boundary=0.140794352 recovery_boundary=0.0477094501 fault_rms=0.0355316759 recovered_rms=0.0355316759
+hard rate=16000 hpf=0 bad=1 lag=1 entry=24 recovery=108 entry_added_step=0.116939627 recovery_added_step=-0.0238547251 entry_boundary=0.142612517 recovery_boundary=0.0238547251 fault_rms=0.0355316759 recovered_rms=0.0337417336
+hard rate=16000FAIL /workspace/scratch/b74ab3415ba4/audio-dualmic-health/tests/test_beamformer_health.c:262 eight recovery observations within 32 frames
+FAIL /workspace/scratch/b74ab3415ba4/audio-dualmic-health/tests/test_beamformer_health.c:262 eight recovery observations within 32 frames
+FAIL /workspace/scratch/b74ab3415ba4/audio-dualmic-health/tests/test_beamformer_health.c:262 eight recovery observations within 32 frames
+FAIL /workspace/scratch/b74ab3415ba4/audio-dualmic-health/tests/test_beamformer_health.c:262 eight recovery observations within 32 frames
+FAIL /workspace/scratch/b74ab3415ba4/audio-dualmic-health/tests/test_beamformer_health.c:262 eight recovery observations within 32 frames
+ hpf=1 bad=0 lag=-1 entry=24 recovery=112 entry_added_step=0.069445584 recovery_added_step=-0.0245604198 entry_boundary=0.0980429091 recovery_boundary=0.0245604198 fault_rms=0.0360409669 recovered_rms=0.0342245402
+hard rate=16000 hpf=1 bad=0 lag=0 entry=24 recovery=112 entry_added_step=0.0645388551 recovery_added_step=0 entry_boundary=0.0940060057 recovery_boundary=0.0491208397 fault_rms=0.0360409669 recovered_rms=0.0360409669
+hard rate=16000 hpf=1 bad=0 lag=1 entry=24 recovery=112 entry_added_step=0.0399784371 recovery_added_step=0.0245604198 entry_boundary=0.0550048575 recovery_boundary=0.0447998103 fault_rms=0.0360409669 recovered_rms=0.0342245402
+hard rate=16000 hpf=1 bad=1 lag=-1 entry=24 recovery=112 entry_added_step=0.0399784371 recovery_added_step=0.0245604198 entry_boundary=0.0550048575 recovery_boundary=0.0447998103 fault_rms=0.0360409669 recovered_rms=0.0342245402
+hard rate=16000 hpf=1 bad=1 lag=0 entry=24 recovery=112 entry_added_step=0.0645388551 recovery_added_step=0 entry_boundary=0.0940060057 recovery_boundary=0.0491208397 fault_rms=0.0360409669 recovered_rms=0.0360409669
+hard rate=16000 hpf=1 bad=1 lag=1 entry=24 recovery=112 entry_added_step=0.069445584 recovery_added_step=-0.0245604198 entry_boundary=0.0980429091 recovery_boundary=0.0245604198 fault_rms=0.0360409669 recovered_rms=0.0342245402
+beamformer fixed-health checks=5760268 failures=12

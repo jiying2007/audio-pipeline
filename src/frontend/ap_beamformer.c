@@ -18,6 +18,7 @@
 #define AP_BF_HARD_FAULT_ROUGHNESS_RATIO 0.18f
 #define AP_BF_HARD_RECOVER_ROUGHNESS_RATIO 0.60f
 #define AP_BF_HARD_ARM_UPDATES 2u
+#define AP_BF_FIXED_MIN_MEAN_ENERGY (1.0f / (32768.0f * 32768.0f))
 
 static float ap_beamformer_clampf(float value, float lo, float hi) {
     if (value < lo) return lo;
@@ -53,6 +54,7 @@ void ap_beamformer_init(ap_beamformer_state_t *s,
     s->max_lag = max_lag;
     s->counter = 3u;
     s->fallback_gain = 1.0f;
+    s->fixed_health_counter = 3u;
 }
 
 static float ap_beamformer_past_sample(const ap_beamformer_state_t *s,
@@ -231,6 +233,109 @@ static void ap_beamformer_update_fallback(ap_beamformer_state_t *s,
     }
 }
 
+/* A fixed beam may have low correlation simply because speech is off-axis.
+ * Do not import the tracking path's soft fallback or search for another lag.
+ * This observes only the existing narrow low-frequency contamination signature.
+ * Its quiet/invalid frames cannot establish either a fault or a recovery. */
+static void ap_beamformer_update_fixed_health(ap_beamformer_state_t *s,
+                                               const float *a,
+                                               const float *b,
+                                               uint32_t n) {
+    const int lag = s->fallback_hard_fault ? s->fallback_lag : s->lag;
+    float aa = 0.0f;
+    float bb = 0.0f;
+    float xy = 0.0f;
+    float coherence, ratio, roughness_a, roughness_b;
+    float strong_roughness, weak_roughness;
+    uint32_t energy_strong_channel, target_channel;
+    uint32_t count = 0u;
+    uint32_t i;
+    int hard_contamination, recovered;
+
+    for (i = 0u; i < n; i += 2u) {
+        const float x = lag < 0 ?
+            ap_beamformer_past_sample(s, a, 0u, (int)i + lag) : a[i];
+        const float y = lag > 0 ?
+            ap_beamformer_past_sample(s, b, 1u, (int)i - lag) : b[i];
+        aa += x * x;
+        bb += y * y;
+        xy += x * y;
+        count++;
+    }
+    /* Accumulate real energy from zero: the numerical regularizer is not
+     * evidence above the exact one-S16-LSB RMS observation boundary. */
+    if (!ap_float_is_finite(aa) || !ap_float_is_finite(bb) ||
+        !ap_float_is_finite(xy) ||
+        aa <= (float)count * AP_BF_FIXED_MIN_MEAN_ENERGY ||
+        bb <= (float)count * AP_BF_FIXED_MIN_MEAN_ENERGY) {
+        s->fallback_hard_arm_count = 0u;
+        s->fallback_recovery_count = 0u;
+        return;
+    }
+
+    coherence = xy / sqrtf(aa * bb);
+    ratio = sqrtf(fminf(aa, bb) / fmaxf(aa, bb));
+    roughness_a = ap_beamformer_roughness(a, n);
+    roughness_b = ap_beamformer_roughness(b, n);
+    if (!ap_float_is_finite(coherence) || !ap_float_is_finite(ratio) ||
+        !ap_float_is_finite(roughness_a) || !ap_float_is_finite(roughness_b)) {
+        s->fallback_hard_arm_count = 0u;
+        s->fallback_recovery_count = 0u;
+        return;
+    }
+
+    energy_strong_channel = aa >= bb ? 0u : 1u;
+    target_channel = 1u - energy_strong_channel;
+    strong_roughness = energy_strong_channel == 0u ? roughness_a : roughness_b;
+    weak_roughness = energy_strong_channel == 0u ? roughness_b : roughness_a;
+    hard_contamination = coherence < AP_BF_FALLBACK_ENTER_COHERENCE &&
+                         ratio < AP_BF_FALLBACK_ENTER_RATIO &&
+                         ratio > AP_BF_HARD_FAULT_MIN_RATIO &&
+                         ratio < AP_BF_HARD_FAULT_MAX_RATIO &&
+                         strong_roughness < AP_BF_HARD_FAULT_ROUGHNESS_RATIO *
+                                            fmaxf(weak_roughness, 1.0e-12f);
+    recovered = ratio > AP_BF_FALLBACK_RECOVER_RATIO &&
+                strong_roughness > AP_BF_HARD_RECOVER_ROUGHNESS_RATIO *
+                                   fmaxf(weak_roughness, 1.0e-12f);
+
+    if (s->fallback_hard_fault) {
+        s->fallback_hard_arm_count = 0u;
+        if (!recovered) {
+            s->fallback_recovery_count = 0u;
+        } else {
+            if (s->fallback_recovery_count < AP_BF_FALLBACK_RECOVER_UPDATES)
+                s->fallback_recovery_count++;
+            if (s->fallback_recovery_count >= AP_BF_FALLBACK_RECOVER_UPDATES) {
+                s->fallback_active = 0u;
+                s->fallback_hard_fault = 0u;
+                s->fallback_recovery_count = 0u;
+                s->fallback_gain = 1.0f;
+            }
+        }
+        return;
+    }
+
+    s->fallback_recovery_count = 0u;
+    if (!hard_contamination) {
+        s->fallback_hard_arm_count = 0u;
+        return;
+    }
+    if (s->fallback_hard_arm_count == 0u ||
+        s->fallback_strong_channel != target_channel) {
+        s->fallback_strong_channel = target_channel;
+        s->fallback_hard_arm_count = 1u;
+    } else if (s->fallback_hard_arm_count < AP_BF_HARD_ARM_UPDATES) {
+        s->fallback_hard_arm_count++;
+    }
+    if (s->fallback_hard_arm_count >= AP_BF_HARD_ARM_UPDATES) {
+        s->fallback_active = 1u;
+        s->fallback_hard_fault = 1u;
+        s->fallback_hard_arm_count = 0u;
+        s->fallback_lag = s->lag;
+        s->fallback_gain = 1.0f;
+    }
+}
+
 void ap_beamformer_process(ap_beamformer_state_t *s,
                            int track_direction,
                            float *a,
@@ -238,6 +343,13 @@ void ap_beamformer_process(ap_beamformer_state_t *s,
                            float *out,
                            uint32_t n) {
     uint32_t i;
+    if (track_direction && s->fixed_health_counter != 3u) {
+        /* A mode change invalidates incomplete evidence, not a confirmed route.
+         * Steady tracking leaves this branch and all original fields untouched. */
+        s->fixed_health_counter = 3u;
+        s->fallback_hard_arm_count = 0u;
+        s->fallback_recovery_count = 0u;
+    }
     if (track_direction && (++s->counter & 3u) == 0u) {
         float coherence = 0.0f;
         float aa = 1.0e-12f;
@@ -252,11 +364,24 @@ void ap_beamformer_process(ap_beamformer_state_t *s,
         ap_beamformer_update_fallback(s, coherence, aa, bb, xy,
                                       roughness_a, roughness_b);
     } else if (!track_direction) {
-        s->fallback_active = 0u;
-        s->fallback_hard_fault = 0u;
-        s->fallback_hard_arm_count = 0u;
-        s->fallback_recovery_count = 0u;
-        s->fallback_gain = 1.0f;
+        if (s->fixed_health_counter < 4u || s->fixed_health_counter > 7u) {
+            s->fixed_health_counter = 3u;
+            s->fallback_hard_arm_count = 0u;
+            s->fallback_recovery_count = 0u;
+        }
+        /* Retain a confirmed hard route across FULL -> LITE. An unconfirmed
+         * soft route has no fixed-direction authority and is not carried in. */
+        if (s->fallback_active && !s->fallback_hard_fault) {
+            s->fallback_active = 0u;
+            s->fallback_hard_arm_count = 0u;
+            s->fallback_recovery_count = 0u;
+            s->fallback_gain = 1.0f;
+        }
+        /* Keep the phase in 4..7, including after an invalid/reset cadence.
+         * No long-running unsigned wrap or cross-mode pending evidence. */
+        s->fixed_health_counter = 4u | ((s->fixed_health_counter + 1u) & 3u);
+        if ((s->fixed_health_counter & 3u) == 0u)
+            ap_beamformer_update_fixed_health(s, a, b, n);
     }
 
     for (i = 0u; i < n; ++i) {

@@ -1,0 +1,8 @@
+[1/8] Building C object CMakeFiles/audio_pipeline.dir/src/ap_build_info.c.o
+[2/8] Building C object CMakeFiles/audio_pipeline.dir/src/modules/ap_sync_module.c.o
+[3/8] Building C object CMakeFiles/ap_module_tests.dir/tests/test_modules.c.o
+[4/8] Building C object CMakeFiles/audio_pipeline.dir/src/sync/ap_sync.c.o
+[5/8] Linking C static library libaudio_pipeline.a
+[6/8] Linking C executable ap_module_tests
+[7/8] Building C object CMakeFiles/ap_sync_observation_time_tests.dir/tests/test_sync_observation_time.c.o
+[8/8] Linking C executable ap_sync_observation_time_tests

@@ -153,20 +153,52 @@ static float ap_sync_delay_score(const ap_sync_state_t *s, const float *mic,
     return (xy * xy) / (xx * yy);
 }
 
+static void ap_sync_advance_capture_time(ap_sync_state_t *s,
+                                        uint32_t frame_samples,
+                                        uint32_t sample_rate_hz) {
+    /* Capture calls, including rejected correlations, define elapsed audio
+     * time. Render pushes can be batched and are not this clock. A rate change
+     * or counter rollover starts a new basis without changing alignment. */
+    if (s->capture_sample_rate_hz != sample_rate_hz ||
+        s->capture_total > UINT64_MAX - (uint64_t)frame_samples) {
+        s->capture_total = 0u;
+        s->last_best_capture_total = 0u;
+        s->capture_sample_rate_hz = sample_rate_hz;
+        s->have_last_best_delay = 0u;
+    }
+    s->capture_total += frame_samples;
+}
+
 static void ap_sync_apply_drift(ap_sync_state_t *s, uint32_t best_delay,
                                 uint32_t sample_rate_hz, uint32_t max_delay_ms,
                                 ap_sync_event_t *event) {
     int32_t error = (int32_t)best_delay - (int32_t)s->delay_samples;
     uint32_t corrections = 0u;
-    if (s->have_last_best_delay) {
+    /* A newly established basis retains the legacy nominal credit step;
+     * never integrate time from an invalidated or unknown observation. */
+    uint64_t elapsed = sample_rate_hz / 10u;
+    if (s->have_last_best_delay &&
+        s->capture_total > s->last_best_capture_total) {
         const int32_t delta = (int32_t)best_delay - (int32_t)s->last_best_delay;
-        float raw_ppm = (float)delta * 10000000.0f / (float)sample_rate_hz;
+        elapsed = s->capture_total - s->last_best_capture_total;
+        /* Keep the original operation order for the normal 100 ms cadence.
+         * Confidence rejections may extend the interval; normalize before
+         * clamping so those gaps cannot manufacture an extreme rate. */
+        float raw_ppm = elapsed == sample_rate_hz / 10u ?
+                        (float)delta * 10000000.0f / (float)sample_rate_hz :
+                        (float)delta * 1000000.0f / (float)elapsed;
         raw_ppm = ap_sync_clamp(raw_ppm, -2000.0f, 2000.0f);
         s->drift_ppm = 0.95f * s->drift_ppm + 0.05f * raw_ppm;
     }
     s->last_best_delay = best_delay;
+    s->last_best_capture_total = s->capture_total;
     s->have_last_best_delay = 1u;
-    s->drift_credit += s->drift_ppm * (float)sample_rate_hz / 10000000.0f;
+    /* Integrate the accepted rate over the same valid capture interval.
+     * Preserve the original floating-point order at the normal cadence. */
+    if (elapsed == sample_rate_hz / 10u)
+        s->drift_credit += s->drift_ppm * (float)sample_rate_hz / 10000000.0f;
+    else
+        s->drift_credit += s->drift_ppm * (float)elapsed / 1000000.0f;
     if (error > 4)
         s->drift_credit += ap_sync_clamp((float)error * 0.05f, 0.0f, 0.5f);
     else if (error < -4)
@@ -200,6 +232,11 @@ void ap_sync_track_delay(ap_sync_state_t *s, const float *mic,
     uint32_t coarse_peak_count = 0u;
     uint32_t best_delay = s->delay_samples, d;
     memset(event, 0, sizeof(*event));
+    ap_sync_advance_capture_time(s, frame_samples, sample_rate_hz);
+    /* Re-enabling must first establish a new acoustic basis. A route change
+     * while tracking/compensation was disabled is not a rate observation. */
+    if (!enable_delay_tracking || !enable_clock_drift_compensation)
+        s->have_last_best_delay = 0u;
     if (!enable_delay_tracking ||
         s->render_total < (uint64_t)(max_delay + frame_samples)) return;
     if (++s->delay_update_counter < 10u) return;
@@ -243,7 +280,8 @@ void ap_sync_track_delay(ap_sync_state_t *s, const float *mic,
             s->drift_ppm = 0.0f;
             s->drift_credit = 0.0f;
             s->last_best_delay = best_delay;
-            s->have_last_best_delay = 1u;
+            s->last_best_capture_total = s->capture_total;
+            s->have_last_best_delay = (uint8_t)(enable_clock_drift_compensation != 0);
             event->route_jump = 1u;
         } else if (!ap_sync_peak_is_unique(coarse_peaks, coarse_peak_count,
                                            best_delay, best, coarse_step)) {
@@ -293,7 +331,10 @@ int ap_sync_observe_timestamps(ap_sync_state_t *s,
     jump = old > observed ? old - observed : observed - old;
     s->delay_samples = observed;
     s->last_best_delay = observed;
-    s->have_last_best_delay = 1u;
+    s->last_best_capture_total = s->capture_total;
+    /* Timestamp alignment is authoritative, but is not an acoustic lag
+     * observation to difference against the next correlation result. */
+    s->have_last_best_delay = 0u;
     s->drift_ppm = 0.0f;
     s->drift_credit = 0.0f;
     s->route_candidate_confirmations = 0u;

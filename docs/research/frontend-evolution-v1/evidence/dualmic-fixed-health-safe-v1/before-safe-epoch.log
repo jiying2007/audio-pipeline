@@ -1,0 +1,65 @@
+safe_arm rate=8000 gap=1 safe=healthy next_bad=0 first_average_error=4635 fifth_target_error=0
+safe_arm rate=8000 gap=1 safe=healthy next_bad=1 first_average_error=1 fifth_target_error=0
+safe_arm rate=8000 gap=1 safe=hard1 next_bad=0 first_average_error=4635 fifth_target_error=0
+safe_arm rate=8000 gap=1 safe=hard1 next_bad=1 first_average_error=1 fifth_target_error=0
+safe_arm rate=8000 gap=4 safe=healthy next_bad=0 first_average_error=4778 fifth_target_error=0
+safe_arm rate=8000 gap=4 safe=healthy next_bad=1 first_average_error=1 fifth_target_error=0
+safe_arm rate=8000 gap=4 safe=hard1 next_bad=0 first_average_error=4778 fifth_target_error=0
+safe_arm rate=8000 gap=4 safe=hard1 next_bad=1 first_average_error=1 fifth_target_error=0
+safe_confirmed rate=8000 profile=0 return_quality=1 max_resumed_route_error=0
+safe_confirmed rate=8000 profile=0 return_quality=2 max_resumed_route_error=0
+safe_confirmed rate=8000 profile=1 return_quality=1 max_resumed_route_error=0
+safe_confirmed rate=8000 profile=1 return_quality=2 max_resumed_route_error=0
+safe_recovery rate=8000 profile=0 safe=healthy expected_first_observation=40 expected_eighth_observation=68 first_selected_error=270 last_average_error=1
+safe_recovery rate=8000 profile=0 safe=hard0 expected_first_observation=40 expected_eighth_observation=68 first_selected_error=270 last_average_error=1
+safe_recovery rate=8000 profile=1 safe=healthy expected_first_observation=40 expected_eighth_observation=68 first_selected_error=270 last_average_error=1
+safe_recovery rate=8000 profile=1 safe=hard0 expected_first_observation=40 expected_eighth_observation=68 first_selected_error=270 last_average_error=1
+safe_arm rate=16000 gap=1 safe=healthy next_bad=0 first_average_error=4635 fifth_target_error=0
+safe_arm rate=16000 gap=1 safe=healthy next_bad=1 first_average_error=1 fifth_target_error=0
+safe_arm rate=16000 gap=1 safe=hard1 next_bad=0 first_average_error=4635 fifth_target_error=0
+safe_arm rate=16000 gap=1 safe=hard1 next_bad=1 first_average_error=1 fifth_target_error=0
+safe_arm rate=16000 gap=4 safe=healthy next_bad=0 first_average_error=5021 fifth_target_error=0
+safe_arm rate=16000 gap=4 safe=healthy next_bad=1 first_average_error=1 fifth_target_error=0
+safe_arm rate=16000 gap=4 safe=hard1 next_bad=0 first_average_error=5021 fifth_target_error=0
+safe_arm rate=16000 gap=4 safe=hard1 next_bad=1 first_average_error=1 fifth_target_error=0
+safe_confirmed rate=16000 profile=0 return_quality=1 max_resumed_route_error=0
+safe_confirmed rate=16000 profile=0 return_quality=2 max_resumed_route_error=0
+safe_confirmed rate=16000 profile=1 return_quality=1 max_resumed_route_error=0
+safe_confirmed rate=16000 profile=1 return_quality=2 max_resumed_route_error=0
+safe_recovery rate=16000 profile=0 safe=healthy expected_first_observation=40 expected_eighth_observation=68 first_selected_error=293 last_average_error=1
+safe_recovery rate=16000 profile=0 safe=hard0 expected_first_observation=40 expected_eighth_observation=68 first_selected_error=293 last_average_error=1
+safe_recovery rate=16000 profile=1 safe=healthy expected_first_observation=40 expected_eighth_observation=68 first_selected_error=293 last_average_error=1
+safe_recovery rate=16000 profile=1 safe=hard0 expected_first_observation=40 expected_eighth_observation=68 first_selected_error=293 last_average_error=1
+beamformer public-SAFE checks=5024 failures=288
+FAIL /workspace/scratch/b74ab3415ba4/audio-dualmic-safe/tests/test_beamformer_health.c:677 SAFE invalidates pending confirmation exactly like a fresh public epoch
+FAIL /workspace/scratch/b74ab3415ba4/audio-dualmic-safe/tests/test_beamformer_health.c:679 post-SAFE route requires two new consistent observations
+FAIL /workspace/scratch/b74ab3415ba4/audio-dualmic-safe/tests/test_beamformer_health.c:677 SAFE invalidates pending confirmation exactly like a fresh public epoch
+FAIL /workspace/scratch/b74ab3415ba4/audio-dualmic-safe/tests/test_beamformer_health.c:679 post-SAFE route requires two new consistent observations
+FAIL /workspace/scratch/b74ab3415ba4/audio-dualmic-safe/tests/test_beamformer_health.c:677 SAFE invalidates pending confirmation exactly like a fresh public epoch
+FAIL /workspace/scratch/b74ab3415ba4/audio-dualmic-safe/tests/test_beamformer_health.c:679 post-SAFE route requires two new consistent observations
+FAIL /workspace/scratch/b74ab3415ba4/audio-dualmic-safe/tests/test_beamformer_health.c:677 SAFE invalidates pending confirmation exactly like a fresh public epoch
+FAIL /workspace/scratch/b74ab3415ba4/audio-dualmic-safe/tests/test_beamformer_health.c:679 post-SAFE route requires two new consistent observations
+FAIL /workspace/scratch/b74ab3415ba4/audio-dualmic-safe/tests/test_beamformer_health.c:677 SAFE invalidates pending confirmation exactly like a fresh public epoch
+FAIL /workspace/scratch/b74ab3415ba4/audio-dualmic-safe/tests/test_beamformer_health.c:679 post-SAFE route requires two new consistent observations
+FAIL /workspace/scratch/b74ab3415ba4/audio-dualmic-safe/tests/test_beamformer_health.c:677 SAFE invalidates pending confirmation exactly like a fresh public epoch
+FAIL /workspace/scratch/b74ab3415ba4/audio-dualmic-safe/tests/test_beamformer_health.c:679 post-SAFE route requires two new consistent observations
+FAIL /workspace/scratch/b74ab3415ba4/audio-dualmic-safe/tests/test_beamformer_health.c:677 SAFE invalidates pending confirmation exactly like a fresh public epoch
+FAIL /workspace/scratch/b74ab3415ba4/audio-dualmic-safe/tests/test_beamformer_health.c:679 post-SAFE route requires two new consistent observations
+FAIL /workspace/scratch/b74ab3415ba4/audio-dualmic-safe/tests/test_beamformer_health.c:677 SAFE invalidates pending confirmation exactly like a fresh public epoch
+FAIL /workspace/scratch/b74ab3415ba4/audio-dualmic-safe/tests/test_beamformer_health.c:679 post-SAFE route requires two new consistent observations
+FAIL /workspace/scratch/b74ab3415ba4/audio-dualmic-safe/tests/test_beamformer_health.c:677 SAFE invalidates pending confirmation exactly like a fresh public epoch
+FAIL /workspace/scratch/b74ab3415ba4/audio-dualmic-safe/tests/test_beamformer_health.c:679 post-SAFE route requires two new consistent observations
+FAIL /workspace/scratch/b74ab3415ba4/audio-dualmic-safe/tests/test_beamformer_health.c:677 SAFE invalidates pending confirmation exactly like a fresh public epoch
+FAIL /workspace/scratch/b74ab3415ba4/audio-dualmic-safe/tests/test_beamformer_health.c:679 post-SAFE route requires two new consistent observations
+FAIL /workspace/scratch/b74ab3415ba4/audio-dualmic-safe/tests/test_beamformer_health.c:677 SAFE invalidates pending confirmation exactly like a fresh public epoch
+FAIL /workspace/scratch/b74ab3415ba4/audio-dualmic-safe/tests/test_beamformer_health.c:679 post-SAFE route requires two new consistent observations
+FAIL /workspace/scratch/b74ab3415ba4/audio-dualmic-safe/tests/test_beamformer_health.c:677 SAFE invalidates pending confirmation exactly like a fresh public epoch
+FAIL /workspace/scratch/b74ab3415ba4/audio-dualmic-safe/tests/test_beamformer_health.c:679 post-SAFE route requires two new consistent observations
+FAIL /workspace/scratch/b74ab3415ba4/audio-dualmic-safe/tests/test_beamformer_health.c:677 SAFE invalidates pending confirmation exactly like a fresh public epoch
+FAIL /workspace/scratch/b74ab3415ba4/audio-dualmic-safe/tests/test_beamformer_health.c:679 post-SAFE route requires two new consistent observations
+FAIL /workspace/scratch/b74ab3415ba4/audio-dualmic-safe/tests/test_beamformer_health.c:677 SAFE invalidates pending confirmation exactly like a fresh public epoch
+FAIL /workspace/scratch/b74ab3415ba4/audio-dualmic-safe/tests/test_beamformer_health.c:679 post-SAFE route requires two new consistent observations
+FAIL /workspace/scratch/b74ab3415ba4/audio-dualmic-safe/tests/test_beamformer_health.c:677 SAFE invalidates pending confirmation exactly like a fresh public epoch
+FAIL /workspace/scratch/b74ab3415ba4/audio-dualmic-safe/tests/test_beamformer_health.c:679 post-SAFE route requires two new consistent observations
+FAIL /workspace/scratch/b74ab3415ba4/audio-dualmic-safe/tests/test_beamformer_health.c:677 SAFE invalidates pending confirmation exactly like a fresh public epoch
+FAIL /workspace/scratch/b74ab3415ba4/audio-dualmic-safe/tests/test_beamformer_health.c:679 post-SAFE route requires two new consistent observations

@@ -1,0 +1,10 @@
+diff --git a/src/ap_build_info.c b/src/ap_build_info.c
+index 2bb5a94..f7de83f 100644
+--- a/src/ap_build_info.c
++++ b/src/ap_build_info.c
+@@ -34,3 +34,5 @@ const ap_build_info_t *ap_build_info(void) {
+     };
+     return &info;
+ }
++
++/* Tracked source modification probe; restored after configure. */

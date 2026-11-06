@@ -1,0 +1,51 @@
+{
+  "bundle": {
+    "bytes": 393826,
+    "encoded_bytes": 525105,
+    "encoded_sha256": "4c2f965246f0232a49921ba9bfe91ff0e08337fd81a91551152554e035e8a12b",
+    "format": "git-bundle-v2",
+    "header": [
+      "# v2 git bundle",
+      "-be45d8127b3f9b986fc7280a8208b09c560eece2 docs(research): record dual-mic health results and disclosed recovery limits",
+      "9a9202eca32cfa03d92644f5735bfc2c2429efbc refs/dualmic-local/arm-static-9a9202e"
+    ],
+    "sha256": "48c816134cc4d612df2fa3200c1109d0690755ae3cb5bfdb2c696a6d6784e170"
+  },
+  "bundle_ref": "refs/dualmic-local/arm-static-9a9202e",
+  "commit_count": 12,
+  "commits": [
+    "9a9202eca32cfa03d92644f5735bfc2c2429efbc",
+    "c03e4d2324eee086e732e06a8a8825a2cf5a044e",
+    "3e862e36e5e6859154c0d3de5f2fcc880d58ffbd",
+    "7c824a21d2b726427fe4aa6dabca8244f5a436d6",
+    "c3e6bfe2a402047c78bdec6ea87fe5c2c966a369",
+    "039e8334b4baeda59e7dcae51a7e106661c05fd5",
+    "f58789dc9e7ac9d32a785492349988764e7a7108",
+    "2fe1644dcda79fa8ef20d6b5391a6c9f33653815",
+    "91f5e0a1dae8c7f017d51499221dad99853c9dca",
+    "2cff45f8d694599162f1164d5df3333a397da10f",
+    "f67a9ea8fb44ccc9120eeeca97fecb9ebcf4dc6f",
+    "9ec381e4f4fa6e6ecd1c9016d3b0711c79343a75"
+  ],
+  "head": "9a9202eca32cfa03d92644f5735bfc2c2429efbc",
+  "prerequisite": "be45d8127b3f9b986fc7280a8208b09c560eece2",
+  "prerequisite_available_from": "../dualmic-local-source-v1/source.bundle.b64",
+  "schema_version": 1,
+  "tree": "bda81fab7ec1420696ff5fa6131b8e9173d4e0ae",
+  "verification": {
+    "after_continuation_commit_objects": 35,
+    "after_v1_commit_objects": 23,
+    "baseline_source_bytes_match_605_snapshot": true,
+    "candidate_measured_source_files_verified": 53,
+    "git_bundle_verify_returncode": 0,
+    "git_fsck_returncode": 0,
+    "head_absent_before_continuation": true,
+    "initial_605_commit_objects": 1,
+    "restored_CMake_src_include_tar": {
+      "bytes": 368640,
+      "sha256": "ff5c2c86a1b19f1dfe77cb8f7a2ef49437f97b06f4ef87e0e17c2ceafbcb1b5b"
+    },
+    "result": "PASS",
+    "root_refs_modified": false
+  }
+}

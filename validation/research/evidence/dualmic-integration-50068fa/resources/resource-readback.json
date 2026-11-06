@@ -1,0 +1,239 @@
+{
+  "builds": {
+    "candidate": {
+      "build_directory": "/workspace/scratch/b74ab3415ba4/build-dualmic-candidate",
+      "effective_build": {
+        "AP_BUILD_BF_DIRECTION_TRACKING": "1",
+        "AP_BUILD_CONFIG_DIGEST": "24aa581405ffa1c6e3c911631f0d39f5ea53fed0c393d27f234b17318745a23a",
+        "AP_BUILD_MAX_AEC_TAIL_MS": "120",
+        "AP_BUILD_MAX_DELAY_MS": "300",
+        "AP_BUILD_MAX_INTERNAL_RATE_HZ": "16000",
+        "AP_BUILD_MAX_IO_RATE_HZ": "48000",
+        "AP_BUILD_MAX_MIC_CHANNELS": "2",
+        "AP_BUILD_RUNTIME_QUEUE_DEPTH": "8",
+        "AP_BUILD_SOURCE_REVISION": "50068fa285bfa7d209e635c63e86e36bec1bd3e1",
+        "AP_HAVE_LINUX_RUNTIME": "1",
+        "AP_HAVE_MODULE_ACTIVITY": "1",
+        "AP_HAVE_MODULE_AEC": "1",
+        "AP_HAVE_MODULE_AGC": "1",
+        "AP_HAVE_MODULE_BF": "1",
+        "AP_HAVE_MODULE_HPF": "1",
+        "AP_HAVE_MODULE_NS": "1",
+        "AP_HAVE_MODULE_RES": "1",
+        "AP_HAVE_MODULE_RESAMPLER": "1",
+        "AP_HAVE_MODULE_SYNC": "1",
+        "AP_HAVE_MODULE_VAD": "1",
+        "AP_HAVE_PIPELINE": "1",
+        "AP_VERSION_STRING": "2.3.62"
+      },
+      "header": {
+        "bytes": 1570,
+        "sha256": "f7ed8e915c96e32a9e87b08b12b4e9f351028730172522e5c5e46473dafeb0f8"
+      },
+      "queries": {
+        "ap_runtime_state_size": {
+          "binary_sha256": "d9348159ac8d5e5c7eedd7b9169eabb37477da2d8f1370cad4a5688fb07ddc88",
+          "returncode": 0,
+          "stderr": "",
+          "stdout": "32760\n",
+          "value_bytes": 32760
+        },
+        "ap_state_size": {
+          "binary_sha256": "c04f8ac013a9931fbd00c427e22a0ee183d13831a903f6e989e81e0d88574da3",
+          "returncode": 0,
+          "stderr": "",
+          "stdout": "78224\n",
+          "value_bytes": 78224
+        }
+      }
+    },
+    "fixed": {
+      "build_directory": "/workspace/scratch/b74ab3415ba4/build-dualmic-fixed",
+      "effective_build": {
+        "AP_BUILD_BF_DIRECTION_TRACKING": "0",
+        "AP_BUILD_CONFIG_DIGEST": "1ec2d08890fcdddd0c81fb02b3e9a7bed6598b53cd2a2da7dcbc09407e434f90",
+        "AP_BUILD_MAX_AEC_TAIL_MS": "120",
+        "AP_BUILD_MAX_DELAY_MS": "300",
+        "AP_BUILD_MAX_INTERNAL_RATE_HZ": "16000",
+        "AP_BUILD_MAX_IO_RATE_HZ": "48000",
+        "AP_BUILD_MAX_MIC_CHANNELS": "2",
+        "AP_BUILD_RUNTIME_QUEUE_DEPTH": "8",
+        "AP_BUILD_SOURCE_REVISION": "50068fa285bfa7d209e635c63e86e36bec1bd3e1",
+        "AP_HAVE_LINUX_RUNTIME": "1",
+        "AP_HAVE_MODULE_ACTIVITY": "1",
+        "AP_HAVE_MODULE_AEC": "1",
+        "AP_HAVE_MODULE_AGC": "1",
+        "AP_HAVE_MODULE_BF": "1",
+        "AP_HAVE_MODULE_HPF": "1",
+        "AP_HAVE_MODULE_NS": "1",
+        "AP_HAVE_MODULE_RES": "1",
+        "AP_HAVE_MODULE_RESAMPLER": "1",
+        "AP_HAVE_MODULE_SYNC": "1",
+        "AP_HAVE_MODULE_VAD": "1",
+        "AP_HAVE_PIPELINE": "1",
+        "AP_VERSION_STRING": "2.3.62"
+      },
+      "header": {
+        "bytes": 1570,
+        "sha256": "71f9f650885e70d9fd48140594190669b377fec4accaaabc471efbe1f6b371ba"
+      },
+      "queries": {
+        "ap_runtime_state_size": {
+          "binary_sha256": "9dd075cb5fabab78986a14af534eb6e562121af87a6fa578fa65b0adb1713f88",
+          "returncode": 0,
+          "stderr": "",
+          "stdout": "32760\n",
+          "value_bytes": 32760
+        },
+        "ap_state_size": {
+          "binary_sha256": "554c381ecae130bb144a12569d7a2ce14032213181a53de1e87944adf18fdf03",
+          "returncode": 0,
+          "stderr": "",
+          "stdout": "78224\n",
+          "value_bytes": 78224
+        }
+      }
+    },
+    "resource-low": {
+      "build_directory": "/workspace/scratch/b74ab3415ba4/build-dualmic-resource-low",
+      "effective_build": {
+        "AP_BUILD_BF_DIRECTION_TRACKING": "1",
+        "AP_BUILD_CONFIG_DIGEST": "e56e3fcd1fdcd2a0185d1109c2f7e1afdf78558865f68d2dc5f4dc6e8b1f29e0",
+        "AP_BUILD_MAX_AEC_TAIL_MS": "64",
+        "AP_BUILD_MAX_DELAY_MS": "180",
+        "AP_BUILD_MAX_INTERNAL_RATE_HZ": "16000",
+        "AP_BUILD_MAX_IO_RATE_HZ": "48000",
+        "AP_BUILD_MAX_MIC_CHANNELS": "2",
+        "AP_BUILD_RUNTIME_QUEUE_DEPTH": "4",
+        "AP_BUILD_SOURCE_REVISION": "50068fa285bfa7d209e635c63e86e36bec1bd3e1",
+        "AP_HAVE_LINUX_RUNTIME": "0",
+        "AP_HAVE_MODULE_ACTIVITY": "1",
+        "AP_HAVE_MODULE_AEC": "1",
+        "AP_HAVE_MODULE_AGC": "1",
+        "AP_HAVE_MODULE_BF": "1",
+        "AP_HAVE_MODULE_HPF": "1",
+        "AP_HAVE_MODULE_NS": "1",
+        "AP_HAVE_MODULE_RES": "1",
+        "AP_HAVE_MODULE_RESAMPLER": "1",
+        "AP_HAVE_MODULE_SYNC": "1",
+        "AP_HAVE_MODULE_VAD": "1",
+        "AP_HAVE_PIPELINE": "1",
+        "AP_VERSION_STRING": "2.3.62"
+      },
+      "header": {
+        "bytes": 1569,
+        "sha256": "5a4044251eaf4a9e069c0e8d12d549b7db1d6882714f8becdb543d30ba8b1676"
+      },
+      "queries": {
+        "ap_state_size": {
+          "binary_sha256": "d0640fdcbc6199837c11a487690ba9fefadf36ee7eb8de327a76cbc1868d933d",
+          "returncode": 0,
+          "stderr": "",
+          "stdout": "47056\n",
+          "value_bytes": 47056
+        }
+      }
+    },
+    "resource-raw": {
+      "build_directory": "/workspace/scratch/b74ab3415ba4/build-dualmic-resource-raw",
+      "effective_build": {
+        "AP_BUILD_BF_DIRECTION_TRACKING": "0",
+        "AP_BUILD_CONFIG_DIGEST": "2311b97f2de10af9d6ab776760fa6c69137dd27b8d466de06538f10dcb166681",
+        "AP_BUILD_MAX_AEC_TAIL_MS": "120",
+        "AP_BUILD_MAX_DELAY_MS": "300",
+        "AP_BUILD_MAX_INTERNAL_RATE_HZ": "16000",
+        "AP_BUILD_MAX_IO_RATE_HZ": "48000",
+        "AP_BUILD_MAX_MIC_CHANNELS": "2",
+        "AP_BUILD_RUNTIME_QUEUE_DEPTH": "8",
+        "AP_BUILD_SOURCE_REVISION": "50068fa285bfa7d209e635c63e86e36bec1bd3e1",
+        "AP_HAVE_LINUX_RUNTIME": "0",
+        "AP_HAVE_MODULE_ACTIVITY": "0",
+        "AP_HAVE_MODULE_AEC": "0",
+        "AP_HAVE_MODULE_AGC": "0",
+        "AP_HAVE_MODULE_BF": "0",
+        "AP_HAVE_MODULE_HPF": "0",
+        "AP_HAVE_MODULE_NS": "0",
+        "AP_HAVE_MODULE_RES": "0",
+        "AP_HAVE_MODULE_RESAMPLER": "1",
+        "AP_HAVE_MODULE_SYNC": "0",
+        "AP_HAVE_MODULE_VAD": "0",
+        "AP_HAVE_PIPELINE": "1",
+        "AP_VERSION_STRING": "2.3.62"
+      },
+      "header": {
+        "bytes": 1570,
+        "sha256": "09524fdd6ac57fc502d002ca340323dbfca788f314b32b524fdb038a759c5dc5"
+      },
+      "queries": {
+        "ap_state_size": {
+          "binary_sha256": "2101954f455d96392fbc48b55448d7316a376c0ec9d271ffeea67664e90a9bd9",
+          "returncode": 0,
+          "stderr": "",
+          "stdout": "1064\n",
+          "value_bytes": 1064
+        }
+      }
+    },
+    "resource-tiny": {
+      "build_directory": "/workspace/scratch/b74ab3415ba4/build-dualmic-resource-tiny",
+      "effective_build": {
+        "AP_BUILD_BF_DIRECTION_TRACKING": "0",
+        "AP_BUILD_CONFIG_DIGEST": "4fdd3e8921ed4e9b3cfd98746c27f9cd42cb28c67e5565acccf1229e8c842f84",
+        "AP_BUILD_MAX_AEC_TAIL_MS": "48",
+        "AP_BUILD_MAX_DELAY_MS": "120",
+        "AP_BUILD_MAX_INTERNAL_RATE_HZ": "8000",
+        "AP_BUILD_MAX_IO_RATE_HZ": "16000",
+        "AP_BUILD_MAX_MIC_CHANNELS": "1",
+        "AP_BUILD_RUNTIME_QUEUE_DEPTH": "4",
+        "AP_BUILD_SOURCE_REVISION": "50068fa285bfa7d209e635c63e86e36bec1bd3e1",
+        "AP_HAVE_LINUX_RUNTIME": "1",
+        "AP_HAVE_MODULE_ACTIVITY": "1",
+        "AP_HAVE_MODULE_AEC": "1",
+        "AP_HAVE_MODULE_AGC": "1",
+        "AP_HAVE_MODULE_BF": "0",
+        "AP_HAVE_MODULE_HPF": "1",
+        "AP_HAVE_MODULE_NS": "1",
+        "AP_HAVE_MODULE_RES": "1",
+        "AP_HAVE_MODULE_RESAMPLER": "1",
+        "AP_HAVE_MODULE_SYNC": "1",
+        "AP_HAVE_MODULE_VAD": "1",
+        "AP_HAVE_PIPELINE": "1",
+        "AP_VERSION_STRING": "2.3.62"
+      },
+      "header": {
+        "bytes": 1566,
+        "sha256": "6ce0c9fed13c830643839eedfc65060915ae956d09cca3b6f0166508772843fd"
+      },
+      "queries": {
+        "ap_runtime_state_size": {
+          "binary_sha256": "123de2bf46e546aa3b9fca36cf2a97d6d2187cd04c1ad9bc68e14e8aadcc4832",
+          "returncode": 0,
+          "stderr": "",
+          "stdout": "5176\n",
+          "value_bytes": 5176
+        },
+        "ap_state_size": {
+          "binary_sha256": "d8983d9f3c1fd31df994d2281ea2077c1b2a37b437d9107aead9cf798df1f719",
+          "returncode": 0,
+          "stderr": "",
+          "stdout": "25432\n",
+          "value_bytes": 25432
+        }
+      }
+    }
+  },
+  "kind": "readback of existing measured-source executables; no rebuild",
+  "not_measured": [
+    "RSS",
+    "stack_high_water",
+    "ROM",
+    "physical_SSC305",
+    "CPU_per_frame",
+    "thermal",
+    "power"
+  ],
+  "readback_utc": "2026-11-06T07:18:59.453392+00:00",
+  "schema_version": 1,
+  "source_revision": "50068fa285bfa7d209e635c63e86e36bec1bd3e1",
+  "status": "PRE_SAFE_FIX"
+}

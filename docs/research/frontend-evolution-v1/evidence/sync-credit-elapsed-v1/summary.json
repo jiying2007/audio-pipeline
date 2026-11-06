@@ -1,0 +1,54 @@
+{
+  "after_default_ctest": "63/63 PASS",
+  "after_observation_default_and_8k_tiny": "PASS",
+  "after_tiny_ctest": "33/33 PASS",
+  "base_merge": "5728a4f1b43d9d66f6cea8467ac3443efe14297e",
+  "before_default_credit_exit": 1,
+  "before_original_tiny_fixture_exit": -6,
+  "before_tiny_credit_exit": 1,
+  "budget_passed_at_evidence_preparation": false,
+  "elapsed_seconds_at_evidence_preparation": 604.192941,
+  "evidence_prepared_utc": "2026-11-06T08:37:02.192941+00:00",
+  "first_basis_policy": "legacy nominal100ms; no invalid elapsed backfill",
+  "freeze_commit": "86c96af3fb8754eb7451f8bca2f83c3d003493f9",
+  "implementation_commit": "a64090d73dd4206fffc9f1f69d7f139e9c158996",
+  "module_state_bytes": {
+    "default": 32840,
+    "tiny": 8264
+  },
+  "normal_cadence": {
+    "default": {
+      "byte_identical": true,
+      "readable_byte_identical": true,
+      "readable_bytes": 1344,
+      "readable_sha256": "c7c84de0932eb74059348385fb4a1dc85d8820a2b00af8d8b640c96ba71bb060",
+      "sha256": "3d9f23b2648a39f59095f3331b86807641cf5293d305867bde94601d882406de",
+      "state_and_reference_bytes": 7330400
+    },
+    "tiny": {
+      "byte_identical": true,
+      "readable_byte_identical": true,
+      "readable_bytes": 684,
+      "readable_sha256": "3fcede1b1b20730d5fc754636e5205ee03512b1ac1ed24449b274dab834104d4",
+      "sha256": "e72904442075bb964a5371ca86f8fee83ad30ed46be7477286de950e1e548099",
+      "state_and_reference_bytes": 944240
+    }
+  },
+  "not_run": [
+    "new_ARM",
+    "acoustic_replay_matrix",
+    "physical_DUT",
+    "real_KWS_FAR_FRR",
+    "subjective_intercom"
+  ],
+  "persistent_state_added_bytes": 0,
+  "single_candidate": true,
+  "source_sha256": {
+    "src/sync/ap_sync.c": "6580e9c482d01020f82acfb83dce37eeb7254cd25936a6a72d1da9a8739de6c1",
+    "src/sync/ap_sync.h": "e855c8a517d7030be90ca4190cad75e84f8764fc35cebef9032cc001b7b47630",
+    "tests/test_drift_res.c": "b2018a9dee2843347f45986f90db9d1043a648ab49601011d34b7040feb44b58",
+    "tests/test_sync_observation_time.c": "6e1b73296d213bd7053e0902bdd820b6f0211a9ec4f654a49d5c952aea27598a"
+  },
+  "started_utc": "2026-11-06T08:26:58+00:00",
+  "total_budget_seconds": 600
+}

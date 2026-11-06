@@ -1,0 +1,25 @@
+beamformer pending-mode checks=3916 failures=24
+FAIL /workspace/scratch/b74ab3415ba4/audio-dualmic-health/tests/test_beamformer_health.c:484 tracking interval invalidates unfinished fixed confirmation
+FAIL /workspace/scratch/b74ab3415ba4/audio-dualmic-health/tests/test_beamformer_health.c:491 return to fixed requires two fresh observations
+FAIL /workspace/scratch/b74ab3415ba4/audio-dualmic-health/tests/test_beamformer_health.c:484 tracking interval invalidates unfinished fixed confirmation
+FAIL /workspace/scratch/b74ab3415ba4/audio-dualmic-health/tests/test_beamformer_health.c:484 tracking interval invalidates unfinished fixed confirmation
+FAIL /workspace/scratch/b74ab3415ba4/audio-dualmic-health/tests/test_beamformer_health.c:484 tracking interval invalidates unfinished fixed confirmation
+FAIL /workspace/scratch/b74ab3415ba4/audio-dualmic-health/tests/test_beamformer_health.c:484 tracking interval invalidates unfinished fixed confirmation
+FAIL /workspace/scratch/b74ab3415ba4/audio-dualmic-health/tests/test_beamformer_health.c:484 tracking interval invalidates unfinished fixed confirmation
+FAIL /workspace/scratch/b74ab3415ba4/audio-dualmic-health/tests/test_beamformer_health.c:491 return to fixed requires two fresh observations
+FAIL /workspace/scratch/b74ab3415ba4/audio-dualmic-health/tests/test_beamformer_health.c:484 tracking interval invalidates unfinished fixed confirmation
+FAIL /workspace/scratch/b74ab3415ba4/audio-dualmic-health/tests/test_beamformer_health.c:484 tracking interval invalidates unfinished fixed confirmation
+FAIL /workspace/scratch/b74ab3415ba4/audio-dualmic-health/tests/test_beamformer_health.c:484 tracking interval invalidates unfinished fixed confirmation
+FAIL /workspace/scratch/b74ab3415ba4/audio-dualmic-health/tests/test_beamformer_health.c:484 tracking interval invalidates unfinished fixed confirmation
+FAIL /workspace/scratch/b74ab3415ba4/audio-dualmic-health/tests/test_beamformer_health.c:484 tracking interval invalidates unfinished fixed confirmation
+FAIL /workspace/scratch/b74ab3415ba4/audio-dualmic-health/tests/test_beamformer_health.c:491 return to fixed requires two fresh observations
+FAIL /workspace/scratch/b74ab3415ba4/audio-dualmic-health/tests/test_beamformer_health.c:484 tracking interval invalidates unfinished fixed confirmation
+FAIL /workspace/scratch/b74ab3415ba4/audio-dualmic-health/tests/test_beamformer_health.c:484 tracking interval invalidates unfinished fixed confirmation
+FAIL /workspace/scratch/b74ab3415ba4/audio-dualmic-health/tests/test_beamformer_health.c:484 tracking interval invalidates unfinished fixed confirmation
+FAIL /workspace/scratch/b74ab3415ba4/audio-dualmic-health/tests/test_beamformer_health.c:484 tracking interval invalidates unfinished fixed confirmation
+FAIL /workspace/scratch/b74ab3415ba4/audio-dualmic-health/tests/test_beamformer_health.c:484 tracking interval invalidates unfinished fixed confirmation
+FAIL /workspace/scratch/b74ab3415ba4/audio-dualmic-health/tests/test_beamformer_health.c:491 return to fixed requires two fresh observations
+FAIL /workspace/scratch/b74ab3415ba4/audio-dualmic-health/tests/test_beamformer_health.c:484 tracking interval invalidates unfinished fixed confirmation
+FAIL /workspace/scratch/b74ab3415ba4/audio-dualmic-health/tests/test_beamformer_health.c:484 tracking interval invalidates unfinished fixed confirmation
+FAIL /workspace/scratch/b74ab3415ba4/audio-dualmic-health/tests/test_beamformer_health.c:484 tracking interval invalidates unfinished fixed confirmation
+FAIL /workspace/scratch/b74ab3415ba4/audio-dualmic-health/tests/test_beamformer_health.c:484 tracking interval invalidates unfinished fixed confirmation

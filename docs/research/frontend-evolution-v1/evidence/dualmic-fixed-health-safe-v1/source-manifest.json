@@ -1,0 +1,709 @@
+{
+  "actual_execution_commit": "88003920f952af69dd7f88fea969122ba726e706",
+  "boundaries": {
+    "DSP_rerun_for_restore": false,
+    "binary_or_full_PCM_payloads_included": false,
+    "bundle_contains_its_own_packaging_commit": false,
+    "physical_target_measurement": false,
+    "remote_CI": false
+  },
+  "bundle": {
+    "bytes": 21956,
+    "decoded_name": "source.bundle",
+    "encoded_bytes": 29277,
+    "encoded_path": "source.bundle.b64",
+    "encoded_sha256": "269284c505ca247f4816ba3e3e0be1aa730fd73bed30733775705060b7304a0b",
+    "encoding": "RFC4648 base64, one line and exactly one terminal LF",
+    "format": "git-bundle-v2",
+    "header": [
+      "# v2 git bundle",
+      "-be45d8127b3f9b986fc7280a8208b09c560eece2 docs(research): record dual-mic health results and disclosed recovery limits",
+      "8633f9ff8cef169c23ad79046c91b2badb217640 HEAD"
+    ],
+    "recovery_ref": "refs/dualmic-local/safe",
+    "sha256": "15f2d2530287cf885c784056deeeb0342a975ed51569a2b1035da5e0eeb053bc",
+    "source_ref": "HEAD"
+  },
+  "bundled_commit_count": 4,
+  "bundled_commits": [
+    "8633f9ff8cef169c23ad79046c91b2badb217640",
+    "88003920f952af69dd7f88fea969122ba726e706",
+    "a72e056420f4254f72a4b4ebae87d118d65aec2f",
+    "9ec381e4f4fa6e6ecd1c9016d3b0711c79343a75"
+  ],
+  "captured_result_commit": "8633f9ff8cef169c23ad79046c91b2badb217640",
+  "isolated_restore": {
+    "after_continuation_commit_object_count": 27,
+    "after_v1_commit_object_count": 23,
+    "alternates_used": false,
+    "bootstrap_commit_object_count": 1,
+    "bootstrap_transport": "local shallow fetch of exact existing prerequisite; no network",
+    "bundle_verify_exit_code": 0,
+    "commands": [
+      {
+        "argv": [
+          "git",
+          "-C",
+          "/workspace/scratch/b74ab3415ba4/audio-dualmic-safe",
+          "rev-parse",
+          "HEAD"
+        ],
+        "returncode": 0
+      },
+      {
+        "argv": [
+          "git",
+          "-C",
+          "/workspace/scratch/b74ab3415ba4/audio-dualmic-safe",
+          "rev-list",
+          "8633f9ff8cef169c23ad79046c91b2badb217640",
+          "^be45d8127b3f9b986fc7280a8208b09c560eece2"
+        ],
+        "returncode": 0
+      },
+      {
+        "argv": [
+          "git",
+          "-C",
+          "/workspace/scratch/b74ab3415ba4/audio-dualmic-safe",
+          "bundle",
+          "create",
+          "/workspace/scratch/b74ab3415ba4/safe-source-continuation-l6640k9f/safe-source.bundle",
+          "HEAD",
+          "^be45d8127b3f9b986fc7280a8208b09c560eece2"
+        ],
+        "returncode": 0
+      },
+      {
+        "argv": [
+          "git",
+          "init",
+          "--bare",
+          "/workspace/scratch/b74ab3415ba4/safe-source-continuation-l6640k9f/recovered.git"
+        ],
+        "returncode": 0
+      },
+      {
+        "argv": [
+          "git",
+          "-C",
+          "/workspace/scratch/b74ab3415ba4/safe-source-continuation-l6640k9f/recovered.git",
+          "fetch",
+          "--no-tags",
+          "--depth=1",
+          "/workspace/scratch/b74ab3415ba4/audio-dualmic-safe",
+          "6056682486c1a2a2c84d77135de8118e07fc8cf3:refs/dualmic-local/prerequisite"
+        ],
+        "returncode": 0
+      },
+      {
+        "argv": [
+          "git",
+          "-C",
+          "/workspace/scratch/b74ab3415ba4/safe-source-continuation-l6640k9f/recovered.git",
+          "cat-file",
+          "--batch-all-objects",
+          "--batch-check=%(objecttype)"
+        ],
+        "returncode": 0
+      },
+      {
+        "argv": [
+          "git",
+          "-C",
+          "/workspace/scratch/b74ab3415ba4/safe-source-continuation-l6640k9f/recovered.git",
+          "cat-file",
+          "-e",
+          "88003920f952af69dd7f88fea969122ba726e706^{commit}"
+        ],
+        "returncode": 128
+      },
+      {
+        "argv": [
+          "git",
+          "-C",
+          "/workspace/scratch/b74ab3415ba4/safe-source-continuation-l6640k9f/recovered.git",
+          "bundle",
+          "verify",
+          "/workspace/scratch/b74ab3415ba4/safe-source-continuation-l6640k9f/source-v1.bundle"
+        ],
+        "returncode": 0
+      },
+      {
+        "argv": [
+          "git",
+          "-C",
+          "/workspace/scratch/b74ab3415ba4/safe-source-continuation-l6640k9f/recovered.git",
+          "fetch",
+          "--no-tags",
+          "/workspace/scratch/b74ab3415ba4/safe-source-continuation-l6640k9f/source-v1.bundle",
+          "refs/dualmic-local/*:refs/dualmic-local/*"
+        ],
+        "returncode": 0
+      },
+      {
+        "argv": [
+          "git",
+          "-C",
+          "/workspace/scratch/b74ab3415ba4/safe-source-continuation-l6640k9f/recovered.git",
+          "cat-file",
+          "--batch-all-objects",
+          "--batch-check=%(objecttype)"
+        ],
+        "returncode": 0
+      },
+      {
+        "argv": [
+          "git",
+          "-C",
+          "/workspace/scratch/b74ab3415ba4/safe-source-continuation-l6640k9f/recovered.git",
+          "cat-file",
+          "-t",
+          "be45d8127b3f9b986fc7280a8208b09c560eece2"
+        ],
+        "returncode": 0
+      },
+      {
+        "argv": [
+          "git",
+          "-C",
+          "/workspace/scratch/b74ab3415ba4/safe-source-continuation-l6640k9f/recovered.git",
+          "cat-file",
+          "-e",
+          "88003920f952af69dd7f88fea969122ba726e706^{commit}"
+        ],
+        "returncode": 128
+      },
+      {
+        "argv": [
+          "git",
+          "-C",
+          "/workspace/scratch/b74ab3415ba4/safe-source-continuation-l6640k9f/recovered.git",
+          "cat-file",
+          "-e",
+          "8633f9ff8cef169c23ad79046c91b2badb217640^{commit}"
+        ],
+        "returncode": 128
+      },
+      {
+        "argv": [
+          "git",
+          "-C",
+          "/workspace/scratch/b74ab3415ba4/safe-source-continuation-l6640k9f/recovered.git",
+          "bundle",
+          "verify",
+          "/workspace/scratch/b74ab3415ba4/safe-source-continuation-l6640k9f/safe-source.bundle"
+        ],
+        "returncode": 0
+      },
+      {
+        "argv": [
+          "git",
+          "-C",
+          "/workspace/scratch/b74ab3415ba4/safe-source-continuation-l6640k9f/recovered.git",
+          "fetch",
+          "--no-tags",
+          "/workspace/scratch/b74ab3415ba4/safe-source-continuation-l6640k9f/safe-source.bundle",
+          "HEAD:refs/dualmic-local/safe"
+        ],
+        "returncode": 0
+      },
+      {
+        "argv": [
+          "git",
+          "-C",
+          "/workspace/scratch/b74ab3415ba4/safe-source-continuation-l6640k9f/recovered.git",
+          "cat-file",
+          "--batch-all-objects",
+          "--batch-check=%(objecttype)"
+        ],
+        "returncode": 0
+      },
+      {
+        "argv": [
+          "git",
+          "-C",
+          "/workspace/scratch/b74ab3415ba4/safe-source-continuation-l6640k9f/recovered.git",
+          "rev-parse",
+          "refs/dualmic-local/safe"
+        ],
+        "returncode": 0
+      },
+      {
+        "argv": [
+          "git",
+          "-C",
+          "/workspace/scratch/b74ab3415ba4/safe-source-continuation-l6640k9f/recovered.git",
+          "rev-list",
+          "8633f9ff8cef169c23ad79046c91b2badb217640",
+          "^be45d8127b3f9b986fc7280a8208b09c560eece2"
+        ],
+        "returncode": 0
+      },
+      {
+        "argv": [
+          "git",
+          "-C",
+          "/workspace/scratch/b74ab3415ba4/audio-dualmic-safe",
+          "rev-parse",
+          "88003920f952af69dd7f88fea969122ba726e706^{tree}"
+        ],
+        "returncode": 0
+      },
+      {
+        "argv": [
+          "git",
+          "-C",
+          "/workspace/scratch/b74ab3415ba4/safe-source-continuation-l6640k9f/recovered.git",
+          "rev-parse",
+          "88003920f952af69dd7f88fea969122ba726e706^{tree}"
+        ],
+        "returncode": 0
+      },
+      {
+        "argv": [
+          "git",
+          "-C",
+          "/workspace/scratch/b74ab3415ba4/audio-dualmic-safe",
+          "cat-file",
+          "commit",
+          "88003920f952af69dd7f88fea969122ba726e706"
+        ],
+        "returncode": 0
+      },
+      {
+        "argv": [
+          "git",
+          "-C",
+          "/workspace/scratch/b74ab3415ba4/safe-source-continuation-l6640k9f/recovered.git",
+          "cat-file",
+          "commit",
+          "88003920f952af69dd7f88fea969122ba726e706"
+        ],
+        "returncode": 0
+      },
+      {
+        "argv": [
+          "git",
+          "-C",
+          "/workspace/scratch/b74ab3415ba4/audio-dualmic-safe",
+          "archive",
+          "--format=tar",
+          "88003920f952af69dd7f88fea969122ba726e706",
+          "src",
+          "include"
+        ],
+        "returncode": 0
+      },
+      {
+        "argv": [
+          "git",
+          "-C",
+          "/workspace/scratch/b74ab3415ba4/safe-source-continuation-l6640k9f/recovered.git",
+          "archive",
+          "--format=tar",
+          "88003920f952af69dd7f88fea969122ba726e706",
+          "src",
+          "include"
+        ],
+        "returncode": 0
+      },
+      {
+        "argv": [
+          "git",
+          "-C",
+          "/workspace/scratch/b74ab3415ba4/audio-dualmic-safe",
+          "ls-tree",
+          "-r",
+          "--name-only",
+          "88003920f952af69dd7f88fea969122ba726e706",
+          "src",
+          "include"
+        ],
+        "returncode": 0
+      },
+      {
+        "argv": [
+          "git",
+          "-C",
+          "/workspace/scratch/b74ab3415ba4/audio-dualmic-safe",
+          "rev-parse",
+          "8633f9ff8cef169c23ad79046c91b2badb217640^{tree}"
+        ],
+        "returncode": 0
+      },
+      {
+        "argv": [
+          "git",
+          "-C",
+          "/workspace/scratch/b74ab3415ba4/safe-source-continuation-l6640k9f/recovered.git",
+          "rev-parse",
+          "8633f9ff8cef169c23ad79046c91b2badb217640^{tree}"
+        ],
+        "returncode": 0
+      },
+      {
+        "argv": [
+          "git",
+          "-C",
+          "/workspace/scratch/b74ab3415ba4/audio-dualmic-safe",
+          "cat-file",
+          "commit",
+          "8633f9ff8cef169c23ad79046c91b2badb217640"
+        ],
+        "returncode": 0
+      },
+      {
+        "argv": [
+          "git",
+          "-C",
+          "/workspace/scratch/b74ab3415ba4/safe-source-continuation-l6640k9f/recovered.git",
+          "cat-file",
+          "commit",
+          "8633f9ff8cef169c23ad79046c91b2badb217640"
+        ],
+        "returncode": 0
+      },
+      {
+        "argv": [
+          "git",
+          "-C",
+          "/workspace/scratch/b74ab3415ba4/audio-dualmic-safe",
+          "archive",
+          "--format=tar",
+          "8633f9ff8cef169c23ad79046c91b2badb217640",
+          "src",
+          "include"
+        ],
+        "returncode": 0
+      },
+      {
+        "argv": [
+          "git",
+          "-C",
+          "/workspace/scratch/b74ab3415ba4/safe-source-continuation-l6640k9f/recovered.git",
+          "archive",
+          "--format=tar",
+          "8633f9ff8cef169c23ad79046c91b2badb217640",
+          "src",
+          "include"
+        ],
+        "returncode": 0
+      },
+      {
+        "argv": [
+          "git",
+          "-C",
+          "/workspace/scratch/b74ab3415ba4/audio-dualmic-safe",
+          "ls-tree",
+          "-r",
+          "--name-only",
+          "8633f9ff8cef169c23ad79046c91b2badb217640",
+          "src",
+          "include"
+        ],
+        "returncode": 0
+      },
+      {
+        "argv": [
+          "git",
+          "-C",
+          "/workspace/scratch/b74ab3415ba4/safe-source-continuation-l6640k9f/recovered.git",
+          "show",
+          "8633f9ff8cef169c23ad79046c91b2badb217640:docs/research/frontend-evolution-v1/evidence/dualmic-fixed-health-safe-v1/summary.json"
+        ],
+        "returncode": 0
+      },
+      {
+        "argv": [
+          "git",
+          "-C",
+          "/workspace/scratch/b74ab3415ba4/audio-dualmic-safe",
+          "show",
+          "8633f9ff8cef169c23ad79046c91b2badb217640:docs/research/frontend-evolution-v1/evidence/dualmic-fixed-health-safe-v1/summary.json"
+        ],
+        "returncode": 0
+      },
+      {
+        "argv": [
+          "git",
+          "-C",
+          "/workspace/scratch/b74ab3415ba4/safe-source-continuation-l6640k9f/recovered.git",
+          "show",
+          "88003920f952af69dd7f88fea969122ba726e706:src/core/ap_pipeline.c"
+        ],
+        "returncode": 0
+      },
+      {
+        "argv": [
+          "git",
+          "-C",
+          "/workspace/scratch/b74ab3415ba4/safe-source-continuation-l6640k9f/recovered.git",
+          "show",
+          "88003920f952af69dd7f88fea969122ba726e706:src/frontend/ap_beamformer.c"
+        ],
+        "returncode": 0
+      },
+      {
+        "argv": [
+          "git",
+          "-C",
+          "/workspace/scratch/b74ab3415ba4/safe-source-continuation-l6640k9f/recovered.git",
+          "show",
+          "88003920f952af69dd7f88fea969122ba726e706:src/frontend/ap_frontend.h"
+        ],
+        "returncode": 0
+      },
+      {
+        "argv": [
+          "git",
+          "-C",
+          "/workspace/scratch/b74ab3415ba4/safe-source-continuation-l6640k9f/recovered.git",
+          "show",
+          "88003920f952af69dd7f88fea969122ba726e706:tests/test_beamformer_health.c"
+        ],
+        "returncode": 0
+      },
+      {
+        "argv": [
+          "git",
+          "-C",
+          "/workspace/scratch/b74ab3415ba4/safe-source-continuation-l6640k9f/recovered.git",
+          "show",
+          "8633f9ff8cef169c23ad79046c91b2badb217640:docs/research/frontend-evolution-v1/evidence/dualmic-fixed-health-safe-v1/before-build.log"
+        ],
+        "returncode": 0
+      },
+      {
+        "argv": [
+          "git",
+          "-C",
+          "/workspace/scratch/b74ab3415ba4/safe-source-continuation-l6640k9f/recovered.git",
+          "show",
+          "8633f9ff8cef169c23ad79046c91b2badb217640:docs/research/frontend-evolution-v1/evidence/dualmic-fixed-health-safe-v1/before-safe-epoch.json"
+        ],
+        "returncode": 0
+      },
+      {
+        "argv": [
+          "git",
+          "-C",
+          "/workspace/scratch/b74ab3415ba4/safe-source-continuation-l6640k9f/recovered.git",
+          "show",
+          "8633f9ff8cef169c23ad79046c91b2badb217640:docs/research/frontend-evolution-v1/evidence/dualmic-fixed-health-safe-v1/before-safe-epoch.log"
+        ],
+        "returncode": 0
+      },
+      {
+        "argv": [
+          "git",
+          "-C",
+          "/workspace/scratch/b74ab3415ba4/safe-source-continuation-l6640k9f/recovered.git",
+          "show",
+          "8633f9ff8cef169c23ad79046c91b2badb217640:docs/research/frontend-evolution-v1/evidence/dualmic-fixed-health-safe-v1/before-state.log"
+        ],
+        "returncode": 0
+      },
+      {
+        "argv": [
+          "git",
+          "-C",
+          "/workspace/scratch/b74ab3415ba4/safe-source-continuation-l6640k9f/recovered.git",
+          "show",
+          "8633f9ff8cef169c23ad79046c91b2badb217640:docs/research/frontend-evolution-v1/evidence/dualmic-fixed-health-safe-v1/candidate-initial-build.log"
+        ],
+        "returncode": 0
+      },
+      {
+        "argv": [
+          "git",
+          "-C",
+          "/workspace/scratch/b74ab3415ba4/safe-source-continuation-l6640k9f/recovered.git",
+          "show",
+          "8633f9ff8cef169c23ad79046c91b2badb217640:docs/research/frontend-evolution-v1/evidence/dualmic-fixed-health-safe-v1/candidate-initial-safe-epoch.log"
+        ],
+        "returncode": 0
+      },
+      {
+        "argv": [
+          "git",
+          "-C",
+          "/workspace/scratch/b74ab3415ba4/safe-source-continuation-l6640k9f/recovered.git",
+          "show",
+          "8633f9ff8cef169c23ad79046c91b2badb217640:docs/research/frontend-evolution-v1/evidence/dualmic-fixed-health-safe-v1/off-build.log"
+        ],
+        "returncode": 0
+      },
+      {
+        "argv": [
+          "git",
+          "-C",
+          "/workspace/scratch/b74ab3415ba4/safe-source-continuation-l6640k9f/recovered.git",
+          "show",
+          "8633f9ff8cef169c23ad79046c91b2badb217640:docs/research/frontend-evolution-v1/evidence/dualmic-fixed-health-safe-v1/off-configure.log"
+        ],
+        "returncode": 0
+      },
+      {
+        "argv": [
+          "git",
+          "-C",
+          "/workspace/scratch/b74ab3415ba4/safe-source-continuation-l6640k9f/recovered.git",
+          "show",
+          "8633f9ff8cef169c23ad79046c91b2badb217640:docs/research/frontend-evolution-v1/evidence/dualmic-fixed-health-safe-v1/off-ctest.log"
+        ],
+        "returncode": 0
+      },
+      {
+        "argv": [
+          "git",
+          "-C",
+          "/workspace/scratch/b74ab3415ba4/safe-source-continuation-l6640k9f/recovered.git",
+          "show",
+          "8633f9ff8cef169c23ad79046c91b2badb217640:docs/research/frontend-evolution-v1/evidence/dualmic-fixed-health-safe-v1/off-execution.json"
+        ],
+        "returncode": 0
+      },
+      {
+        "argv": [
+          "git",
+          "-C",
+          "/workspace/scratch/b74ab3415ba4/safe-source-continuation-l6640k9f/recovered.git",
+          "show",
+          "8633f9ff8cef169c23ad79046c91b2badb217640:docs/research/frontend-evolution-v1/evidence/dualmic-fixed-health-safe-v1/off-safe-epoch.log"
+        ],
+        "returncode": 0
+      },
+      {
+        "argv": [
+          "git",
+          "-C",
+          "/workspace/scratch/b74ab3415ba4/safe-source-continuation-l6640k9f/recovered.git",
+          "show",
+          "8633f9ff8cef169c23ad79046c91b2badb217640:docs/research/frontend-evolution-v1/evidence/dualmic-fixed-health-safe-v1/off-state.log"
+        ],
+        "returncode": 0
+      },
+      {
+        "argv": [
+          "git",
+          "-C",
+          "/workspace/scratch/b74ab3415ba4/safe-source-continuation-l6640k9f/recovered.git",
+          "show",
+          "8633f9ff8cef169c23ad79046c91b2badb217640:docs/research/frontend-evolution-v1/evidence/dualmic-fixed-health-safe-v1/on-build.log"
+        ],
+        "returncode": 0
+      },
+      {
+        "argv": [
+          "git",
+          "-C",
+          "/workspace/scratch/b74ab3415ba4/safe-source-continuation-l6640k9f/recovered.git",
+          "show",
+          "8633f9ff8cef169c23ad79046c91b2badb217640:docs/research/frontend-evolution-v1/evidence/dualmic-fixed-health-safe-v1/on-configure.log"
+        ],
+        "returncode": 0
+      },
+      {
+        "argv": [
+          "git",
+          "-C",
+          "/workspace/scratch/b74ab3415ba4/safe-source-continuation-l6640k9f/recovered.git",
+          "show",
+          "8633f9ff8cef169c23ad79046c91b2badb217640:docs/research/frontend-evolution-v1/evidence/dualmic-fixed-health-safe-v1/on-ctest.log"
+        ],
+        "returncode": 0
+      },
+      {
+        "argv": [
+          "git",
+          "-C",
+          "/workspace/scratch/b74ab3415ba4/safe-source-continuation-l6640k9f/recovered.git",
+          "show",
+          "8633f9ff8cef169c23ad79046c91b2badb217640:docs/research/frontend-evolution-v1/evidence/dualmic-fixed-health-safe-v1/on-execution.json"
+        ],
+        "returncode": 0
+      },
+      {
+        "argv": [
+          "git",
+          "-C",
+          "/workspace/scratch/b74ab3415ba4/safe-source-continuation-l6640k9f/recovered.git",
+          "show",
+          "8633f9ff8cef169c23ad79046c91b2badb217640:docs/research/frontend-evolution-v1/evidence/dualmic-fixed-health-safe-v1/on-safe-epoch.log"
+        ],
+        "returncode": 0
+      },
+      {
+        "argv": [
+          "git",
+          "-C",
+          "/workspace/scratch/b74ab3415ba4/safe-source-continuation-l6640k9f/recovered.git",
+          "show",
+          "8633f9ff8cef169c23ad79046c91b2badb217640:docs/research/frontend-evolution-v1/evidence/dualmic-fixed-health-safe-v1/on-state.log"
+        ],
+        "returncode": 0
+      },
+      {
+        "argv": [
+          "git",
+          "-C",
+          "/workspace/scratch/b74ab3415ba4/safe-source-continuation-l6640k9f/recovered.git",
+          "show",
+          "8633f9ff8cef169c23ad79046c91b2badb217640:docs/research/frontend-evolution-v1/evidence/dualmic-fixed-health-safe-v1/pre-fix-public-counterexample.json"
+        ],
+        "returncode": 0
+      },
+      {
+        "argv": [
+          "git",
+          "-C",
+          "/workspace/scratch/b74ab3415ba4/safe-source-continuation-l6640k9f/recovered.git",
+          "show",
+          "8633f9ff8cef169c23ad79046c91b2badb217640:docs/research/frontend-evolution-v1/evidence/dualmic-fixed-health-safe-v1/pre-fix-public-counterexample.log"
+        ],
+        "returncode": 0
+      },
+      {
+        "argv": [
+          "git",
+          "-C",
+          "/workspace/scratch/b74ab3415ba4/safe-source-continuation-l6640k9f/recovered.git",
+          "fsck",
+          "--full",
+          "--no-reflogs"
+        ],
+        "returncode": 0
+      }
+    ],
+    "execution_and_result_commits_absent_before_continuation": true,
+    "git_fsck_exit_code": 0,
+    "restored": {
+      "8633f9ff8cef169c23ad79046c91b2badb217640": {
+        "src_include_file_count": 49,
+        "src_include_tar_bytes": 337920,
+        "src_include_tar_sha256": "fd226bb1be7cc2363a4203821352272cf68825777602caeced9004a080ad4253",
+        "tree": "dec7b67af5570657a7028379782c550c5ae70b5c"
+      },
+      "88003920f952af69dd7f88fea969122ba726e706": {
+        "src_include_file_count": 49,
+        "src_include_tar_bytes": 337920,
+        "src_include_tar_sha256": "64244ebca5f6afd455f6795078a793e6704f7d0d878db3e36b476424a66956ff",
+        "tree": "9d76fb1a1148fb5d143d1fe874ef8a8f3444ff27"
+      }
+    },
+    "summary_path": "docs/research/frontend-evolution-v1/evidence/dualmic-fixed-health-safe-v1/summary.json",
+    "summary_sha256": "5e57f1be06c0371e1a56e04902a0c0da4d5c044ed614d17f3c5d9d34a38afb66",
+    "validated_evidence_file_count": 20,
+    "validated_source_hash_count": 4
+  },
+  "kind": "SAFE-source-continuation",
+  "prerequisite": {
+    "commit": "be45d8127b3f9b986fc7280a8208b09c560eece2",
+    "supplied_by": "validation/research/evidence/dualmic-local-source-v1",
+    "v1_bootstrap_commit": "6056682486c1a2a2c84d77135de8118e07fc8cf3",
+    "v1_bundle_sha256": "3ce088c0b631083c585f5b5f1b5a87bebf6800f1de4ef8d3288adca70ca7093b",
+    "v1_manifest_sha256": "540891077b78afb9e84925ca03f4a9ec65dea09e1e5d9faf1dc29e4c344e1c88"
+  },
+  "schema_version": 1
+}

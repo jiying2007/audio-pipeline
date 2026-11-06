@@ -1,0 +1,52 @@
+Internal ctest changing into directory: /workspace/scratch/b74ab3415ba4/audio-dualmic-health-build/sanitizer
+Test project /workspace/scratch/b74ab3415ba4/audio-dualmic-health-build/sanitizer
+    Start  1: ap_module_tests
+1/4 Test  #1: ap_module_tests ..................***Failed    0.01 sec
+==20==LeakSanitizer has encountered a fatal error.
+==20==HINT: For debugging, try setting environment variable LSAN_OPTIONS=verbosity=1:log_threads=1
+==20==HINT: LeakSanitizer does not work under ptrace (strace, gdb, etc)
+
+    Start  2: ap_beamformer_health_tests
+2/4 Test  #2: ap_beamformer_health_tests .......***Failed    0.49 sec
+BF state=180 module=188 legacy_fields=176 pipeline=78200 tracking_capability=1
+hard rate=8000 hpf=0 bad=0 lag=-1 entry=24 recovery=108 first_valid_recovery=80 raw_recovery_frames=29 entry_added_step=0.118757799 recovery_added_step=-0.0329557471 entry_boundary=0.152603671 recovery_boundary=0.0329557471 fault_rms=0.035531676 recovered_rms=0.028861936
+hard rate=8000 hpf=0 bad=0 lag=0 entry=24 recovery=108 first_valid_recovery=80 raw_recovery_frames=29 entry_added_step=0.114126779 recovery_added_step=0 entry_boundary=0.15171355 recovery_boundary=0.0659114942 fault_rms=0.035531676 recovered_rms=0.035531676
+hard rate=8000 hpf=0 bad=0 lag=1 entry=24 recovery=108 first_valid_recovery=80 raw_recovery_frames=29 entry_added_step=0.0811710283 recovery_added_step=0.0329557471 entry_boundary=0.0647295639 recovery_boundary=-0.00918923691 fault_rms=0.035531676 recovered_rms=0.028861936
+hard rate=8000 hpf=0 bad=1 lag=-1 entry=24 recovery=108 first_valid_recovery=80 raw_recovery_frames=29 entry_added_step=0.0811710283 recovery_added_step=0.0329557471 entry_boundary=0.0647295639 recovery_boundary=-0.00918923691 fault_rms=0.035531676 recovered_rms=0.028861936
+hard rate=8000 hpf=0 bad=1 lag=0 entry=24 recovery=108 first_valid_recovery=80 raw_recovery_frames=29 entry_added_step=0.114126779 recovery_added_step=0 entry_boundary=0.15171355 recovery_boundary=0.0659114942 fault_rms=0.035531676 recovered_rms=0.035531676
+hard rate=8000 hpf=0 bad=1 lag=1 entry=24 recovery=108 first_valid_recovery=80 raw_recovery_frames=29 entry_added_step=0.118757799 recovery_added_step=-0.0329557471 entry_boundary=0.152603671 recovery_boundary=0.0329557471 fault_rms=0.035531676 recovered_rms=0.028861936
+hard rate=8000 hpf=1 bad=0 lag=-1 entry=24 recovery=112 first_valid_recovery=84 raw_recovery_frames=33 entry_added_step=0.074432075 recovery_added_step=-0.0349931195 entry_boundary=0.115100063 recovery_boundary=0.0349931195 fault_rms=0.0366065312 recovered_rms=0.029732492
+hard rate=8000 hpf=1 bad=0 lag=0 entry=24 recovery=112 first_valid_recovery=84 raw_recovery_frames=33 entry_added_step=0.0653619021 recovery_added_step=0 entry_boundary=0.109425195 recovery_boundary=0.0699862391 fault_rms=0.0366065312 recovered_rms=0.0366065312
+hard rate=8000 hpf=1 bad=0 lag=1 entry=24 recovery=112 first_valid_recovery=84 raw_recovery_frames=33 entry_added_step=0.0303687826 recovery_added_step=0.0349931195 entry_boundary=0.0191694498 recovery_boundary=-0.00554588996 fault_rms=0.0366065312 recovered_rms=0.029732492
+hard rate=8000 hpf=1 bad=1 lag=-1 entry=24 recovery=112 first_valid_recovery=84 raw_recovery_frames=33 entry_added_step=0.0303687826 recovery_added_step=0.0349931195 entry_boundary=0.0191694498 recovery_boundary=-0.00554588996 fault_rms=0.0366065312 recovered_rms=0.029732492
+hard rate=8000 hpf=1 bad=1 lag=0 entry=24 recovery=112 first_valid_recovery=84 raw_recovery_frames=33 entry_added_step=0.0653619021 recovery_added_step=0 entry_boundary=0.109425195 recovery_boundary=0.0699862391 fault_rms=0.0366065312 recovered_rms=0.0366065312
+hard rate=8000 hpf=1 bad=1 lag=1 entry=24 recovery=112 first_valid_recovery=84 raw_recovery_frames=33 entry_added_step=0.074432075 recovery_added_step=-0.0349931195 entry_boundary=0.115100063 recovery_boundary=0.0349931195 fault_rms=0.0366065312 recovered_rms=0.029732492
+hard rate=16000 hpf=0 bad=0 lag=-1 entry=24 recovery=108 first_valid_recovery=80 raw_recovery_frames=29 entry_added_step=0.116939627 recovery_added_step=-0.0238547251 entry_boundary=0.142612517 recovery_boundary=0.0238547251 fault_rms=0.0355316759 recovered_rms=0.0337417336
+hard rate=16000 hpf=0 bad=0 lag=0 entry=24 recovery=108 first_valid_recovery=80 raw_recovery_frames=29 entry_added_step=0.114126779 recovery_added_step=0 entry_boundary=0.140794352 recovery_boundary=0.0477094501 fault_rms=0.0355316759 recovered_rms=0.0355316759
+hard rate=16000 hpf=0 bad=0 lag=1 entry=24 recovery=108 first_valid_recovery=80 raw_recovery_frames=29 entry_added_step=0.0902720541 recovery_added_step=0.0238547251 entry_boundary=0.10218592 recovery_boundary=0.0420567691 fault_rms=0.0355316759 recove==22==LeakSanitizer has encountered a fatal error.
+==22==HINT: For debugging, try setting environment variable LSAN_OPTIONS=verbosity=1:log_threads=1
+==22==HINT: LeakSanitizer does not work under ptrace (strace, gdb, etc)
+
+    Start  6: ap_contract_tests
+3/4 Test  #6: ap_contract_tests ................***Failed    0.07 sec
+==24==LeakSanitizer has encountered a fatal error.
+==24==HINT: For debugging, try setting environment variable LSAN_OPTIONS=verbosity=1:log_threads=1
+==24==HINT: LeakSanitizer does not work under ptrace (strace, gdb, etc)
+
+    Start 30: ap_realtime_tests
+4/4 Test #30: ap_realtime_tests ................***Failed    0.85 sec
+==26==LeakSanitizer has encountered a fatal error.
+==26==HINT: For debugging, try setting environment variable LSAN_OPTIONS=verbosity=1:log_threads=1
+==26==HINT: LeakSanitizer does not work under ptrace (strace, gdb, etc)
+
+
+0% tests passed, 4 tests failed out of 4
+
+Total Test time (real) =   1.42 sec
+
+The following tests FAILED:
+	  1 - ap_module_tests (Failed)
+	  2 - ap_beamformer_health_tests (Failed)
+	  6 - ap_contract_tests (Failed)
+	 30 - ap_realtime_tests (Failed)
+Errors while running CTest

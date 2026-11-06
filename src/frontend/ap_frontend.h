@@ -69,6 +69,9 @@ typedef struct ap_beamformer_state {
     uint32_t fallback_recovery_count;
     uint32_t fallback_hard_fault;
     uint32_t fallback_hard_arm_count;
+    /* 3: outside fixed mode; 4..7: bounded fixed-mode phase (4 observes).
+     * This owns health epochs without advancing the tracking counter. */
+    uint32_t fixed_health_counter;
 } ap_beamformer_state_t;
 
 void ap_hpf_init(ap_hpf_state_t *state,

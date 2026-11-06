@@ -18,6 +18,8 @@ AArch64 NEON/ASIMD
 
 Do not copy Cortex-A32 `-mcpu/-mfpu` flags into an A7 BSP. `ssc305-cortex-a32-low` is the conservative SSC305 research starting profile: 16 kHz/2-mic geometry, 60 ms maximum delay, 64 ms AEC tail, runtime queue depth 4 and fixed broadside delay/sum BF. Adaptive BF direction tracking remains available in generic builds but is disabled in this preset until real render-active/motor/far-field corpus evidence supports enabling it.
 
+Fixed steering retains the narrowly defined hard-contamination observer in the public BF implementation. It does not run a direction search or the tracking soft fallback. Budget its periodic O(n) observation and validate route transitions in the intercom integration. Entering or leaving SAFE discards unfinished BF confirmation/recovery, while retaining a confirmed hard route; repeated identical quality settings preserve the current observation epoch. SAFE itself still bypasses BF and uses mic0. See the [API contract](API_CONTRACT.md#build-capability-and-identity) for observation and mode-lifecycle semantics.
+
 ## 2. Define the product artifact
 
 Choose the module set and maximum geometry before integrating ALSA/runtime:

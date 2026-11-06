@@ -1,0 +1,31 @@
+$ /workspace/scratch/b74ab3415ba4/build-dualmic-candidate/ap_state_size
+78224
+returncode=0
+
+$ /workspace/scratch/b74ab3415ba4/build-dualmic-candidate/ap_runtime_state_size
+32760
+returncode=0
+
+$ /workspace/scratch/b74ab3415ba4/build-dualmic-fixed/ap_state_size
+78224
+returncode=0
+
+$ /workspace/scratch/b74ab3415ba4/build-dualmic-fixed/ap_runtime_state_size
+32760
+returncode=0
+
+$ /workspace/scratch/b74ab3415ba4/build-dualmic-resource-low/ap_state_size
+47056
+returncode=0
+
+$ /workspace/scratch/b74ab3415ba4/build-dualmic-resource-tiny/ap_state_size
+25432
+returncode=0
+
+$ /workspace/scratch/b74ab3415ba4/build-dualmic-resource-tiny/ap_runtime_state_size
+5176
+returncode=0
+
+$ /workspace/scratch/b74ab3415ba4/build-dualmic-resource-raw/ap_state_size
+1064
+returncode=0

@@ -1,3 +1,18 @@
+# 2.3.63
+
+- Integrate reference drift credit over the same elapsed capture interval used for the accepted acoustic rate observation, including confidence-rejection gaps. Preserve the exact normal 100 ms arithmetic, smoothing, clamp, feedback and per-observation slip limit.
+- Preserve the original tiny drift/route regression and the failed 2.3.62 candidate evidence; use a separate causal correction and exact R7 source registration instead of relaxing the test.
+- Retain the dual-microphone health, SAFE evidence lifecycle and CALL/ASSISTANT integration from the 2.3.62 research candidate. Source version changes do not create a release, tag or physical qualification.
+
+# 2.3.62
+
+- Normalize SYNC drift by elapsed capture samples between accepted acoustic delay observations, including low-confidence gaps; preserve the existing normal-cadence arithmetic, smoothing and correction policy.
+- Rebuild the drift observation basis after reset, timestamp alignment, disabled tracking/compensation, sample-rate changes and counter rollover so unrelated observation epochs cannot create a rate estimate.
+- Retain the existing narrow hard-contamination protection in fixed-direction dual-microphone processing, including LITE and builds without direction tracking. Preserve steady tracking behavior and keep health confirmation independent of steering updates.
+- Invalidate unfinished BF health confirmation/recovery across SAFE bypass intervals while preserving confirmed routing and repeated-quality cadence.
+- Add explicit `--profile call|assistant` selection to the existing offline processor, with CALL remaining the default and explicit tuning overrides retaining their semantics.
+- Add source-bound dual-use replay, complete-output checks and effective-configuration/PCM regressions in the existing Verify workflow. Keep descriptive acoustic observations distinct from quality approval and physical-device evidence.
+
 # 2.3.61
 
 - Make offline PCM processing fail visibly on incomplete S16 samples/channel groups and capture/render read errors, while preserving legitimate render EOF zero-padding.

@@ -1,5 +1,23 @@
 # Frontend Evolution v1 / 双麦与四麦开放研究
 
+## 2026-11-06 双麦识别交互与语音对讲
+
+当前任务聚焦同一公共双麦前端的 CALL / ASSISTANT 两种用途。
+[首轮实施合同](DUALMIC_INTERACTION_INTERCOM_V1_PLAN.zh-CN.md)冻结三个因果工作包，
+[2.3.62 源码迁移合同](DUALMIC_2362_SOURCE_MIGRATION_PLAN.zh-CN.md)与
+[2.3.63 后继登记](DUALMIC_2363_SOURCE_MIGRATION_PLAN.zh-CN.md)要求先独立审查准确字节，再接入现有门禁。
+本轮不重启 I025–I040、已关闭的 AGC 参数研究或已拒绝的固定神经后置配置；四麦历史记录保留。
+
+- [SYNC 观察间隔修复](SYNC_OBSERVATION_TIME_V1_RESULT.zh-CN.md)：按实际 capture 样点间隔归一化 drift，保留正常节拍与既有补偿策略。
+- [SYNC 补偿积分修复](SYNC_CREDIT_ELAPSED_V1_RESULT.zh-CN.md)：原 tiny 门禁揭示观察间隔与 slip credit 时间基准不一致；独立修复按同一真实间隔积分，原漂移测试保持不变。默认 63 项与 tiny 33 项本地测试通过，原失败、正常 100 ms 字节等价及总任务预算超时分别保留；远端 2.3.63 须通过自己的完整验证。
+- [固定方向健康观察](DUALMIC_FIXED_HEALTH_V1_RESULT.zh-CN.md)及[SAFE 边界修复](DUALMIC_FIXED_HEALTH_V1_SAFE_EPOCH_RESULT.zh-CN.md)：LITE/无方向跟踪构建保留狭义 hard 保护，跨旁路区间不借用未完成证据；恢复迟滞和采样边界变化如实保留。
+- [CLI profile 与回放接入](DUALMIC_PROFILE_REPLAY_V1_RESULT.zh-CN.md)及[SAFE 修复前的整合回放](DUALMIC_INTEGRATION_V1_RESULT.zh-CN.md)：分别记录实际执行源码、连续输出、参数与资源；空质量阈值的工程回放不称为音质 PASS。
+- [SSC305-low ARM 静态预检](../../../validation/research/evidence/dualmic-arm-static-9a9202e/TRANSPORT.md)：同工具链实测 ROM 与 arena，并保留原总任务预算超时事实；这项有限预检不替代 CI 或物理测量。
+
+离线使用见 [PCM 入口](../../OFFLINE_PCM_IO.md)，应用契约见[中文 API 说明](../../API_CONTRACT.zh-CN.md)。
+各结果只支持其明确列出的执行 SHA；后继 PR/main 必须通过自己的适用门禁。
+真实中文 KWS、真人双讲主观质量及 SSC305 物理资源仍需各自的实际证据。
+
 ## 2026-10-20 本地研究与采集保全
 
 [设备采集数据说明](DEVICE_CAPTURE_DATASET.zh-CN.md)记录原119文件的身份、数据角色和本地提交边界。

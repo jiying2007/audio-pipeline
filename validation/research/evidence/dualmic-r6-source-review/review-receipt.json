@@ -1,0 +1,182 @@
+{
+  "candidate_source_commit": "516ace7230f4846ab76941bcdeacc5465f79e2ce",
+  "candidate_tree": "e5e23d76fa8bf54b40505fcd853c02ef57dfbe4e",
+  "decision": "SOURCE_ONLY_REVIEW_NO_BLOCKING_CODE_FINDINGS_CI_PENDING",
+  "derivation": {
+    "build_only_in_metadata_allowlist": false,
+    "literal_identity_only_functions": 2,
+    "unchanged_classes": 8,
+    "unchanged_functions": 102
+  },
+  "full_ci_result_claimed": false,
+  "log_files": {
+    "O-fe09_b3_f0_r6_source_admission.py.log": {
+      "bytes": 207,
+      "sha256": "80ffaa14e2f47a149bfe9b6432638875a64e2143f5418899a91e9ed2e712590d"
+    },
+    "O-fe09_dualmic_r6_derivation_contract.py.log": {
+      "bytes": 1956,
+      "sha256": "4249036c34a537132c81a2658e274d672bcf3e9d860cebf484308a8b94ff97f4"
+    },
+    "O-fe09_runtime_maintenance_rebind.py.log": {
+      "bytes": 163,
+      "sha256": "c75d54654025bebfab43332bd3ff484435c112f8a3dcfe8aae1ee5f416e8e7fa"
+    },
+    "O-test_fe09_a3_r2_source_audit.py.log": {
+      "bytes": 2366,
+      "sha256": "d2c2ae44801688704aa748fafa246d8890301c3919105cdddc19f02f59cd85eb"
+    },
+    "O-test_fe09_a3_r2_static_build.py.log": {
+      "bytes": 5078,
+      "sha256": "252bbb23bd9d1be824951b92a5284cb90574fce246bf579925cfb1c9f0a51284"
+    },
+    "O-test_fe09_f1_r2_build.py.log": {
+      "bytes": 15411,
+      "sha256": "6c252387c3435a4069c268e92dcc88b8f8741fb4265babc2ed2865d8cfe1d10e"
+    },
+    "O-test_fe09_f1_r2_source_bridge.py.log": {
+      "bytes": 4004,
+      "sha256": "7a07ad8ed878dfbca7213f714b89eed85f0c36cf95e5ac3cd6b8163bd043c7e5"
+    },
+    "OO-fe09_b3_f0_r6_source_admission.py.log": {
+      "bytes": 207,
+      "sha256": "80ffaa14e2f47a149bfe9b6432638875a64e2143f5418899a91e9ed2e712590d"
+    },
+    "OO-fe09_dualmic_r6_derivation_contract.py.log": {
+      "bytes": 1956,
+      "sha256": "4249036c34a537132c81a2658e274d672bcf3e9d860cebf484308a8b94ff97f4"
+    },
+    "OO-fe09_runtime_maintenance_rebind.py.log": {
+      "bytes": 163,
+      "sha256": "c75d54654025bebfab43332bd3ff484435c112f8a3dcfe8aae1ee5f416e8e7fa"
+    },
+    "OO-test_fe09_a3_r2_source_audit.py.log": {
+      "bytes": 2366,
+      "sha256": "b0ad7e31a0b56a3d28c1b1dd265c930474c551aae52bc798a8677d381c093f81"
+    },
+    "OO-test_fe09_a3_r2_static_build.py.log": {
+      "bytes": 5078,
+      "sha256": "60542610921e34af289db0ab566d1aaed697a221f442e5957c7d85285ef7117e"
+    },
+    "OO-test_fe09_f1_r2_build.py.log": {
+      "bytes": 15411,
+      "sha256": "70fc6e406e02ffc4bba27e86f1dc33bbf447bfdaac8bdf91403f9dcd3bfd6078"
+    },
+    "OO-test_fe09_f1_r2_source_bridge.py.log": {
+      "bytes": 4004,
+      "sha256": "2232bdb18f3f59383b84e1016d46d9ddf6c6c08b7b4000a31a88f6b55a6da199"
+    },
+    "additional-00.log": {
+      "bytes": 84,
+      "sha256": "3f351c7cfaf5f7144a106c2e3250e682cf26de34747845d36e331ea1ba174c39"
+    },
+    "additional-01.log": {
+      "bytes": 73,
+      "sha256": "385b4797a54b2da418227a648241bb865f1c732ecc8518606fc6197a4ba46f4d"
+    },
+    "additional-02.log": {
+      "bytes": 1980,
+      "sha256": "3aa3a60676e17f9b713ae3c1932dbce270d252e31e81d47b4fe86cd6bead84e3"
+    },
+    "additional-03.log": {
+      "bytes": 45,
+      "sha256": "e8190734374ea564550e405296c7e192fef4d62dc9aea2d3b371049add707857"
+    },
+    "additional-04.log": {
+      "bytes": 181,
+      "sha256": "e2be2fa8891456e5d63f64794aea6d41d7ddbde63c128b11e086ade5adb8878c"
+    },
+    "additional-05.log": {
+      "bytes": 181,
+      "sha256": "e2be2fa8891456e5d63f64794aea6d41d7ddbde63c128b11e086ade5adb8878c"
+    },
+    "additional-06.log": {
+      "bytes": 181,
+      "sha256": "e2be2fa8891456e5d63f64794aea6d41d7ddbde63c128b11e086ade5adb8878c"
+    },
+    "additional-tests.json": {
+      "bytes": 6820,
+      "sha256": "75bc2d3139e1046876e22c9dd74e36ad647fff2a7f799f06f99940b6d167d02e"
+    },
+    "historical-tests.json": {
+      "bytes": 3836,
+      "sha256": "3e3245df7f7a77952997710b3df03f33534d4f5f02d72784e3c6a659b1131b1b"
+    },
+    "key-gates.json": {
+      "bytes": 3165,
+      "sha256": "bfdcbd3f8223be377fad6c4f9fc7e70d605b910b29e21a978266012727321555"
+    },
+    "normal-fe09_b3_f0_r6_source_admission.py.log": {
+      "bytes": 207,
+      "sha256": "80ffaa14e2f47a149bfe9b6432638875a64e2143f5418899a91e9ed2e712590d"
+    },
+    "normal-fe09_dualmic_r6_derivation_contract.py.log": {
+      "bytes": 1956,
+      "sha256": "4249036c34a537132c81a2658e274d672bcf3e9d860cebf484308a8b94ff97f4"
+    },
+    "normal-fe09_runtime_maintenance_rebind.py.log": {
+      "bytes": 163,
+      "sha256": "c75d54654025bebfab43332bd3ff484435c112f8a3dcfe8aae1ee5f416e8e7fa"
+    },
+    "normal-test_fe09_a3_r2_source_audit.py.log": {
+      "bytes": 2366,
+      "sha256": "b0ad7e31a0b56a3d28c1b1dd265c930474c551aae52bc798a8677d381c093f81"
+    },
+    "normal-test_fe09_a3_r2_static_build.py.log": {
+      "bytes": 5078,
+      "sha256": "384fa11794d2ffc3061f14c976543cb0cc5f6764d636c57896b4556c8dad9558"
+    },
+    "normal-test_fe09_f1_r2_build.py.log": {
+      "bytes": 15411,
+      "sha256": "2f90b1367e3c2dff8da84267355f1ea7fe271a908a676d43f9d60bd8c7f3e843"
+    },
+    "normal-test_fe09_f1_r2_source_bridge.py.log": {
+      "bytes": 4004,
+      "sha256": "7decc696c0e696fffb84bb8103ae3dcec807164e07d94a72a59f4743e55e5918"
+    }
+  },
+  "manual_source_delta_forward_and_reverse_verified": true,
+  "preparation_src_include_cmake_identical_to_438fe09": true,
+  "review_time_utc": "2026-11-06T07:30:32.748174+00:00",
+  "reviewed_local_head": "7998cc5870889e37191b1e91d77575309a4ba98d",
+  "reviewed_tree": "bd026252b07d6213cf1add4660098d298c1404c3",
+  "runtime": {
+    "new_bound_source_members": 6,
+    "new_negative_cases": 14,
+    "old_registrations_unchanged": true,
+    "preserved_negative_counts": [
+      16,
+      12,
+      12,
+      12
+    ]
+  },
+  "schema_version": 1,
+  "scientific_DSP_or_device_execution_in_this_review": false,
+  "source_sets": {
+    "a3_candidate_unchanged": 88,
+    "a3_original": 88,
+    "b3_original": 77,
+    "f0_only_unchanged": 22,
+    "f0_original": 88,
+    "f1_candidate_reviewed_exceptions": 13,
+    "f1_candidate_unchanged": 83,
+    "f1_original": 96,
+    "historical_pins_verified": 30,
+    "reviewed_exceptions": 13,
+    "shared_live": 66,
+    "shared_unchanged": 53
+  },
+  "tests": {
+    "additional_expected_returncodes_all_match": true,
+    "additional_invocations": 7,
+    "environment_error": "test_fe09_a3_r2_static_build.py:test_fake_full_pipeline_records_eight_not_executed_objects -> A3_REQUIRED_PINNED_COMPILER_MISSING; same unchanged test/helper in normal/-O/-OO, no bypass",
+    "historical_environment_error_invocations": 3,
+    "historical_invocations": 12,
+    "key_gate_all_pass": true,
+    "key_gate_invocations": 9,
+    "unknown_versions_rejected": 8,
+    "workflow_version_routes_checked": 22
+  },
+  "worktree_clean_after_review": true
+}

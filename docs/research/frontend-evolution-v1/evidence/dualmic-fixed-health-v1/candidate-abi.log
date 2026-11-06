@@ -1,0 +1,14 @@
+ap_build_info_t=176
+ap_build_info_t.source_revision=96
+ap_config_t=60
+ap_config_t.stages=52
+ap_metrics_t=120
+ap_metrics_t.processed_frames=56
+ap_runtime_config_t=16
+ap_runtime_options_t=72
+ap_runtime_metrics_t=232
+ap_runtime_metrics_t.failed_frames=24
+AP_OK=0
+AP_EINVAL=-1
+AP_EFULL=-4
+AP_EEMPTY=-5

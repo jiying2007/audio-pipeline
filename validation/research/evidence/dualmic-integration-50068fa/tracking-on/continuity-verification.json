@@ -1,0 +1,1621 @@
+{
+  "cases": [
+    {
+      "case_id": "seed-5107-near-only-call",
+      "command": [
+        "/workspace/scratch/b74ab3415ba4/build-dualmic-candidate/ap_process_pcm",
+        "--profile",
+        "call",
+        "--sample-rate",
+        "16000",
+        "--mic-channels",
+        "2",
+        "--strict-capture-frames",
+        "--metrics-jsonl",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/replay/seed-5107-near-only-call/metrics.jsonl",
+        "--capture-profile",
+        "default",
+        "--capture-only",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/input/cases/seed-5107-near-only/mic.pcm",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/replay/seed-5107-near-only-call/out.pcm"
+      ],
+      "metrics_jsonl": {
+        "bytes": 127888,
+        "sha256": "53e858e950dbf2d495a8d809c595b834a2f22351fa846e361fe7fc0370d8a30c"
+      },
+      "output_contract": {
+        "capture_frames": 600,
+        "frame_indices_contiguous": true,
+        "frame_samples": 160,
+        "input_samples_per_channel": 96000,
+        "metrics_frames": 600,
+        "output_mono_samples": 96000
+      },
+      "output_pcm": {
+        "bytes": 192000,
+        "sha256": "e01d83cfbb0137a13e46d25eb75b89327e2c17b9b5111763ae64e83f35635696"
+      },
+      "profile": "call",
+      "returncode": 0,
+      "scenario": "near-only"
+    },
+    {
+      "case_id": "seed-5107-near-only-assistant",
+      "command": [
+        "/workspace/scratch/b74ab3415ba4/build-dualmic-candidate/ap_process_pcm",
+        "--profile",
+        "assistant",
+        "--sample-rate",
+        "16000",
+        "--mic-channels",
+        "2",
+        "--strict-capture-frames",
+        "--metrics-jsonl",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/replay/seed-5107-near-only-assistant/metrics.jsonl",
+        "--capture-profile",
+        "default",
+        "--capture-only",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/input/cases/seed-5107-near-only/mic.pcm",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/replay/seed-5107-near-only-assistant/out.pcm"
+      ],
+      "metrics_jsonl": {
+        "bytes": 127999,
+        "sha256": "2eb10c0ef6ce0df3273c5d6ca44fcb2f50863fe4240b19a32dfc33d408418f37"
+      },
+      "output_contract": {
+        "capture_frames": 600,
+        "frame_indices_contiguous": true,
+        "frame_samples": 160,
+        "input_samples_per_channel": 96000,
+        "metrics_frames": 600,
+        "output_mono_samples": 96000
+      },
+      "output_pcm": {
+        "bytes": 192000,
+        "sha256": "be51642c36e32e1b3dfb0c5cd799f6884c6e65357071470e2551f0eadc940115"
+      },
+      "profile": "assistant",
+      "returncode": 0,
+      "scenario": "near-only"
+    },
+    {
+      "case_id": "seed-5107-silent-render-call",
+      "command": [
+        "/workspace/scratch/b74ab3415ba4/build-dualmic-candidate/ap_process_pcm",
+        "--profile",
+        "call",
+        "--sample-rate",
+        "16000",
+        "--mic-channels",
+        "2",
+        "--strict-capture-frames",
+        "--metrics-jsonl",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/replay/seed-5107-silent-render-call/metrics.jsonl",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/input/cases/seed-5107-silent-render/mic.pcm",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/input/cases/seed-5107-silent-render/render.pcm",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/replay/seed-5107-silent-render-call/out.pcm"
+      ],
+      "metrics_jsonl": {
+        "bytes": 128488,
+        "sha256": "2dd2ae632c31380af41ecd7e2bb1869c7c2d29e20ba8f937e617f9900d635e8e"
+      },
+      "output_contract": {
+        "capture_frames": 600,
+        "frame_indices_contiguous": true,
+        "frame_samples": 160,
+        "input_samples_per_channel": 96000,
+        "metrics_frames": 600,
+        "output_mono_samples": 96000
+      },
+      "output_pcm": {
+        "bytes": 192000,
+        "sha256": "e01d83cfbb0137a13e46d25eb75b89327e2c17b9b5111763ae64e83f35635696"
+      },
+      "profile": "call",
+      "returncode": 0,
+      "scenario": "silent-render"
+    },
+    {
+      "case_id": "seed-5107-silent-render-assistant",
+      "command": [
+        "/workspace/scratch/b74ab3415ba4/build-dualmic-candidate/ap_process_pcm",
+        "--profile",
+        "assistant",
+        "--sample-rate",
+        "16000",
+        "--mic-channels",
+        "2",
+        "--strict-capture-frames",
+        "--metrics-jsonl",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/replay/seed-5107-silent-render-assistant/metrics.jsonl",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/input/cases/seed-5107-silent-render/mic.pcm",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/input/cases/seed-5107-silent-render/render.pcm",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/replay/seed-5107-silent-render-assistant/out.pcm"
+      ],
+      "metrics_jsonl": {
+        "bytes": 128599,
+        "sha256": "5753b37e4540d246fd858aeb7defa90f1d1ae933cad03f81642dca92a52e4168"
+      },
+      "output_contract": {
+        "capture_frames": 600,
+        "frame_indices_contiguous": true,
+        "frame_samples": 160,
+        "input_samples_per_channel": 96000,
+        "metrics_frames": 600,
+        "output_mono_samples": 96000
+      },
+      "output_pcm": {
+        "bytes": 192000,
+        "sha256": "be51642c36e32e1b3dfb0c5cd799f6884c6e65357071470e2551f0eadc940115"
+      },
+      "profile": "assistant",
+      "returncode": 0,
+      "scenario": "silent-render"
+    },
+    {
+      "case_id": "seed-5107-far-only-call",
+      "command": [
+        "/workspace/scratch/b74ab3415ba4/build-dualmic-candidate/ap_process_pcm",
+        "--profile",
+        "call",
+        "--sample-rate",
+        "16000",
+        "--mic-channels",
+        "2",
+        "--strict-capture-frames",
+        "--metrics-jsonl",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/replay/seed-5107-far-only-call/metrics.jsonl",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/input/cases/seed-5107-far-only/mic.pcm",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/input/cases/seed-5107-far-only/render.pcm",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/replay/seed-5107-far-only-call/out.pcm"
+      ],
+      "metrics_jsonl": {
+        "bytes": 136227,
+        "sha256": "b66df3a233cc5c41eec08fd160735a1375ae77d07cbbe40a9e8328dd8a67cd35"
+      },
+      "output_contract": {
+        "capture_frames": 600,
+        "frame_indices_contiguous": true,
+        "frame_samples": 160,
+        "input_samples_per_channel": 96000,
+        "metrics_frames": 600,
+        "output_mono_samples": 96000
+      },
+      "output_pcm": {
+        "bytes": 192000,
+        "sha256": "f750bd907e090c9350011fe932c0f50a8d6c697108bcc9ad7a7e2bbb0222a243"
+      },
+      "profile": "call",
+      "returncode": 0,
+      "scenario": "far-only"
+    },
+    {
+      "case_id": "seed-5107-far-only-assistant",
+      "command": [
+        "/workspace/scratch/b74ab3415ba4/build-dualmic-candidate/ap_process_pcm",
+        "--profile",
+        "assistant",
+        "--sample-rate",
+        "16000",
+        "--mic-channels",
+        "2",
+        "--strict-capture-frames",
+        "--metrics-jsonl",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/replay/seed-5107-far-only-assistant/metrics.jsonl",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/input/cases/seed-5107-far-only/mic.pcm",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/input/cases/seed-5107-far-only/render.pcm",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/replay/seed-5107-far-only-assistant/out.pcm"
+      ],
+      "metrics_jsonl": {
+        "bytes": 136214,
+        "sha256": "480a8f6b454c610c82ac7f1a8d161ae05f0632d2b787efe47b6a3af6beccafdc"
+      },
+      "output_contract": {
+        "capture_frames": 600,
+        "frame_indices_contiguous": true,
+        "frame_samples": 160,
+        "input_samples_per_channel": 96000,
+        "metrics_frames": 600,
+        "output_mono_samples": 96000
+      },
+      "output_pcm": {
+        "bytes": 192000,
+        "sha256": "2824851759c30126110e50ca68da922bfa581e4315f05f353b7a1ef552030529"
+      },
+      "profile": "assistant",
+      "returncode": 0,
+      "scenario": "far-only"
+    },
+    {
+      "case_id": "seed-5107-doubletalk-nominal-call",
+      "command": [
+        "/workspace/scratch/b74ab3415ba4/build-dualmic-candidate/ap_process_pcm",
+        "--profile",
+        "call",
+        "--sample-rate",
+        "16000",
+        "--mic-channels",
+        "2",
+        "--strict-capture-frames",
+        "--metrics-jsonl",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/replay/seed-5107-doubletalk-nominal-call/metrics.jsonl",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/input/cases/seed-5107-doubletalk-nominal/mic.pcm",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/input/cases/seed-5107-doubletalk-nominal/render.pcm",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/replay/seed-5107-doubletalk-nominal-call/out.pcm"
+      ],
+      "metrics_jsonl": {
+        "bytes": 135859,
+        "sha256": "a4708311487c3c0083dbc5bd0619f5166712dac3f2cee2bae53923056913a51c"
+      },
+      "output_contract": {
+        "capture_frames": 600,
+        "frame_indices_contiguous": true,
+        "frame_samples": 160,
+        "input_samples_per_channel": 96000,
+        "metrics_frames": 600,
+        "output_mono_samples": 96000
+      },
+      "output_pcm": {
+        "bytes": 192000,
+        "sha256": "195f7edaf49d324863cb01e131ac7509fce04f636f08d8063a0f2b8d636f2778"
+      },
+      "profile": "call",
+      "returncode": 0,
+      "scenario": "doubletalk-nominal"
+    },
+    {
+      "case_id": "seed-5107-doubletalk-nominal-assistant",
+      "command": [
+        "/workspace/scratch/b74ab3415ba4/build-dualmic-candidate/ap_process_pcm",
+        "--profile",
+        "assistant",
+        "--sample-rate",
+        "16000",
+        "--mic-channels",
+        "2",
+        "--strict-capture-frames",
+        "--metrics-jsonl",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/replay/seed-5107-doubletalk-nominal-assistant/metrics.jsonl",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/input/cases/seed-5107-doubletalk-nominal/mic.pcm",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/input/cases/seed-5107-doubletalk-nominal/render.pcm",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/replay/seed-5107-doubletalk-nominal-assistant/out.pcm"
+      ],
+      "metrics_jsonl": {
+        "bytes": 135860,
+        "sha256": "28af26e7f785afbce341f5822c053841fc723d0f2b50590ae46b6271a6113d19"
+      },
+      "output_contract": {
+        "capture_frames": 600,
+        "frame_indices_contiguous": true,
+        "frame_samples": 160,
+        "input_samples_per_channel": 96000,
+        "metrics_frames": 600,
+        "output_mono_samples": 96000
+      },
+      "output_pcm": {
+        "bytes": 192000,
+        "sha256": "e662d5b1e924ef849f98f8791a11cbb12b2fbdafb38523fc9421669e2a0aef6b"
+      },
+      "profile": "assistant",
+      "returncode": 0,
+      "scenario": "doubletalk-nominal"
+    },
+    {
+      "case_id": "seed-5107-doubletalk-weak-call",
+      "command": [
+        "/workspace/scratch/b74ab3415ba4/build-dualmic-candidate/ap_process_pcm",
+        "--profile",
+        "call",
+        "--sample-rate",
+        "16000",
+        "--mic-channels",
+        "2",
+        "--strict-capture-frames",
+        "--metrics-jsonl",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/replay/seed-5107-doubletalk-weak-call/metrics.jsonl",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/input/cases/seed-5107-doubletalk-weak/mic.pcm",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/input/cases/seed-5107-doubletalk-weak/render.pcm",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/replay/seed-5107-doubletalk-weak-call/out.pcm"
+      ],
+      "metrics_jsonl": {
+        "bytes": 135627,
+        "sha256": "fc4b7d3411deee2f2f79e45d87c084b36575b7427b851c0b589073cfb981a1a4"
+      },
+      "output_contract": {
+        "capture_frames": 600,
+        "frame_indices_contiguous": true,
+        "frame_samples": 160,
+        "input_samples_per_channel": 96000,
+        "metrics_frames": 600,
+        "output_mono_samples": 96000
+      },
+      "output_pcm": {
+        "bytes": 192000,
+        "sha256": "a095d5d00e7e83a24fc1a13a79de2575d3af01910e698f2d2dbdc8768040dcf4"
+      },
+      "profile": "call",
+      "returncode": 0,
+      "scenario": "doubletalk-weak"
+    },
+    {
+      "case_id": "seed-5107-doubletalk-weak-assistant",
+      "command": [
+        "/workspace/scratch/b74ab3415ba4/build-dualmic-candidate/ap_process_pcm",
+        "--profile",
+        "assistant",
+        "--sample-rate",
+        "16000",
+        "--mic-channels",
+        "2",
+        "--strict-capture-frames",
+        "--metrics-jsonl",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/replay/seed-5107-doubletalk-weak-assistant/metrics.jsonl",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/input/cases/seed-5107-doubletalk-weak/mic.pcm",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/input/cases/seed-5107-doubletalk-weak/render.pcm",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/replay/seed-5107-doubletalk-weak-assistant/out.pcm"
+      ],
+      "metrics_jsonl": {
+        "bytes": 135633,
+        "sha256": "a13a01110f5726296ab4b97f7342bdf6ffec3782142bd11c6e35a9062d2bfca9"
+      },
+      "output_contract": {
+        "capture_frames": 600,
+        "frame_indices_contiguous": true,
+        "frame_samples": 160,
+        "input_samples_per_channel": 96000,
+        "metrics_frames": 600,
+        "output_mono_samples": 96000
+      },
+      "output_pcm": {
+        "bytes": 192000,
+        "sha256": "7009371233c5f5fcfee58526b56b4a222806a64cf2146c80b7c03986d3f318af"
+      },
+      "profile": "assistant",
+      "returncode": 0,
+      "scenario": "doubletalk-weak"
+    },
+    {
+      "case_id": "seed-5107-path-change-call",
+      "command": [
+        "/workspace/scratch/b74ab3415ba4/build-dualmic-candidate/ap_process_pcm",
+        "--profile",
+        "call",
+        "--sample-rate",
+        "16000",
+        "--mic-channels",
+        "2",
+        "--strict-capture-frames",
+        "--metrics-jsonl",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/replay/seed-5107-path-change-call/metrics.jsonl",
+        "--echo-path-change-frame",
+        "300",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/input/cases/seed-5107-path-change/mic.pcm",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/input/cases/seed-5107-path-change/render.pcm",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/replay/seed-5107-path-change-call/out.pcm"
+      ],
+      "metrics_jsonl": {
+        "bytes": 136234,
+        "sha256": "f542b8b4a95d27f951a9ec11878e503e21a277bd797a47cf5e399712fc6e2dbb"
+      },
+      "output_contract": {
+        "capture_frames": 600,
+        "frame_indices_contiguous": true,
+        "frame_samples": 160,
+        "input_samples_per_channel": 96000,
+        "metrics_frames": 600,
+        "output_mono_samples": 96000
+      },
+      "output_pcm": {
+        "bytes": 192000,
+        "sha256": "f035301c607b5ffa307aad5d5c025f4f8513367c1cb767eabba5033df44c0c51"
+      },
+      "profile": "call",
+      "returncode": 0,
+      "scenario": "path-change"
+    },
+    {
+      "case_id": "seed-5107-path-change-assistant",
+      "command": [
+        "/workspace/scratch/b74ab3415ba4/build-dualmic-candidate/ap_process_pcm",
+        "--profile",
+        "assistant",
+        "--sample-rate",
+        "16000",
+        "--mic-channels",
+        "2",
+        "--strict-capture-frames",
+        "--metrics-jsonl",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/replay/seed-5107-path-change-assistant/metrics.jsonl",
+        "--echo-path-change-frame",
+        "300",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/input/cases/seed-5107-path-change/mic.pcm",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/input/cases/seed-5107-path-change/render.pcm",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/replay/seed-5107-path-change-assistant/out.pcm"
+      ],
+      "metrics_jsonl": {
+        "bytes": 136206,
+        "sha256": "47f2665af03b8a45b21cd4aae4beb88dd72f2cb6de8dd4388b53e2da1c202802"
+      },
+      "output_contract": {
+        "capture_frames": 600,
+        "frame_indices_contiguous": true,
+        "frame_samples": 160,
+        "input_samples_per_channel": 96000,
+        "metrics_frames": 600,
+        "output_mono_samples": 96000
+      },
+      "output_pcm": {
+        "bytes": 192000,
+        "sha256": "98bf7d86a6979f3c5bccd86d75a199482108362f179e1e86b2a980b6e6e37739"
+      },
+      "profile": "assistant",
+      "returncode": 0,
+      "scenario": "path-change"
+    },
+    {
+      "case_id": "seed-5107-render-gap-call",
+      "command": [
+        "/workspace/scratch/b74ab3415ba4/build-dualmic-candidate/ap_process_pcm",
+        "--profile",
+        "call",
+        "--sample-rate",
+        "16000",
+        "--mic-channels",
+        "2",
+        "--strict-capture-frames",
+        "--metrics-jsonl",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/replay/seed-5107-render-gap-call/metrics.jsonl",
+        "--discontinuity-frame",
+        "300",
+        "--discontinuity-flags",
+        "2",
+        "--discontinuity-lost-frames",
+        "4",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/input/cases/seed-5107-render-gap/mic.pcm",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/input/cases/seed-5107-render-gap/render.pcm",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/replay/seed-5107-render-gap-call/out.pcm"
+      ],
+      "metrics_jsonl": {
+        "bytes": 135946,
+        "sha256": "01703c8bdbb2e80483e5e2291613ae89effb340c843f7b109d7555ce6c5dd9bd"
+      },
+      "output_contract": {
+        "capture_frames": 600,
+        "frame_indices_contiguous": true,
+        "frame_samples": 160,
+        "input_samples_per_channel": 96000,
+        "metrics_frames": 600,
+        "output_mono_samples": 96000
+      },
+      "output_pcm": {
+        "bytes": 192000,
+        "sha256": "aeb410375af882c3e6da5d3de8d66da05ffb5f7bb9fc5ca50b10a3cbb0a6f36f"
+      },
+      "profile": "call",
+      "returncode": 0,
+      "scenario": "render-gap"
+    },
+    {
+      "case_id": "seed-5107-render-gap-assistant",
+      "command": [
+        "/workspace/scratch/b74ab3415ba4/build-dualmic-candidate/ap_process_pcm",
+        "--profile",
+        "assistant",
+        "--sample-rate",
+        "16000",
+        "--mic-channels",
+        "2",
+        "--strict-capture-frames",
+        "--metrics-jsonl",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/replay/seed-5107-render-gap-assistant/metrics.jsonl",
+        "--discontinuity-frame",
+        "300",
+        "--discontinuity-flags",
+        "2",
+        "--discontinuity-lost-frames",
+        "4",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/input/cases/seed-5107-render-gap/mic.pcm",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/input/cases/seed-5107-render-gap/render.pcm",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/replay/seed-5107-render-gap-assistant/out.pcm"
+      ],
+      "metrics_jsonl": {
+        "bytes": 135880,
+        "sha256": "3f89b9940a4912be27ebf969be64fdf36bec7fc685a400292a5de2cf49fcb452"
+      },
+      "output_contract": {
+        "capture_frames": 600,
+        "frame_indices_contiguous": true,
+        "frame_samples": 160,
+        "input_samples_per_channel": 96000,
+        "metrics_frames": 600,
+        "output_mono_samples": 96000
+      },
+      "output_pcm": {
+        "bytes": 192000,
+        "sha256": "c38ad20bd6c57db6e231db90207763ca2f0e6ff39329c2485365f07f19c07646"
+      },
+      "profile": "assistant",
+      "returncode": 0,
+      "scenario": "render-gap"
+    },
+    {
+      "case_id": "seed-6107-near-only-call",
+      "command": [
+        "/workspace/scratch/b74ab3415ba4/build-dualmic-candidate/ap_process_pcm",
+        "--profile",
+        "call",
+        "--sample-rate",
+        "16000",
+        "--mic-channels",
+        "2",
+        "--strict-capture-frames",
+        "--metrics-jsonl",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/replay/seed-6107-near-only-call/metrics.jsonl",
+        "--capture-profile",
+        "default",
+        "--capture-only",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/input/cases/seed-6107-near-only/mic.pcm",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/replay/seed-6107-near-only-call/out.pcm"
+      ],
+      "metrics_jsonl": {
+        "bytes": 127408,
+        "sha256": "64b789cb229000349b2c0c867f3e4669174ccfb3d96e55bfa04b6485d27e53e3"
+      },
+      "output_contract": {
+        "capture_frames": 600,
+        "frame_indices_contiguous": true,
+        "frame_samples": 160,
+        "input_samples_per_channel": 96000,
+        "metrics_frames": 600,
+        "output_mono_samples": 96000
+      },
+      "output_pcm": {
+        "bytes": 192000,
+        "sha256": "7d474af464e7c95e94cd310fe9ffbc14490e9b742f7328b1c804c2999f945bec"
+      },
+      "profile": "call",
+      "returncode": 0,
+      "scenario": "near-only"
+    },
+    {
+      "case_id": "seed-6107-near-only-assistant",
+      "command": [
+        "/workspace/scratch/b74ab3415ba4/build-dualmic-candidate/ap_process_pcm",
+        "--profile",
+        "assistant",
+        "--sample-rate",
+        "16000",
+        "--mic-channels",
+        "2",
+        "--strict-capture-frames",
+        "--metrics-jsonl",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/replay/seed-6107-near-only-assistant/metrics.jsonl",
+        "--capture-profile",
+        "default",
+        "--capture-only",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/input/cases/seed-6107-near-only/mic.pcm",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/replay/seed-6107-near-only-assistant/out.pcm"
+      ],
+      "metrics_jsonl": {
+        "bytes": 127375,
+        "sha256": "024c811bb5610f3470efa6fe738ff8707ef249b89d9903b036187940c06350b7"
+      },
+      "output_contract": {
+        "capture_frames": 600,
+        "frame_indices_contiguous": true,
+        "frame_samples": 160,
+        "input_samples_per_channel": 96000,
+        "metrics_frames": 600,
+        "output_mono_samples": 96000
+      },
+      "output_pcm": {
+        "bytes": 192000,
+        "sha256": "ec47e3af0ff210cc1d50f57493180ce5ab33ad043b5411634cb0cb9259b64160"
+      },
+      "profile": "assistant",
+      "returncode": 0,
+      "scenario": "near-only"
+    },
+    {
+      "case_id": "seed-6107-silent-render-call",
+      "command": [
+        "/workspace/scratch/b74ab3415ba4/build-dualmic-candidate/ap_process_pcm",
+        "--profile",
+        "call",
+        "--sample-rate",
+        "16000",
+        "--mic-channels",
+        "2",
+        "--strict-capture-frames",
+        "--metrics-jsonl",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/replay/seed-6107-silent-render-call/metrics.jsonl",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/input/cases/seed-6107-silent-render/mic.pcm",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/input/cases/seed-6107-silent-render/render.pcm",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/replay/seed-6107-silent-render-call/out.pcm"
+      ],
+      "metrics_jsonl": {
+        "bytes": 128008,
+        "sha256": "49ddfdde5371f349cb1c21200a765528a3e9e6ca4545e959d70baa35a955e20d"
+      },
+      "output_contract": {
+        "capture_frames": 600,
+        "frame_indices_contiguous": true,
+        "frame_samples": 160,
+        "input_samples_per_channel": 96000,
+        "metrics_frames": 600,
+        "output_mono_samples": 96000
+      },
+      "output_pcm": {
+        "bytes": 192000,
+        "sha256": "7d474af464e7c95e94cd310fe9ffbc14490e9b742f7328b1c804c2999f945bec"
+      },
+      "profile": "call",
+      "returncode": 0,
+      "scenario": "silent-render"
+    },
+    {
+      "case_id": "seed-6107-silent-render-assistant",
+      "command": [
+        "/workspace/scratch/b74ab3415ba4/build-dualmic-candidate/ap_process_pcm",
+        "--profile",
+        "assistant",
+        "--sample-rate",
+        "16000",
+        "--mic-channels",
+        "2",
+        "--strict-capture-frames",
+        "--metrics-jsonl",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/replay/seed-6107-silent-render-assistant/metrics.jsonl",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/input/cases/seed-6107-silent-render/mic.pcm",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/input/cases/seed-6107-silent-render/render.pcm",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/replay/seed-6107-silent-render-assistant/out.pcm"
+      ],
+      "metrics_jsonl": {
+        "bytes": 127975,
+        "sha256": "1ee9d887c5fa0c3473fe62c9b9ff654bbde7dc9c52a70bc766e443461bf6aa69"
+      },
+      "output_contract": {
+        "capture_frames": 600,
+        "frame_indices_contiguous": true,
+        "frame_samples": 160,
+        "input_samples_per_channel": 96000,
+        "metrics_frames": 600,
+        "output_mono_samples": 96000
+      },
+      "output_pcm": {
+        "bytes": 192000,
+        "sha256": "ec47e3af0ff210cc1d50f57493180ce5ab33ad043b5411634cb0cb9259b64160"
+      },
+      "profile": "assistant",
+      "returncode": 0,
+      "scenario": "silent-render"
+    },
+    {
+      "case_id": "seed-6107-far-only-call",
+      "command": [
+        "/workspace/scratch/b74ab3415ba4/build-dualmic-candidate/ap_process_pcm",
+        "--profile",
+        "call",
+        "--sample-rate",
+        "16000",
+        "--mic-channels",
+        "2",
+        "--strict-capture-frames",
+        "--metrics-jsonl",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/replay/seed-6107-far-only-call/metrics.jsonl",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/input/cases/seed-6107-far-only/mic.pcm",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/input/cases/seed-6107-far-only/render.pcm",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/replay/seed-6107-far-only-call/out.pcm"
+      ],
+      "metrics_jsonl": {
+        "bytes": 136241,
+        "sha256": "532fa13dfe4948280975a47078856ccbcddde5604f89760108cf8e3e6fa45db5"
+      },
+      "output_contract": {
+        "capture_frames": 600,
+        "frame_indices_contiguous": true,
+        "frame_samples": 160,
+        "input_samples_per_channel": 96000,
+        "metrics_frames": 600,
+        "output_mono_samples": 96000
+      },
+      "output_pcm": {
+        "bytes": 192000,
+        "sha256": "93db22986007527c9e80f605d2f926e09549f2eb6fafd2d508a1101cd30d0f65"
+      },
+      "profile": "call",
+      "returncode": 0,
+      "scenario": "far-only"
+    },
+    {
+      "case_id": "seed-6107-far-only-assistant",
+      "command": [
+        "/workspace/scratch/b74ab3415ba4/build-dualmic-candidate/ap_process_pcm",
+        "--profile",
+        "assistant",
+        "--sample-rate",
+        "16000",
+        "--mic-channels",
+        "2",
+        "--strict-capture-frames",
+        "--metrics-jsonl",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/replay/seed-6107-far-only-assistant/metrics.jsonl",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/input/cases/seed-6107-far-only/mic.pcm",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/input/cases/seed-6107-far-only/render.pcm",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/replay/seed-6107-far-only-assistant/out.pcm"
+      ],
+      "metrics_jsonl": {
+        "bytes": 136198,
+        "sha256": "cfceaf1d4a72f9430f6c0479987652bb64454a0f5202f61df50b0e17d8c09996"
+      },
+      "output_contract": {
+        "capture_frames": 600,
+        "frame_indices_contiguous": true,
+        "frame_samples": 160,
+        "input_samples_per_channel": 96000,
+        "metrics_frames": 600,
+        "output_mono_samples": 96000
+      },
+      "output_pcm": {
+        "bytes": 192000,
+        "sha256": "3ff2030fa4371cc2291d437afae2c62ac61562de7b2a31fa639cc637eee591cc"
+      },
+      "profile": "assistant",
+      "returncode": 0,
+      "scenario": "far-only"
+    },
+    {
+      "case_id": "seed-6107-doubletalk-nominal-call",
+      "command": [
+        "/workspace/scratch/b74ab3415ba4/build-dualmic-candidate/ap_process_pcm",
+        "--profile",
+        "call",
+        "--sample-rate",
+        "16000",
+        "--mic-channels",
+        "2",
+        "--strict-capture-frames",
+        "--metrics-jsonl",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/replay/seed-6107-doubletalk-nominal-call/metrics.jsonl",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/input/cases/seed-6107-doubletalk-nominal/mic.pcm",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/input/cases/seed-6107-doubletalk-nominal/render.pcm",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/replay/seed-6107-doubletalk-nominal-call/out.pcm"
+      ],
+      "metrics_jsonl": {
+        "bytes": 135834,
+        "sha256": "91004fd4604cdec9eb9a18acde59c82dcaa12115ca97b90c85396e112747eed0"
+      },
+      "output_contract": {
+        "capture_frames": 600,
+        "frame_indices_contiguous": true,
+        "frame_samples": 160,
+        "input_samples_per_channel": 96000,
+        "metrics_frames": 600,
+        "output_mono_samples": 96000
+      },
+      "output_pcm": {
+        "bytes": 192000,
+        "sha256": "95f95a2778c304bca3616786547978a11fc24d38f793a35b7b599e0a74dbdd0b"
+      },
+      "profile": "call",
+      "returncode": 0,
+      "scenario": "doubletalk-nominal"
+    },
+    {
+      "case_id": "seed-6107-doubletalk-nominal-assistant",
+      "command": [
+        "/workspace/scratch/b74ab3415ba4/build-dualmic-candidate/ap_process_pcm",
+        "--profile",
+        "assistant",
+        "--sample-rate",
+        "16000",
+        "--mic-channels",
+        "2",
+        "--strict-capture-frames",
+        "--metrics-jsonl",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/replay/seed-6107-doubletalk-nominal-assistant/metrics.jsonl",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/input/cases/seed-6107-doubletalk-nominal/mic.pcm",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/input/cases/seed-6107-doubletalk-nominal/render.pcm",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/replay/seed-6107-doubletalk-nominal-assistant/out.pcm"
+      ],
+      "metrics_jsonl": {
+        "bytes": 135100,
+        "sha256": "a6e5dab4ba3b335a7255386ccf8c41ba8cd7be2b7570c8fa9a6a6bdfcae0cb1c"
+      },
+      "output_contract": {
+        "capture_frames": 600,
+        "frame_indices_contiguous": true,
+        "frame_samples": 160,
+        "input_samples_per_channel": 96000,
+        "metrics_frames": 600,
+        "output_mono_samples": 96000
+      },
+      "output_pcm": {
+        "bytes": 192000,
+        "sha256": "9baf031d5f96ce167f1bac83ba1e57cc9f1da92483914137c850af46f4dabfa1"
+      },
+      "profile": "assistant",
+      "returncode": 0,
+      "scenario": "doubletalk-nominal"
+    },
+    {
+      "case_id": "seed-6107-doubletalk-weak-call",
+      "command": [
+        "/workspace/scratch/b74ab3415ba4/build-dualmic-candidate/ap_process_pcm",
+        "--profile",
+        "call",
+        "--sample-rate",
+        "16000",
+        "--mic-channels",
+        "2",
+        "--strict-capture-frames",
+        "--metrics-jsonl",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/replay/seed-6107-doubletalk-weak-call/metrics.jsonl",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/input/cases/seed-6107-doubletalk-weak/mic.pcm",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/input/cases/seed-6107-doubletalk-weak/render.pcm",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/replay/seed-6107-doubletalk-weak-call/out.pcm"
+      ],
+      "metrics_jsonl": {
+        "bytes": 135511,
+        "sha256": "17acdffda872db2250865122f8315589a08bf009db4f6a0c93d212a7ec6ad62d"
+      },
+      "output_contract": {
+        "capture_frames": 600,
+        "frame_indices_contiguous": true,
+        "frame_samples": 160,
+        "input_samples_per_channel": 96000,
+        "metrics_frames": 600,
+        "output_mono_samples": 96000
+      },
+      "output_pcm": {
+        "bytes": 192000,
+        "sha256": "21134026504427f87d411f1dbdf54c8fb7a81bab85d947b331d52ca71ffe6c3a"
+      },
+      "profile": "call",
+      "returncode": 0,
+      "scenario": "doubletalk-weak"
+    },
+    {
+      "case_id": "seed-6107-doubletalk-weak-assistant",
+      "command": [
+        "/workspace/scratch/b74ab3415ba4/build-dualmic-candidate/ap_process_pcm",
+        "--profile",
+        "assistant",
+        "--sample-rate",
+        "16000",
+        "--mic-channels",
+        "2",
+        "--strict-capture-frames",
+        "--metrics-jsonl",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/replay/seed-6107-doubletalk-weak-assistant/metrics.jsonl",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/input/cases/seed-6107-doubletalk-weak/mic.pcm",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/input/cases/seed-6107-doubletalk-weak/render.pcm",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/replay/seed-6107-doubletalk-weak-assistant/out.pcm"
+      ],
+      "metrics_jsonl": {
+        "bytes": 135370,
+        "sha256": "c6c0a419c0acddb52ee81f35cb4fd82b601d1a5ffee39c8c21d46556c3448ea1"
+      },
+      "output_contract": {
+        "capture_frames": 600,
+        "frame_indices_contiguous": true,
+        "frame_samples": 160,
+        "input_samples_per_channel": 96000,
+        "metrics_frames": 600,
+        "output_mono_samples": 96000
+      },
+      "output_pcm": {
+        "bytes": 192000,
+        "sha256": "0fe1624be83438859b6bd3467670fa4d98aca411407e92d614518b0b2b09f0c4"
+      },
+      "profile": "assistant",
+      "returncode": 0,
+      "scenario": "doubletalk-weak"
+    },
+    {
+      "case_id": "seed-6107-path-change-call",
+      "command": [
+        "/workspace/scratch/b74ab3415ba4/build-dualmic-candidate/ap_process_pcm",
+        "--profile",
+        "call",
+        "--sample-rate",
+        "16000",
+        "--mic-channels",
+        "2",
+        "--strict-capture-frames",
+        "--metrics-jsonl",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/replay/seed-6107-path-change-call/metrics.jsonl",
+        "--echo-path-change-frame",
+        "300",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/input/cases/seed-6107-path-change/mic.pcm",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/input/cases/seed-6107-path-change/render.pcm",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/replay/seed-6107-path-change-call/out.pcm"
+      ],
+      "metrics_jsonl": {
+        "bytes": 136197,
+        "sha256": "dabd3935ee05d3284ea7b575cb271a883b07912d3f39daf36f41fba3b31c881a"
+      },
+      "output_contract": {
+        "capture_frames": 600,
+        "frame_indices_contiguous": true,
+        "frame_samples": 160,
+        "input_samples_per_channel": 96000,
+        "metrics_frames": 600,
+        "output_mono_samples": 96000
+      },
+      "output_pcm": {
+        "bytes": 192000,
+        "sha256": "e635d3320dc3ed943bc6733272c23136210de940bda22247785e73fdc6e53079"
+      },
+      "profile": "call",
+      "returncode": 0,
+      "scenario": "path-change"
+    },
+    {
+      "case_id": "seed-6107-path-change-assistant",
+      "command": [
+        "/workspace/scratch/b74ab3415ba4/build-dualmic-candidate/ap_process_pcm",
+        "--profile",
+        "assistant",
+        "--sample-rate",
+        "16000",
+        "--mic-channels",
+        "2",
+        "--strict-capture-frames",
+        "--metrics-jsonl",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/replay/seed-6107-path-change-assistant/metrics.jsonl",
+        "--echo-path-change-frame",
+        "300",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/input/cases/seed-6107-path-change/mic.pcm",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/input/cases/seed-6107-path-change/render.pcm",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/replay/seed-6107-path-change-assistant/out.pcm"
+      ],
+      "metrics_jsonl": {
+        "bytes": 136154,
+        "sha256": "a8c4606b14942b057ea7f6aaf4d1eb32ab92a6948ced8278ff529a11cb9321bc"
+      },
+      "output_contract": {
+        "capture_frames": 600,
+        "frame_indices_contiguous": true,
+        "frame_samples": 160,
+        "input_samples_per_channel": 96000,
+        "metrics_frames": 600,
+        "output_mono_samples": 96000
+      },
+      "output_pcm": {
+        "bytes": 192000,
+        "sha256": "38200a323ecaa5845788df1c6b4906b117d49bd29246a7e7038863a660a58ef6"
+      },
+      "profile": "assistant",
+      "returncode": 0,
+      "scenario": "path-change"
+    },
+    {
+      "case_id": "seed-6107-render-gap-call",
+      "command": [
+        "/workspace/scratch/b74ab3415ba4/build-dualmic-candidate/ap_process_pcm",
+        "--profile",
+        "call",
+        "--sample-rate",
+        "16000",
+        "--mic-channels",
+        "2",
+        "--strict-capture-frames",
+        "--metrics-jsonl",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/replay/seed-6107-render-gap-call/metrics.jsonl",
+        "--discontinuity-frame",
+        "300",
+        "--discontinuity-flags",
+        "2",
+        "--discontinuity-lost-frames",
+        "4",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/input/cases/seed-6107-render-gap/mic.pcm",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/input/cases/seed-6107-render-gap/render.pcm",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/replay/seed-6107-render-gap-call/out.pcm"
+      ],
+      "metrics_jsonl": {
+        "bytes": 135998,
+        "sha256": "83d54175cff58c143d033bcdf65569bfc647fdf7b0ea56859e2b6235d3f795e2"
+      },
+      "output_contract": {
+        "capture_frames": 600,
+        "frame_indices_contiguous": true,
+        "frame_samples": 160,
+        "input_samples_per_channel": 96000,
+        "metrics_frames": 600,
+        "output_mono_samples": 96000
+      },
+      "output_pcm": {
+        "bytes": 192000,
+        "sha256": "b6897cff9a8e12f8118a7acf9ace8c2f83f83fe503b2232be951e858c080d443"
+      },
+      "profile": "call",
+      "returncode": 0,
+      "scenario": "render-gap"
+    },
+    {
+      "case_id": "seed-6107-render-gap-assistant",
+      "command": [
+        "/workspace/scratch/b74ab3415ba4/build-dualmic-candidate/ap_process_pcm",
+        "--profile",
+        "assistant",
+        "--sample-rate",
+        "16000",
+        "--mic-channels",
+        "2",
+        "--strict-capture-frames",
+        "--metrics-jsonl",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/replay/seed-6107-render-gap-assistant/metrics.jsonl",
+        "--discontinuity-frame",
+        "300",
+        "--discontinuity-flags",
+        "2",
+        "--discontinuity-lost-frames",
+        "4",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/input/cases/seed-6107-render-gap/mic.pcm",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/input/cases/seed-6107-render-gap/render.pcm",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/replay/seed-6107-render-gap-assistant/out.pcm"
+      ],
+      "metrics_jsonl": {
+        "bytes": 135962,
+        "sha256": "7be3fe7d3505ec07620965b0251508905ce6bd1f5ca9a78951e27a16ee88d2c0"
+      },
+      "output_contract": {
+        "capture_frames": 600,
+        "frame_indices_contiguous": true,
+        "frame_samples": 160,
+        "input_samples_per_channel": 96000,
+        "metrics_frames": 600,
+        "output_mono_samples": 96000
+      },
+      "output_pcm": {
+        "bytes": 192000,
+        "sha256": "94fa89d141b49fec03605ab8779901ce1ff22671d5465cb5aded4dcf3d5cdc48"
+      },
+      "profile": "assistant",
+      "returncode": 0,
+      "scenario": "render-gap"
+    },
+    {
+      "case_id": "seed-7107-near-only-call",
+      "command": [
+        "/workspace/scratch/b74ab3415ba4/build-dualmic-candidate/ap_process_pcm",
+        "--profile",
+        "call",
+        "--sample-rate",
+        "16000",
+        "--mic-channels",
+        "2",
+        "--strict-capture-frames",
+        "--metrics-jsonl",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/replay/seed-7107-near-only-call/metrics.jsonl",
+        "--capture-profile",
+        "default",
+        "--capture-only",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/input/cases/seed-7107-near-only/mic.pcm",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/replay/seed-7107-near-only-call/out.pcm"
+      ],
+      "metrics_jsonl": {
+        "bytes": 127240,
+        "sha256": "b249545d89e183ac90acbdd795252e989bbbace11f07e35db50b07fe72609597"
+      },
+      "output_contract": {
+        "capture_frames": 600,
+        "frame_indices_contiguous": true,
+        "frame_samples": 160,
+        "input_samples_per_channel": 96000,
+        "metrics_frames": 600,
+        "output_mono_samples": 96000
+      },
+      "output_pcm": {
+        "bytes": 192000,
+        "sha256": "6117edd6bbf4b810e392c9b9c23e88effb6bdb00cd6d74fee1d130104c19b014"
+      },
+      "profile": "call",
+      "returncode": 0,
+      "scenario": "near-only"
+    },
+    {
+      "case_id": "seed-7107-near-only-assistant",
+      "command": [
+        "/workspace/scratch/b74ab3415ba4/build-dualmic-candidate/ap_process_pcm",
+        "--profile",
+        "assistant",
+        "--sample-rate",
+        "16000",
+        "--mic-channels",
+        "2",
+        "--strict-capture-frames",
+        "--metrics-jsonl",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/replay/seed-7107-near-only-assistant/metrics.jsonl",
+        "--capture-profile",
+        "default",
+        "--capture-only",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/input/cases/seed-7107-near-only/mic.pcm",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/replay/seed-7107-near-only-assistant/out.pcm"
+      ],
+      "metrics_jsonl": {
+        "bytes": 127207,
+        "sha256": "4d35749aea366e736179c6a27687d27176c2cfe891333deec92caf916c0e3a9b"
+      },
+      "output_contract": {
+        "capture_frames": 600,
+        "frame_indices_contiguous": true,
+        "frame_samples": 160,
+        "input_samples_per_channel": 96000,
+        "metrics_frames": 600,
+        "output_mono_samples": 96000
+      },
+      "output_pcm": {
+        "bytes": 192000,
+        "sha256": "b42009ee06febb9c0018a36c51bd4852996f428807c211d3badb40b4106f10bc"
+      },
+      "profile": "assistant",
+      "returncode": 0,
+      "scenario": "near-only"
+    },
+    {
+      "case_id": "seed-7107-silent-render-call",
+      "command": [
+        "/workspace/scratch/b74ab3415ba4/build-dualmic-candidate/ap_process_pcm",
+        "--profile",
+        "call",
+        "--sample-rate",
+        "16000",
+        "--mic-channels",
+        "2",
+        "--strict-capture-frames",
+        "--metrics-jsonl",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/replay/seed-7107-silent-render-call/metrics.jsonl",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/input/cases/seed-7107-silent-render/mic.pcm",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/input/cases/seed-7107-silent-render/render.pcm",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/replay/seed-7107-silent-render-call/out.pcm"
+      ],
+      "metrics_jsonl": {
+        "bytes": 127840,
+        "sha256": "dd02a865967ac98767c976b04316d453204b1f032ce466d14501d7b32c717365"
+      },
+      "output_contract": {
+        "capture_frames": 600,
+        "frame_indices_contiguous": true,
+        "frame_samples": 160,
+        "input_samples_per_channel": 96000,
+        "metrics_frames": 600,
+        "output_mono_samples": 96000
+      },
+      "output_pcm": {
+        "bytes": 192000,
+        "sha256": "6117edd6bbf4b810e392c9b9c23e88effb6bdb00cd6d74fee1d130104c19b014"
+      },
+      "profile": "call",
+      "returncode": 0,
+      "scenario": "silent-render"
+    },
+    {
+      "case_id": "seed-7107-silent-render-assistant",
+      "command": [
+        "/workspace/scratch/b74ab3415ba4/build-dualmic-candidate/ap_process_pcm",
+        "--profile",
+        "assistant",
+        "--sample-rate",
+        "16000",
+        "--mic-channels",
+        "2",
+        "--strict-capture-frames",
+        "--metrics-jsonl",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/replay/seed-7107-silent-render-assistant/metrics.jsonl",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/input/cases/seed-7107-silent-render/mic.pcm",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/input/cases/seed-7107-silent-render/render.pcm",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/replay/seed-7107-silent-render-assistant/out.pcm"
+      ],
+      "metrics_jsonl": {
+        "bytes": 127807,
+        "sha256": "7710d2f1a66cd96032c2b34dea6cf5b6fb139da8beea5ddd811b14ae721dd06d"
+      },
+      "output_contract": {
+        "capture_frames": 600,
+        "frame_indices_contiguous": true,
+        "frame_samples": 160,
+        "input_samples_per_channel": 96000,
+        "metrics_frames": 600,
+        "output_mono_samples": 96000
+      },
+      "output_pcm": {
+        "bytes": 192000,
+        "sha256": "b42009ee06febb9c0018a36c51bd4852996f428807c211d3badb40b4106f10bc"
+      },
+      "profile": "assistant",
+      "returncode": 0,
+      "scenario": "silent-render"
+    },
+    {
+      "case_id": "seed-7107-far-only-call",
+      "command": [
+        "/workspace/scratch/b74ab3415ba4/build-dualmic-candidate/ap_process_pcm",
+        "--profile",
+        "call",
+        "--sample-rate",
+        "16000",
+        "--mic-channels",
+        "2",
+        "--strict-capture-frames",
+        "--metrics-jsonl",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/replay/seed-7107-far-only-call/metrics.jsonl",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/input/cases/seed-7107-far-only/mic.pcm",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/input/cases/seed-7107-far-only/render.pcm",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/replay/seed-7107-far-only-call/out.pcm"
+      ],
+      "metrics_jsonl": {
+        "bytes": 136267,
+        "sha256": "fba353e13df1ef4d5d4674e608bdc7a113677d60cbb649830494bb69236d0c23"
+      },
+      "output_contract": {
+        "capture_frames": 600,
+        "frame_indices_contiguous": true,
+        "frame_samples": 160,
+        "input_samples_per_channel": 96000,
+        "metrics_frames": 600,
+        "output_mono_samples": 96000
+      },
+      "output_pcm": {
+        "bytes": 192000,
+        "sha256": "d604227fceb434bac6ac7a875231beb88cb649a0f6686f03545522707cd95cdf"
+      },
+      "profile": "call",
+      "returncode": 0,
+      "scenario": "far-only"
+    },
+    {
+      "case_id": "seed-7107-far-only-assistant",
+      "command": [
+        "/workspace/scratch/b74ab3415ba4/build-dualmic-candidate/ap_process_pcm",
+        "--profile",
+        "assistant",
+        "--sample-rate",
+        "16000",
+        "--mic-channels",
+        "2",
+        "--strict-capture-frames",
+        "--metrics-jsonl",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/replay/seed-7107-far-only-assistant/metrics.jsonl",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/input/cases/seed-7107-far-only/mic.pcm",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/input/cases/seed-7107-far-only/render.pcm",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/replay/seed-7107-far-only-assistant/out.pcm"
+      ],
+      "metrics_jsonl": {
+        "bytes": 136284,
+        "sha256": "425ba0f95d7ac64b2d1fa81708d46443c40a19327c9a916f1d59d01d42d039b3"
+      },
+      "output_contract": {
+        "capture_frames": 600,
+        "frame_indices_contiguous": true,
+        "frame_samples": 160,
+        "input_samples_per_channel": 96000,
+        "metrics_frames": 600,
+        "output_mono_samples": 96000
+      },
+      "output_pcm": {
+        "bytes": 192000,
+        "sha256": "9e786b6d05adbca239785dbe197635df6993f9d367add6132751c6fa7559dcff"
+      },
+      "profile": "assistant",
+      "returncode": 0,
+      "scenario": "far-only"
+    },
+    {
+      "case_id": "seed-7107-doubletalk-nominal-call",
+      "command": [
+        "/workspace/scratch/b74ab3415ba4/build-dualmic-candidate/ap_process_pcm",
+        "--profile",
+        "call",
+        "--sample-rate",
+        "16000",
+        "--mic-channels",
+        "2",
+        "--strict-capture-frames",
+        "--metrics-jsonl",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/replay/seed-7107-doubletalk-nominal-call/metrics.jsonl",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/input/cases/seed-7107-doubletalk-nominal/mic.pcm",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/input/cases/seed-7107-doubletalk-nominal/render.pcm",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/replay/seed-7107-doubletalk-nominal-call/out.pcm"
+      ],
+      "metrics_jsonl": {
+        "bytes": 136006,
+        "sha256": "b6e1f9961e825249e71d6df347715d0634f5c7b8367e4f4802e95d585884c031"
+      },
+      "output_contract": {
+        "capture_frames": 600,
+        "frame_indices_contiguous": true,
+        "frame_samples": 160,
+        "input_samples_per_channel": 96000,
+        "metrics_frames": 600,
+        "output_mono_samples": 96000
+      },
+      "output_pcm": {
+        "bytes": 192000,
+        "sha256": "de78be028dc3fdd2f56f0a155d71b1cf478a6a8b7efb42b643016ec3a682b9ea"
+      },
+      "profile": "call",
+      "returncode": 0,
+      "scenario": "doubletalk-nominal"
+    },
+    {
+      "case_id": "seed-7107-doubletalk-nominal-assistant",
+      "command": [
+        "/workspace/scratch/b74ab3415ba4/build-dualmic-candidate/ap_process_pcm",
+        "--profile",
+        "assistant",
+        "--sample-rate",
+        "16000",
+        "--mic-channels",
+        "2",
+        "--strict-capture-frames",
+        "--metrics-jsonl",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/replay/seed-7107-doubletalk-nominal-assistant/metrics.jsonl",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/input/cases/seed-7107-doubletalk-nominal/mic.pcm",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/input/cases/seed-7107-doubletalk-nominal/render.pcm",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/replay/seed-7107-doubletalk-nominal-assistant/out.pcm"
+      ],
+      "metrics_jsonl": {
+        "bytes": 136177,
+        "sha256": "9d411e8ac47fc77cd6b7622de92581a2de67f86ae548e86f15b65e3e3ecd9691"
+      },
+      "output_contract": {
+        "capture_frames": 600,
+        "frame_indices_contiguous": true,
+        "frame_samples": 160,
+        "input_samples_per_channel": 96000,
+        "metrics_frames": 600,
+        "output_mono_samples": 96000
+      },
+      "output_pcm": {
+        "bytes": 192000,
+        "sha256": "66a36a61b30a4a62d4fe010b629bdff04c4aabce4c3aa3a0cb56536e05412c76"
+      },
+      "profile": "assistant",
+      "returncode": 0,
+      "scenario": "doubletalk-nominal"
+    },
+    {
+      "case_id": "seed-7107-doubletalk-weak-call",
+      "command": [
+        "/workspace/scratch/b74ab3415ba4/build-dualmic-candidate/ap_process_pcm",
+        "--profile",
+        "call",
+        "--sample-rate",
+        "16000",
+        "--mic-channels",
+        "2",
+        "--strict-capture-frames",
+        "--metrics-jsonl",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/replay/seed-7107-doubletalk-weak-call/metrics.jsonl",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/input/cases/seed-7107-doubletalk-weak/mic.pcm",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/input/cases/seed-7107-doubletalk-weak/render.pcm",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/replay/seed-7107-doubletalk-weak-call/out.pcm"
+      ],
+      "metrics_jsonl": {
+        "bytes": 135597,
+        "sha256": "c3eab687816f9893b41892481d6ecc2a5c7c16ebcf03644ba780234cb17913a1"
+      },
+      "output_contract": {
+        "capture_frames": 600,
+        "frame_indices_contiguous": true,
+        "frame_samples": 160,
+        "input_samples_per_channel": 96000,
+        "metrics_frames": 600,
+        "output_mono_samples": 96000
+      },
+      "output_pcm": {
+        "bytes": 192000,
+        "sha256": "1d1cdffce6fe8ef72d0539c772210fea15d711c5c0dc2ccf0c5102a5eaae4356"
+      },
+      "profile": "call",
+      "returncode": 0,
+      "scenario": "doubletalk-weak"
+    },
+    {
+      "case_id": "seed-7107-doubletalk-weak-assistant",
+      "command": [
+        "/workspace/scratch/b74ab3415ba4/build-dualmic-candidate/ap_process_pcm",
+        "--profile",
+        "assistant",
+        "--sample-rate",
+        "16000",
+        "--mic-channels",
+        "2",
+        "--strict-capture-frames",
+        "--metrics-jsonl",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/replay/seed-7107-doubletalk-weak-assistant/metrics.jsonl",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/input/cases/seed-7107-doubletalk-weak/mic.pcm",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/input/cases/seed-7107-doubletalk-weak/render.pcm",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/replay/seed-7107-doubletalk-weak-assistant/out.pcm"
+      ],
+      "metrics_jsonl": {
+        "bytes": 135537,
+        "sha256": "2a67d69bd938a1427825acaadaea814b096a60b92ce1e528b70fab1d230c226f"
+      },
+      "output_contract": {
+        "capture_frames": 600,
+        "frame_indices_contiguous": true,
+        "frame_samples": 160,
+        "input_samples_per_channel": 96000,
+        "metrics_frames": 600,
+        "output_mono_samples": 96000
+      },
+      "output_pcm": {
+        "bytes": 192000,
+        "sha256": "6cc4b914eccafe60fe675b44deb83bd9b1f64e3d76088746813c2a2ccecbed09"
+      },
+      "profile": "assistant",
+      "returncode": 0,
+      "scenario": "doubletalk-weak"
+    },
+    {
+      "case_id": "seed-7107-path-change-call",
+      "command": [
+        "/workspace/scratch/b74ab3415ba4/build-dualmic-candidate/ap_process_pcm",
+        "--profile",
+        "call",
+        "--sample-rate",
+        "16000",
+        "--mic-channels",
+        "2",
+        "--strict-capture-frames",
+        "--metrics-jsonl",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/replay/seed-7107-path-change-call/metrics.jsonl",
+        "--echo-path-change-frame",
+        "300",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/input/cases/seed-7107-path-change/mic.pcm",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/input/cases/seed-7107-path-change/render.pcm",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/replay/seed-7107-path-change-call/out.pcm"
+      ],
+      "metrics_jsonl": {
+        "bytes": 136165,
+        "sha256": "eca66cde240dcfd55505743c6d3dd3019cfb7ee8c2d997e5e310e96be50fca6a"
+      },
+      "output_contract": {
+        "capture_frames": 600,
+        "frame_indices_contiguous": true,
+        "frame_samples": 160,
+        "input_samples_per_channel": 96000,
+        "metrics_frames": 600,
+        "output_mono_samples": 96000
+      },
+      "output_pcm": {
+        "bytes": 192000,
+        "sha256": "f0872dd5954dd07a1fc9d52a0f53038dfbb3eff70a80a646db74cf2a52299c53"
+      },
+      "profile": "call",
+      "returncode": 0,
+      "scenario": "path-change"
+    },
+    {
+      "case_id": "seed-7107-path-change-assistant",
+      "command": [
+        "/workspace/scratch/b74ab3415ba4/build-dualmic-candidate/ap_process_pcm",
+        "--profile",
+        "assistant",
+        "--sample-rate",
+        "16000",
+        "--mic-channels",
+        "2",
+        "--strict-capture-frames",
+        "--metrics-jsonl",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/replay/seed-7107-path-change-assistant/metrics.jsonl",
+        "--echo-path-change-frame",
+        "300",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/input/cases/seed-7107-path-change/mic.pcm",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/input/cases/seed-7107-path-change/render.pcm",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/replay/seed-7107-path-change-assistant/out.pcm"
+      ],
+      "metrics_jsonl": {
+        "bytes": 136239,
+        "sha256": "f443cf8514747a91e90a50ecacb17b887125d6872e0311e5feb7843fafb236a1"
+      },
+      "output_contract": {
+        "capture_frames": 600,
+        "frame_indices_contiguous": true,
+        "frame_samples": 160,
+        "input_samples_per_channel": 96000,
+        "metrics_frames": 600,
+        "output_mono_samples": 96000
+      },
+      "output_pcm": {
+        "bytes": 192000,
+        "sha256": "e34f18c112781bb5511609c8460f1d25a832763d79619ba5d3b9de438d97a7ad"
+      },
+      "profile": "assistant",
+      "returncode": 0,
+      "scenario": "path-change"
+    },
+    {
+      "case_id": "seed-7107-render-gap-call",
+      "command": [
+        "/workspace/scratch/b74ab3415ba4/build-dualmic-candidate/ap_process_pcm",
+        "--profile",
+        "call",
+        "--sample-rate",
+        "16000",
+        "--mic-channels",
+        "2",
+        "--strict-capture-frames",
+        "--metrics-jsonl",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/replay/seed-7107-render-gap-call/metrics.jsonl",
+        "--discontinuity-frame",
+        "300",
+        "--discontinuity-flags",
+        "2",
+        "--discontinuity-lost-frames",
+        "4",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/input/cases/seed-7107-render-gap/mic.pcm",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/input/cases/seed-7107-render-gap/render.pcm",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/replay/seed-7107-render-gap-call/out.pcm"
+      ],
+      "metrics_jsonl": {
+        "bytes": 135996,
+        "sha256": "775c20b7d1f5e661d98b488ef87c5ed3758ce4841e6604639f28b3370ee9b18b"
+      },
+      "output_contract": {
+        "capture_frames": 600,
+        "frame_indices_contiguous": true,
+        "frame_samples": 160,
+        "input_samples_per_channel": 96000,
+        "metrics_frames": 600,
+        "output_mono_samples": 96000
+      },
+      "output_pcm": {
+        "bytes": 192000,
+        "sha256": "b2121a8b146b204c33f3f925e6b2c5630966c4d4ec16c53c69c72df4c46fb235"
+      },
+      "profile": "call",
+      "returncode": 0,
+      "scenario": "render-gap"
+    },
+    {
+      "case_id": "seed-7107-render-gap-assistant",
+      "command": [
+        "/workspace/scratch/b74ab3415ba4/build-dualmic-candidate/ap_process_pcm",
+        "--profile",
+        "assistant",
+        "--sample-rate",
+        "16000",
+        "--mic-channels",
+        "2",
+        "--strict-capture-frames",
+        "--metrics-jsonl",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/replay/seed-7107-render-gap-assistant/metrics.jsonl",
+        "--discontinuity-frame",
+        "300",
+        "--discontinuity-flags",
+        "2",
+        "--discontinuity-lost-frames",
+        "4",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/input/cases/seed-7107-render-gap/mic.pcm",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/input/cases/seed-7107-render-gap/render.pcm",
+        "/workspace/scratch/b74ab3415ba4/dualmic-integration-evidence/replay-candidate/replay/seed-7107-render-gap-assistant/out.pcm"
+      ],
+      "metrics_jsonl": {
+        "bytes": 135925,
+        "sha256": "3f2378aa040527d34b44c2fdfe4023ad429fc732a60876f24f907e2daf71b569"
+      },
+      "output_contract": {
+        "capture_frames": 600,
+        "frame_indices_contiguous": true,
+        "frame_samples": 160,
+        "input_samples_per_channel": 96000,
+        "metrics_frames": 600,
+        "output_mono_samples": 96000
+      },
+      "output_pcm": {
+        "bytes": 192000,
+        "sha256": "22b3db5484d8ccb811ba17acb18d1458fb04895ca9db53b10fb742ba2934636b"
+      },
+      "profile": "assistant",
+      "returncode": 0,
+      "scenario": "render-gap"
+    }
+  ],
+  "quality_decision": "DESCRIPTIVE_ONLY",
+  "status": "PRE_SAFE_FIX",
+  "verification_method": "actual original input/output byte lengths, JSONL frame indices and finite values; no DSP rerun"
+}

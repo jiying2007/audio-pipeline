@@ -1,0 +1,1 @@
+baseline_probe: /workspace/scratch/b74ab3415ba4/audio-dualmic-sync/tests/test_sync_observation_time.c:85: step: Assertion `result.selected_delay == (int32_t)truth' failed.

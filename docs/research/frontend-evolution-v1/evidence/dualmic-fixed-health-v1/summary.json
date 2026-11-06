@@ -1,0 +1,160 @@
+{
+  "authority": "first-party-engineering-development-and-regression-not-acoustic-promotion",
+  "base_final_health_test": {
+    "exit_code": 1,
+    "failed_assertions": 21850,
+    "note": "assertion count is not an independent-case count"
+  },
+  "base_source_sha": "438fe09d79ff768306c00573849517bcd91cbc6e",
+  "boundaries": {
+    "SAFE_health_protection_added": false,
+    "aarch32_qemu": "NOT_RUN_TOOLCHAIN_UNAVAILABLE_LOCALLY",
+    "aarch32_rom_ceiling": "NOT_MEASURED_LOCALLY",
+    "generic_dead_mic_or_rail_detection_added": false,
+    "no_crossfade": true,
+    "physical_ssc305_cpu_thermal_power": "NOT_RUN",
+    "real_chinese_kws": "NOT_RUN",
+    "real_intercom_subjective_quality": "NOT_RUN"
+  },
+  "candidate_dsp_source_sha": "4f2a1c63455736c42ce72f8c7103b35b3b0f9893",
+  "candidate_final_health_test": {
+    "checks": 5766658,
+    "exit_code": 0,
+    "failed_assertions": 0,
+    "negative_trajectory_count": 216,
+    "positive_case_count": 24
+  },
+  "common_contract_sha": "6056682486c1a2a2c84d77135de8118e07fc8cf3",
+  "compiler": "GNU 14.2.0",
+  "direct_allocator_symbol_references": [],
+  "evidence_sha256": {
+    "allocator-symbol-check.json": "7f402e69d3c48510041857e355e29d2283be9c9a9b27b14b9542c0c8fddbf432",
+    "asan-ubsan-no-lsan-ctest.log": "c0fec9537e204073004b65eb701fd61cce936b44d0cb0693585917183d1654d8",
+    "base-abi.log": "19781b1b5f5c05e97fe642d0654bdd5e8355f98a455364aed7662b9f7d2d5107",
+    "base-corrected-config.log": "16af329fb4c3a3ba2c2b885998a1efef5fdab75cc06c199ac73d9d8026eee4bf",
+    "base-final-behavior.log": "0f8b9bcf06e003a065e8c5413db4db9bfd5a809bb839ee234ba512079407061c",
+    "base-initial-config-rejected.log": "5e26fa47181028bbd0bb0f56921624849f4f0a55894a5bf9e53e80af1becbe1b",
+    "base-low-host-contract.log": "0ebcea714eae16c0fb045e193ff38d26fc1c374f5e1a926bdb19d996ba2217af",
+    "candidate-abi.log": "19781b1b5f5c05e97fe642d0654bdd5e8355f98a455364aed7662b9f7d2d5107",
+    "candidate-final-behavior.log": "c7c95d154827b7ac295ab3fce45680744e7f9767ae2c0b07bb7089eca4b2a6cf",
+    "candidate-initial-recovery-fail.log": "176facd5d6e35df29fb50bc1bff4d1dcb6078c11d2437367b1f49bb8499a0593",
+    "candidate-pending-mode-fail.log": "be71306d8f4a8750fb74ab80b7212db3b6b418685f62676b9a485cbea6da5716",
+    "exact-4f2a1c6-ctest.log": "6f6671b4dcf768642c8d7cbf4912f11fa925a485880fef0f41730cc4963c7adf",
+    "low-host-ctest.log": "e8ea40bd7aa80245f37f048617abd6f632f86c7f4a2dcd47eba21531a1f50ee4",
+    "low-host-final-behavior.log": "89f4bad35cdd122588d773a13caa83205574c3eb9879b5a12405c305ad6e478a",
+    "sanitizer-ctest.log": "27c3de8f491e3d41bec7d56b2f23f17aeb972dd9c608aaae0c08b61b27f5a769"
+  },
+  "exact_candidate_head_ctest": {
+    "failed": 0,
+    "passed": 4
+  },
+  "experiment_id": "FE-C2-FIXED-DIRECTION-HEALTH-V1",
+  "first_attempt_failures_preserved": {
+    "initial_hpf_raw_recovery_assertions": 12,
+    "initial_pending_mode_assertions": 24,
+    "initial_public_configuration_rejections": 4
+  },
+  "hard_fixture_groups": {
+    "bf-only": {
+      "cases": 12,
+      "entry_frames": [
+        24
+      ],
+      "first_valid_recovery_frames": [
+        80
+      ],
+      "max_abs_entry_added_step": 0.118757799,
+      "max_abs_entry_adjacent_frame_boundary": 0.152603671,
+      "max_abs_recovery_added_step": 0.0329557471,
+      "max_abs_recovery_adjacent_frame_boundary": 0.0659114942,
+      "raw_recovery_audio_frames": [
+        29
+      ],
+      "recovery_frames": [
+        108
+      ]
+    },
+    "hpf-bf": {
+      "cases": 12,
+      "entry_frames": [
+        24
+      ],
+      "first_valid_recovery_frames": [
+        84
+      ],
+      "max_abs_entry_added_step": 0.074432075,
+      "max_abs_entry_adjacent_frame_boundary": 0.115100063,
+      "max_abs_recovery_added_step": 0.0349931195,
+      "max_abs_recovery_adjacent_frame_boundary": 0.0699862391,
+      "raw_recovery_audio_frames": [
+        33
+      ],
+      "recovery_frames": [
+        112
+      ]
+    }
+  },
+  "host_target": "x86_64-linux-gnu",
+  "implementation_freeze_sha": "f62ab668c315a30d395bfd14682f2c38826008c2",
+  "legacy_tracking": {
+    "base_candidate_byte_equal": true,
+    "bytes": 1935360,
+    "frames": 2880,
+    "old_state_prefix_bytes_per_frame": 176,
+    "sha256": "f0effc06bc7ce5f22ef46a5f6c26268f29167cc7bfd540ebeecdf5851c1f6426"
+  },
+  "low_host_existing_ctest": {
+    "contract": "FAIL_PREEXISTING_100MS_TIMESTAMP_EXCEEDS_60MS_CAP",
+    "module": "PASS",
+    "realtime": "PASS",
+    "same_base_failure_reproduced": true
+  },
+  "low_host_health_test": {
+    "bf_direction_tracking": 0,
+    "checks": 5766658,
+    "exit_code": 0,
+    "failed_assertions": 0
+  },
+  "public_abi_probe_equal": true,
+  "sanitizers": {
+    "address_undefined_with_detect_leaks_0": {
+      "failed": 0,
+      "passed": 4
+    },
+    "initial_lsan": "BLOCKED_PTRACE_FATAL_LOG_RETAINED",
+    "leak_sanitizer": "NOT_RUN_IN_SUPPORTED_ENVIRONMENT"
+  },
+  "schema_version": 1,
+  "source_sha256": {
+    "CMakeLists.txt": "d973fad2da474e6a2ebfeaad1c58ae52c466b68371d471452c6d441f1c6616b3",
+    "src/frontend/ap_beamformer.c": "5dcd320ebdc587c5e62831dc5cf708315bb1235762036705816cbce489a9a47b",
+    "src/frontend/ap_frontend.h": "d64b615d9496811690bcd2c9928065e8270b3bdf4a9ae6fc756cb5dd4e566854",
+    "tests/test_beamformer_health.c": "124436a8b8a2477b19372704a9c09388cda9c17f30f21cbacfbdc657d203cce4"
+  },
+  "state_bytes": {
+    "bf": {
+      "base": 176,
+      "candidate": 180
+    },
+    "host_full_pipeline": {
+      "base": 78192,
+      "candidate": 78200
+    },
+    "host_low_combined": {
+      "base": 45288,
+      "candidate": 45296
+    },
+    "host_low_pipeline": {
+      "base": 38832,
+      "candidate": 38840
+    },
+    "host_low_runtime": {
+      "base": 6456,
+      "candidate": 6456
+    },
+    "module": {
+      "base": 184,
+      "candidate": 188
+    }
+  }
+}

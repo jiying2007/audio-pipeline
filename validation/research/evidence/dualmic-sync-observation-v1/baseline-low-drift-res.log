@@ -1,0 +1,1 @@
+baseline_low_drift_res: /workspace/scratch/b74ab3415ba4/sync-observation-evidence/baseline-low-source/tests/test_drift_res.c:56: test_clock_drift_and_route_jump: Assertion `ap_pipeline_init(state, sizeof(state), &c, &p) == AP_OK' failed.

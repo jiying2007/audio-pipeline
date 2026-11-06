@@ -1,0 +1,33 @@
+{
+  "encoded_members": {
+    "original/base-size.log": "original/base-size.log.b64",
+    "original/candidate-size.log": "original/candidate-size.log.b64"
+  },
+  "failed_verify": {
+    "base": "a920beed8e2c66ea9d90442d31af9632f5c75a23",
+    "decoded_log": {
+      "bytes": 49725,
+      "encoded_path": "transport/verify-42185156796-impact.log.b64",
+      "representation": "UTF-8 bytes of complete decoded log text returned by GitHub fetch_workflow_job_logs; original BOM/ANSI/newlines retained",
+      "sha256": "47b1deea998fb253dee4dd9dea6ab7af75d457d897a2e69b6511d9d7cbdc9aab",
+      "source_uri": "https://api.github.com/repos/jiying2007/audio-pipeline/actions/jobs/127783643002/logs"
+    },
+    "head": "ce5d3f460c3fdb371c8ce9182b4443b2c262fb79",
+    "impact_job_id": 127783643002,
+    "merge_checkout": "abb9dd778830e0817548183e5b036a484bedc3a6",
+    "pr": 917,
+    "reason": "unregistered or reordered whitespace diagnostics",
+    "result": "FAIL",
+    "run_id": 42185156796,
+    "summary_job_id": 127783779847,
+    "url": "https://github.com/jiying2007/audio-pipeline/actions/runs/42185156796"
+  },
+  "original_manifest": {
+    "bytes": 3690,
+    "path": "transport/original-artifact-manifest.json",
+    "sha256": "b7b8b07c7206c01904dcae1c2c6e7f89959d2d611dd6acc67670a11e98adbdf6"
+  },
+  "original_snapshot": "ce5d3f460c3fdb371c8ce9182b4443b2c262fb79",
+  "schema_version": 1,
+  "scope": "lossless transport only; original measurements unchanged"
+}

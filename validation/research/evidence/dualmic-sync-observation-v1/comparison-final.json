@@ -1,0 +1,29 @@
+{
+  "baseline": "438fe09d79ff768306c00573849517bcd91cbc6e",
+  "contract": "6056682486c1a2a2c84d77135de8118e07fc8cf3",
+  "continuous_lines": 20,
+  "continuous_byte_identical": true,
+  "continuous_sha256": "7a5728de262a416ff79608523d2c060b2358d25e648c722ab905daf00718fba2",
+  "module_bytes": {
+    "before": 32816,
+    "after": 32840,
+    "delta": 24
+  },
+  "full_pipeline_bytes": {
+    "before": 78192,
+    "after": 78216,
+    "delta": 24
+  },
+  "low_pipeline_bytes": {
+    "before": 38832,
+    "after": 38856,
+    "delta": 24
+  },
+  "results": {
+    "baseline_elapsed_exit": 1,
+    "candidate_new_test_exit": 0,
+    "full_targeted_ctest": "6/6 PASS",
+    "8k_module_ctest": "2/2 PASS",
+    "low_ctest": "2/3 PASS; legacy drift_res init fails on both before and after because hardcoded100ms exceeds compiled60ms"
+  }
+}

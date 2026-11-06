@@ -1,0 +1,95 @@
+{
+  "actual_ccache_invoked": false,
+  "budget_seconds": 300,
+  "cache_probe_sha256": "8de74c4d5b253d5686a3910c38d73ac2a611ba7681d91965b575d5eaf2bbd05a",
+  "cases": [
+    {
+      "cache_check_ignore_exit_code": 1,
+      "case": "before-clean",
+      "cmake_exit_code": 0,
+      "configure_elapsed_seconds": 0.291259514997364,
+      "expected_source_revision": "a0e83e2bbfca4577697efe15e2683adf87118755",
+      "head": "a0e83e2bbfca4577697efe15e2683adf87118755",
+      "observed_source_revision": "a0e83e2bbfca4577697efe15e2683adf87118755",
+      "passed": true,
+      "source_files_sha256": {
+        ".gitignore": "8ef5d3f84dcfb41f1449ab02c34c7192fe356fda595296fc14733740de8033ef",
+        "CMakeLists.txt": "28b7fb2c5232502cba2f0d10db8c08ab93ebdf1e1cccbabd3dddd50b5203e5f4",
+        "src/ap_build_info.c": "c69871911344fa2f5fc755a51da8bf7c55da54b6953a873c665fe407ac6d8bf6"
+      },
+      "strict_40hex_revision_equality": true
+    },
+    {
+      "cache_check_ignore_exit_code": 1,
+      "case": "before-cache",
+      "cmake_exit_code": 0,
+      "configure_elapsed_seconds": 0.24628724899957888,
+      "expected_source_revision": "a0e83e2bbfca4577697efe15e2683adf87118755-dirty",
+      "head": "a0e83e2bbfca4577697efe15e2683adf87118755",
+      "observed_source_revision": "a0e83e2bbfca4577697efe15e2683adf87118755-dirty",
+      "passed": true,
+      "source_files_sha256": {
+        ".gitignore": "8ef5d3f84dcfb41f1449ab02c34c7192fe356fda595296fc14733740de8033ef",
+        "CMakeLists.txt": "28b7fb2c5232502cba2f0d10db8c08ab93ebdf1e1cccbabd3dddd50b5203e5f4",
+        "src/ap_build_info.c": "c69871911344fa2f5fc755a51da8bf7c55da54b6953a873c665fe407ac6d8bf6"
+      },
+      "strict_40hex_revision_equality": false
+    },
+    {
+      "cache_check_ignore_exit_code": 0,
+      "case": "after-cache",
+      "cmake_exit_code": 0,
+      "configure_elapsed_seconds": 0.24846067600083188,
+      "expected_source_revision": "f6206a2e30ebe45bcba4972afeca560ba62130fb",
+      "head": "f6206a2e30ebe45bcba4972afeca560ba62130fb",
+      "observed_source_revision": "f6206a2e30ebe45bcba4972afeca560ba62130fb",
+      "passed": true,
+      "source_files_sha256": {
+        ".gitignore": "65a538c89e106be7ab1ceb6f07f0bc2fd53d7e9d5886ca723645a2c00737c897",
+        "CMakeLists.txt": "28b7fb2c5232502cba2f0d10db8c08ab93ebdf1e1cccbabd3dddd50b5203e5f4",
+        "src/ap_build_info.c": "c69871911344fa2f5fc755a51da8bf7c55da54b6953a873c665fe407ac6d8bf6"
+      },
+      "strict_40hex_revision_equality": true
+    },
+    {
+      "cache_check_ignore_exit_code": 0,
+      "case": "after-untracked-source",
+      "cmake_exit_code": 0,
+      "configure_elapsed_seconds": 0.2539587620012753,
+      "expected_source_revision": "f6206a2e30ebe45bcba4972afeca560ba62130fb-dirty",
+      "head": "f6206a2e30ebe45bcba4972afeca560ba62130fb",
+      "observed_source_revision": "f6206a2e30ebe45bcba4972afeca560ba62130fb-dirty",
+      "passed": true,
+      "source_files_sha256": {
+        ".gitignore": "65a538c89e106be7ab1ceb6f07f0bc2fd53d7e9d5886ca723645a2c00737c897",
+        "CMakeLists.txt": "28b7fb2c5232502cba2f0d10db8c08ab93ebdf1e1cccbabd3dddd50b5203e5f4",
+        "src/ap_build_info.c": "c69871911344fa2f5fc755a51da8bf7c55da54b6953a873c665fe407ac6d8bf6"
+      },
+      "strict_40hex_revision_equality": false
+    },
+    {
+      "cache_check_ignore_exit_code": 0,
+      "case": "after-tracked-source",
+      "cmake_exit_code": 0,
+      "configure_elapsed_seconds": 0.2756040150015906,
+      "expected_source_revision": "f6206a2e30ebe45bcba4972afeca560ba62130fb-dirty",
+      "head": "f6206a2e30ebe45bcba4972afeca560ba62130fb",
+      "observed_source_revision": "f6206a2e30ebe45bcba4972afeca560ba62130fb-dirty",
+      "passed": true,
+      "source_files_sha256": {
+        ".gitignore": "65a538c89e106be7ab1ceb6f07f0bc2fd53d7e9d5886ca723645a2c00737c897",
+        "CMakeLists.txt": "28b7fb2c5232502cba2f0d10db8c08ab93ebdf1e1cccbabd3dddd50b5203e5f4",
+        "src/ap_build_info.c": "2effb524f16569d60e744a4ea2c2604ab7d3cc71ddb686978da9f80d94db12a1"
+      },
+      "strict_40hex_revision_equality": false
+    }
+  ],
+  "elapsed_seconds": 1.4203091800009133,
+  "not_run": [
+    "actual_ccache",
+    "remote_Actions",
+    "DSP",
+    "physical_SSC305"
+  ],
+  "result": "PASS"
+}

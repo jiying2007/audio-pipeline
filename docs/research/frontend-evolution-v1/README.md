@@ -10,6 +10,7 @@
 - [SYNC 观察间隔修复](SYNC_OBSERVATION_TIME_V1_RESULT.zh-CN.md)：按实际 capture 样点间隔归一化 drift，保留正常节拍与既有补偿策略。
 - [固定方向健康观察](DUALMIC_FIXED_HEALTH_V1_RESULT.zh-CN.md)及[SAFE 边界修复](DUALMIC_FIXED_HEALTH_V1_SAFE_EPOCH_RESULT.zh-CN.md)：LITE/无方向跟踪构建保留狭义 hard 保护，跨旁路区间不借用未完成证据；恢复迟滞和采样边界变化如实保留。
 - [CLI profile 与回放接入](DUALMIC_PROFILE_REPLAY_V1_RESULT.zh-CN.md)及[SAFE 修复前的整合回放](DUALMIC_INTEGRATION_V1_RESULT.zh-CN.md)：分别记录实际执行源码、连续输出、参数与资源；空质量阈值的工程回放不称为音质 PASS。
+- [SSC305-low ARM 静态预检](../../../validation/research/evidence/dualmic-arm-static-9a9202e/README.md)：同工具链实测 ROM 与 arena，并保留原总任务预算超时事实；这项有限预检不替代 CI 或物理测量。
 
 离线使用见 [PCM 入口](../../OFFLINE_PCM_IO.md)，应用契约见[中文 API 说明](../../API_CONTRACT.zh-CN.md)。
 各结果只支持其明确列出的执行 SHA；后继 PR/main 必须通过自己的适用门禁。

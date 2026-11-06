@@ -1,0 +1,294 @@
+In archive /workspace/scratch/b74ab3415ba4/arm-rom-preflight-9a9202e/base-build/libaudio_pipeline.a:
+
+unity_0_c.c.o:     file format elf32-littlearm
+
+
+Disassembly of section .text.ap_filter_s16:
+
+Disassembly of section .text.ap_mdf_set_active:
+
+Disassembly of section .text.ap_filter_f32:
+
+Disassembly of section .text.ap_fft.constprop.0:
+
+Disassembly of section .text.ap_fft.constprop.1:
+
+Disassembly of section .text.ap_filter_s16.constprop.0:
+
+Disassembly of section .text.ap_filter_s16.constprop.1:
+
+Disassembly of section .text.ap_update_s16_history.constprop.0:
+
+Disassembly of section .text.ap_update_s16_history.constprop.1:
+
+Disassembly of section .text.ap_update_s16_history:
+
+Disassembly of section .text.ap_build_info:
+
+Disassembly of section .text.ap_pipeline_compiled_stages:
+
+Disassembly of section .text.ap_pipeline_validate_config:
+
+Disassembly of section .text.ap_config_for_resource:
+
+Disassembly of section .text.ap_config_default:
+
+Disassembly of section .text.ap_pipeline_state_size:
+
+00000000 <ap_pipeline_state_size>:
+   0:	f249 70b0 	movw	r0, #38832	@ 0x97b0
+   4:	4770      	bx	lr
+
+Disassembly of section .text.ap_pipeline_state_alignment:
+
+Disassembly of section .text.ap_pipeline_io_frame_samples:
+
+Disassembly of section .text.ap_pipeline_internal_frame_samples:
+
+Disassembly of section .text.ap_pipeline_frame_samples:
+
+Disassembly of section .text.ap_pipeline_mic_channels:
+
+Disassembly of section .text.ap_pipeline_sample_rate_hz:
+
+Disassembly of section .text.ap_pipeline_init:
+
+Disassembly of section .text.ap_pipeline_reset:
+
+Disassembly of section .text.ap_pipeline_set_quality:
+
+Disassembly of section .text.ap_pipeline_push_render:
+
+Disassembly of section .text.ap_pipeline_observe_io_timestamps:
+
+Disassembly of section .text.ap_pipeline_notify_echo_path_change:
+
+Disassembly of section .text.ap_pipeline_get_metrics:
+
+Disassembly of section .text.ap_pipeline_algorithmic_latency_ms:
+
+Disassembly of section .text.ap_pipeline_stages:
+
+Disassembly of section .text.ap_pipeline_get_config:
+
+Disassembly of section .text.ap_pipeline_get_tuning:
+
+Disassembly of section .text.ap_pipeline_notify_stream_discontinuity:
+
+Disassembly of section .text.ap_pipeline_apply_tuning:
+
+Disassembly of section .text.ap_resampler_init:
+
+Disassembly of section .text.ap_resampler_reset:
+
+Disassembly of section .text.ap_supported_io_rate:
+
+Disassembly of section .text.ap_resample_input_channel:
+
+Disassembly of section .text.ap_resample_output:
+
+Disassembly of section .text.ap_resampler_filter_delay_samples:
+
+Disassembly of section .text.ap_hpf_init:
+
+Disassembly of section .text.ap_hpf_process:
+
+Disassembly of section .text.ap_beamformer_init:
+
+Disassembly of section .text.ap_beamformer_process:
+
+Disassembly of section .text.ap_sync_init:
+
+Disassembly of section .text.ap_sync_reset:
+
+Disassembly of section .text.ap_sync_push_render:
+
+Disassembly of section .text.ap_sync_get_reference:
+
+Disassembly of section .text.ap_sync_track_delay:
+
+Disassembly of section .text.ap_sync_observe_timestamps:
+
+Disassembly of section .text.ap_sync_note_capture:
+
+Disassembly of section .text.ap_sync_get_status:
+
+Disassembly of section .text.ap_activity_init:
+
+Disassembly of section .text.ap_activity_reset:
+
+Disassembly of section .text.ap_activity_process:
+
+Disassembly of section .text.ap_res_init:
+
+Disassembly of section .text.ap_res_process:
+
+Disassembly of section .text.ap_ns_init:
+
+Disassembly of section .text.ap_ns_process:
+
+Disassembly of section .text.ap_noise_tracker_init:
+
+Disassembly of section .text.ap_noise_tracker_update:
+
+Disassembly of section .text.ap_noise_tracker_next_frame:
+
+Disassembly of section .text.ap_window_half:
+
+Disassembly of section .text.ap_agc_init:
+
+Disassembly of section .text.ap_agc_process_controlled:
+
+Disassembly of section .text.ap_agc_process:
+
+Disassembly of section .text.ap_vad_init:
+
+Disassembly of section .text.ap_vad_process:
+
+Disassembly of section .text.ap_aec_backend_init:
+
+Disassembly of section .text.ap_aec_backend_reset:
+
+Disassembly of section .text.ap_aec_backend_set_active:
+
+Disassembly of section .text.ap_aec_backend_get_status:
+
+Disassembly of section .text.ap_kernel_dot_f32:
+
+Disassembly of section .text.ap_kernel_complex_mac:
+
+Disassembly of section .text.ap_kernel_complex_adapt:
+
+Disassembly of section .text.ap_aec_backend_process:
+
+Disassembly of section .text.ap_pipeline_process_capture:
+
+Disassembly of section .text.ap_kernel_nlms_update:
+
+Disassembly of section .text.ap_clampf:
+
+Disassembly of section .text.ap_rms_dbfs:
+
+Disassembly of section .text.ap_fft:
+
+ap_resampler_module.c.o:     file format elf32-littlearm
+
+
+Disassembly of section .text.ap_module_resampler_state_size:
+
+Disassembly of section .text.ap_module_resampler_init:
+
+Disassembly of section .text.ap_module_resampler_reset:
+
+Disassembly of section .text.ap_module_resampler_input_s16:
+
+Disassembly of section .text.ap_module_resampler_output_s16:
+
+Disassembly of section .text.ap_module_resampler_filter_delay_samples:
+
+ap_hpf_module.c.o:     file format elf32-littlearm
+
+
+Disassembly of section .text.ap_module_hpf_state_size:
+
+Disassembly of section .text.ap_module_hpf_init:
+
+Disassembly of section .text.ap_module_hpf_reset:
+
+Disassembly of section .text.ap_module_hpf_process:
+
+ap_beamformer_module.c.o:     file format elf32-littlearm
+
+
+Disassembly of section .text.ap_module_beamformer_state_size:
+
+Disassembly of section .text.ap_module_beamformer_init:
+
+Disassembly of section .text.ap_module_beamformer_reset:
+
+Disassembly of section .text.ap_module_beamformer_process:
+
+ap_sync_module.c.o:     file format elf32-littlearm
+
+
+Disassembly of section .text.ap_module_sync_state_size:
+
+Disassembly of section .text.ap_module_sync_init:
+
+Disassembly of section .text.ap_module_sync_reset:
+
+Disassembly of section .text.ap_module_sync_push_render:
+
+Disassembly of section .text.ap_module_sync_track:
+
+Disassembly of section .text.ap_module_sync_observe_timestamps:
+
+Disassembly of section .text.ap_module_sync_get_reference:
+
+Disassembly of section .text.ap_module_sync_get_status:
+
+ap_activity_module.c.o:     file format elf32-littlearm
+
+
+Disassembly of section .text.ap_module_activity_state_size:
+
+Disassembly of section .text.ap_module_activity_init:
+
+Disassembly of section .text.ap_module_activity_reset:
+
+Disassembly of section .text.ap_module_activity_process:
+
+ap_res_module.c.o:     file format elf32-littlearm
+
+
+Disassembly of section .text.ap_module_res_state_size:
+
+Disassembly of section .text.ap_module_res_init:
+
+Disassembly of section .text.ap_module_res_reset:
+
+Disassembly of section .text.ap_module_res_process:
+
+ap_ns_module.c.o:     file format elf32-littlearm
+
+
+Disassembly of section .text.ap_module_ns_state_size:
+
+Disassembly of section .text.ap_module_ns_init:
+
+Disassembly of section .text.ap_module_ns_reset:
+
+Disassembly of section .text.ap_module_ns_process:
+
+ap_agc_module.c.o:     file format elf32-littlearm
+
+
+Disassembly of section .text.ap_module_agc_state_size:
+
+Disassembly of section .text.ap_module_agc_init:
+
+Disassembly of section .text.ap_module_agc_reset:
+
+Disassembly of section .text.ap_module_agc_process:
+
+ap_vad_module.c.o:     file format elf32-littlearm
+
+
+Disassembly of section .text.ap_module_vad_state_size:
+
+Disassembly of section .text.ap_module_vad_init:
+
+Disassembly of section .text.ap_module_vad_reset:
+
+Disassembly of section .text.ap_module_vad_process:
+
+ap_aec_module.c.o:     file format elf32-littlearm
+
+
+Disassembly of section .text.ap_module_aec_state_size:
+
+Disassembly of section .text.ap_module_aec_init:
+
+Disassembly of section .text.ap_module_aec_reset:
+
+Disassembly of section .text.ap_module_aec_process:

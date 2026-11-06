@@ -1,0 +1,16 @@
+[ 14%] Building C object CMakeFiles/audio_pipeline.dir/Unity/unity_0_c.c.o
+[ 14%] Building C object CMakeFiles/audio_pipeline.dir/src/modules/ap_resampler_module.c.o
+[ 21%] Building C object CMakeFiles/audio_pipeline.dir/src/modules/ap_hpf_module.c.o
+[ 28%] Building C object CMakeFiles/audio_pipeline.dir/src/modules/ap_beamformer_module.c.o
+[ 35%] Building C object CMakeFiles/audio_pipeline.dir/src/modules/ap_sync_module.c.o
+[ 42%] Building C object CMakeFiles/audio_pipeline.dir/src/modules/ap_activity_module.c.o
+[ 50%] Building C object CMakeFiles/audio_pipeline.dir/src/modules/ap_res_module.c.o
+[ 57%] Building C object CMakeFiles/audio_pipeline.dir/src/modules/ap_ns_module.c.o
+[ 64%] Building C object CMakeFiles/audio_pipeline.dir/src/modules/ap_agc_module.c.o
+[ 71%] Building C object CMakeFiles/audio_pipeline.dir/src/modules/ap_vad_module.c.o
+[ 78%] Building C object CMakeFiles/audio_pipeline.dir/src/modules/ap_aec_module.c.o
+[ 85%] Linking C static library libaudio_pipeline.a
+[ 85%] Built target audio_pipeline
+[ 92%] Building C object CMakeFiles/audio_pipeline_runtime.dir/src/platform/linux/ap_runtime.c.o
+[100%] Linking C static library libaudio_pipeline_runtime.a
+[100%] Built target audio_pipeline_runtime

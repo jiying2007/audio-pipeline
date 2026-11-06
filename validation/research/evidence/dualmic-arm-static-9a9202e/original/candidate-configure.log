@@ -1,0 +1,36 @@
+Preset CMake variables:
+
+  AP_AEC_BACKEND="MDF"
+  AP_BUILD_BENCH="OFF"
+  AP_BUILD_EXAMPLES="OFF"
+  AP_BUILD_MAX_AEC_TAIL_MS="64"
+  AP_BUILD_MAX_DELAY_MS="60"
+  AP_BUILD_MAX_INTERNAL_RATE_HZ="16000"
+  AP_BUILD_MAX_IO_RATE_HZ="16000"
+  AP_BUILD_MAX_MIC_CHANNELS="2"
+  AP_BUILD_PIPELINE="ON"
+  AP_BUILD_TESTS="OFF"
+  AP_ENABLE_BF_DIRECTION_TRACKING="OFF"
+  AP_ENABLE_FAST_MATH="OFF"
+  AP_ENABLE_LINUX_RUNTIME="ON"
+  AP_MODULES="RESAMPLER,HPF,BF,SYNC,ACTIVITY,AEC,RES,NS,AGC,VAD"
+  AP_RUNTIME_QUEUE_DEPTH="4"
+  AP_SIMD_BACKEND="NEON"
+  CMAKE_BUILD_TYPE="Release"
+  CMAKE_C_FLAGS="-O3 -mcpu=cortex-a32 -mfpu=neon-fp-armv8 -mfloat-abi=hard -fdata-sections -ffunction-sections"
+  CMAKE_EXE_LINKER_FLAGS="-Wl,--gc-sections"
+  CMAKE_SHARED_LINKER_FLAGS="-Wl,--gc-sections"
+  CMAKE_TOOLCHAIN_FILE:FILEPATH="/workspace/scratch/b74ab3415ba4/arm-rom-preflight-9a9202e/candidate-source/cmake/toolchains/arm-linux-gnueabihf.cmake"
+
+-- The C compiler identification is GNU 14.2.0
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: /workspace/scratch/b74ab3415ba4/arm-rom-preflight-9a9202e/toolchain/usr/bin/arm-linux-gnueabihf-gcc-14 - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Success
+-- Found Threads: TRUE
+-- Configuring done (0.2s)
+-- Generating done (0.0s)
+-- Build files have been written to: /workspace/scratch/b74ab3415ba4/arm-rom-preflight-9a9202e/candidate-build

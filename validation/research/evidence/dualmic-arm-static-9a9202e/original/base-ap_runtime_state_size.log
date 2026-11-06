@@ -1,0 +1,72 @@
+In archive /workspace/scratch/b74ab3415ba4/arm-rom-preflight-9a9202e/base-build/libaudio_pipeline_runtime.a:
+
+ap_runtime.c.o:     file format elf32-littlearm
+
+
+Disassembly of section .text.runtime_resync_tuning_projection:
+
+Disassembly of section .text.runtime_emit_event:
+
+Disassembly of section .text.runtime_note_discontinuity:
+
+Disassembly of section .text.apply_quality_transition:
+
+Disassembly of section .text.ap_flight_recorder_config_default:
+
+Disassembly of section .text.ap_flight_recorder_state_size:
+
+Disassembly of section .text.ap_flight_recorder_state_alignment:
+
+Disassembly of section .text.ap_flight_recorder_init:
+
+Disassembly of section .text.ap_flight_recorder_reset:
+
+Disassembly of section .text.ap_flight_recorder_trigger:
+
+Disassembly of section .text.ap_flight_recorder_record:
+
+Disassembly of section .text.runtime_publish_failure:
+
+Disassembly of section .text.worker:
+
+Disassembly of section .text.ap_flight_recorder_is_frozen:
+
+Disassembly of section .text.ap_flight_recorder_export_size:
+
+Disassembly of section .text.ap_flight_recorder_export:
+
+Disassembly of section .text.ap_runtime_bind_current_thread:
+
+Disassembly of section .text.ap_runtime_config_default:
+
+Disassembly of section .text.ap_runtime_options_default:
+
+Disassembly of section .text.ap_runtime_state_size:
+
+00000000 <ap_runtime_state_size>:
+   0:	f641 1018 	movw	r0, #6424	@ 0x1918
+   4:	4770      	bx	lr
+
+Disassembly of section .text.ap_runtime_state_alignment:
+
+Disassembly of section .text.ap_runtime_open:
+
+Disassembly of section .text.ap_runtime_start:
+
+Disassembly of section .text.ap_runtime_stop:
+
+Disassembly of section .text.ap_runtime_deinit:
+
+Disassembly of section .text.ap_runtime_submit_frame:
+
+Disassembly of section .text.ap_runtime_command:
+
+Disassembly of section .text.ap_runtime_receive:
+
+Disassembly of section .text.ap_runtime_receive_event:
+
+Disassembly of section .text.ap_runtime_attach_flight_recorder:
+
+Disassembly of section .text.ap_runtime_read_metrics:
+
+Disassembly of section .text.ap_runtime_get_critical_state:

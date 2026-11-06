@@ -1,0 +1,50 @@
+[
+  {
+    "url": "https://deb.debian.org/debian/pool/main/g/gcc-14-cross/gcc-14-arm-linux-gnueabihf_14.2.0-19cross1_amd64.deb",
+    "file": "gcc-14-arm-linux-gnueabihf_14.2.0-19cross1_amd64.deb",
+    "bytes": 19772136,
+    "sha256": "2caeee6eee62b44503939ba93fc75ade0f018e839cfc3207a5e2350864c2d147"
+  },
+  {
+    "url": "https://deb.debian.org/debian/pool/main/g/gcc-14-cross/cpp-14-arm-linux-gnueabihf_14.2.0-19cross1_amd64.deb",
+    "file": "cpp-14-arm-linux-gnueabihf_14.2.0-19cross1_amd64.deb",
+    "bytes": 10387920,
+    "sha256": "e503180c7e7bb8451b33acd124872c7a43f45903913e8c96467e5ed386f7e434"
+  },
+  {
+    "url": "https://deb.debian.org/debian/pool/main/g/gcc-14-cross/libgcc-14-dev-armhf-cross_14.2.0-19cross1_all.deb",
+    "file": "libgcc-14-dev-armhf-cross_14.2.0-19cross1_all.deb",
+    "bytes": 768456,
+    "sha256": "f55933295979b017f7e94755396b95cf9fd59042f8c630ced39183dbe6711eaf"
+  },
+  {
+    "url": "https://deb.debian.org/debian/pool/main/g/gcc-14-cross/libgcc-s1-armhf-cross_14.2.0-19cross1_all.deb",
+    "file": "libgcc-s1-armhf-cross_14.2.0-19cross1_all.deb",
+    "bytes": 36924,
+    "sha256": "7cbb781db348bffeac4dbd94896ea933b6fad50aeb7744c660fee72b05f9f4b8"
+  },
+  {
+    "url": "https://deb.debian.org/debian/pool/main/b/binutils/binutils-arm-linux-gnueabihf_2.44-3_amd64.deb",
+    "file": "binutils-arm-linux-gnueabihf_2.44-3_amd64.deb",
+    "bytes": 1500984,
+    "sha256": "9733b7a7a320da0ca637d71e69ab663c64f550ad542a848e5755c8170c8caf09"
+  },
+  {
+    "url": "https://deb.debian.org/debian/pool/main/c/cross-toolchain-base/libc6-armhf-cross_2.41-11cross1_all.deb",
+    "file": "libc6-armhf-cross_2.41-11cross1_all.deb",
+    "bytes": 921804,
+    "sha256": "fa9bcf96a12d15a2e47396c31b3203e107a04baf25e324ecf008931c09320074"
+  },
+  {
+    "url": "https://deb.debian.org/debian/pool/main/c/cross-toolchain-base/libc6-dev-armhf-cross_2.41-11cross1_all.deb",
+    "file": "libc6-dev-armhf-cross_2.41-11cross1_all.deb",
+    "bytes": 1323856,
+    "sha256": "9f0c3d473edb51883949fb4fd61929110aa3e5d6f4a88782aaa95c9ae65031e0"
+  },
+  {
+    "url": "https://deb.debian.org/debian/pool/main/c/cross-toolchain-base/linux-libc-dev-armhf-cross_6.12.38-1cross1_all.deb",
+    "file": "linux-libc-dev-armhf-cross_6.12.38-1cross1_all.deb",
+    "bytes": 2430512,
+    "sha256": "bf6fa2d938e493a84c34086219b3e3e391aba885d4fb349022eda9fdafa36272"
+  }
+]

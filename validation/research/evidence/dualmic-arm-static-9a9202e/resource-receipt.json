@@ -1,0 +1,63 @@
+{
+  "CI_qualification_claimed": false,
+  "DUT_or_timing_claimed": false,
+  "archive_stage": {
+    "no_ARM_execution": true,
+    "no_compilation": true,
+    "no_download": true,
+    "no_measurement_rerun": true,
+    "source_bundle_excludes_archive_and_report_save": true
+  },
+  "candidate_arena_headroom_bytes": 4712,
+  "candidate_rom_headroom_bytes": 4804,
+  "measurement_source": "9a9202eca32cfa03d92644f5735bfc2c2429efbc",
+  "measurement_tree": "bda81fab7ec1420696ff5fa6131b8e9173d4e0ae",
+  "original_artifact_hashes_verified": true,
+  "original_evidence_files_retained": 19,
+  "original_measurement_budget": {
+    "compile_and_static_measurement_completed_approximately_seconds": 233,
+    "limit_seconds": 300,
+    "overrun_approximately_seconds": 26,
+    "total_budget_passed": false,
+    "total_elapsed_approximately_seconds": 326
+  },
+  "original_packages_tools_libraries_ELFs_headers_hashes_verified": true,
+  "original_report": "original/report.json",
+  "original_report_sha256": "825e51db18c0e43d70e17595d3bdf32505b0e5da21ad0069be154ac7a84fbf79",
+  "overall_budget_and_qualification_pass_claimed": false,
+  "resource_values": [
+    {
+      "arena": {
+        "ap_pipeline_state_size": 38832,
+        "ap_runtime_state_size": 6424
+      },
+      "arena_ceiling": 50000,
+      "arena_within_ceiling": true,
+      "caller_owned_state_bytes": 45256,
+      "rodata_bytes": 3292,
+      "rom_ceiling": 40960,
+      "rom_within_ceiling": true,
+      "source_revision": "438fe09d79ff768306c00573849517bcd91cbc6e",
+      "text_bytes": 27560,
+      "text_rodata_bytes": 30852
+    },
+    {
+      "arena": {
+        "ap_pipeline_state_size": 38864,
+        "ap_runtime_state_size": 6424
+      },
+      "arena_ceiling": 50000,
+      "arena_within_ceiling": true,
+      "caller_owned_state_bytes": 45288,
+      "rodata_bytes": 3292,
+      "rom_ceiling": 40960,
+      "rom_within_ceiling": true,
+      "source_revision": "9a9202eca32cfa03d92644f5735bfc2c2429efbc",
+      "text_bytes": 32864,
+      "text_rodata_bytes": 36156
+    }
+  ],
+  "schema_version": 1,
+  "scope": "finite local static ARM GNU precheck; not complete qualification",
+  "source_restore_verified": true
+}

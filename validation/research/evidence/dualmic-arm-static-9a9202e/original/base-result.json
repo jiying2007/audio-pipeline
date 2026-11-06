@@ -1,0 +1,39 @@
+{
+  "source_revision": "438fe09d79ff768306c00573849517bcd91cbc6e",
+  "compile_preset": "ssc305-cortex-a32-low",
+  "compiler": "/workspace/scratch/b74ab3415ba4/arm-rom-preflight-9a9202e/toolchain/usr/bin/arm-linux-gnueabihf-gcc-14",
+  "sysroot": "/workspace/scratch/b74ab3415ba4/arm-rom-preflight-9a9202e/toolchain",
+  "cmake_argv": [
+    "/workspace/scratch/b74ab3415ba4/build-tools/cmake/data/bin/cmake",
+    "--preset",
+    "ssc305-cortex-a32-low",
+    "-B",
+    "/workspace/scratch/b74ab3415ba4/arm-rom-preflight-9a9202e/base-build",
+    "-DCMAKE_C_COMPILER=/workspace/scratch/b74ab3415ba4/arm-rom-preflight-9a9202e/toolchain/usr/bin/arm-linux-gnueabihf-gcc-14",
+    "-DCMAKE_SYSROOT=/workspace/scratch/b74ab3415ba4/arm-rom-preflight-9a9202e/toolchain",
+    "-DAP_BUILD_SOURCE_REVISION=438fe09d79ff768306c00573849517bcd91cbc6e"
+  ],
+  "cflags": [
+    "-O3",
+    "-mcpu=cortex-a32",
+    "-mfpu=neon-fp-armv8",
+    "-mfloat-abi=hard",
+    "-ffunction-sections",
+    "-fdata-sections"
+  ],
+  "text_bytes": 27560,
+  "rodata_bytes": 3292,
+  "text_rodata_bytes": 30852,
+  "rom_ceiling": 40960,
+  "rom_within_ceiling": true,
+  "arena": {
+    "ap_pipeline_state_size": 38832,
+    "ap_runtime_state_size": 6424
+  },
+  "caller_owned_state_bytes": 45256,
+  "arena_ceiling": 50000,
+  "arena_within_ceiling": true,
+  "elf_bytes": 72432,
+  "elf_sha256": "81de4353f827b42a5330f88c5f5cb0e4a1e59fa889dc5f7ab60c689f6d61d44d",
+  "arm_programs_executed": false
+}

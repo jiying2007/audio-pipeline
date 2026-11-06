@@ -1,0 +1,10 @@
+[
+  "/workspace/scratch/b74ab3415ba4/build-tools/cmake/data/bin/cmake",
+  "-S",
+  "/workspace/scratch/b74ab3415ba4/audio-dualmic-cache",
+  "-B",
+  "/workspace/scratch/b74ab3415ba4/ci-ccache-identity-v1/build/before-cache",
+  "-DCMAKE_BUILD_TYPE=Release",
+  "-DAP_BUILD_BENCH=OFF",
+  "-DAP_STRICT_WARNINGS=ON"
+]

@@ -1,0 +1,16 @@
+{
+  "cache_check_ignore_exit_code": 0,
+  "case": "after-untracked-source",
+  "cmake_exit_code": 0,
+  "configure_elapsed_seconds": 0.2539587620012753,
+  "expected_source_revision": "f6206a2e30ebe45bcba4972afeca560ba62130fb-dirty",
+  "head": "f6206a2e30ebe45bcba4972afeca560ba62130fb",
+  "observed_source_revision": "f6206a2e30ebe45bcba4972afeca560ba62130fb-dirty",
+  "passed": true,
+  "source_files_sha256": {
+    ".gitignore": "65a538c89e106be7ab1ceb6f07f0bc2fd53d7e9d5886ca723645a2c00737c897",
+    "CMakeLists.txt": "28b7fb2c5232502cba2f0d10db8c08ab93ebdf1e1cccbabd3dddd50b5203e5f4",
+    "src/ap_build_info.c": "c69871911344fa2f5fc755a51da8bf7c55da54b6953a873c665fe407ac6d8bf6"
+  },
+  "strict_40hex_revision_equality": false
+}

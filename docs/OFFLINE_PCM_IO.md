@@ -51,8 +51,9 @@ By default, a legitimate EOF tail shorter than 10 ms preserves the established
 behavior: process the complete blocks and omit the final tail. The tool now
 reports the omitted samples per channel and the channel count on stderr. Output
 PCM and metrics contain only the complete processed frames; the tail is not
-padded or processed. Arbitrary-duration PCM, including the pinned hosted real
-corpus, therefore keeps its prior output bytes and frame count.
+padded or processed. This tail policy preserves the complete-block frame count
+for arbitrary-duration PCM, including the pinned hosted real corpus. It does not
+imply output-byte equivalence across separate DSP algorithm revisions.
 
 Use `--strict-capture-frames` when recording completeness is required. This mode
 rejects every nonempty partial capture block with a nonzero exit status. For
@@ -80,7 +81,7 @@ zero exit status. This contract does not make in-place processing safe.
 
 Regression coverage uses deterministic stdio fixtures and the actual processor
 translation unit. Valid complete inputs are compared byte-for-byte to direct
-calls of the unchanged DSP core. Nonempty valid controls span 12 frames (120 ms)
+calls of the same current DSP core. Nonempty valid controls span 12 frames (120 ms)
 and require nonzero PCM, covering the default reference delay and startup latency.
 Each of the 21 scenarios runs in default and strict modes. The default tail
 compatibility control includes 12 complete frames plus a half frame and checks
@@ -90,10 +91,11 @@ the corresponding two-microphone input remains a missing-channel error.
 Frozen predecessor controls use the default two-microphone build and reproduce
 eight false-success error paths and the
 silent whole-channel tail discard using exact v2.3.60 processor bytes linked to
-the unchanged current core; they do not rebuild or certify a historical release
+the same current core; they do not rebuild or certify a historical release
 binary. The rejected first candidate and its hosted-real compatibility failure
 remain recorded in [#866](https://github.com/jiying2007/audio-pipeline/issues/866).
 
-The change has no effect on DSP defaults, public C API/ABI, data roles, historical
+These file I/O and profile-selection rules do not alter DSP preset defaults,
+public C API/ABI, data roles, historical
 research results, or the exact immutable v2.3.16 physical qualification program
 tracked in [#58](https://github.com/jiying2007/audio-pipeline/issues/58).

@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "checked_commit": "17db31419abe2263a6756c8a931c3a75ab2bd3b1",
+  "checked_tree": "1f6dbd9d2df622e7b5a270c0598cc429c9df547d",
+  "protected_base": "a920beed8e2c66ea9d90442d31af9632f5c75a23",
+  "protected_helpers_byte_equal": true,
+  "four_original_files_byte_equal": true,
+  "original_manifest_verified": true,
+  "production_CMake_src_include_API_equal_protected_base": true,
+  "production_version": "2.3.61",
+  "checks": {
+    "ci-impact": {
+      "protected_source_path": "scripts/ci_impact.py",
+      "protected_source_sha256": "86ac8ae856345ebe6e7fc606c42c7cd07161f29e119248cea5e548242b62a77e",
+      "args": [
+        "--base",
+        "a920beed8e2c66ea9d90442d31af9632f5c75a23",
+        "--head",
+        "17db31419abe2263a6756c8a931c3a75ab2bd3b1"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.4283699980005622,
+      "stderr_base64": "",
+      "stdout_sha256": "50dff39bc3c9faa0ca0eb47746faa310c56ce54e30b30e59aab120c6574a9ef0"
+    },
+    "whitespace": {
+      "protected_source_path": "tools/codex_assets/immutable_whitespace.py",
+      "protected_source_sha256": "fc748d224beb3987b7e254668b16dece4b7f61a80e4cde3e2b01453fd25e04eb",
+      "args": [
+        "--root",
+        "/workspace/scratch/b74ab3415ba4/audio-dualmic-source-r7",
+        "--base",
+        "a920beed8e2c66ea9d90442d31af9632f5c75a23",
+        "--head",
+        "17db31419abe2263a6756c8a931c3a75ab2bd3b1"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.054163126998901134,
+      "stderr_base64": "",
+      "stdout_sha256": "45cb6e0d5d8734f242615cda82d642fcb6757f76db99ec862b1e4d241ae3fa7c"
+    }
+  },
+  "limits": "source/impact/whitespace only; no DSP/build; actual remote new-head CI remains pending"
+}

@@ -19,6 +19,6 @@ checker 实际返回 `CURRENT_MAINTENANCE_SOURCE_DRIFT_docs/API_CONTRACT.md`。
 mismatch；“CMake→API”指该新登记后的期望标签纠正，不是原 R6 的实际拒绝
 原因。原映射和 patch 不改，verifier 不放宽。
 
-[原始失败、实际命令、最终日志、源码审计和预算记录](../../../../validation/research/evidence/dualmic-r7-source-preparation/README.md)。
+[原始失败、实际命令、最终日志、源码审计和预算记录](../evidence/dualmic-r7-source-preparation/README.md)。
 首次未提交作者尝试的文件名/诊断标签/route测试期望失败原样保存。没有声称
 独立审查、完整Verify、F1/A3编译、B3/F0执行、QEMU或DUT已经通过。

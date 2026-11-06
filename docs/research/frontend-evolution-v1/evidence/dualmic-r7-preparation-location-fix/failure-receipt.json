@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "scope": "source-preparation-evidence-location-only",
+  "original_failure": {
+    "pr": 918,
+    "source_head": "0761d7d24fd1c985fdf14a5e9bc3a201f8389010",
+    "base": "a920beed8e2c66ea9d90442d31af9632f5c75a23",
+    "checkout_merge": "9e42d241ee9a5f9c5f3687c11de546ad5b2a6315",
+    "verify_run": 42190381955,
+    "attempt": 1,
+    "impact_job": 127800641572,
+    "conclusion": "failure",
+    "reason": "release-bearing change must advance SemVer: base=2.3.61 head=2.3.61",
+    "decoded_log_bytes": 51051,
+    "decoded_log_sha256": "74d068964914804b60fe22e61e233ec210a972c0584ecbe377ac50ac93272194",
+    "log_representation": "complete connector-decoded UTF-8 log, preserving BOM/ANSI/newlines; lossless base64 transport",
+    "base64_bytes": 68069,
+    "base64_sha256": "f8f32668f599584e752dffcb9ea44f94f575c4f061d2273ca64fba77e47d5092"
+  },
+  "relocation": {
+    "from": "validation/research/evidence/dualmic-r7-source-preparation",
+    "to": "docs/research/frontend-evolution-v1/evidence/dualmic-r7-source-preparation",
+    "original_files": {
+      "README.md": {
+        "bytes": 3924,
+        "sha256": "89134f332fd4836ad8552c8144983526bc1d6ad64833fbbb7d1b82406391566c"
+      },
+      "manifest.json": {
+        "bytes": 444,
+        "sha256": "a0ef6f1898a56170a9cfb3f74da4b71f1333caddd9185623becc2f999c16dad9"
+      },
+      "raw-records.json": {
+        "bytes": 81694,
+        "sha256": "a0267026ca9949532655fd29c0590547f5c461efb008938b4f4ee160c8741e42"
+      },
+      "receipt.json": {
+        "bytes": 2463,
+        "sha256": "e856de83910433cbb1ccf04723006f9e2de7452c83cf3838311a93b4b1ea8687"
+      }
+    },
+    "four_file_bytes_unchanged": true
+  },
+  "limits": {
+    "production_version": "2.3.61",
+    "source_pins_changed": false,
+    "classifier_changed": false,
+    "thresholds_changed": false,
+    "DSP_execution": "NOT_RUN",
+    "CI_qualification": "PENDING_NEW_EXACT_HEAD"
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "files": {
+    "README.md": {
+      "bytes": 1438,
+      "sha256": "06f3801d3aa6a1e0a5f717c151d3ccc3823542418ffb54556219bceb3ad685c0"
+    },
+    "ci-impact.stdout.json": {
+      "bytes": 2753,
+      "sha256": "50dff39bc3c9faa0ca0eb47746faa310c56ce54e30b30e59aab120c6574a9ef0"
+    },
+    "failure-receipt.json": {
+      "bytes": 1925,
+      "sha256": "64e53cc1dcc873d5f037fe3773b674c8f518bb26b0a44ecb3eec361ee97370c5"
+    },
+    "impact-original.log.b64": {
+      "bytes": 68069,
+      "sha256": "f8f32668f599584e752dffcb9ea44f94f575c4f061d2273ca64fba77e47d5092"
+    },
+    "local-gate-receipt.json": {
+      "bytes": 1725,
+      "sha256": "51ba1bf8f990f652393889d56d373a3f6864261d61cf44bd1dc33ae13a5bc32c"
+    },
+    "whitespace.stdout.json": {
+      "bytes": 63,
+      "sha256": "45cb6e0d5d8734f242615cda82d642fcb6757f76db99ec862b1e4d241ae3fa7c"
+    }
+  }
+}

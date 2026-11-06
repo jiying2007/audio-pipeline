@@ -65,7 +65,7 @@ class ResearchCIBoundaryTests(unittest.TestCase):
                     self.assertNotIn(retired, text)
 
     def test_current_research_guides_do_not_restore_retired_approval(self):
-        for name in ('docs/ARCHITECTURE.md', 'docs/AUDIO_QUALITY_EVALUATION.md', 'docs/EXTENDED_REAL_VALIDATION.zh-CN.md', 'docs/PERFORMANCE.md', 'docs/PLATFORM_SUPPORT.md', 'docs/PORTING.md', 'docs/SSC305_DELIVERY.md', 'docs/SSC305_DELIVERY.zh-CN.md', 'docs/TRUSTED_AUDIO_VALIDATION_BLIND_RUNNER.md', 'docs/TUNING.md'):
+        for name in ('docs/ARCHITECTURE.md', 'docs/AUDIO_QUALITY_EVALUATION.md', 'docs/EXTENDED_REAL_VALIDATION.zh-CN.md', 'docs/PERFORMANCE.md', 'docs/PLATFORM_SUPPORT.md', 'docs/PORTING.md', 'docs/SSC305_DELIVERY.md', 'docs/SSC305_DELIVERY.zh-CN.md', 'docs/TRUSTED_AUDIO_VALIDATION_BLIND_RUNNER.md', 'docs/TUNING.md', 'docs/PCR02_REAL_CAPTURE.md'):
             with self.subTest(path=name):
                 text = (ROOT / name).read_text(encoding="utf-8")
                 self.assertTrue("Current research scope" in text or "当前研究范围" in text)
@@ -77,7 +77,9 @@ class ResearchCIBoundaryTests(unittest.TestCase):
             self.assertIn("validation/research-authority.json", text)
             self.assertNotIn("software-commercial-ready", text)
             self.assertNotIn("validation/authority.json", text)
-        for name, retired in (("docs/PERFORMANCE.md", "The checked-in Cortex-A32 LOW shipping policy requires 72 hours"),
+        for name, retired in (("docs/PCR02_REAL_CAPTURE.md", "Those states can only be established by their separate reviewed workflows"),
+                              ("docs/PCR02_REAL_CAPTURE.md", "--purpose qualification-candidate"),
+                              ("docs/PERFORMANCE.md", "The checked-in Cortex-A32 LOW shipping policy requires 72 hours"),
                               ("docs/PORTING.md", "Formal shipping acceptance uses schema-v4"),
                               ("docs/SSC305_DELIVERY.md", "Beginning with v2.3.55, Release downloads"),
                               ("docs/EXTENDED_REAL_VALIDATION.zh-CN.md", "EXTENDED_REAL_ENABLED=true")):

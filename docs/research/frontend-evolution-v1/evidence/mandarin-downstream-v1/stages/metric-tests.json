@@ -1,0 +1,25 @@
+{
+  "stage": "metric-tests",
+  "started_at": "2026-11-06T13:30:26.068239+00:00",
+  "budget_seconds": 300.0,
+  "cwd": "/workspace/scratch/b74ab3415ba4/audio-dualmic-downstream-v2",
+  "source_revision": "fea7e0735ce2e1d6fb45e1f02e0489dea6d7e920",
+  "commands": [
+    {
+      "argv": [
+        "python3",
+        "tests/validation/test_downstream_metrics.py"
+      ],
+      "started_at": "2026-11-06T13:30:26.070307+00:00",
+      "ended_at": "2026-11-06T13:30:26.184444+00:00",
+      "exit_code": 0
+    }
+  ],
+  "timing_scope": "before first command through all child exits; includes runner evidence sealing",
+  "status": "COMPLETE",
+  "ended_at": "2026-11-06T13:30:26.184482+00:00",
+  "elapsed_seconds": 0.11624641700473148,
+  "exit_code": 0,
+  "log_sha256": "1c563e9ac19be410908338792b00f162cd17be756bd758174902ecb57190ed10",
+  "log_bytes": 123
+}

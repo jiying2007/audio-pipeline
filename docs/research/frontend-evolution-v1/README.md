@@ -1,5 +1,23 @@
 # Frontend Evolution v1 / 双麦与四麦开放研究
 
+## 2026-11-06 双麦非真机集成 V2
+
+[实施前合同](DUALMIC_NONDEVICE_V2_PLAN.zh-CN.md)承接用户“除真机外继续落地”的新授权，
+补齐真实录音整链、实际 codec/Runtime 和固定中文模型三项接线缺口。
+[统一使用入口](DUALMIC_NONDEVICE_V2_USAGE.zh-CN.md)给出构建、执行、回读与 CI 产物定位；
+[CI 合同](DUALMIC_NONDEVICE_V2_CI_CONTRACT.zh-CN.md)保持完整原门禁和独立效果判断。
+
+- [真实录音结果](DUALMIC_RECORDED_SPEECH_V1_RESULT.zh-CN.md)：56 例完成、84 个原电平 WAV，保留部分负 ERLE 与双讲近端损伤；DESCRIPTIVE_ONLY。
+- [对讲传输结果](DUALMIC_INTERCOM_TRANSPORT_V1_RESULT.zh-CN.md)：实际 Opus 与原 worker 的八场景，严格绑定 post-PLC/post-volume Render；保留诊断事件丢弃与有限尾部处理边界。
+- [中文模型合同](MANDARIN_DOWNSTREAM_V1_CONTRACT.zh-CN.md)及[双讲补充](MANDARIN_DOWNSTREAM_V1_DUPLEX_ADDENDUM.zh-CN.md)：单条有外部转写的中文录音、六个固定处理视图、真实 ASR/KWS，统一评分且不调模型阈值。
+- [中文模型实际结果](MANDARIN_DOWNSTREAM_V1_RESULT.zh-CN.md)：capture 三视图 CER0/12，duplex raw1/12、CALL/ASSISTANT3/12，三个 duplex KWS 均零触发；这些单句负结果不作效果晋升。
+- [独立审查与整合记录](DUALMIC_NONDEVICE_V2_REVIEW.zh-CN.md)：保留 A 首次整阶段审查超预算、B/C 独立实际回读、CI 接线修正及 3ce5656 整合源码自身的 11 阶段执行。
+- [首次远端源码身份故障定位](DUALMIC_NONDEVICE_V2_CI_SOURCE_ORDER_RESULT.zh-CN.md)：保留 head1cf 的 A 失败，独立复现未忽略研究输出使 CMake 标记 `-dirty`；调整构建顺序与产物目录，严格身份和原质量门禁保持。
+- [下载原件隐藏来源文件遗漏](DUALMIC_NONDEVICE_V2_CI_ARTIFACT_RESULT.zh-CN.md)：保留 head083 的 648/650 原件完整性失败；仅修正 A 受控上传的隐藏文件设置，新提交须重新验证完整原件。
+
+SDK/DSP 仍为 2.3.63。各本地结果只对应自己的执行 SHA；PR #920 与新 main 必须取得
+各自完整门禁和实际产物。本轮没有真人听评、真实 WAN 或 SSC305 物理结果。
+
 ## 2026-11-06 双麦识别交互与语音对讲
 
 当前任务聚焦同一公共双麦前端的 CALL / ASSISTANT 两种用途。
@@ -16,7 +34,8 @@
 
 离线使用见 [PCM 入口](../../OFFLINE_PCM_IO.md)，应用契约见[中文 API 说明](../../API_CONTRACT.zh-CN.md)。
 各结果只支持其明确列出的执行 SHA；后继 PR/main 必须通过自己的适用门禁。
-真实中文 KWS、真人双讲主观质量及 SSC305 物理资源仍需各自的实际证据。
+首轮未包含真实中文 KWS；其后续接入见上方 V2。真人双讲主观质量及 SSC305
+物理资源仍需各自的实际证据。
 
 ## 2026-10-20 本地研究与采集保全
 

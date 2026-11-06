@@ -1,0 +1,13 @@
+version=2.3.63
+module_mask=1023
+aec_backend=MDF
+ns_estimator=EMA
+simd_backend=SCALAR
+resampler_mode=BANDLIMITED
+fast_math=0
+source_revision=74765cfb8678f41e11166dd37316a66a2f131977-dirty
+compiler_id=GNU
+compiler_version=14.2.0
+target_triple=x86_64-linux-gnu
+build_type=Release
+config_digest=7abf0ce0985d3d15682037f715d7afc0c1844a725f56aef29164c25d103d557a

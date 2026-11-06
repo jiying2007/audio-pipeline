@@ -1,0 +1,32 @@
+{
+  "stage": "formal-inference-first",
+  "started_at": "2026-11-06T13:31:13.350798+00:00",
+  "budget_seconds": 300.0,
+  "cwd": "/workspace/scratch/b74ab3415ba4/audio-dualmic-downstream-v2",
+  "source_revision": "fea7e0735ce2e1d6fb45e1f02e0489dea6d7e920",
+  "commands": [
+    {
+      "argv": [
+        "python3",
+        "tests/validation/mandarin_downstream.py",
+        "run",
+        "--source-root",
+        "/workspace/scratch/b74ab3415ba4/mandarin-downstream-v1-source",
+        "--prepared",
+        "/workspace/scratch/b74ab3415ba4/mandarin-downstream-v1-prepared",
+        "--output",
+        "/workspace/scratch/b74ab3415ba4/mandarin-downstream-v1-result"
+      ],
+      "started_at": "2026-11-06T13:31:13.353849+00:00",
+      "ended_at": "2026-11-06T13:31:37.247947+00:00",
+      "exit_code": 0
+    }
+  ],
+  "timing_scope": "before first command through all child exits; includes runner evidence sealing",
+  "status": "COMPLETE",
+  "ended_at": "2026-11-06T13:31:37.247980+00:00",
+  "elapsed_seconds": 23.89718450300279,
+  "exit_code": 0,
+  "log_sha256": "be0021256dc1676f0f1a112f3b81b17e8c6b9d9143779391d64cc66210f6ad11",
+  "log_bytes": 133
+}

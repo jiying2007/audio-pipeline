@@ -1,0 +1,11 @@
+{
+  "budget_seconds": 300.0,
+  "checker_sha256": "fd9f15eb867d2d37b4f2cddbe7750d9720cffd613a835e00214803c13d36f7ce",
+  "cleanup_reserve_seconds": 3.0,
+  "execution_source_revision": "5e5b70fb1f009b6f88b251040268bfc0956f85bc",
+  "new_artifact_label": "pr920-corrected-42230060500-attempt-1",
+  "prior_review_not_reset": true,
+  "scope": "complete automated readback; includes worker receipt and output sealing",
+  "started_at": "2026-11-06T14:27:41.107677+00:00",
+  "status": "RUNNING"
+}

@@ -1,0 +1,151 @@
+{
+  "asr": {
+    "accept_waveform_calls": 629,
+    "consumed_samples": 100640,
+    "native_library_sha256": "85c4654de3acdeb99abab86eeb2a6e603927d37089597c0fcc33d8638dc2ccaf",
+    "raw_results": [
+      {
+        "consumed_samples": 87040,
+        "kind": "endpoint",
+        "result": {
+          "text": "我 中 是 房地产 中介 协会 分析"
+        }
+      },
+      {
+        "consumed_samples": 100640,
+        "kind": "final",
+        "result": {
+          "text": ""
+        }
+      }
+    ],
+    "status": "ok",
+    "text": "我 中 是 房地产 中介 协会 分析"
+  },
+  "case_id": "assistant_duplex",
+  "elapsed_seconds": 2.8919088900001952,
+  "ended_at": "2026-11-06T13:31:36.609980+00:00",
+  "exit_code": 0,
+  "kws": {
+    "accept_waveform_calls": 661,
+    "consumed_samples": 105760,
+    "decode_stream_calls": 40,
+    "events": [],
+    "explicit_flush_samples": 5120,
+    "input_samples": 100640,
+    "numpy_version": "2.3.3",
+    "sherpa_onnx_version": "1.13.4",
+    "status": "ok",
+    "token_time_is_trigger_latency": false
+  },
+  "loaded_native_files": {
+    "/usr/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2": {
+      "bytes": 225672,
+      "sha256": "c8438e4fde1934e61c88311633f00949ff645d5c04cdb8671fa3d78164d2f307",
+      "source": "host-system"
+    },
+    "/usr/lib/x86_64-linux-gnu/libc.so.6": {
+      "bytes": 1995216,
+      "sha256": "9792e3cbb541c8f44c7acf5f14f4022ea62998ecc787d326bed4d8b6547dfd92",
+      "source": "host-system"
+    },
+    "/usr/lib/x86_64-linux-gnu/libdl.so.2": {
+      "bytes": 14408,
+      "sha256": "295fa521a03cd2faa99974f378c9e23dd622021ec7d32bcad4f8ea61aec8a872",
+      "source": "host-system"
+    },
+    "/usr/lib/x86_64-linux-gnu/libgcc_s.so.1": {
+      "bytes": 182856,
+      "sha256": "30c61ab012a4241bed033725a09b61f5fdd3bb7df95ee852d0b096520524c7af",
+      "source": "host-system"
+    },
+    "/usr/lib/x86_64-linux-gnu/libm.so.6": {
+      "bytes": 977112,
+      "sha256": "6d567d53e895273ca14a1f9dc164fc6c8d39aed2f60aa46a733c2784228915f3",
+      "source": "host-system"
+    },
+    "/usr/lib/x86_64-linux-gnu/libpthread.so.0": {
+      "bytes": 14408,
+      "sha256": "85e21f7dba0394411d00959176fd18b470e575b0b05f1f4f41e5636802ce0500",
+      "source": "host-system"
+    },
+    "/usr/lib/x86_64-linux-gnu/librt.so.1": {
+      "bytes": 14552,
+      "sha256": "7b7b84d1aedda0e0b2bdfc68844362782132180b8f02be1300e21e77572e514b",
+      "source": "host-system"
+    },
+    "/usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.33": {
+      "bytes": 2497768,
+      "sha256": "972bb2a18b71140dab0240f8a1f68ab3fb1d56bcd4c4f824a91b70888faf5a00",
+      "source": "host-system"
+    },
+    "/usr/lib/x86_64-linux-gnu/libutil.so.1": {
+      "bytes": 14408,
+      "sha256": "e3981d10efd152a53f083e38f5f9ddde7a049c85d0ab388a5eec91b52fc98a11",
+      "source": "host-system"
+    },
+    "/usr/lib/x86_64-linux-gnu/libz.so.1.3.1": {
+      "bytes": 125376,
+      "sha256": "85590dd58edf5445e18bc7193e5ebc01ac5841f1ae187e97705a662e90c6421e",
+      "source": "host-system"
+    },
+    "runtime/numpy.libs/libgfortran-040039e1-0352e75f.so.5.0.0": {
+      "bytes": 2833617,
+      "sha256": "c6090048eccc763522c12ef016f81da6b627cb3a044f55cf0479a839c41c0980",
+      "source": "frozen-runtime"
+    },
+    "runtime/numpy.libs/libquadmath-96973f99-934c22de.so.0.0.0": {
+      "bytes": 250985,
+      "sha256": "6ed5137f412781ad7863439fb543613f620b43c32b63292a0029246162f5bbc6",
+      "source": "frozen-runtime"
+    },
+    "runtime/numpy.libs/libscipy_openblas64_-8fb3d286.so": {
+      "bytes": 25050385,
+      "sha256": "37ba6b373a22ff42844e014f5dcbb428183f2325fd993361b41fccf68241333d",
+      "source": "frozen-runtime"
+    },
+    "runtime/numpy/_core/_multiarray_umath.cpython-312-x86_64-linux-gnu.so": {
+      "bytes": 10808937,
+      "sha256": "3b52486354a16057a18768971e6522ddb682651a228186d2fb05e4358cc474de",
+      "source": "frozen-runtime"
+    },
+    "runtime/numpy/linalg/_umath_linalg.cpython-312-x86_64-linux-gnu.so": {
+      "bytes": 231833,
+      "sha256": "e3a50497a5b85d9152bb86460c2fd1815481cc0320e168b8e6ef855e264045d9",
+      "source": "frozen-runtime"
+    },
+    "runtime/sherpa_onnx.libs/libasound-fb5348bf.so.2.0.0": {
+      "bytes": 5506825,
+      "sha256": "628ac35dd48f734279e097503681b01e4ab410f0c8082b9606f152c1bd732ec6",
+      "source": "frozen-runtime"
+    },
+    "runtime/sherpa_onnx/lib/_sherpa_onnx.cpython-312-x86_64-linux-gnu.so": {
+      "bytes": 6202305,
+      "sha256": "658fc6484055892f9330566c6463e0ba258b9dcbb02bf89623d23c13b8d9f6f4",
+      "source": "frozen-runtime"
+    },
+    "runtime/sherpa_onnx/lib/libonnxruntime.so": {
+      "bytes": 26403889,
+      "sha256": "026c7d5c609323fb16506dbc3cce801bcdffdd7566fdba49a50727e2e1e881ca",
+      "source": "frozen-runtime"
+    },
+    "runtime/vosk/libvosk.so": {
+      "bytes": 25986496,
+      "sha256": "85c4654de3acdeb99abab86eeb2a6e603927d37089597c0fcc33d8638dc2ccaf",
+      "source": "frozen-runtime"
+    }
+  },
+  "manifest_digest": "edd3b0570fc1bfcb2ec9ef0ea750f875d4c65e800bc20fa49cf62e5674ca6a32",
+  "model_bindings": {
+    "asr": "c3a0db71484b8bc53a28f00d22b979967f99bc50e9eaedb15c811e6056f7feec",
+    "kws": "19c4903d1b94212af5634cc0db50a11e81080a075b4d3847ee08a19d72c861b4"
+  },
+  "pcm_sha256": "145742efe0e0bd9158f04973de1809861db9afb2d62374208c72517400b3f9fd",
+  "python": {
+    "executable_sha256": "fa67443527ed9647f760d807e2a38f26340757123e643c4639cf273ed15d5ea7",
+    "platform": "Linux-6.18.57-x86_64-with-glibc2.41",
+    "version": "3.12.14 (main, Aug 25 2026, 14:00:49) [Clang 22.1.3 ]"
+  },
+  "started_at": "2026-11-06T13:31:33.718308+00:00",
+  "status": "MODEL_EXECUTION_COMPLETE"
+}

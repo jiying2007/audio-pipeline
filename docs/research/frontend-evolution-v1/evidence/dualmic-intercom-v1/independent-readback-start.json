@@ -1,0 +1,8 @@
+{
+  "reviewer": "dualmic_acoustic",
+  "started_monotonic": 48080.530472397,
+  "started_utc": "2026-11-06T13:19:40.783638+00:00",
+  "budget_seconds": 300,
+  "reviewed_source": "dbbbe7ecff03f0a98920cf8317f979470bcd86b4",
+  "evidence": "/workspace/scratch/b74ab3415ba4/intercom-v1-evidence/formal-dbbbe7e"
+}

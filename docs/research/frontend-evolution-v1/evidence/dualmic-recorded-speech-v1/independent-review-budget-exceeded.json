@@ -1,0 +1,44 @@
+{
+  "status": "REVIEW_BUDGET_EXCEEDED",
+  "source_revision": "f4f222ff3f3c65689e2462bb50277b84afb6b025",
+  "reviewer": "dualmic_intercom, independent of A author",
+  "started_at_utc": "2026-11-06T13:18:28.177362+00:00",
+  "budget_seconds": 300,
+  "original_budget_not_reset": true,
+  "validation_completed_at_elapsed_seconds": 256.4421856879999,
+  "post_stop_administrative_record_elapsed_seconds": 339.6280493350059,
+  "verifier_returncode": 0,
+  "verifier_result": {
+    "result": "RECORDED_SPEECH_EVIDENCE_VERIFIED",
+    "DSP_reexecuted": false,
+    "files": 650,
+    "cases": 56,
+    "wav_options": 84,
+    "elapsed_seconds": 59.10173681300512,
+    "quality_decision": "DESCRIPTIVE_ONLY",
+    "human_listening": "NOT_RUN"
+  },
+  "verifier_log": "/workspace/scratch/b74ab3415ba4/dualmic-recorded-independent-intercom-verify.log",
+  "independent_numpy_and_wave_readback": "/workspace/scratch/b74ab3415ba4/dualmic-recorded-independent-intercom-readback.json",
+  "independent_readback_completed_at_elapsed_seconds": 232.6166335010057,
+  "failure": "ValueError: original independent review budget exceeded, raised while attempting final receipt. All verification already ended; no final overall time-qualified PASS is claimed.",
+  "A_files_modified": false,
+  "DSP_reexecuted": false,
+  "further_verification_after_budget": false,
+  "findings": [
+    "Retained evidence verifier reconstructed admitted and derived input bytes, recomputed all 56 canonical cases, checked 650 bound files and all 84 WAV.",
+    "Independent 16-row NumPy SI-SDR recomputation differed at most 2.135180920959101e-12 dB; independently checked 84 WAV total 16128000 PCM bytes and same input paths for 28 profile pairs.",
+    "Canonical raw scalar projection does not subtract means; alignment is a +/-3ms search around declared delay. All 16 applicable mixed rows selected 0 input and 160 output samples.",
+    "Near-only and silent-render input-identical raw approx -228 dB improvements are numerical-floor-degenerate and correctly excluded from aggregate. Each profile retains 8 applicable mixed doubletalk cases.",
+    "Valid worst pair-0 nominal improvements are CALL -12.412928501115307 dB and ASSISTANT -12.092780541485421 dB. These full-scene target-fidelity reductions are not a DSP root-cause diagnosis.",
+    "Only 4 speaker pairs, previously admitted regression source, synthetic propagation and broadside near speech; full 6s includes far-only, overlap, near-only and silence, without framewise human speech labels.",
+    "DESCRIPTIVE_ONLY, empty acoustic thresholds, no promotion and human listening NOT_RUN are appropriate. Completion is not acoustic PASS."
+  ],
+  "future_diagnostic_suggestions_only": [
+    "Freeze exact pair-0 nominal/weak negative PCM and pair-1 positive control before any follow-up.",
+    "Keep original full-scene canonical result. Predeclare additional placement-interval summaries to localize far-only residual echo versus overlap or near-only waveform distortion; do not claim human activity labels.",
+    "Only after localization, freeze a single-module paired diagnostic, for example dynamic gain/limiter control if evidence points there, preserving all other modules and criteria. Constant scalar gain alone cannot explain SI-SDR loss. Do not run a module sweep or retune thresholds."
+  ],
+  "phase_pass": false,
+  "post_budget_action": "Administrative archival only; no validation rerun or timer reset"
+}

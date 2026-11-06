@@ -6,6 +6,8 @@
 
 ## 当前双麦识别交互与语音对讲
 
+[双麦非真机 V2 使用入口](research/frontend-evolution-v1/DUALMIC_NONDEVICE_V2_USAGE.zh-CN.md)接入真实录音的完整双 profile 回放、实际 Opus/Runtime 对讲和固定中文 ASR/KWS；包含可执行命令、原始证据位置与结果边界。56 例声学回放保留近端损伤等负结果，软件集成完成不等于音质通过。
+
 [双麦首轮实施与证据索引](research/frontend-evolution-v1/README.md#2026-11-06-双麦识别交互与语音对讲)覆盖 SYNC 实际观察间隔、LITE/固定方向健康保护、SAFE 计数生命周期，以及同一公共前端的 CALL / ASSISTANT 配置回放。使用现有 [PCM 入口](OFFLINE_PCM_IO.md) 的 `--profile call|assistant` 显式选择用途；不指定时仍为 CALL。工程连续性、声学效果、KWS 与物理目标结果分别依其实际证据判断；保留已发现的近端幅度损失和切换边界问题。
 
 ## 双/四麦历史研究接续

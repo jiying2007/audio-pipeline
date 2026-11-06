@@ -1,0 +1,74 @@
+{
+  "DSP_reexecuted": false,
+  "acoustic_metrics_independently_verified": false,
+  "actual_result_files": 648,
+  "archive_sha256": "8f0da48068e1af0c02d7ccab0d63a6b9c7aabdb6a7dbdfd21c7bf29fe5a66a5e",
+  "artifact_id": 13510677983,
+  "canonical_full_readback_executed": false,
+  "early_build": {
+    "files": {
+      "build-identity.txt": {
+        "bytes": 350,
+        "sha256": "3bf27f26a864b164f7adc2aeb471df26ba0d939fe29b98b7e5be2a1e94a73006"
+      },
+      "checkout-sha.txt": {
+        "bytes": 41,
+        "sha256": "cd48b04fdd7accdb1332759954ad7aa37279db6de7374c41796c5b9f881df96c"
+      },
+      "prebuild-git-status.log": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    "identity": {
+      "aec_backend": "MDF",
+      "build_type": "Release",
+      "compiler_id": "GNU",
+      "compiler_version": "13.3.0",
+      "config_digest": "569d92f450c5a431aee273fcfe0f61df252ec6ba4924b2c87bdfa5421bf3b2ec",
+      "fast_math": "0",
+      "module_mask": "1023",
+      "ns_estimator": "EMA",
+      "resampler_mode": "BANDLIMITED",
+      "simd_backend": "SCALAR",
+      "source_revision": "5e5b70fb1f009b6f88b251040268bfc0956f85bc",
+      "target_triple": "x86_64-linux-gnu",
+      "version": "2.3.63"
+    },
+    "prebuild_git_status_empty": true,
+    "status": "VERIFIED_ACTUAL_ORIGINAL"
+  },
+  "expected_result_files_including_manifest": 650,
+  "independent_review_receipts": {
+    "/workspace/scratch/b74ab3415ba4/A-independent-pr920-corrected-42230060500/checker/phase.json": "3923e7ec68907f803f2de9b749ee56303059c5c93b435b6d5bef8e9a67764a9a",
+    "/workspace/scratch/b74ab3415ba4/A-independent-pr920-corrected-42230060500/checker/readback.json": "c6f0946fe6be863f58b8478d874b49a15c95bdb8e1c8e229c3bbd7039fd2c0f0",
+    "/workspace/scratch/b74ab3415ba4/A-independent-pr920-corrected-42230060500/phase.json": "473f3b3037852cc2a250b1608097baeb425f1cf4dec74958141bb83cfea15f69"
+  },
+  "missing_files": {
+    "source-tree/.github/research/frontend-evolution-v1/speech-admission-v1.json": {
+      "sha256": "a9768d0cf83c7d9875d73a54b8dda7f59540346b3d60a2fd72336071914bbc9f",
+      "size_bytes": 1219
+    },
+    "source-tree/.github/research/frontend-evolution-v1/speech-spatial-v1.json": {
+      "sha256": "9cf0253c3e04e48ed98643c1bd39dcc94c9e8ac0bb0265fd90f5e645a13dc8da",
+      "size_bytes": 1498
+    }
+  },
+  "original_artifact_modified": false,
+  "pinned_upstream_action_metadata": {
+    "bytes": 3603,
+    "path": "/workspace/scratch/b74ab3415ba4/upload-artifact-043fb46-action.yml",
+    "purpose": "Read-only primary-source verification of exact pinned action behavior after preserved failed artifact readback; not a new audio review.",
+    "retrieved_at": "2026-11-06T14:28:44.283172+00:00",
+    "sha256": "c5979822866a72362e609844b6ebe77d4b7e759af68cc1c2c425dcf51481fab4",
+    "url": "https://raw.githubusercontent.com/actions/upload-artifact/043fb46d1a93c77aae656e7c1c64a875d1fc6a0a/action.yml"
+  },
+  "prior_review_budget_failure_reclassified": false,
+  "recommended_fix": "Only the A bounded output upload should set include-hidden-files: true, retaining exact source identity and 650-file evidence checks. Produce and download a new artifact; do not fill/reseal this original from checkout.",
+  "record_type": "administrative diagnosis after failed automatic readback; no extra scoring or DSP execution",
+  "root_cause": "The A upload uses pinned upload-artifact whose include-hidden-files defaults to false; two source-tree/.github research JSONs were present in the producer manifest but absent in the downloadable original.",
+  "run_attempt": 1,
+  "run_id": 42230060500,
+  "saved_at_utc": "2026-11-06T14:29:26.793480+00:00",
+  "status": "ORIGINAL_ARTIFACT_READBACK_FAILED_MISSING_COMMITTED_SOURCE_FILES"
+}

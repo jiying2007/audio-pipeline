@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "observed_at": "2026-11-06T14:30:16.439889+00:00",
+  "source_revision": "5e5b70fb1f009b6f88b251040268bfc0956f85bc",
+  "source_tree": "e2e2cbf0d36e3d922bd571a37f2eb758637dd14c",
+  "artifact_id": 13510677983,
+  "artifact_zip_sha256": "8f0da48068e1af0c02d7ccab0d63a6b9c7aabdb6a7dbdfd21c7bf29fe5a66a5e",
+  "artifact_files": 793,
+  "result_expected_files": 650,
+  "result_actual_files": 648,
+  "missing": [
+    "source-tree/.github/research/frontend-evolution-v1/speech-admission-v1.json",
+    "source-tree/.github/research/frontend-evolution-v1/speech-spatial-v1.json"
+  ],
+  "unexpected": [],
+  "present_file_hash_mismatches": [],
+  "archive_missing": [
+    "result/source-tree/.github/research/frontend-evolution-v1/speech-admission-v1.json",
+    "result/source-tree/.github/research/frontend-evolution-v1/speech-spatial-v1.json"
+  ],
+  "missing_source_members": [
+    {
+      "path": ".github/research/frontend-evolution-v1/speech-admission-v1.json",
+      "exists_in_exact_checkout": true,
+      "sha256": "a9768d0cf83c7d9875d73a54b8dda7f59540346b3d60a2fd72336071914bbc9f",
+      "expected": {
+        "sha256": "a9768d0cf83c7d9875d73a54b8dda7f59540346b3d60a2fd72336071914bbc9f",
+        "size_bytes": 1219
+      }
+    },
+    {
+      "path": ".github/research/frontend-evolution-v1/speech-spatial-v1.json",
+      "exists_in_exact_checkout": true,
+      "sha256": "9cf0253c3e04e48ed98643c1bd39dcc94c9e8ac0bb0265fd90f5e645a13dc8da",
+      "expected": {
+        "sha256": "9cf0253c3e04e48ed98643c1bd39dcc94c9e8ac0bb0265fd90f5e645a13dc8da",
+        "size_bytes": 1498
+      }
+    }
+  ],
+  "original_independent_phase_sha256": "473f3b3037852cc2a250b1608097baeb425f1cf4dec74958141bb83cfea15f69",
+  "evidence_result": "FAIL_MISSING_ORIGINAL_SOURCE_MEMBERS",
+  "gate": "NOT_QUALIFIED",
+  "artifact_or_repo_files_modified": false,
+  "DSP_reexecuted": false,
+  "elapsed_seconds": 0.13979882300191093
+}

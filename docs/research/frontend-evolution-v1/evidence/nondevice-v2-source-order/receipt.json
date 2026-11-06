@@ -1,0 +1,132 @@
+{
+  "started_at": "2026-11-06T13:52:43.395642+00:00",
+  "source_revision": "74765cfb8678f41e11166dd37316a66a2f131977",
+  "budget_seconds": 300,
+  "formal_audio_or_model_executed": false,
+  "clean": {
+    "source_revision": "74765cfb8678f41e11166dd37316a66a2f131977",
+    "git_status": ""
+  },
+  "dirty": {
+    "source_revision": "74765cfb8678f41e11166dd37316a66a2f131977-dirty",
+    "git_status": "?? fe-speech/\n"
+  },
+  "result": "CONTROLLED_SOURCE_ORDER_CAUSE_REPRODUCED",
+  "commands": [
+    {
+      "label": "clean-git-status",
+      "command": [
+        "git",
+        "status",
+        "--porcelain"
+      ],
+      "returncode": 0,
+      "elapsed_seconds": 0.41526721700211056,
+      "log": "clean-git-status.log"
+    },
+    {
+      "label": "clean-configure",
+      "command": [
+        "/workspace/scratch/b74ab3415ba4/build-tools/cmake/data/bin/cmake",
+        "-S",
+        "/workspace/scratch/b74ab3415ba4/audio-dualmic-ci-source-repro",
+        "-B",
+        "/workspace/scratch/b74ab3415ba4/audio-dualmic-ci-source-repro/build-source-order-clean",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DAP_BUILD_BENCH=OFF",
+        "-DAP_STRICT_WARNINGS=ON"
+      ],
+      "returncode": 0,
+      "elapsed_seconds": 0.269167999002093,
+      "log": "clean-configure.log"
+    },
+    {
+      "label": "clean-build",
+      "command": [
+        "/workspace/scratch/b74ab3415ba4/build-tools/cmake/data/bin/cmake",
+        "--build",
+        "/workspace/scratch/b74ab3415ba4/audio-dualmic-ci-source-repro/build-source-order-clean",
+        "--target",
+        "ap_build_info_dump",
+        "--parallel",
+        "2"
+      ],
+      "returncode": 0,
+      "elapsed_seconds": 1.5180299090061453,
+      "log": "clean-build.log"
+    },
+    {
+      "label": "clean-identity",
+      "command": [
+        "/workspace/scratch/b74ab3415ba4/audio-dualmic-ci-source-repro/build-source-order-clean/ap_build_info_dump"
+      ],
+      "returncode": 0,
+      "elapsed_seconds": 0.0016293529988615774,
+      "log": "clean-identity.log"
+    },
+    {
+      "label": "dirty-git-status",
+      "command": [
+        "git",
+        "status",
+        "--porcelain"
+      ],
+      "returncode": 0,
+      "elapsed_seconds": 0.0075891529995715246,
+      "log": "dirty-git-status.log"
+    },
+    {
+      "label": "dirty-configure",
+      "command": [
+        "/workspace/scratch/b74ab3415ba4/build-tools/cmake/data/bin/cmake",
+        "-S",
+        "/workspace/scratch/b74ab3415ba4/audio-dualmic-ci-source-repro",
+        "-B",
+        "/workspace/scratch/b74ab3415ba4/audio-dualmic-ci-source-repro/build-source-order-dirty",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DAP_BUILD_BENCH=OFF",
+        "-DAP_STRICT_WARNINGS=ON"
+      ],
+      "returncode": 0,
+      "elapsed_seconds": 0.26438741300080437,
+      "log": "dirty-configure.log"
+    },
+    {
+      "label": "dirty-build",
+      "command": [
+        "/workspace/scratch/b74ab3415ba4/build-tools/cmake/data/bin/cmake",
+        "--build",
+        "/workspace/scratch/b74ab3415ba4/audio-dualmic-ci-source-repro/build-source-order-dirty",
+        "--target",
+        "ap_build_info_dump",
+        "--parallel",
+        "2"
+      ],
+      "returncode": 0,
+      "elapsed_seconds": 1.5180879620020278,
+      "log": "dirty-build.log"
+    },
+    {
+      "label": "dirty-identity",
+      "command": [
+        "/workspace/scratch/b74ab3415ba4/audio-dualmic-ci-source-repro/build-source-order-dirty/ap_build_info_dump"
+      ],
+      "returncode": 0,
+      "elapsed_seconds": 0.0014656450002803467,
+      "log": "dirty-identity.log"
+    },
+    {
+      "label": "restored-git-status",
+      "command": [
+        "git",
+        "status",
+        "--porcelain"
+      ],
+      "returncode": 0,
+      "elapsed_seconds": 0.007740059998468496,
+      "log": "restored-git-status.log"
+    }
+  ],
+  "elapsed_seconds": 4.004836043997784,
+  "restored_worktree_clean": true
+}

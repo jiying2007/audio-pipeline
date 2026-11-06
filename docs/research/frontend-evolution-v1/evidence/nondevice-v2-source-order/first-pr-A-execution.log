@@ -1,0 +1,13 @@
+Traceback (most recent call last):
+  File "/home/runner/work/audio-pipeline/audio-pipeline/tests/validation/run_dualmic_recorded_replay.py", line 408, in <module>
+    raise SystemExit(main())
+                     ^^^^^^
+  File "/home/runner/work/audio-pipeline/audio-pipeline/tests/validation/run_dualmic_recorded_replay.py", line 402, in main
+    report = run(args.processor.resolve(), args.corpus.resolve(), args.output.resolve(), args.source_revision)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/audio-pipeline/audio-pipeline/tests/validation/run_dualmic_recorded_replay.py", line 186, in run
+    identity = existing.build_identity(processor, revision)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/audio-pipeline/audio-pipeline/tests/validation/run_dualmic_profile_replay.py", line 80, in build_identity
+    raise ValueError("linked build source does not match --source-revision")
+ValueError: linked build source does not match --source-revision

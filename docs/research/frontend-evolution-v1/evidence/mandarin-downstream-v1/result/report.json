@@ -1,0 +1,132 @@
+{
+  "budget_seconds": 300.0,
+  "cases": [
+    {
+      "case_id": "raw",
+      "command": [
+        "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+        "/workspace/scratch/b74ab3415ba4/audio-dualmic-downstream-v2/tests/validation/mandarin_downstream.py",
+        "infer-case",
+        "--source-root",
+        "/workspace/scratch/b74ab3415ba4/mandarin-downstream-v1-source",
+        "--prepared",
+        "/workspace/scratch/b74ab3415ba4/mandarin-downstream-v1-prepared",
+        "--case-id",
+        "raw",
+        "--output",
+        "/workspace/scratch/b74ab3415ba4/mandarin-downstream-v1-result/raw.json"
+      ],
+      "exit_code": 0
+    },
+    {
+      "case_id": "call",
+      "command": [
+        "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+        "/workspace/scratch/b74ab3415ba4/audio-dualmic-downstream-v2/tests/validation/mandarin_downstream.py",
+        "infer-case",
+        "--source-root",
+        "/workspace/scratch/b74ab3415ba4/mandarin-downstream-v1-source",
+        "--prepared",
+        "/workspace/scratch/b74ab3415ba4/mandarin-downstream-v1-prepared",
+        "--case-id",
+        "call",
+        "--output",
+        "/workspace/scratch/b74ab3415ba4/mandarin-downstream-v1-result/call.json"
+      ],
+      "exit_code": 0
+    },
+    {
+      "case_id": "assistant",
+      "command": [
+        "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+        "/workspace/scratch/b74ab3415ba4/audio-dualmic-downstream-v2/tests/validation/mandarin_downstream.py",
+        "infer-case",
+        "--source-root",
+        "/workspace/scratch/b74ab3415ba4/mandarin-downstream-v1-source",
+        "--prepared",
+        "/workspace/scratch/b74ab3415ba4/mandarin-downstream-v1-prepared",
+        "--case-id",
+        "assistant",
+        "--output",
+        "/workspace/scratch/b74ab3415ba4/mandarin-downstream-v1-result/assistant.json"
+      ],
+      "exit_code": 0
+    },
+    {
+      "case_id": "raw_duplex",
+      "command": [
+        "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+        "/workspace/scratch/b74ab3415ba4/audio-dualmic-downstream-v2/tests/validation/mandarin_downstream.py",
+        "infer-case",
+        "--source-root",
+        "/workspace/scratch/b74ab3415ba4/mandarin-downstream-v1-source",
+        "--prepared",
+        "/workspace/scratch/b74ab3415ba4/mandarin-downstream-v1-prepared",
+        "--case-id",
+        "raw_duplex",
+        "--output",
+        "/workspace/scratch/b74ab3415ba4/mandarin-downstream-v1-result/raw_duplex.json"
+      ],
+      "exit_code": 0
+    },
+    {
+      "case_id": "call_duplex",
+      "command": [
+        "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+        "/workspace/scratch/b74ab3415ba4/audio-dualmic-downstream-v2/tests/validation/mandarin_downstream.py",
+        "infer-case",
+        "--source-root",
+        "/workspace/scratch/b74ab3415ba4/mandarin-downstream-v1-source",
+        "--prepared",
+        "/workspace/scratch/b74ab3415ba4/mandarin-downstream-v1-prepared",
+        "--case-id",
+        "call_duplex",
+        "--output",
+        "/workspace/scratch/b74ab3415ba4/mandarin-downstream-v1-result/call_duplex.json"
+      ],
+      "exit_code": 0
+    },
+    {
+      "case_id": "assistant_duplex",
+      "command": [
+        "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+        "/workspace/scratch/b74ab3415ba4/audio-dualmic-downstream-v2/tests/validation/mandarin_downstream.py",
+        "infer-case",
+        "--source-root",
+        "/workspace/scratch/b74ab3415ba4/mandarin-downstream-v1-source",
+        "--prepared",
+        "/workspace/scratch/b74ab3415ba4/mandarin-downstream-v1-prepared",
+        "--case-id",
+        "assistant_duplex",
+        "--output",
+        "/workspace/scratch/b74ab3415ba4/mandarin-downstream-v1-result/assistant_duplex.json"
+      ],
+      "exit_code": 0
+    }
+  ],
+  "elapsed_seconds": 23.760955267003737,
+  "ended_at": "2026-11-06T13:31:37.199987+00:00",
+  "exit_code": 0,
+  "experiment": "FE-C2-MANDARIN-DOWNSTREAM-V1",
+  "manifest_digest": "edd3b0570fc1bfcb2ec9ef0ea750f875d4c65e800bc20fa49cf62e5674ca6a32",
+  "not_run": [
+    "human_KWS_temporal_truth",
+    "real_negative_exposure",
+    "population_CER_WER",
+    "human_listening",
+    "real_playback_barge_in",
+    "physical_SSC305"
+  ],
+  "original_utterances": 1,
+  "predictions_sha256": "e71345793984951ff20fea6816deb349b8dcf4f36cb6acc7cbf3fb06905cb771",
+  "promotion_allowed": false,
+  "quality_decision": "DESCRIPTIVE_ONLY",
+  "real_array_recording": false,
+  "scores_sha256": "cadc528856120309cf3f34bf415e2500d180d14417297f56ee4ac81564a0a5e5",
+  "seal_reserve_seconds": 3.0,
+  "source_lock_sha256": "306e4a6f4f83e7e577e17037103985804d353f67d0e1d5dc3c3027f320ba64dd",
+  "source_revision": "fea7e0735ce2e1d6fb45e1f02e0489dea6d7e920",
+  "started_at": "2026-11-06T13:31:13.439035+00:00",
+  "status": "MANDARIN_MODEL_INTEGRATION_SMOKE_ONLY",
+  "timing_scope": "through first complete artifact seal; excludes final timing metadata refresh and process exit"
+}

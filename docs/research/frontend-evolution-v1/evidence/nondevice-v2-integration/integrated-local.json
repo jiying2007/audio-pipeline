@@ -1,0 +1,1121 @@
+{
+  "status": "LOCAL_NONDEVICE_INTEGRATION_COMPLETE",
+  "source_revision": "3ce56566c4c20b30eb75a93d51e454527566aa9c",
+  "source_version": "2.3.63",
+  "recorded_at_utc": "2026-11-06T13:36:41.140500+00:00",
+  "phase_records": {
+    "A-corpus": {
+      "name": "A-corpus",
+      "started_at": "2026-11-06T13:33:02.285306+00:00",
+      "source_revision": "3ce56566c4c20b30eb75a93d51e454527566aa9c",
+      "budget_seconds": 300,
+      "commands": [
+        {
+          "argv": [
+            "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+            "tests/validation/build_dualmic_recorded_corpus.py",
+            "--source",
+            "/workspace/scratch/b74ab3415ba4/dualmic-recorded-evidence-v1/source",
+            "--output",
+            "/workspace/scratch/b74ab3415ba4/nondevice-v2-integrated-3ce5656/A-corpus"
+          ],
+          "returncode": 0,
+          "log": "/workspace/scratch/b74ab3415ba4/nondevice-v2-integrated-3ce5656/A-corpus-0.log",
+          "sha256": "cd85854910fa13bf38a367c309cdecbad896b83513f6b4364d0f66c9f4ccf649"
+        }
+      ],
+      "status": "PASS",
+      "ended_at": "2026-11-06T13:33:08.081072+00:00",
+      "elapsed_seconds": 5.795791570999427
+    },
+    "A-matrix": {
+      "name": "A-matrix",
+      "started_at": "2026-11-06T13:33:08.081676+00:00",
+      "source_revision": "3ce56566c4c20b30eb75a93d51e454527566aa9c",
+      "budget_seconds": 300,
+      "commands": [
+        {
+          "argv": [
+            "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+            "tests/validation/run_dualmic_recorded_replay.py",
+            "--processor",
+            "/workspace/scratch/b74ab3415ba4/nondevice-v2-integrated-3ce5656/build/ap_process_pcm",
+            "--corpus",
+            "/workspace/scratch/b74ab3415ba4/nondevice-v2-integrated-3ce5656/A-corpus/corpus.json",
+            "--output",
+            "/workspace/scratch/b74ab3415ba4/nondevice-v2-integrated-3ce5656/A-result",
+            "--source-revision",
+            "3ce56566c4c20b30eb75a93d51e454527566aa9c"
+          ],
+          "returncode": 0,
+          "log": "/workspace/scratch/b74ab3415ba4/nondevice-v2-integrated-3ce5656/A-matrix-0.log",
+          "sha256": "20195e01f9f5a9accade89d5ff48f6c8426e0bb1db8af3bd40fc2548cd525309"
+        }
+      ],
+      "status": "PASS",
+      "ended_at": "2026-11-06T13:34:16.896227+00:00",
+      "elapsed_seconds": 68.8145698379958
+    },
+    "A-root-readback": {
+      "name": "A-root-readback",
+      "started_at": "2026-11-06T13:34:16.896795+00:00",
+      "source_revision": "3ce56566c4c20b30eb75a93d51e454527566aa9c",
+      "budget_seconds": 300,
+      "commands": [
+        {
+          "argv": [
+            "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+            "tests/validation/run_dualmic_recorded_replay.py",
+            "--output",
+            "/workspace/scratch/b74ab3415ba4/nondevice-v2-integrated-3ce5656/A-result",
+            "--verify"
+          ],
+          "returncode": 0,
+          "log": "/workspace/scratch/b74ab3415ba4/nondevice-v2-integrated-3ce5656/A-root-readback-0.log",
+          "sha256": "8e8685ddaeb34694e13cc1b1ff8c7c1c0566b45e2f4a751fa3052e998f9ac5ac"
+        }
+      ],
+      "status": "PASS",
+      "ended_at": "2026-11-06T13:35:15.982411+00:00",
+      "elapsed_seconds": 59.085634699004004
+    },
+    "B-matrix": {
+      "name": "B-matrix",
+      "started_at": "2026-11-06T13:33:02.507879+00:00",
+      "source_revision": "3ce56566c4c20b30eb75a93d51e454527566aa9c",
+      "budget_seconds": 300,
+      "commands": [
+        {
+          "argv": [
+            "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+            "tests/validation/frontend_evolution/dualmic_intercom_transport.py",
+            "--bridge",
+            "/workspace/scratch/b74ab3415ba4/nondevice-v2-integrated-3ce5656/build/dualmic_intercom_runtime",
+            "--source-revision",
+            "3ce56566c4c20b30eb75a93d51e454527566aa9c",
+            "--output",
+            "/workspace/scratch/b74ab3415ba4/nondevice-v2-integrated-3ce5656/B-result"
+          ],
+          "returncode": 0,
+          "log": "/workspace/scratch/b74ab3415ba4/nondevice-v2-integrated-3ce5656/B-matrix-0.log",
+          "sha256": "fa67494f6b2de0a00c6ff578034e0394146129b7e10392d76262451800eca0a3"
+        }
+      ],
+      "status": "PASS",
+      "ended_at": "2026-11-06T13:33:12.116032+00:00",
+      "elapsed_seconds": 9.608175841000048
+    },
+    "B-units": {
+      "name": "B-units",
+      "started_at": "2026-11-06T13:33:02.289025+00:00",
+      "source_revision": "3ce56566c4c20b30eb75a93d51e454527566aa9c",
+      "budget_seconds": 300,
+      "commands": [
+        {
+          "argv": [
+            "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+            "tests/validation/frontend_evolution/test_dualmic_intercom_transport.py",
+            "--bridge",
+            "/workspace/scratch/b74ab3415ba4/nondevice-v2-integrated-3ce5656/build/dualmic_intercom_runtime"
+          ],
+          "returncode": 0,
+          "log": "/workspace/scratch/b74ab3415ba4/nondevice-v2-integrated-3ce5656/B-units-0.log",
+          "sha256": "c4b00bd173ff0b69ca102443a7eeab85e766f985ac12a87a709a1dd522ca84d5"
+        }
+      ],
+      "status": "PASS",
+      "ended_at": "2026-11-06T13:33:02.507495+00:00",
+      "elapsed_seconds": 0.21849283699702937
+    },
+    "C-integrity": {
+      "name": "C-integrity",
+      "started_at": "2026-11-06T13:33:30.546481+00:00",
+      "source_revision": "3ce56566c4c20b30eb75a93d51e454527566aa9c",
+      "budget_seconds": 300,
+      "commands": [
+        {
+          "argv": [
+            "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+            "tests/validation/test_mandarin_downstream_integrity.py",
+            "--source-root",
+            "/workspace/scratch/b74ab3415ba4/mandarin-downstream-v1-source",
+            "--prepared",
+            "/workspace/scratch/b74ab3415ba4/nondevice-v2-integrated-3ce5656/C-prepared",
+            "--result",
+            "/workspace/scratch/b74ab3415ba4/nondevice-v2-integrated-3ce5656/C-result"
+          ],
+          "returncode": 0,
+          "log": "/workspace/scratch/b74ab3415ba4/nondevice-v2-integrated-3ce5656/C-integrity-0.log",
+          "sha256": "eb323ab52f07d3f5f57ecb70e555fa5faac4839341956f0314b2f36c2a9bf6d6"
+        }
+      ],
+      "status": "PASS",
+      "ended_at": "2026-11-06T13:33:42.159070+00:00",
+      "elapsed_seconds": 11.612608570998418
+    },
+    "C-matrix": {
+      "name": "C-matrix",
+      "started_at": "2026-11-06T13:33:03.676287+00:00",
+      "source_revision": "3ce56566c4c20b30eb75a93d51e454527566aa9c",
+      "budget_seconds": 300,
+      "commands": [
+        {
+          "argv": [
+            "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+            "tests/validation/mandarin_downstream.py",
+            "run",
+            "--source-root",
+            "/workspace/scratch/b74ab3415ba4/mandarin-downstream-v1-source",
+            "--prepared",
+            "/workspace/scratch/b74ab3415ba4/nondevice-v2-integrated-3ce5656/C-prepared",
+            "--output",
+            "/workspace/scratch/b74ab3415ba4/nondevice-v2-integrated-3ce5656/C-result"
+          ],
+          "returncode": 0,
+          "log": "/workspace/scratch/b74ab3415ba4/nondevice-v2-integrated-3ce5656/C-matrix-0.log",
+          "sha256": "356acb6c2c6e4cb82e001f0a09804cdb4768e297a545b7b47ad1d6b7c2e1a058"
+        }
+      ],
+      "status": "PASS",
+      "ended_at": "2026-11-06T13:33:29.676465+00:00",
+      "elapsed_seconds": 26.000195875996724
+    },
+    "C-metrics": {
+      "name": "C-metrics",
+      "started_at": "2026-11-06T13:33:02.282084+00:00",
+      "source_revision": "3ce56566c4c20b30eb75a93d51e454527566aa9c",
+      "budget_seconds": 300,
+      "commands": [
+        {
+          "argv": [
+            "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+            "tests/validation/test_downstream_metrics.py"
+          ],
+          "returncode": 0,
+          "log": "/workspace/scratch/b74ab3415ba4/nondevice-v2-integrated-3ce5656/C-metrics-0.log",
+          "sha256": "0b9075e7201110dee60c619f7f9f59833477e74057d3891a6aa862e6c411152c"
+        }
+      ],
+      "status": "PASS",
+      "ended_at": "2026-11-06T13:33:02.398898+00:00",
+      "elapsed_seconds": 0.11683543199615087
+    },
+    "C-prepare": {
+      "name": "C-prepare",
+      "started_at": "2026-11-06T13:33:02.399317+00:00",
+      "source_revision": "3ce56566c4c20b30eb75a93d51e454527566aa9c",
+      "budget_seconds": 300,
+      "commands": [
+        {
+          "argv": [
+            "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+            "tests/validation/mandarin_downstream.py",
+            "prepare",
+            "--source-root",
+            "/workspace/scratch/b74ab3415ba4/mandarin-downstream-v1-source",
+            "--processor",
+            "/workspace/scratch/b74ab3415ba4/nondevice-v2-integrated-3ce5656/build/ap_process_pcm",
+            "--source-revision",
+            "3ce56566c4c20b30eb75a93d51e454527566aa9c",
+            "--output",
+            "/workspace/scratch/b74ab3415ba4/nondevice-v2-integrated-3ce5656/C-prepared"
+          ],
+          "returncode": 0,
+          "log": "/workspace/scratch/b74ab3415ba4/nondevice-v2-integrated-3ce5656/C-prepare-0.log",
+          "sha256": "48869229e543de0a08288274113f0215eb81fae1614b267bf088e09cbcc37c27"
+        }
+      ],
+      "status": "PASS",
+      "ended_at": "2026-11-06T13:33:03.675877+00:00",
+      "elapsed_seconds": 1.2765786009986186
+    },
+    "C-root-readback": {
+      "name": "C-root-readback",
+      "started_at": "2026-11-06T13:33:29.676940+00:00",
+      "source_revision": "3ce56566c4c20b30eb75a93d51e454527566aa9c",
+      "budget_seconds": 300,
+      "commands": [
+        {
+          "argv": [
+            "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+            "tests/validation/mandarin_downstream.py",
+            "verify",
+            "--source-root",
+            "/workspace/scratch/b74ab3415ba4/mandarin-downstream-v1-source",
+            "--prepared",
+            "/workspace/scratch/b74ab3415ba4/nondevice-v2-integrated-3ce5656/C-prepared",
+            "--output",
+            "/workspace/scratch/b74ab3415ba4/nondevice-v2-integrated-3ce5656/C-result"
+          ],
+          "returncode": 0,
+          "log": "/workspace/scratch/b74ab3415ba4/nondevice-v2-integrated-3ce5656/C-root-readback-0.log",
+          "sha256": "8511be27c39c91f948b3741a7abdcc4b6b82eae4cc5b87a72119b64339e4473c"
+        }
+      ],
+      "status": "PASS",
+      "ended_at": "2026-11-06T13:33:30.546135+00:00",
+      "elapsed_seconds": 0.8692153640004108
+    },
+    "build": {
+      "name": "build",
+      "started_at": "2026-11-06T13:32:50.276540+00:00",
+      "source_revision": "3ce56566c4c20b30eb75a93d51e454527566aa9c",
+      "budget_seconds": 300,
+      "commands": [
+        {
+          "argv": [
+            "/workspace/scratch/b74ab3415ba4/build-tools/cmake/data/bin/cmake",
+            "-S",
+            "/workspace/scratch/b74ab3415ba4/audio-dualmic-nondevice-v2",
+            "-B",
+            "/workspace/scratch/b74ab3415ba4/nondevice-v2-integrated-3ce5656/build",
+            "-DCMAKE_BUILD_TYPE=Release",
+            "-DAP_BUILD_BENCH=OFF",
+            "-DAP_STRICT_WARNINGS=ON"
+          ],
+          "returncode": 0,
+          "log": "/workspace/scratch/b74ab3415ba4/nondevice-v2-integrated-3ce5656/build-0.log",
+          "sha256": "8c729012e72b72d3d7d215129152160ec21b7c752015572e88e7e8c6097e567e"
+        },
+        {
+          "argv": [
+            "/workspace/scratch/b74ab3415ba4/build-tools/cmake/data/bin/cmake",
+            "--build",
+            "/workspace/scratch/b74ab3415ba4/nondevice-v2-integrated-3ce5656/build",
+            "--target",
+            "ap_process_pcm",
+            "ap_build_info_dump",
+            "audio_pipeline_runtime",
+            "--parallel",
+            "2"
+          ],
+          "returncode": 0,
+          "log": "/workspace/scratch/b74ab3415ba4/nondevice-v2-integrated-3ce5656/build-1.log",
+          "sha256": "571c8cd03984fb2b06488bad206b86ec87d3580e6355754b8a37538eec3be9db"
+        },
+        {
+          "argv": [
+            "cc",
+            "-std=c11",
+            "-O2",
+            "-Wall",
+            "-Wextra",
+            "-Werror",
+            "-I",
+            "/workspace/scratch/b74ab3415ba4/nondevice-v2-integrated-3ce5656/build/generated",
+            "-I",
+            "include",
+            "tests/validation/frontend_evolution/dualmic_intercom_runtime.c",
+            "/workspace/scratch/b74ab3415ba4/nondevice-v2-integrated-3ce5656/build/libaudio_pipeline_runtime.a",
+            "/workspace/scratch/b74ab3415ba4/nondevice-v2-integrated-3ce5656/build/libaudio_pipeline.a",
+            "-pthread",
+            "-lm",
+            "-o",
+            "/workspace/scratch/b74ab3415ba4/nondevice-v2-integrated-3ce5656/build/dualmic_intercom_runtime"
+          ],
+          "returncode": 0,
+          "log": "/workspace/scratch/b74ab3415ba4/nondevice-v2-integrated-3ce5656/build-2.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "status": "PASS",
+      "ended_at": "2026-11-06T13:32:53.132094+00:00",
+      "elapsed_seconds": 2.8555788779995055
+    }
+  },
+  "quality_promotion": false,
+  "source_acquisition": "Existing admitted speech and Mandarin assets reused; actual bytes reconstructed/hash-reverified by current runners. No fresh-download claim.",
+  "A": {
+    "result": "RECORDED_SPEECH_REPLAY_COMPLETE",
+    "case_count": 56,
+    "report_sha256": "ec0a114217c6539ccf2f0e334e2e022feee18e78502a1a9b721aa3fa5d33a367",
+    "quality_decision": "DESCRIPTIVE_ONLY",
+    "profile_summaries": {
+      "assistant": {
+        "cases": 28,
+        "dimension_values": {},
+        "max_output_clip_fraction": 0.0,
+        "max_output_dc_offset_dbfs": -81.53538343845469,
+        "max_vad_false_positive_rate": null,
+        "median_erle_db": 3.194176492762846,
+        "median_near_si_sdr_improvement_db": -0.6258320229594827,
+        "median_output_render_corr_reduction": 0.16236088939369123,
+        "min_vad_f1": null,
+        "min_vad_recall": null,
+        "near_si_sdr_improvement_applicable_cases": 8,
+        "p10_interference_corr_reduction": 0.1264588967038266,
+        "p10_interference_projection_attenuation_db": 3.5314058803580686,
+        "p10_near_projection_gain_db": 3.0143766696924525,
+        "p10_near_si_sdr_improvement_db": -8.768296997750317,
+        "p10_noise_only_attenuation_db": null,
+        "p10_output_render_corr_reduction": 0.0,
+        "p90_erle_convergence_ms": 0.0,
+        "p90_erle_recovery_ms": 556.0,
+        "p90_vad_onset_delay_ms": null,
+        "p90_vad_release_delay_ms": null,
+        "pass_rate": 1.0,
+        "passed_cases": 28,
+        "scenario_metrics": {
+          "doubletalk-nominal": {
+            "cases": 4,
+            "metrics": {
+              "near_si_sdr_improvement_db": {
+                "count": 4,
+                "max": 0.543484507501494,
+                "median": -1.809375634116417,
+                "min": -12.092780541485421,
+                "p10": -9.211231268759171
+              },
+              "output_clip_fraction": {
+                "count": 4,
+                "max": 0.0,
+                "median": 0.0,
+                "min": 0.0,
+                "p10": 0.0
+              },
+              "output_dc_offset_dbfs": {
+                "count": 4,
+                "max": -81.53538343845469,
+                "median": -93.9049397999377,
+                "min": -103.15466802391879,
+                "p10": -100.3875311755312
+              },
+              "output_render_corr_reduction": {
+                "count": 4,
+                "max": 0.3500484640695273,
+                "median": 0.2436976849174805,
+                "min": 0.05923864083982287,
+                "p10": 0.09260517895425927
+              }
+            },
+            "passed_cases": 4
+          },
+          "doubletalk-weak": {
+            "cases": 4,
+            "metrics": {
+              "near_si_sdr_improvement_db": {
+                "count": 4,
+                "max": 1.3227096638794782,
+                "median": 0.26523694903937023,
+                "min": -7.343518336149559,
+                "p10": -5.176621558329907
+              },
+              "output_clip_fraction": {
+                "count": 4,
+                "max": 0.0,
+                "median": 0.0,
+                "min": 0.0,
+                "p10": 0.0
+              },
+              "output_dc_offset_dbfs": {
+                "count": 4,
+                "max": -92.76265182527588,
+                "median": -98.22940439624259,
+                "min": -103.67497098277357,
+                "p10": -102.70957719657105
+              },
+              "output_render_corr_reduction": {
+                "count": 4,
+                "max": 0.4913242282768784,
+                "median": 0.3715216206300352,
+                "min": 0.1303401681478999,
+                "p10": 0.1895585537218758
+              }
+            },
+            "passed_cases": 4
+          },
+          "far-only": {
+            "cases": 4,
+            "metrics": {
+              "erle_db": {
+                "count": 4,
+                "max": 3.639224859706855,
+                "median": 0.8734188295311871,
+                "min": -7.886011458473825,
+                "p10": -5.8274226188597416
+              },
+              "output_clip_fraction": {
+                "count": 4,
+                "max": 0.0,
+                "median": 0.0,
+                "min": 0.0,
+                "p10": 0.0
+              },
+              "output_dc_offset_dbfs": {
+                "count": 4,
+                "max": -89.09700902827323,
+                "median": -106.64100590756107,
+                "min": -117.7051040809229,
+                "p10": -115.14937119078698
+              },
+              "output_render_corr_reduction": {
+                "count": 4,
+                "max": 0.528773920440005,
+                "median": 0.19846776916406794,
+                "min": 0.07974479563685888,
+                "p10": 0.10209976021563269
+              }
+            },
+            "passed_cases": 4
+          },
+          "near-only": {
+            "cases": 4,
+            "metrics": {
+              "output_clip_fraction": {
+                "count": 4,
+                "max": 0.0,
+                "median": 0.0,
+                "min": 0.0,
+                "p10": 0.0
+              },
+              "output_dc_offset_dbfs": {
+                "count": 4,
+                "max": -85.91370726333004,
+                "median": -89.85917611059395,
+                "min": -100.4203986864338,
+                "p10": -97.41950869328038
+              }
+            },
+            "passed_cases": 4
+          },
+          "path-change": {
+            "cases": 4,
+            "metrics": {
+              "erle_db": {
+                "count": 4,
+                "max": 4.621558304536687,
+                "median": 2.030803737798267,
+                "min": -2.6243413221688634,
+                "p10": -1.7940894097959048
+              },
+              "output_clip_fraction": {
+                "count": 4,
+                "max": 0.0,
+                "median": 0.0,
+                "min": 0.0,
+                "p10": 0.0
+              },
+              "output_dc_offset_dbfs": {
+                "count": 4,
+                "max": -91.24447957459132,
+                "median": -104.73539876382313,
+                "min": -114.64254225359683,
+                "p10": -113.18910802930557
+              },
+              "output_render_corr_reduction": {
+                "count": 4,
+                "max": 0.32945155058188835,
+                "median": 0.16069655187142123,
+                "min": 0.05723720849554004,
+                "p10": 0.0836344963126385
+              }
+            },
+            "passed_cases": 4
+          },
+          "render-gap": {
+            "cases": 4,
+            "metrics": {
+              "erle_db": {
+                "count": 4,
+                "max": 6.436641349231021,
+                "median": 3.742938769946743,
+                "min": -8.297336535397735,
+                "p10": -4.722895574767483
+              },
+              "output_clip_fraction": {
+                "count": 4,
+                "max": 0.0,
+                "median": 0.0,
+                "min": 0.0,
+                "p10": 0.0
+              },
+              "output_dc_offset_dbfs": {
+                "count": 4,
+                "max": -96.3864233254108,
+                "median": -110.44477187568995,
+                "min": -128.16338570225665,
+                "p10": -123.03498567544284
+              },
+              "output_render_corr_reduction": {
+                "count": 4,
+                "max": 0.5255543391032147,
+                "median": 0.17352187472123054,
+                "min": 0.07452588849386255,
+                "p10": 0.09786555474474273
+              }
+            },
+            "passed_cases": 4
+          },
+          "silent-render": {
+            "cases": 4,
+            "metrics": {
+              "output_clip_fraction": {
+                "count": 4,
+                "max": 0.0,
+                "median": 0.0,
+                "min": 0.0,
+                "p10": 0.0
+              },
+              "output_dc_offset_dbfs": {
+                "count": 4,
+                "max": -85.91370726333004,
+                "median": -89.85917611059395,
+                "min": -100.4203986864338,
+                "p10": -97.41950869328038
+              },
+              "output_render_corr_reduction": {
+                "count": 4,
+                "max": 0.0,
+                "median": 0.0,
+                "min": 0.0,
+                "p10": 0.0
+              }
+            },
+            "passed_cases": 4
+          }
+        },
+        "scenario_pass_rate": {
+          "doubletalk-nominal": 1.0,
+          "doubletalk-weak": 1.0,
+          "far-only": 1.0,
+          "near-only": 1.0,
+          "path-change": 1.0,
+          "render-gap": 1.0,
+          "silent-render": 1.0
+        }
+      },
+      "call": {
+        "cases": 28,
+        "dimension_values": {},
+        "max_output_clip_fraction": 0.0,
+        "max_output_dc_offset_dbfs": -85.06774269681429,
+        "max_vad_false_positive_rate": null,
+        "median_erle_db": 3.049331605897265,
+        "median_near_si_sdr_improvement_db": -0.11560198908929376,
+        "median_output_render_corr_reduction": 0.1600753809545451,
+        "min_vad_f1": null,
+        "min_vad_recall": null,
+        "near_si_sdr_improvement_applicable_cases": 8,
+        "p10_interference_corr_reduction": 0.11930399941322206,
+        "p10_interference_projection_attenuation_db": 3.9162083134439722,
+        "p10_near_projection_gain_db": 1.9737374106411962,
+        "p10_near_si_sdr_improvement_db": -8.851119987858935,
+        "p10_noise_only_attenuation_db": null,
+        "p10_output_render_corr_reduction": 0.0,
+        "p90_erle_convergence_ms": 0.0,
+        "p90_erle_recovery_ms": 549.0,
+        "p90_vad_onset_delay_ms": null,
+        "p90_vad_release_delay_ms": null,
+        "pass_rate": 1.0,
+        "passed_cases": 28,
+        "scenario_metrics": {
+          "doubletalk-nominal": {
+            "cases": 4,
+            "metrics": {
+              "near_si_sdr_improvement_db": {
+                "count": 4,
+                "max": 0.612748347039328,
+                "median": -1.5405782023364691,
+                "min": -12.412928501115307,
+                "p10": -9.412938967483058
+              },
+              "output_clip_fraction": {
+                "count": 4,
+                "max": 0.0,
+                "median": 0.0,
+                "min": 0.0,
+                "p10": 0.0
+              },
+              "output_dc_offset_dbfs": {
+                "count": 4,
+                "max": -85.06774269681429,
+                "median": -93.58704236948847,
+                "min": -95.16471698754452,
+                "p10": -94.96954800100384
+              },
+              "output_render_corr_reduction": {
+                "count": 4,
+                "max": 0.32823072948535603,
+                "median": 0.2279635493569302,
+                "min": 0.052423756130850145,
+                "p10": 0.08279229046929967
+              }
+            },
+            "passed_cases": 4
+          },
+          "doubletalk-weak": {
+            "cases": 4,
+            "metrics": {
+              "near_si_sdr_improvement_db": {
+                "count": 4,
+                "max": 1.6321317127488593,
+                "median": 0.7649265988662609,
+                "min": -7.324630625034776,
+                "p10": -4.996144726278382
+              },
+              "output_clip_fraction": {
+                "count": 4,
+                "max": 0.0,
+                "median": 0.0,
+                "min": 0.0,
+                "p10": 0.0
+              },
+              "output_dc_offset_dbfs": {
+                "count": 4,
+                "max": -93.64366530066532,
+                "median": -98.95280647122885,
+                "min": -110.23153406577532,
+                "p10": -107.12239138322366
+              },
+              "output_render_corr_reduction": {
+                "count": 4,
+                "max": 0.4570399132976676,
+                "median": 0.3404668460236422,
+                "min": 0.12148432192021279,
+                "p10": 0.1778876807913356
+              }
+            },
+            "passed_cases": 4
+          },
+          "far-only": {
+            "cases": 4,
+            "metrics": {
+              "erle_db": {
+                "count": 4,
+                "max": 3.7112663382015745,
+                "median": 2.133958666625317,
+                "min": -8.19882714819384,
+                "p10": -5.179773213760925
+              },
+              "output_clip_fraction": {
+                "count": 4,
+                "max": 0.0,
+                "median": 0.0,
+                "min": 0.0,
+                "p10": 0.0
+              },
+              "output_dc_offset_dbfs": {
+                "count": 4,
+                "max": -92.75245676601537,
+                "median": -108.70677338901814,
+                "min": -150.86957317119922,
+                "p10": -140.7083839262222
+              },
+              "output_render_corr_reduction": {
+                "count": 4,
+                "max": 0.5703294111269848,
+                "median": 0.173493216012441,
+                "min": 0.08463312208904838,
+                "p10": 0.1093351223179576
+              }
+            },
+            "passed_cases": 4
+          },
+          "near-only": {
+            "cases": 4,
+            "metrics": {
+              "output_clip_fraction": {
+                "count": 4,
+                "max": 0.0,
+                "median": 0.0,
+                "min": 0.0,
+                "p10": 0.0
+              },
+              "output_dc_offset_dbfs": {
+                "count": 4,
+                "max": -87.56890957024899,
+                "median": -90.28681124371846,
+                "min": -100.8092027106774,
+                "p10": -97.88501429539654
+              }
+            },
+            "passed_cases": 4
+          },
+          "path-change": {
+            "cases": 4,
+            "metrics": {
+              "erle_db": {
+                "count": 4,
+                "max": 4.662608952394221,
+                "median": 1.954458714941078,
+                "min": -1.891370082215703,
+                "p10": -1.3370014824592582
+              },
+              "output_clip_fraction": {
+                "count": 4,
+                "max": 0.0,
+                "median": 0.0,
+                "min": 0.0,
+                "p10": 0.0
+              },
+              "output_dc_offset_dbfs": {
+                "count": 4,
+                "max": -93.31779543903778,
+                "median": -108.70580516496733,
+                "min": -140.21165585044199,
+                "p10": -131.23570655489692
+              },
+              "output_render_corr_reduction": {
+                "count": 4,
+                "max": 0.39383085284237274,
+                "median": 0.14758547880734568,
+                "min": 0.06145996153888311,
+                "p10": 0.0816236929666031
+              }
+            },
+            "passed_cases": 4
+          },
+          "render-gap": {
+            "cases": 4,
+            "metrics": {
+              "erle_db": {
+                "count": 4,
+                "max": 7.1363801009439864,
+                "median": 3.7553913324356,
+                "min": -7.374008669550798,
+                "p10": -4.0531765151476264
+              },
+              "output_clip_fraction": {
+                "count": 4,
+                "max": 0.0,
+                "median": 0.0,
+                "min": 0.0,
+                "p10": 0.0
+              },
+              "output_dc_offset_dbfs": {
+                "count": 4,
+                "max": -97.8614797738386,
+                "median": -110.50689143175599,
+                "min": -144.15373113273537,
+                "p10": -137.65315647111626
+              },
+              "output_render_corr_reduction": {
+                "count": 4,
+                "max": 0.5437318940689531,
+                "median": 0.16283034686733,
+                "min": 0.08022274539690566,
+                "p10": 0.09975703384711791
+              }
+            },
+            "passed_cases": 4
+          },
+          "silent-render": {
+            "cases": 4,
+            "metrics": {
+              "output_clip_fraction": {
+                "count": 4,
+                "max": 0.0,
+                "median": 0.0,
+                "min": 0.0,
+                "p10": 0.0
+              },
+              "output_dc_offset_dbfs": {
+                "count": 4,
+                "max": -87.56890957024899,
+                "median": -90.28681124371846,
+                "min": -100.8092027106774,
+                "p10": -97.88501429539654
+              },
+              "output_render_corr_reduction": {
+                "count": 4,
+                "max": 0.0,
+                "median": 0.0,
+                "min": 0.0,
+                "p10": 0.0
+              }
+            },
+            "passed_cases": 4
+          }
+        },
+        "scenario_pass_rate": {
+          "doubletalk-nominal": 1.0,
+          "doubletalk-weak": 1.0,
+          "far-only": 1.0,
+          "near-only": 1.0,
+          "path-change": 1.0,
+          "render-gap": 1.0,
+          "silent-render": 1.0
+        }
+      }
+    },
+    "raw_files": 650
+  },
+  "B": {
+    "result": "HOST_INTEGRATION_COMPLETE",
+    "report_sha256": "5580b09f6616c72c18398295e1a0cce8d7aad21ef4185e59e1c2a82388dae65a",
+    "cases": 10,
+    "quality_decision": "NOT_EVALUATED"
+  },
+  "C": {
+    "report_sha256": "257556e2f19320872072a3c92e1aeb42488f5ac19d9e2af08aaee68bceca28c8",
+    "score_sha256": "cadc528856120309cf3f34bf415e2500d180d14417297f56ee4ac81564a0a5e5",
+    "scores": {
+      "cases": [
+        {
+          "asr": {
+            "cer": {
+              "deletions": 0,
+              "distance": 0,
+              "error_rate": 0.0,
+              "hypothesis_units": 12,
+              "insertions": 0,
+              "reference_units": 12,
+              "substitutions": 0
+            },
+            "normalization": "NFC-strip-whitespace-v1",
+            "normalized_hypothesis": "广州市房地产中介协会分析",
+            "normalized_reference": "广州市房地产中介协会分析",
+            "wer": null,
+            "wer_tokenization": null
+          },
+          "case_id": "raw",
+          "kws": {
+            "annotation_status": "UNAVAILABLE",
+            "duplicate_target_triggers": null,
+            "emitted_events": 1,
+            "far_per_hour": null,
+            "far_zero_event_one_sided_95_upper_per_hour": null,
+            "frr": null,
+            "latency_ms": null,
+            "matched_events": null,
+            "matches": null,
+            "missed_events": null,
+            "negative_exposure_hours": null,
+            "negative_exposure_samples": null,
+            "negative_false_alarms": null,
+            "positive_events": null,
+            "unmatched_events": null,
+            "unscored_event_ids": null
+          },
+          "pcm_sha256": "a48d9f5e939046e9a809626ff182a719f914fb263cc30a3b439788b4d2623a0b"
+        },
+        {
+          "asr": {
+            "cer": {
+              "deletions": 0,
+              "distance": 0,
+              "error_rate": 0.0,
+              "hypothesis_units": 12,
+              "insertions": 0,
+              "reference_units": 12,
+              "substitutions": 0
+            },
+            "normalization": "NFC-strip-whitespace-v1",
+            "normalized_hypothesis": "广州市房地产中介协会分析",
+            "normalized_reference": "广州市房地产中介协会分析",
+            "wer": null,
+            "wer_tokenization": null
+          },
+          "case_id": "call",
+          "kws": {
+            "annotation_status": "UNAVAILABLE",
+            "duplicate_target_triggers": null,
+            "emitted_events": 1,
+            "far_per_hour": null,
+            "far_zero_event_one_sided_95_upper_per_hour": null,
+            "frr": null,
+            "latency_ms": null,
+            "matched_events": null,
+            "matches": null,
+            "missed_events": null,
+            "negative_exposure_hours": null,
+            "negative_exposure_samples": null,
+            "negative_false_alarms": null,
+            "positive_events": null,
+            "unmatched_events": null,
+            "unscored_event_ids": null
+          },
+          "pcm_sha256": "bc9411db16f9bc6855b2bd42c424639a272906dcf1097844de27ed9892b60616"
+        },
+        {
+          "asr": {
+            "cer": {
+              "deletions": 0,
+              "distance": 0,
+              "error_rate": 0.0,
+              "hypothesis_units": 12,
+              "insertions": 0,
+              "reference_units": 12,
+              "substitutions": 0
+            },
+            "normalization": "NFC-strip-whitespace-v1",
+            "normalized_hypothesis": "广州市房地产中介协会分析",
+            "normalized_reference": "广州市房地产中介协会分析",
+            "wer": null,
+            "wer_tokenization": null
+          },
+          "case_id": "assistant",
+          "kws": {
+            "annotation_status": "UNAVAILABLE",
+            "duplicate_target_triggers": null,
+            "emitted_events": 1,
+            "far_per_hour": null,
+            "far_zero_event_one_sided_95_upper_per_hour": null,
+            "frr": null,
+            "latency_ms": null,
+            "matched_events": null,
+            "matches": null,
+            "missed_events": null,
+            "negative_exposure_hours": null,
+            "negative_exposure_samples": null,
+            "negative_false_alarms": null,
+            "positive_events": null,
+            "unmatched_events": null,
+            "unscored_event_ids": null
+          },
+          "pcm_sha256": "c67ffea92db6ed5feab146a6ee8fc1219e831b67c693629aefb5310b25920912"
+        },
+        {
+          "asr": {
+            "cer": {
+              "deletions": 0,
+              "distance": 1,
+              "error_rate": 0.08333333333333333,
+              "hypothesis_units": 12,
+              "insertions": 0,
+              "reference_units": 12,
+              "substitutions": 1
+            },
+            "normalization": "NFC-strip-whitespace-v1",
+            "normalized_hypothesis": "广州市房地产中介机会分析",
+            "normalized_reference": "广州市房地产中介协会分析",
+            "wer": null,
+            "wer_tokenization": null
+          },
+          "case_id": "raw_duplex",
+          "kws": {
+            "annotation_status": "UNAVAILABLE",
+            "duplicate_target_triggers": null,
+            "emitted_events": 0,
+            "far_per_hour": null,
+            "far_zero_event_one_sided_95_upper_per_hour": null,
+            "frr": null,
+            "latency_ms": null,
+            "matched_events": null,
+            "matches": null,
+            "missed_events": null,
+            "negative_exposure_hours": null,
+            "negative_exposure_samples": null,
+            "negative_false_alarms": null,
+            "positive_events": null,
+            "unmatched_events": null,
+            "unscored_event_ids": null
+          },
+          "pcm_sha256": "79ba900f2221e082f3bf624a912eb5e70586f1e20920131868c591bdab509ba3"
+        },
+        {
+          "asr": {
+            "cer": {
+              "deletions": 1,
+              "distance": 3,
+              "error_rate": 0.25,
+              "hypothesis_units": 11,
+              "insertions": 0,
+              "reference_units": 12,
+              "substitutions": 2
+            },
+            "normalization": "NFC-strip-whitespace-v1",
+            "normalized_hypothesis": "中是房地产中介协会分析",
+            "normalized_reference": "广州市房地产中介协会分析",
+            "wer": null,
+            "wer_tokenization": null
+          },
+          "case_id": "call_duplex",
+          "kws": {
+            "annotation_status": "UNAVAILABLE",
+            "duplicate_target_triggers": null,
+            "emitted_events": 0,
+            "far_per_hour": null,
+            "far_zero_event_one_sided_95_upper_per_hour": null,
+            "frr": null,
+            "latency_ms": null,
+            "matched_events": null,
+            "matches": null,
+            "missed_events": null,
+            "negative_exposure_hours": null,
+            "negative_exposure_samples": null,
+            "negative_false_alarms": null,
+            "positive_events": null,
+            "unmatched_events": null,
+            "unscored_event_ids": null
+          },
+          "pcm_sha256": "f0345b98bbb0536271ace5d9089ee639de44bb9aae3491fcf19fb7b513cb245a"
+        },
+        {
+          "asr": {
+            "cer": {
+              "deletions": 0,
+              "distance": 3,
+              "error_rate": 0.25,
+              "hypothesis_units": 12,
+              "insertions": 0,
+              "reference_units": 12,
+              "substitutions": 3
+            },
+            "normalization": "NFC-strip-whitespace-v1",
+            "normalized_hypothesis": "我中是房地产中介协会分析",
+            "normalized_reference": "广州市房地产中介协会分析",
+            "wer": null,
+            "wer_tokenization": null
+          },
+          "case_id": "assistant_duplex",
+          "kws": {
+            "annotation_status": "UNAVAILABLE",
+            "duplicate_target_triggers": null,
+            "emitted_events": 0,
+            "far_per_hour": null,
+            "far_zero_event_one_sided_95_upper_per_hour": null,
+            "frr": null,
+            "latency_ms": null,
+            "matched_events": null,
+            "matches": null,
+            "missed_events": null,
+            "negative_exposure_hours": null,
+            "negative_exposure_samples": null,
+            "negative_false_alarms": null,
+            "positive_events": null,
+            "unmatched_events": null,
+            "unscored_event_ids": null
+          },
+          "pcm_sha256": "145742efe0e0bd9158f04973de1809861db9afb2d62374208c72517400b3f9fd"
+        }
+      ],
+      "manifest_digest": "edd3b0570fc1bfcb2ec9ef0ea750f875d4c65e800bc20fa49cf62e5674ca6a32",
+      "model_bindings": {
+        "asr": "c3a0db71484b8bc53a28f00d22b979967f99bc50e9eaedb15c811e6056f7feec",
+        "kws": "19c4903d1b94212af5634cc0db50a11e81080a075b4d3847ee08a19d72c861b4"
+      },
+      "normalization": "NFC-strip-whitespace-v1",
+      "pooled_view_accounting": {
+        "cer": {
+          "deletions": 1,
+          "distance": 7,
+          "error_rate": 0.09722222222222222,
+          "hypothesis_units": 71,
+          "insertions": 0,
+          "presentations": 6,
+          "reference_units": 72,
+          "substitutions": 6
+        },
+        "independence_claim": false,
+        "scope": "count accounting over presented views, not independent speakers or utterances",
+        "wer": null
+      },
+      "promotion_allowed": false,
+      "quality_decision": "DESCRIPTIVE_ONLY",
+      "schema_version": 1
+    },
+    "independent_original_utterances": 1
+  },
+  "cross_source_payload_comparison": {
+    "status": "IDENTICAL",
+    "checks": 193,
+    "elapsed_seconds": 0.11222657500184141,
+    "scope": "56 A PCM+JSONL pairs; ten B cases capture/playback/Runtime trace+PCM/downlink+uplink payload and decoded PCM; C predictions including raw results/events. Excludes changed source metadata and wall timing.",
+    "A_original_execution": "f4f222ff3f3c65689e2462bb50277b84afb6b025",
+    "B_original_execution": "dbbbe7ecff03f0a98920cf8317f979470bcd86b4",
+    "C_original_execution": "fea7e0735ce2e1d6fb45e1f02e0489dea6d7e920"
+  },
+  "prior_A_independent_review": "REVIEW_BUDGET_EXCEEDED preserved; this is a distinct integrated-source execution and automated readback, not a reset/relabel of that review.",
+  "pr_main_ci": "NOT_YET_QUALIFIED"
+}

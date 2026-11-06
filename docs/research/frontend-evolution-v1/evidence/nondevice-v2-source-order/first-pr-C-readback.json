@@ -1,0 +1,1615 @@
+{
+  "schema_version": 1,
+  "status": "INDEPENDENT_C_ORIGINAL_READBACK_COMPLETE",
+  "reviewer": "independent_dualmic_intercom",
+  "budget_seconds": 300,
+  "started_at_utc": "2026-11-06T13:48:37.435513+00:00",
+  "expected_source_revision": "74765cfb8678f41e11166dd37316a66a2f131977",
+  "artifact_id": 13507046071,
+  "run_id": 42227371302,
+  "attempt": 1,
+  "artifact_root": "/workspace/scratch/b74ab3415ba4/nondevice-v2-ci-pr920/C",
+  "model_reexecuted": false,
+  "DSP_reexecuted": false,
+  "source_or_artifact_modified": false,
+  "checks": [
+    "exact source revision format",
+    "checkout HEAD is actual CI execution SHA",
+    "whole original artifact ZIP digest",
+    "ZIP has no duplicate members",
+    "extracted exact member set equals original ZIP",
+    "regular unencrypted ZIP member integrity.log",
+    "ZIP/extracted bytes integrity.log",
+    "regular unencrypted ZIP member prepare.log",
+    "ZIP/extracted bytes prepare.log",
+    "regular unencrypted ZIP member integrity-optimized.log",
+    "ZIP/extracted bytes integrity-optimized.log",
+    "regular unencrypted ZIP member prepared/clean_capture.pcm",
+    "ZIP/extracted bytes prepared/clean_capture.pcm",
+    "regular unencrypted ZIP member prepared/clean_mono.pcm",
+    "ZIP/extracted bytes prepared/clean_mono.pcm",
+    "regular unencrypted ZIP member prepared/duplex_capture.pcm",
+    "ZIP/extracted bytes prepared/duplex_capture.pcm",
+    "regular unencrypted ZIP member prepared/duplex_mono.pcm",
+    "ZIP/extracted bytes prepared/duplex_mono.pcm",
+    "regular unencrypted ZIP member prepared/duplex_render.pcm",
+    "ZIP/extracted bytes prepared/duplex_render.pcm",
+    "regular unencrypted ZIP member prepared/keywords.txt",
+    "ZIP/extracted bytes prepared/keywords.txt",
+    "regular unencrypted ZIP member prepared/manifest.json",
+    "ZIP/extracted bytes prepared/manifest.json",
+    "regular unencrypted ZIP member prepared/preparation.json",
+    "ZIP/extracted bytes prepared/preparation.json",
+    "regular unencrypted ZIP member prepared/processed/assistant/command.json",
+    "ZIP/extracted bytes prepared/processed/assistant/command.json",
+    "regular unencrypted ZIP member prepared/processed/assistant/continuity.json",
+    "ZIP/extracted bytes prepared/processed/assistant/continuity.json",
+    "regular unencrypted ZIP member prepared/processed/assistant/execution.json",
+    "ZIP/extracted bytes prepared/processed/assistant/execution.json",
+    "regular unencrypted ZIP member prepared/processed/assistant/metrics.jsonl",
+    "ZIP/extracted bytes prepared/processed/assistant/metrics.jsonl",
+    "regular unencrypted ZIP member prepared/processed/assistant/out.pcm",
+    "ZIP/extracted bytes prepared/processed/assistant/out.pcm",
+    "regular unencrypted ZIP member prepared/processed/assistant/stdout.txt",
+    "ZIP/extracted bytes prepared/processed/assistant/stdout.txt",
+    "regular unencrypted ZIP member prepared/processed/assistant/stderr.txt",
+    "ZIP/extracted bytes prepared/processed/assistant/stderr.txt",
+    "regular unencrypted ZIP member prepared/processed/assistant_duplex/command.json",
+    "ZIP/extracted bytes prepared/processed/assistant_duplex/command.json",
+    "regular unencrypted ZIP member prepared/processed/assistant_duplex/continuity.json",
+    "ZIP/extracted bytes prepared/processed/assistant_duplex/continuity.json",
+    "regular unencrypted ZIP member prepared/processed/assistant_duplex/execution.json",
+    "ZIP/extracted bytes prepared/processed/assistant_duplex/execution.json",
+    "regular unencrypted ZIP member prepared/processed/assistant_duplex/metrics.jsonl",
+    "ZIP/extracted bytes prepared/processed/assistant_duplex/metrics.jsonl",
+    "regular unencrypted ZIP member prepared/processed/assistant_duplex/stderr.txt",
+    "ZIP/extracted bytes prepared/processed/assistant_duplex/stderr.txt",
+    "regular unencrypted ZIP member prepared/processed/assistant_duplex/out.pcm",
+    "ZIP/extracted bytes prepared/processed/assistant_duplex/out.pcm",
+    "regular unencrypted ZIP member prepared/processed/assistant_duplex/stdout.txt",
+    "ZIP/extracted bytes prepared/processed/assistant_duplex/stdout.txt",
+    "regular unencrypted ZIP member prepared/processed/call/command.json",
+    "ZIP/extracted bytes prepared/processed/call/command.json",
+    "regular unencrypted ZIP member prepared/processed/call/continuity.json",
+    "ZIP/extracted bytes prepared/processed/call/continuity.json",
+    "regular unencrypted ZIP member prepared/processed/call/execution.json",
+    "ZIP/extracted bytes prepared/processed/call/execution.json",
+    "regular unencrypted ZIP member prepared/processed/call/metrics.jsonl",
+    "ZIP/extracted bytes prepared/processed/call/metrics.jsonl",
+    "regular unencrypted ZIP member prepared/processed/call/out.pcm",
+    "ZIP/extracted bytes prepared/processed/call/out.pcm",
+    "regular unencrypted ZIP member prepared/processed/call/stderr.txt",
+    "ZIP/extracted bytes prepared/processed/call/stderr.txt",
+    "regular unencrypted ZIP member prepared/processed/call/stdout.txt",
+    "ZIP/extracted bytes prepared/processed/call/stdout.txt",
+    "regular unencrypted ZIP member prepared/processed/call_duplex/command.json",
+    "ZIP/extracted bytes prepared/processed/call_duplex/command.json",
+    "regular unencrypted ZIP member prepared/processed/call_duplex/continuity.json",
+    "ZIP/extracted bytes prepared/processed/call_duplex/continuity.json",
+    "regular unencrypted ZIP member prepared/processed/call_duplex/execution.json",
+    "ZIP/extracted bytes prepared/processed/call_duplex/execution.json",
+    "regular unencrypted ZIP member prepared/processed/call_duplex/metrics.jsonl",
+    "ZIP/extracted bytes prepared/processed/call_duplex/metrics.jsonl",
+    "regular unencrypted ZIP member prepared/processed/call_duplex/out.pcm",
+    "ZIP/extracted bytes prepared/processed/call_duplex/out.pcm",
+    "regular unencrypted ZIP member prepared/processed/call_duplex/stderr.txt",
+    "ZIP/extracted bytes prepared/processed/call_duplex/stderr.txt",
+    "regular unencrypted ZIP member prepared/processed/call_duplex/stdout.txt",
+    "ZIP/extracted bytes prepared/processed/call_duplex/stdout.txt",
+    "regular unencrypted ZIP member readback.log",
+    "ZIP/extracted bytes readback.log",
+    "regular unencrypted ZIP member result/artifact-manifest.json",
+    "ZIP/extracted bytes result/artifact-manifest.json",
+    "regular unencrypted ZIP member result/assistant.json",
+    "ZIP/extracted bytes result/assistant.json",
+    "regular unencrypted ZIP member result/assistant.log",
+    "ZIP/extracted bytes result/assistant.log",
+    "regular unencrypted ZIP member result/assistant_duplex.json",
+    "ZIP/extracted bytes result/assistant_duplex.json",
+    "regular unencrypted ZIP member result/assistant_duplex.log",
+    "ZIP/extracted bytes result/assistant_duplex.log",
+    "regular unencrypted ZIP member result/call.json",
+    "ZIP/extracted bytes result/call.json",
+    "regular unencrypted ZIP member result/call.log",
+    "ZIP/extracted bytes result/call.log",
+    "regular unencrypted ZIP member result/call_duplex.json",
+    "ZIP/extracted bytes result/call_duplex.json",
+    "regular unencrypted ZIP member result/call_duplex.log",
+    "ZIP/extracted bytes result/call_duplex.log",
+    "regular unencrypted ZIP member result/predictions.json",
+    "ZIP/extracted bytes result/predictions.json",
+    "regular unencrypted ZIP member result/progress.json",
+    "ZIP/extracted bytes result/progress.json",
+    "regular unencrypted ZIP member result/raw.json",
+    "ZIP/extracted bytes result/raw.json",
+    "regular unencrypted ZIP member result/raw.log",
+    "ZIP/extracted bytes result/raw.log",
+    "regular unencrypted ZIP member result/raw_duplex.json",
+    "ZIP/extracted bytes result/raw_duplex.json",
+    "regular unencrypted ZIP member result/raw_duplex.log",
+    "ZIP/extracted bytes result/raw_duplex.log",
+    "regular unencrypted ZIP member result/report.json",
+    "ZIP/extracted bytes result/report.json",
+    "regular unencrypted ZIP member result/scores.json",
+    "ZIP/extracted bytes result/scores.json",
+    "regular unencrypted ZIP member run.log",
+    "ZIP/extracted bytes run.log",
+    "regular unencrypted ZIP member source-receipts/assets/aishell-BAC009S0724W0121.wav.acquisition.json",
+    "ZIP/extracted bytes source-receipts/assets/aishell-BAC009S0724W0121.wav.acquisition.json",
+    "regular unencrypted ZIP member source-receipts/assets/sherpa-onnx-kws-zipformer-zh-en-3M-2025-12-20.tar.bz2.acquisition.json",
+    "ZIP/extracted bytes source-receipts/assets/sherpa-onnx-kws-zipformer-zh-en-3M-2025-12-20.tar.bz2.acquisition.json",
+    "regular unencrypted ZIP member source-receipts/assets/vosk-COPYING.txt",
+    "ZIP/extracted bytes source-receipts/assets/vosk-COPYING.txt",
+    "regular unencrypted ZIP member source-receipts/assets/vosk-COPYING.txt.acquisition.json",
+    "ZIP/extracted bytes source-receipts/assets/vosk-COPYING.txt.acquisition.json",
+    "regular unencrypted ZIP member source-receipts/assets/vosk-model-small-cn-0.22.zip.acquisition.json",
+    "ZIP/extracted bytes source-receipts/assets/vosk-model-small-cn-0.22.zip.acquisition.json",
+    "regular unencrypted ZIP member source-receipts/assets/vosk_api.h.acquisition.json",
+    "ZIP/extracted bytes source-receipts/assets/vosk_api.h.acquisition.json",
+    "regular unencrypted ZIP member source-receipts/assets/wenet-LICENSE.txt",
+    "ZIP/extracted bytes source-receipts/assets/wenet-LICENSE.txt",
+    "regular unencrypted ZIP member source-receipts/assets/wenet-LICENSE.txt.acquisition.json",
+    "ZIP/extracted bytes source-receipts/assets/wenet-LICENSE.txt.acquisition.json",
+    "regular unencrypted ZIP member source-receipts/assets/wenet-transcript.txt",
+    "ZIP/extracted bytes source-receipts/assets/wenet-transcript.txt",
+    "regular unencrypted ZIP member source-receipts/assets/wenet-transcript.txt.acquisition.json",
+    "ZIP/extracted bytes source-receipts/assets/wenet-transcript.txt.acquisition.json",
+    "regular unencrypted ZIP member source-receipts/materialization.json",
+    "ZIP/extracted bytes source-receipts/materialization.json",
+    "regular unencrypted ZIP member source-receipts/source-candidate.json",
+    "ZIP/extracted bytes source-receipts/source-candidate.json",
+    "regular unencrypted ZIP member source-receipts/source-lock.json",
+    "ZIP/extracted bytes source-receipts/source-lock.json",
+    "regular unencrypted ZIP member source-receipts/wheels/numpy-2.3.3-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl.acquisition.json",
+    "ZIP/extracted bytes source-receipts/wheels/numpy-2.3.3-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl.acquisition.json",
+    "regular unencrypted ZIP member source-receipts/wheels/sherpa_onnx-1.13.4-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl.acquisition.json",
+    "ZIP/extracted bytes source-receipts/wheels/sherpa_onnx-1.13.4-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl.acquisition.json",
+    "regular unencrypted ZIP member source-receipts/wheels/sherpa_onnx_core-1.13.4-py3-none-manylinux2014_x86_64.whl.acquisition.json",
+    "ZIP/extracted bytes source-receipts/wheels/sherpa_onnx_core-1.13.4-py3-none-manylinux2014_x86_64.whl.acquisition.json",
+    "regular unencrypted ZIP member source-receipts/wheels/vosk-0.3.45-py3-none-manylinux_2_12_x86_64.manylinux2010_x86_64.whl.acquisition.json",
+    "ZIP/extracted bytes source-receipts/wheels/vosk-0.3.45-py3-none-manylinux_2_12_x86_64.manylinux2010_x86_64.whl.acquisition.json",
+    "regular unencrypted ZIP member source.log",
+    "ZIP/extracted bytes source.log",
+    "regular unencrypted ZIP member unit-optimized.log",
+    "ZIP/extracted bytes unit-optimized.log",
+    "regular unencrypted ZIP member unit.log",
+    "ZIP/extracted bytes unit.log",
+    "prior canonical readback belongs to this original timed phase",
+    "artifact source lock matches exact repository and both stages",
+    "preparation/result actual source SHA",
+    "explicit ASR/KWS settings frozen",
+    "model/settings/runtime inventory binding",
+    "descriptive-only result and no promotion",
+    "recorded preparation and matrix budgets unchanged",
+    "recorded linked processor build source/version",
+    "bound execution source CMakeLists.txt",
+    "bound execution source docs/research/frontend-evolution-v1/MANDARIN_DOWNSTREAM_V1_CONTRACT.zh-CN.md",
+    "bound execution source docs/research/frontend-evolution-v1/MANDARIN_DOWNSTREAM_V1_DUPLEX_ADDENDUM.zh-CN.md",
+    "bound execution source docs/research/frontend-evolution-v1/mandarin-downstream-v1-source-lock.json",
+    "bound execution source examples/process_pcm.c",
+    "bound execution source tests/validation/dualmic_profile_support.py",
+    "bound execution source tests/validation/mandarin_downstream.py",
+    "bound execution source tests/validation/mandarin_downstream_source.py",
+    "bound execution source tests/validation/quality_metric_support.py",
+    "bound execution source tests/validation/run_dualmic_profile_replay.py",
+    "bound execution source validation/tools/build_validation_corpus.py",
+    "bound execution source validation/tools/downstream_metrics.py",
+    "bound execution source validation/tools/run_validation.py",
+    "bound execution source validation/tools/run_validation_engine.py",
+    "bound execution source validation/tools/stage_profile_support.py",
+    "actual acquisition receipt vosk-model",
+    "actual acquisition receipt kws-model",
+    "actual acquisition receipt aishell-wav",
+    "actual acquisition receipt transcript",
+    "actual acquisition receipt wenet-license",
+    "actual acquisition receipt vosk-code-license",
+    "actual acquisition receipt vosk-c-api-header",
+    "actual acquisition receipt sherpa-onnx",
+    "actual acquisition receipt sherpa-onnx-core",
+    "actual acquisition receipt numpy",
+    "actual acquisition receipt vosk",
+    "source candidate role and external transcript",
+    "source candidate exact acquired asset membership",
+    "source candidate asset identity vosk-model",
+    "source candidate asset identity kws-model",
+    "source candidate asset identity aishell-wav",
+    "source candidate asset identity transcript",
+    "source candidate asset identity wenet-license",
+    "source candidate asset identity vosk-code-license",
+    "source candidate asset identity vosk-c-api-header",
+    "source candidate asset identity sherpa-onnx",
+    "source candidate asset identity sherpa-onnx-core",
+    "source candidate asset identity numpy",
+    "source candidate asset identity vosk",
+    "source materialization did not execute models",
+    "source receipt model/runtime inventories match lock",
+    "retained source legal/text bytes assets/wenet-LICENSE.txt",
+    "retained source legal/text bytes assets/vosk-COPYING.txt",
+    "retained source legal/text bytes assets/wenet-transcript.txt",
+    "exact complete C artifact membership",
+    "source PCM derivation parameters",
+    "byte-complete reconstructed PCM clean_mono",
+    "byte-complete reconstructed PCM clean_capture",
+    "byte-complete reconstructed PCM duplex_mono",
+    "byte-complete reconstructed PCM duplex_capture",
+    "byte-complete reconstructed PCM duplex_render",
+    "canonical full S/D/I/N and event/null score recomputation",
+    "actual successful model record raw",
+    "model consumed exact view PCM raw",
+    "complete model feed/flush accounting raw",
+    "raw final ASR boundary raw",
+    "raw ASR monotonic consumed samples raw",
+    "raw ASR monotonic consumed samples raw",
+    "raw ASR transcript reconstruction raw",
+    "token time not claimed as trigger latency raw",
+    "finite raw token times raw",
+    "native identity record geometry raw:/usr/lib/python3.12/lib-dynload/_bz2.cpython-312-x86_64-linux-gnu.so",
+    "runner-only host library identity raw:/usr/lib/python3.12/lib-dynload/_bz2.cpython-312-x86_64-linux-gnu.so",
+    "native identity record geometry raw:/usr/lib/python3.12/lib-dynload/_contextvars.cpython-312-x86_64-linux-gnu.so",
+    "runner-only host library identity raw:/usr/lib/python3.12/lib-dynload/_contextvars.cpython-312-x86_64-linux-gnu.so",
+    "native identity record geometry raw:/usr/lib/python3.12/lib-dynload/_ctypes.cpython-312-x86_64-linux-gnu.so",
+    "runner-only host library identity raw:/usr/lib/python3.12/lib-dynload/_ctypes.cpython-312-x86_64-linux-gnu.so",
+    "native identity record geometry raw:/usr/lib/python3.12/lib-dynload/_decimal.cpython-312-x86_64-linux-gnu.so",
+    "runner-only host library identity raw:/usr/lib/python3.12/lib-dynload/_decimal.cpython-312-x86_64-linux-gnu.so",
+    "native identity record geometry raw:/usr/lib/python3.12/lib-dynload/_hashlib.cpython-312-x86_64-linux-gnu.so",
+    "runner-only host library identity raw:/usr/lib/python3.12/lib-dynload/_hashlib.cpython-312-x86_64-linux-gnu.so",
+    "native identity record geometry raw:/usr/lib/python3.12/lib-dynload/_json.cpython-312-x86_64-linux-gnu.so",
+    "runner-only host library identity raw:/usr/lib/python3.12/lib-dynload/_json.cpython-312-x86_64-linux-gnu.so",
+    "native identity record geometry raw:/usr/lib/python3.12/lib-dynload/_lzma.cpython-312-x86_64-linux-gnu.so",
+    "runner-only host library identity raw:/usr/lib/python3.12/lib-dynload/_lzma.cpython-312-x86_64-linux-gnu.so",
+    "native identity record geometry raw:/usr/lib/python3.12/lib-dynload/_ssl.cpython-312-x86_64-linux-gnu.so",
+    "runner-only host library identity raw:/usr/lib/python3.12/lib-dynload/_ssl.cpython-312-x86_64-linux-gnu.so",
+    "native identity record geometry raw:/usr/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2",
+    "runner-only host library identity raw:/usr/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2",
+    "native identity record geometry raw:/usr/lib/x86_64-linux-gnu/libbz2.so.1.0.4",
+    "runner-only host library identity raw:/usr/lib/x86_64-linux-gnu/libbz2.so.1.0.4",
+    "native identity record geometry raw:/usr/lib/x86_64-linux-gnu/libc.so.6",
+    "runner-only host library identity raw:/usr/lib/x86_64-linux-gnu/libc.so.6",
+    "native identity record geometry raw:/usr/lib/x86_64-linux-gnu/libcrypto.so.3",
+    "runner-only host library identity raw:/usr/lib/x86_64-linux-gnu/libcrypto.so.3",
+    "native identity record geometry raw:/usr/lib/x86_64-linux-gnu/libdl.so.2",
+    "runner-only host library identity raw:/usr/lib/x86_64-linux-gnu/libdl.so.2",
+    "native identity record geometry raw:/usr/lib/x86_64-linux-gnu/libexpat.so.1.9.1",
+    "runner-only host library identity raw:/usr/lib/x86_64-linux-gnu/libexpat.so.1.9.1",
+    "native identity record geometry raw:/usr/lib/x86_64-linux-gnu/libffi.so.8.1.4",
+    "runner-only host library identity raw:/usr/lib/x86_64-linux-gnu/libffi.so.8.1.4",
+    "native identity record geometry raw:/usr/lib/x86_64-linux-gnu/libgcc_s.so.1",
+    "runner-only host library identity raw:/usr/lib/x86_64-linux-gnu/libgcc_s.so.1",
+    "native identity record geometry raw:/usr/lib/x86_64-linux-gnu/liblzma.so.5.4.5",
+    "runner-only host library identity raw:/usr/lib/x86_64-linux-gnu/liblzma.so.5.4.5",
+    "native identity record geometry raw:/usr/lib/x86_64-linux-gnu/libm.so.6",
+    "runner-only host library identity raw:/usr/lib/x86_64-linux-gnu/libm.so.6",
+    "native identity record geometry raw:/usr/lib/x86_64-linux-gnu/libpthread.so.0",
+    "runner-only host library identity raw:/usr/lib/x86_64-linux-gnu/libpthread.so.0",
+    "native identity record geometry raw:/usr/lib/x86_64-linux-gnu/librt.so.1",
+    "runner-only host library identity raw:/usr/lib/x86_64-linux-gnu/librt.so.1",
+    "native identity record geometry raw:/usr/lib/x86_64-linux-gnu/libssl.so.3",
+    "runner-only host library identity raw:/usr/lib/x86_64-linux-gnu/libssl.so.3",
+    "native identity record geometry raw:/usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.33",
+    "runner-only host library identity raw:/usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.33",
+    "native identity record geometry raw:/usr/lib/x86_64-linux-gnu/libz.so.1.3",
+    "runner-only host library identity raw:/usr/lib/x86_64-linux-gnu/libz.so.1.3",
+    "native identity record geometry raw:runtime/numpy.libs/libgfortran-040039e1-0352e75f.so.5.0.0",
+    "all loaded frozen native bindings raw:runtime/numpy.libs/libgfortran-040039e1-0352e75f.so.5.0.0",
+    "local admitted frozen native bytes raw:runtime/numpy.libs/libgfortran-040039e1-0352e75f.so.5.0.0",
+    "native identity record geometry raw:runtime/numpy.libs/libquadmath-96973f99-934c22de.so.0.0.0",
+    "all loaded frozen native bindings raw:runtime/numpy.libs/libquadmath-96973f99-934c22de.so.0.0.0",
+    "local admitted frozen native bytes raw:runtime/numpy.libs/libquadmath-96973f99-934c22de.so.0.0.0",
+    "native identity record geometry raw:runtime/numpy.libs/libscipy_openblas64_-8fb3d286.so",
+    "all loaded frozen native bindings raw:runtime/numpy.libs/libscipy_openblas64_-8fb3d286.so",
+    "local admitted frozen native bytes raw:runtime/numpy.libs/libscipy_openblas64_-8fb3d286.so",
+    "native identity record geometry raw:runtime/numpy/_core/_multiarray_umath.cpython-312-x86_64-linux-gnu.so",
+    "all loaded frozen native bindings raw:runtime/numpy/_core/_multiarray_umath.cpython-312-x86_64-linux-gnu.so",
+    "local admitted frozen native bytes raw:runtime/numpy/_core/_multiarray_umath.cpython-312-x86_64-linux-gnu.so",
+    "native identity record geometry raw:runtime/numpy/linalg/_umath_linalg.cpython-312-x86_64-linux-gnu.so",
+    "all loaded frozen native bindings raw:runtime/numpy/linalg/_umath_linalg.cpython-312-x86_64-linux-gnu.so",
+    "local admitted frozen native bytes raw:runtime/numpy/linalg/_umath_linalg.cpython-312-x86_64-linux-gnu.so",
+    "native identity record geometry raw:runtime/sherpa_onnx.libs/libasound-fb5348bf.so.2.0.0",
+    "all loaded frozen native bindings raw:runtime/sherpa_onnx.libs/libasound-fb5348bf.so.2.0.0",
+    "local admitted frozen native bytes raw:runtime/sherpa_onnx.libs/libasound-fb5348bf.so.2.0.0",
+    "native identity record geometry raw:runtime/sherpa_onnx/lib/_sherpa_onnx.cpython-312-x86_64-linux-gnu.so",
+    "all loaded frozen native bindings raw:runtime/sherpa_onnx/lib/_sherpa_onnx.cpython-312-x86_64-linux-gnu.so",
+    "local admitted frozen native bytes raw:runtime/sherpa_onnx/lib/_sherpa_onnx.cpython-312-x86_64-linux-gnu.so",
+    "native identity record geometry raw:runtime/sherpa_onnx/lib/libonnxruntime.so",
+    "all loaded frozen native bindings raw:runtime/sherpa_onnx/lib/libonnxruntime.so",
+    "local admitted frozen native bytes raw:runtime/sherpa_onnx/lib/libonnxruntime.so",
+    "native identity record geometry raw:runtime/vosk/libvosk.so",
+    "all loaded frozen native bindings raw:runtime/vosk/libvosk.so",
+    "local admitted frozen native bytes raw:runtime/vosk/libvosk.so",
+    "Vosk C API loaded frozen library raw",
+    "unavailable WER/FRR/FAR/latency remain null raw",
+    "actual successful model record call",
+    "model consumed exact view PCM call",
+    "complete model feed/flush accounting call",
+    "raw final ASR boundary call",
+    "raw ASR monotonic consumed samples call",
+    "raw ASR monotonic consumed samples call",
+    "raw ASR transcript reconstruction call",
+    "token time not claimed as trigger latency call",
+    "finite raw token times call",
+    "native identity record geometry call:/usr/lib/python3.12/lib-dynload/_bz2.cpython-312-x86_64-linux-gnu.so",
+    "runner-only host library identity call:/usr/lib/python3.12/lib-dynload/_bz2.cpython-312-x86_64-linux-gnu.so",
+    "native identity record geometry call:/usr/lib/python3.12/lib-dynload/_contextvars.cpython-312-x86_64-linux-gnu.so",
+    "runner-only host library identity call:/usr/lib/python3.12/lib-dynload/_contextvars.cpython-312-x86_64-linux-gnu.so",
+    "native identity record geometry call:/usr/lib/python3.12/lib-dynload/_ctypes.cpython-312-x86_64-linux-gnu.so",
+    "runner-only host library identity call:/usr/lib/python3.12/lib-dynload/_ctypes.cpython-312-x86_64-linux-gnu.so",
+    "native identity record geometry call:/usr/lib/python3.12/lib-dynload/_decimal.cpython-312-x86_64-linux-gnu.so",
+    "runner-only host library identity call:/usr/lib/python3.12/lib-dynload/_decimal.cpython-312-x86_64-linux-gnu.so",
+    "native identity record geometry call:/usr/lib/python3.12/lib-dynload/_hashlib.cpython-312-x86_64-linux-gnu.so",
+    "runner-only host library identity call:/usr/lib/python3.12/lib-dynload/_hashlib.cpython-312-x86_64-linux-gnu.so",
+    "native identity record geometry call:/usr/lib/python3.12/lib-dynload/_json.cpython-312-x86_64-linux-gnu.so",
+    "runner-only host library identity call:/usr/lib/python3.12/lib-dynload/_json.cpython-312-x86_64-linux-gnu.so",
+    "native identity record geometry call:/usr/lib/python3.12/lib-dynload/_lzma.cpython-312-x86_64-linux-gnu.so",
+    "runner-only host library identity call:/usr/lib/python3.12/lib-dynload/_lzma.cpython-312-x86_64-linux-gnu.so",
+    "native identity record geometry call:/usr/lib/python3.12/lib-dynload/_ssl.cpython-312-x86_64-linux-gnu.so",
+    "runner-only host library identity call:/usr/lib/python3.12/lib-dynload/_ssl.cpython-312-x86_64-linux-gnu.so",
+    "native identity record geometry call:/usr/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2",
+    "runner-only host library identity call:/usr/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2",
+    "native identity record geometry call:/usr/lib/x86_64-linux-gnu/libbz2.so.1.0.4",
+    "runner-only host library identity call:/usr/lib/x86_64-linux-gnu/libbz2.so.1.0.4",
+    "native identity record geometry call:/usr/lib/x86_64-linux-gnu/libc.so.6",
+    "runner-only host library identity call:/usr/lib/x86_64-linux-gnu/libc.so.6",
+    "native identity record geometry call:/usr/lib/x86_64-linux-gnu/libcrypto.so.3",
+    "runner-only host library identity call:/usr/lib/x86_64-linux-gnu/libcrypto.so.3",
+    "native identity record geometry call:/usr/lib/x86_64-linux-gnu/libdl.so.2",
+    "runner-only host library identity call:/usr/lib/x86_64-linux-gnu/libdl.so.2",
+    "native identity record geometry call:/usr/lib/x86_64-linux-gnu/libexpat.so.1.9.1",
+    "runner-only host library identity call:/usr/lib/x86_64-linux-gnu/libexpat.so.1.9.1",
+    "native identity record geometry call:/usr/lib/x86_64-linux-gnu/libffi.so.8.1.4",
+    "runner-only host library identity call:/usr/lib/x86_64-linux-gnu/libffi.so.8.1.4",
+    "native identity record geometry call:/usr/lib/x86_64-linux-gnu/libgcc_s.so.1",
+    "runner-only host library identity call:/usr/lib/x86_64-linux-gnu/libgcc_s.so.1",
+    "native identity record geometry call:/usr/lib/x86_64-linux-gnu/liblzma.so.5.4.5",
+    "runner-only host library identity call:/usr/lib/x86_64-linux-gnu/liblzma.so.5.4.5",
+    "native identity record geometry call:/usr/lib/x86_64-linux-gnu/libm.so.6",
+    "runner-only host library identity call:/usr/lib/x86_64-linux-gnu/libm.so.6",
+    "native identity record geometry call:/usr/lib/x86_64-linux-gnu/libpthread.so.0",
+    "runner-only host library identity call:/usr/lib/x86_64-linux-gnu/libpthread.so.0",
+    "native identity record geometry call:/usr/lib/x86_64-linux-gnu/librt.so.1",
+    "runner-only host library identity call:/usr/lib/x86_64-linux-gnu/librt.so.1",
+    "native identity record geometry call:/usr/lib/x86_64-linux-gnu/libssl.so.3",
+    "runner-only host library identity call:/usr/lib/x86_64-linux-gnu/libssl.so.3",
+    "native identity record geometry call:/usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.33",
+    "runner-only host library identity call:/usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.33",
+    "native identity record geometry call:/usr/lib/x86_64-linux-gnu/libz.so.1.3",
+    "runner-only host library identity call:/usr/lib/x86_64-linux-gnu/libz.so.1.3",
+    "native identity record geometry call:runtime/numpy.libs/libgfortran-040039e1-0352e75f.so.5.0.0",
+    "all loaded frozen native bindings call:runtime/numpy.libs/libgfortran-040039e1-0352e75f.so.5.0.0",
+    "local admitted frozen native bytes call:runtime/numpy.libs/libgfortran-040039e1-0352e75f.so.5.0.0",
+    "native identity record geometry call:runtime/numpy.libs/libquadmath-96973f99-934c22de.so.0.0.0",
+    "all loaded frozen native bindings call:runtime/numpy.libs/libquadmath-96973f99-934c22de.so.0.0.0",
+    "local admitted frozen native bytes call:runtime/numpy.libs/libquadmath-96973f99-934c22de.so.0.0.0",
+    "native identity record geometry call:runtime/numpy.libs/libscipy_openblas64_-8fb3d286.so",
+    "all loaded frozen native bindings call:runtime/numpy.libs/libscipy_openblas64_-8fb3d286.so",
+    "local admitted frozen native bytes call:runtime/numpy.libs/libscipy_openblas64_-8fb3d286.so",
+    "native identity record geometry call:runtime/numpy/_core/_multiarray_umath.cpython-312-x86_64-linux-gnu.so",
+    "all loaded frozen native bindings call:runtime/numpy/_core/_multiarray_umath.cpython-312-x86_64-linux-gnu.so",
+    "local admitted frozen native bytes call:runtime/numpy/_core/_multiarray_umath.cpython-312-x86_64-linux-gnu.so",
+    "native identity record geometry call:runtime/numpy/linalg/_umath_linalg.cpython-312-x86_64-linux-gnu.so",
+    "all loaded frozen native bindings call:runtime/numpy/linalg/_umath_linalg.cpython-312-x86_64-linux-gnu.so",
+    "local admitted frozen native bytes call:runtime/numpy/linalg/_umath_linalg.cpython-312-x86_64-linux-gnu.so",
+    "native identity record geometry call:runtime/sherpa_onnx.libs/libasound-fb5348bf.so.2.0.0",
+    "all loaded frozen native bindings call:runtime/sherpa_onnx.libs/libasound-fb5348bf.so.2.0.0",
+    "local admitted frozen native bytes call:runtime/sherpa_onnx.libs/libasound-fb5348bf.so.2.0.0",
+    "native identity record geometry call:runtime/sherpa_onnx/lib/_sherpa_onnx.cpython-312-x86_64-linux-gnu.so",
+    "all loaded frozen native bindings call:runtime/sherpa_onnx/lib/_sherpa_onnx.cpython-312-x86_64-linux-gnu.so",
+    "local admitted frozen native bytes call:runtime/sherpa_onnx/lib/_sherpa_onnx.cpython-312-x86_64-linux-gnu.so",
+    "native identity record geometry call:runtime/sherpa_onnx/lib/libonnxruntime.so",
+    "all loaded frozen native bindings call:runtime/sherpa_onnx/lib/libonnxruntime.so",
+    "local admitted frozen native bytes call:runtime/sherpa_onnx/lib/libonnxruntime.so",
+    "native identity record geometry call:runtime/vosk/libvosk.so",
+    "all loaded frozen native bindings call:runtime/vosk/libvosk.so",
+    "local admitted frozen native bytes call:runtime/vosk/libvosk.so",
+    "Vosk C API loaded frozen library call",
+    "unavailable WER/FRR/FAR/latency remain null call",
+    "exact profile/continuous capture processor command call",
+    "actual bounded PCM process execution call",
+    "actual complete PCM and frame trace call",
+    "actual successful model record assistant",
+    "model consumed exact view PCM assistant",
+    "complete model feed/flush accounting assistant",
+    "raw final ASR boundary assistant",
+    "raw ASR monotonic consumed samples assistant",
+    "raw ASR monotonic consumed samples assistant",
+    "raw ASR transcript reconstruction assistant",
+    "token time not claimed as trigger latency assistant",
+    "finite raw token times assistant",
+    "native identity record geometry assistant:/usr/lib/python3.12/lib-dynload/_bz2.cpython-312-x86_64-linux-gnu.so",
+    "runner-only host library identity assistant:/usr/lib/python3.12/lib-dynload/_bz2.cpython-312-x86_64-linux-gnu.so",
+    "native identity record geometry assistant:/usr/lib/python3.12/lib-dynload/_contextvars.cpython-312-x86_64-linux-gnu.so",
+    "runner-only host library identity assistant:/usr/lib/python3.12/lib-dynload/_contextvars.cpython-312-x86_64-linux-gnu.so",
+    "native identity record geometry assistant:/usr/lib/python3.12/lib-dynload/_ctypes.cpython-312-x86_64-linux-gnu.so",
+    "runner-only host library identity assistant:/usr/lib/python3.12/lib-dynload/_ctypes.cpython-312-x86_64-linux-gnu.so",
+    "native identity record geometry assistant:/usr/lib/python3.12/lib-dynload/_decimal.cpython-312-x86_64-linux-gnu.so",
+    "runner-only host library identity assistant:/usr/lib/python3.12/lib-dynload/_decimal.cpython-312-x86_64-linux-gnu.so",
+    "native identity record geometry assistant:/usr/lib/python3.12/lib-dynload/_hashlib.cpython-312-x86_64-linux-gnu.so",
+    "runner-only host library identity assistant:/usr/lib/python3.12/lib-dynload/_hashlib.cpython-312-x86_64-linux-gnu.so",
+    "native identity record geometry assistant:/usr/lib/python3.12/lib-dynload/_json.cpython-312-x86_64-linux-gnu.so",
+    "runner-only host library identity assistant:/usr/lib/python3.12/lib-dynload/_json.cpython-312-x86_64-linux-gnu.so",
+    "native identity record geometry assistant:/usr/lib/python3.12/lib-dynload/_lzma.cpython-312-x86_64-linux-gnu.so",
+    "runner-only host library identity assistant:/usr/lib/python3.12/lib-dynload/_lzma.cpython-312-x86_64-linux-gnu.so",
+    "native identity record geometry assistant:/usr/lib/python3.12/lib-dynload/_ssl.cpython-312-x86_64-linux-gnu.so",
+    "runner-only host library identity assistant:/usr/lib/python3.12/lib-dynload/_ssl.cpython-312-x86_64-linux-gnu.so",
+    "native identity record geometry assistant:/usr/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2",
+    "runner-only host library identity assistant:/usr/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2",
+    "native identity record geometry assistant:/usr/lib/x86_64-linux-gnu/libbz2.so.1.0.4",
+    "runner-only host library identity assistant:/usr/lib/x86_64-linux-gnu/libbz2.so.1.0.4",
+    "native identity record geometry assistant:/usr/lib/x86_64-linux-gnu/libc.so.6",
+    "runner-only host library identity assistant:/usr/lib/x86_64-linux-gnu/libc.so.6",
+    "native identity record geometry assistant:/usr/lib/x86_64-linux-gnu/libcrypto.so.3",
+    "runner-only host library identity assistant:/usr/lib/x86_64-linux-gnu/libcrypto.so.3",
+    "native identity record geometry assistant:/usr/lib/x86_64-linux-gnu/libdl.so.2",
+    "runner-only host library identity assistant:/usr/lib/x86_64-linux-gnu/libdl.so.2",
+    "native identity record geometry assistant:/usr/lib/x86_64-linux-gnu/libexpat.so.1.9.1",
+    "runner-only host library identity assistant:/usr/lib/x86_64-linux-gnu/libexpat.so.1.9.1",
+    "native identity record geometry assistant:/usr/lib/x86_64-linux-gnu/libffi.so.8.1.4",
+    "runner-only host library identity assistant:/usr/lib/x86_64-linux-gnu/libffi.so.8.1.4",
+    "native identity record geometry assistant:/usr/lib/x86_64-linux-gnu/libgcc_s.so.1",
+    "runner-only host library identity assistant:/usr/lib/x86_64-linux-gnu/libgcc_s.so.1",
+    "native identity record geometry assistant:/usr/lib/x86_64-linux-gnu/liblzma.so.5.4.5",
+    "runner-only host library identity assistant:/usr/lib/x86_64-linux-gnu/liblzma.so.5.4.5",
+    "native identity record geometry assistant:/usr/lib/x86_64-linux-gnu/libm.so.6",
+    "runner-only host library identity assistant:/usr/lib/x86_64-linux-gnu/libm.so.6",
+    "native identity record geometry assistant:/usr/lib/x86_64-linux-gnu/libpthread.so.0",
+    "runner-only host library identity assistant:/usr/lib/x86_64-linux-gnu/libpthread.so.0",
+    "native identity record geometry assistant:/usr/lib/x86_64-linux-gnu/librt.so.1",
+    "runner-only host library identity assistant:/usr/lib/x86_64-linux-gnu/librt.so.1",
+    "native identity record geometry assistant:/usr/lib/x86_64-linux-gnu/libssl.so.3",
+    "runner-only host library identity assistant:/usr/lib/x86_64-linux-gnu/libssl.so.3",
+    "native identity record geometry assistant:/usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.33",
+    "runner-only host library identity assistant:/usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.33",
+    "native identity record geometry assistant:/usr/lib/x86_64-linux-gnu/libz.so.1.3",
+    "runner-only host library identity assistant:/usr/lib/x86_64-linux-gnu/libz.so.1.3",
+    "native identity record geometry assistant:runtime/numpy.libs/libgfortran-040039e1-0352e75f.so.5.0.0",
+    "all loaded frozen native bindings assistant:runtime/numpy.libs/libgfortran-040039e1-0352e75f.so.5.0.0",
+    "local admitted frozen native bytes assistant:runtime/numpy.libs/libgfortran-040039e1-0352e75f.so.5.0.0",
+    "native identity record geometry assistant:runtime/numpy.libs/libquadmath-96973f99-934c22de.so.0.0.0",
+    "all loaded frozen native bindings assistant:runtime/numpy.libs/libquadmath-96973f99-934c22de.so.0.0.0",
+    "local admitted frozen native bytes assistant:runtime/numpy.libs/libquadmath-96973f99-934c22de.so.0.0.0",
+    "native identity record geometry assistant:runtime/numpy.libs/libscipy_openblas64_-8fb3d286.so",
+    "all loaded frozen native bindings assistant:runtime/numpy.libs/libscipy_openblas64_-8fb3d286.so",
+    "local admitted frozen native bytes assistant:runtime/numpy.libs/libscipy_openblas64_-8fb3d286.so",
+    "native identity record geometry assistant:runtime/numpy/_core/_multiarray_umath.cpython-312-x86_64-linux-gnu.so",
+    "all loaded frozen native bindings assistant:runtime/numpy/_core/_multiarray_umath.cpython-312-x86_64-linux-gnu.so",
+    "local admitted frozen native bytes assistant:runtime/numpy/_core/_multiarray_umath.cpython-312-x86_64-linux-gnu.so",
+    "native identity record geometry assistant:runtime/numpy/linalg/_umath_linalg.cpython-312-x86_64-linux-gnu.so",
+    "all loaded frozen native bindings assistant:runtime/numpy/linalg/_umath_linalg.cpython-312-x86_64-linux-gnu.so",
+    "local admitted frozen native bytes assistant:runtime/numpy/linalg/_umath_linalg.cpython-312-x86_64-linux-gnu.so",
+    "native identity record geometry assistant:runtime/sherpa_onnx.libs/libasound-fb5348bf.so.2.0.0",
+    "all loaded frozen native bindings assistant:runtime/sherpa_onnx.libs/libasound-fb5348bf.so.2.0.0",
+    "local admitted frozen native bytes assistant:runtime/sherpa_onnx.libs/libasound-fb5348bf.so.2.0.0",
+    "native identity record geometry assistant:runtime/sherpa_onnx/lib/_sherpa_onnx.cpython-312-x86_64-linux-gnu.so",
+    "all loaded frozen native bindings assistant:runtime/sherpa_onnx/lib/_sherpa_onnx.cpython-312-x86_64-linux-gnu.so",
+    "local admitted frozen native bytes assistant:runtime/sherpa_onnx/lib/_sherpa_onnx.cpython-312-x86_64-linux-gnu.so",
+    "native identity record geometry assistant:runtime/sherpa_onnx/lib/libonnxruntime.so",
+    "all loaded frozen native bindings assistant:runtime/sherpa_onnx/lib/libonnxruntime.so",
+    "local admitted frozen native bytes assistant:runtime/sherpa_onnx/lib/libonnxruntime.so",
+    "native identity record geometry assistant:runtime/vosk/libvosk.so",
+    "all loaded frozen native bindings assistant:runtime/vosk/libvosk.so",
+    "local admitted frozen native bytes assistant:runtime/vosk/libvosk.so",
+    "Vosk C API loaded frozen library assistant",
+    "unavailable WER/FRR/FAR/latency remain null assistant",
+    "exact profile/continuous capture processor command assistant",
+    "actual bounded PCM process execution assistant",
+    "actual complete PCM and frame trace assistant",
+    "actual successful model record raw_duplex",
+    "model consumed exact view PCM raw_duplex",
+    "complete model feed/flush accounting raw_duplex",
+    "raw final ASR boundary raw_duplex",
+    "raw ASR monotonic consumed samples raw_duplex",
+    "raw ASR monotonic consumed samples raw_duplex",
+    "raw ASR transcript reconstruction raw_duplex",
+    "token time not claimed as trigger latency raw_duplex",
+    "native identity record geometry raw_duplex:/usr/lib/python3.12/lib-dynload/_bz2.cpython-312-x86_64-linux-gnu.so",
+    "runner-only host library identity raw_duplex:/usr/lib/python3.12/lib-dynload/_bz2.cpython-312-x86_64-linux-gnu.so",
+    "native identity record geometry raw_duplex:/usr/lib/python3.12/lib-dynload/_contextvars.cpython-312-x86_64-linux-gnu.so",
+    "runner-only host library identity raw_duplex:/usr/lib/python3.12/lib-dynload/_contextvars.cpython-312-x86_64-linux-gnu.so",
+    "native identity record geometry raw_duplex:/usr/lib/python3.12/lib-dynload/_ctypes.cpython-312-x86_64-linux-gnu.so",
+    "runner-only host library identity raw_duplex:/usr/lib/python3.12/lib-dynload/_ctypes.cpython-312-x86_64-linux-gnu.so",
+    "native identity record geometry raw_duplex:/usr/lib/python3.12/lib-dynload/_decimal.cpython-312-x86_64-linux-gnu.so",
+    "runner-only host library identity raw_duplex:/usr/lib/python3.12/lib-dynload/_decimal.cpython-312-x86_64-linux-gnu.so",
+    "native identity record geometry raw_duplex:/usr/lib/python3.12/lib-dynload/_hashlib.cpython-312-x86_64-linux-gnu.so",
+    "runner-only host library identity raw_duplex:/usr/lib/python3.12/lib-dynload/_hashlib.cpython-312-x86_64-linux-gnu.so",
+    "native identity record geometry raw_duplex:/usr/lib/python3.12/lib-dynload/_json.cpython-312-x86_64-linux-gnu.so",
+    "runner-only host library identity raw_duplex:/usr/lib/python3.12/lib-dynload/_json.cpython-312-x86_64-linux-gnu.so",
+    "native identity record geometry raw_duplex:/usr/lib/python3.12/lib-dynload/_lzma.cpython-312-x86_64-linux-gnu.so",
+    "runner-only host library identity raw_duplex:/usr/lib/python3.12/lib-dynload/_lzma.cpython-312-x86_64-linux-gnu.so",
+    "native identity record geometry raw_duplex:/usr/lib/python3.12/lib-dynload/_ssl.cpython-312-x86_64-linux-gnu.so",
+    "runner-only host library identity raw_duplex:/usr/lib/python3.12/lib-dynload/_ssl.cpython-312-x86_64-linux-gnu.so",
+    "native identity record geometry raw_duplex:/usr/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2",
+    "runner-only host library identity raw_duplex:/usr/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2",
+    "native identity record geometry raw_duplex:/usr/lib/x86_64-linux-gnu/libbz2.so.1.0.4",
+    "runner-only host library identity raw_duplex:/usr/lib/x86_64-linux-gnu/libbz2.so.1.0.4",
+    "native identity record geometry raw_duplex:/usr/lib/x86_64-linux-gnu/libc.so.6",
+    "runner-only host library identity raw_duplex:/usr/lib/x86_64-linux-gnu/libc.so.6",
+    "native identity record geometry raw_duplex:/usr/lib/x86_64-linux-gnu/libcrypto.so.3",
+    "runner-only host library identity raw_duplex:/usr/lib/x86_64-linux-gnu/libcrypto.so.3",
+    "native identity record geometry raw_duplex:/usr/lib/x86_64-linux-gnu/libdl.so.2",
+    "runner-only host library identity raw_duplex:/usr/lib/x86_64-linux-gnu/libdl.so.2",
+    "native identity record geometry raw_duplex:/usr/lib/x86_64-linux-gnu/libexpat.so.1.9.1",
+    "runner-only host library identity raw_duplex:/usr/lib/x86_64-linux-gnu/libexpat.so.1.9.1",
+    "native identity record geometry raw_duplex:/usr/lib/x86_64-linux-gnu/libffi.so.8.1.4",
+    "runner-only host library identity raw_duplex:/usr/lib/x86_64-linux-gnu/libffi.so.8.1.4",
+    "native identity record geometry raw_duplex:/usr/lib/x86_64-linux-gnu/libgcc_s.so.1",
+    "runner-only host library identity raw_duplex:/usr/lib/x86_64-linux-gnu/libgcc_s.so.1",
+    "native identity record geometry raw_duplex:/usr/lib/x86_64-linux-gnu/liblzma.so.5.4.5",
+    "runner-only host library identity raw_duplex:/usr/lib/x86_64-linux-gnu/liblzma.so.5.4.5",
+    "native identity record geometry raw_duplex:/usr/lib/x86_64-linux-gnu/libm.so.6",
+    "runner-only host library identity raw_duplex:/usr/lib/x86_64-linux-gnu/libm.so.6",
+    "native identity record geometry raw_duplex:/usr/lib/x86_64-linux-gnu/libpthread.so.0",
+    "runner-only host library identity raw_duplex:/usr/lib/x86_64-linux-gnu/libpthread.so.0",
+    "native identity record geometry raw_duplex:/usr/lib/x86_64-linux-gnu/librt.so.1",
+    "runner-only host library identity raw_duplex:/usr/lib/x86_64-linux-gnu/librt.so.1",
+    "native identity record geometry raw_duplex:/usr/lib/x86_64-linux-gnu/libssl.so.3",
+    "runner-only host library identity raw_duplex:/usr/lib/x86_64-linux-gnu/libssl.so.3",
+    "native identity record geometry raw_duplex:/usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.33",
+    "runner-only host library identity raw_duplex:/usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.33",
+    "native identity record geometry raw_duplex:/usr/lib/x86_64-linux-gnu/libz.so.1.3",
+    "runner-only host library identity raw_duplex:/usr/lib/x86_64-linux-gnu/libz.so.1.3",
+    "native identity record geometry raw_duplex:runtime/numpy.libs/libgfortran-040039e1-0352e75f.so.5.0.0",
+    "all loaded frozen native bindings raw_duplex:runtime/numpy.libs/libgfortran-040039e1-0352e75f.so.5.0.0",
+    "local admitted frozen native bytes raw_duplex:runtime/numpy.libs/libgfortran-040039e1-0352e75f.so.5.0.0",
+    "native identity record geometry raw_duplex:runtime/numpy.libs/libquadmath-96973f99-934c22de.so.0.0.0",
+    "all loaded frozen native bindings raw_duplex:runtime/numpy.libs/libquadmath-96973f99-934c22de.so.0.0.0",
+    "local admitted frozen native bytes raw_duplex:runtime/numpy.libs/libquadmath-96973f99-934c22de.so.0.0.0",
+    "native identity record geometry raw_duplex:runtime/numpy.libs/libscipy_openblas64_-8fb3d286.so",
+    "all loaded frozen native bindings raw_duplex:runtime/numpy.libs/libscipy_openblas64_-8fb3d286.so",
+    "local admitted frozen native bytes raw_duplex:runtime/numpy.libs/libscipy_openblas64_-8fb3d286.so",
+    "native identity record geometry raw_duplex:runtime/numpy/_core/_multiarray_umath.cpython-312-x86_64-linux-gnu.so",
+    "all loaded frozen native bindings raw_duplex:runtime/numpy/_core/_multiarray_umath.cpython-312-x86_64-linux-gnu.so",
+    "local admitted frozen native bytes raw_duplex:runtime/numpy/_core/_multiarray_umath.cpython-312-x86_64-linux-gnu.so",
+    "native identity record geometry raw_duplex:runtime/numpy/linalg/_umath_linalg.cpython-312-x86_64-linux-gnu.so",
+    "all loaded frozen native bindings raw_duplex:runtime/numpy/linalg/_umath_linalg.cpython-312-x86_64-linux-gnu.so",
+    "local admitted frozen native bytes raw_duplex:runtime/numpy/linalg/_umath_linalg.cpython-312-x86_64-linux-gnu.so",
+    "native identity record geometry raw_duplex:runtime/sherpa_onnx.libs/libasound-fb5348bf.so.2.0.0",
+    "all loaded frozen native bindings raw_duplex:runtime/sherpa_onnx.libs/libasound-fb5348bf.so.2.0.0",
+    "local admitted frozen native bytes raw_duplex:runtime/sherpa_onnx.libs/libasound-fb5348bf.so.2.0.0",
+    "native identity record geometry raw_duplex:runtime/sherpa_onnx/lib/_sherpa_onnx.cpython-312-x86_64-linux-gnu.so",
+    "all loaded frozen native bindings raw_duplex:runtime/sherpa_onnx/lib/_sherpa_onnx.cpython-312-x86_64-linux-gnu.so",
+    "local admitted frozen native bytes raw_duplex:runtime/sherpa_onnx/lib/_sherpa_onnx.cpython-312-x86_64-linux-gnu.so",
+    "native identity record geometry raw_duplex:runtime/sherpa_onnx/lib/libonnxruntime.so",
+    "all loaded frozen native bindings raw_duplex:runtime/sherpa_onnx/lib/libonnxruntime.so",
+    "local admitted frozen native bytes raw_duplex:runtime/sherpa_onnx/lib/libonnxruntime.so",
+    "native identity record geometry raw_duplex:runtime/vosk/libvosk.so",
+    "all loaded frozen native bindings raw_duplex:runtime/vosk/libvosk.so",
+    "local admitted frozen native bytes raw_duplex:runtime/vosk/libvosk.so",
+    "Vosk C API loaded frozen library raw_duplex",
+    "unavailable WER/FRR/FAR/latency remain null raw_duplex",
+    "actual successful model record call_duplex",
+    "model consumed exact view PCM call_duplex",
+    "complete model feed/flush accounting call_duplex",
+    "raw final ASR boundary call_duplex",
+    "raw ASR monotonic consumed samples call_duplex",
+    "raw ASR monotonic consumed samples call_duplex",
+    "raw ASR transcript reconstruction call_duplex",
+    "token time not claimed as trigger latency call_duplex",
+    "native identity record geometry call_duplex:/usr/lib/python3.12/lib-dynload/_bz2.cpython-312-x86_64-linux-gnu.so",
+    "runner-only host library identity call_duplex:/usr/lib/python3.12/lib-dynload/_bz2.cpython-312-x86_64-linux-gnu.so",
+    "native identity record geometry call_duplex:/usr/lib/python3.12/lib-dynload/_contextvars.cpython-312-x86_64-linux-gnu.so",
+    "runner-only host library identity call_duplex:/usr/lib/python3.12/lib-dynload/_contextvars.cpython-312-x86_64-linux-gnu.so",
+    "native identity record geometry call_duplex:/usr/lib/python3.12/lib-dynload/_ctypes.cpython-312-x86_64-linux-gnu.so",
+    "runner-only host library identity call_duplex:/usr/lib/python3.12/lib-dynload/_ctypes.cpython-312-x86_64-linux-gnu.so",
+    "native identity record geometry call_duplex:/usr/lib/python3.12/lib-dynload/_decimal.cpython-312-x86_64-linux-gnu.so",
+    "runner-only host library identity call_duplex:/usr/lib/python3.12/lib-dynload/_decimal.cpython-312-x86_64-linux-gnu.so",
+    "native identity record geometry call_duplex:/usr/lib/python3.12/lib-dynload/_hashlib.cpython-312-x86_64-linux-gnu.so",
+    "runner-only host library identity call_duplex:/usr/lib/python3.12/lib-dynload/_hashlib.cpython-312-x86_64-linux-gnu.so",
+    "native identity record geometry call_duplex:/usr/lib/python3.12/lib-dynload/_json.cpython-312-x86_64-linux-gnu.so",
+    "runner-only host library identity call_duplex:/usr/lib/python3.12/lib-dynload/_json.cpython-312-x86_64-linux-gnu.so",
+    "native identity record geometry call_duplex:/usr/lib/python3.12/lib-dynload/_lzma.cpython-312-x86_64-linux-gnu.so",
+    "runner-only host library identity call_duplex:/usr/lib/python3.12/lib-dynload/_lzma.cpython-312-x86_64-linux-gnu.so",
+    "native identity record geometry call_duplex:/usr/lib/python3.12/lib-dynload/_ssl.cpython-312-x86_64-linux-gnu.so",
+    "runner-only host library identity call_duplex:/usr/lib/python3.12/lib-dynload/_ssl.cpython-312-x86_64-linux-gnu.so",
+    "native identity record geometry call_duplex:/usr/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2",
+    "runner-only host library identity call_duplex:/usr/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2",
+    "native identity record geometry call_duplex:/usr/lib/x86_64-linux-gnu/libbz2.so.1.0.4",
+    "runner-only host library identity call_duplex:/usr/lib/x86_64-linux-gnu/libbz2.so.1.0.4",
+    "native identity record geometry call_duplex:/usr/lib/x86_64-linux-gnu/libc.so.6",
+    "runner-only host library identity call_duplex:/usr/lib/x86_64-linux-gnu/libc.so.6",
+    "native identity record geometry call_duplex:/usr/lib/x86_64-linux-gnu/libcrypto.so.3",
+    "runner-only host library identity call_duplex:/usr/lib/x86_64-linux-gnu/libcrypto.so.3",
+    "native identity record geometry call_duplex:/usr/lib/x86_64-linux-gnu/libdl.so.2",
+    "runner-only host library identity call_duplex:/usr/lib/x86_64-linux-gnu/libdl.so.2",
+    "native identity record geometry call_duplex:/usr/lib/x86_64-linux-gnu/libexpat.so.1.9.1",
+    "runner-only host library identity call_duplex:/usr/lib/x86_64-linux-gnu/libexpat.so.1.9.1",
+    "native identity record geometry call_duplex:/usr/lib/x86_64-linux-gnu/libffi.so.8.1.4",
+    "runner-only host library identity call_duplex:/usr/lib/x86_64-linux-gnu/libffi.so.8.1.4",
+    "native identity record geometry call_duplex:/usr/lib/x86_64-linux-gnu/libgcc_s.so.1",
+    "runner-only host library identity call_duplex:/usr/lib/x86_64-linux-gnu/libgcc_s.so.1",
+    "native identity record geometry call_duplex:/usr/lib/x86_64-linux-gnu/liblzma.so.5.4.5",
+    "runner-only host library identity call_duplex:/usr/lib/x86_64-linux-gnu/liblzma.so.5.4.5",
+    "native identity record geometry call_duplex:/usr/lib/x86_64-linux-gnu/libm.so.6",
+    "runner-only host library identity call_duplex:/usr/lib/x86_64-linux-gnu/libm.so.6",
+    "native identity record geometry call_duplex:/usr/lib/x86_64-linux-gnu/libpthread.so.0",
+    "runner-only host library identity call_duplex:/usr/lib/x86_64-linux-gnu/libpthread.so.0",
+    "native identity record geometry call_duplex:/usr/lib/x86_64-linux-gnu/librt.so.1",
+    "runner-only host library identity call_duplex:/usr/lib/x86_64-linux-gnu/librt.so.1",
+    "native identity record geometry call_duplex:/usr/lib/x86_64-linux-gnu/libssl.so.3",
+    "runner-only host library identity call_duplex:/usr/lib/x86_64-linux-gnu/libssl.so.3",
+    "native identity record geometry call_duplex:/usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.33",
+    "runner-only host library identity call_duplex:/usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.33",
+    "native identity record geometry call_duplex:/usr/lib/x86_64-linux-gnu/libz.so.1.3",
+    "runner-only host library identity call_duplex:/usr/lib/x86_64-linux-gnu/libz.so.1.3",
+    "native identity record geometry call_duplex:runtime/numpy.libs/libgfortran-040039e1-0352e75f.so.5.0.0",
+    "all loaded frozen native bindings call_duplex:runtime/numpy.libs/libgfortran-040039e1-0352e75f.so.5.0.0",
+    "local admitted frozen native bytes call_duplex:runtime/numpy.libs/libgfortran-040039e1-0352e75f.so.5.0.0",
+    "native identity record geometry call_duplex:runtime/numpy.libs/libquadmath-96973f99-934c22de.so.0.0.0",
+    "all loaded frozen native bindings call_duplex:runtime/numpy.libs/libquadmath-96973f99-934c22de.so.0.0.0",
+    "local admitted frozen native bytes call_duplex:runtime/numpy.libs/libquadmath-96973f99-934c22de.so.0.0.0",
+    "native identity record geometry call_duplex:runtime/numpy.libs/libscipy_openblas64_-8fb3d286.so",
+    "all loaded frozen native bindings call_duplex:runtime/numpy.libs/libscipy_openblas64_-8fb3d286.so",
+    "local admitted frozen native bytes call_duplex:runtime/numpy.libs/libscipy_openblas64_-8fb3d286.so",
+    "native identity record geometry call_duplex:runtime/numpy/_core/_multiarray_umath.cpython-312-x86_64-linux-gnu.so",
+    "all loaded frozen native bindings call_duplex:runtime/numpy/_core/_multiarray_umath.cpython-312-x86_64-linux-gnu.so",
+    "local admitted frozen native bytes call_duplex:runtime/numpy/_core/_multiarray_umath.cpython-312-x86_64-linux-gnu.so",
+    "native identity record geometry call_duplex:runtime/numpy/linalg/_umath_linalg.cpython-312-x86_64-linux-gnu.so",
+    "all loaded frozen native bindings call_duplex:runtime/numpy/linalg/_umath_linalg.cpython-312-x86_64-linux-gnu.so",
+    "local admitted frozen native bytes call_duplex:runtime/numpy/linalg/_umath_linalg.cpython-312-x86_64-linux-gnu.so",
+    "native identity record geometry call_duplex:runtime/sherpa_onnx.libs/libasound-fb5348bf.so.2.0.0",
+    "all loaded frozen native bindings call_duplex:runtime/sherpa_onnx.libs/libasound-fb5348bf.so.2.0.0",
+    "local admitted frozen native bytes call_duplex:runtime/sherpa_onnx.libs/libasound-fb5348bf.so.2.0.0",
+    "native identity record geometry call_duplex:runtime/sherpa_onnx/lib/_sherpa_onnx.cpython-312-x86_64-linux-gnu.so",
+    "all loaded frozen native bindings call_duplex:runtime/sherpa_onnx/lib/_sherpa_onnx.cpython-312-x86_64-linux-gnu.so",
+    "local admitted frozen native bytes call_duplex:runtime/sherpa_onnx/lib/_sherpa_onnx.cpython-312-x86_64-linux-gnu.so",
+    "native identity record geometry call_duplex:runtime/sherpa_onnx/lib/libonnxruntime.so",
+    "all loaded frozen native bindings call_duplex:runtime/sherpa_onnx/lib/libonnxruntime.so",
+    "local admitted frozen native bytes call_duplex:runtime/sherpa_onnx/lib/libonnxruntime.so",
+    "native identity record geometry call_duplex:runtime/vosk/libvosk.so",
+    "all loaded frozen native bindings call_duplex:runtime/vosk/libvosk.so",
+    "local admitted frozen native bytes call_duplex:runtime/vosk/libvosk.so",
+    "Vosk C API loaded frozen library call_duplex",
+    "unavailable WER/FRR/FAR/latency remain null call_duplex",
+    "exact profile/continuous capture processor command call_duplex",
+    "actual bounded PCM process execution call_duplex",
+    "actual complete PCM and frame trace call_duplex",
+    "actual successful model record assistant_duplex",
+    "model consumed exact view PCM assistant_duplex",
+    "complete model feed/flush accounting assistant_duplex",
+    "raw final ASR boundary assistant_duplex",
+    "raw ASR monotonic consumed samples assistant_duplex",
+    "raw ASR monotonic consumed samples assistant_duplex",
+    "raw ASR transcript reconstruction assistant_duplex",
+    "token time not claimed as trigger latency assistant_duplex",
+    "native identity record geometry assistant_duplex:/usr/lib/python3.12/lib-dynload/_bz2.cpython-312-x86_64-linux-gnu.so",
+    "runner-only host library identity assistant_duplex:/usr/lib/python3.12/lib-dynload/_bz2.cpython-312-x86_64-linux-gnu.so",
+    "native identity record geometry assistant_duplex:/usr/lib/python3.12/lib-dynload/_contextvars.cpython-312-x86_64-linux-gnu.so",
+    "runner-only host library identity assistant_duplex:/usr/lib/python3.12/lib-dynload/_contextvars.cpython-312-x86_64-linux-gnu.so",
+    "native identity record geometry assistant_duplex:/usr/lib/python3.12/lib-dynload/_ctypes.cpython-312-x86_64-linux-gnu.so",
+    "runner-only host library identity assistant_duplex:/usr/lib/python3.12/lib-dynload/_ctypes.cpython-312-x86_64-linux-gnu.so",
+    "native identity record geometry assistant_duplex:/usr/lib/python3.12/lib-dynload/_decimal.cpython-312-x86_64-linux-gnu.so",
+    "runner-only host library identity assistant_duplex:/usr/lib/python3.12/lib-dynload/_decimal.cpython-312-x86_64-linux-gnu.so",
+    "native identity record geometry assistant_duplex:/usr/lib/python3.12/lib-dynload/_hashlib.cpython-312-x86_64-linux-gnu.so",
+    "runner-only host library identity assistant_duplex:/usr/lib/python3.12/lib-dynload/_hashlib.cpython-312-x86_64-linux-gnu.so",
+    "native identity record geometry assistant_duplex:/usr/lib/python3.12/lib-dynload/_json.cpython-312-x86_64-linux-gnu.so",
+    "runner-only host library identity assistant_duplex:/usr/lib/python3.12/lib-dynload/_json.cpython-312-x86_64-linux-gnu.so",
+    "native identity record geometry assistant_duplex:/usr/lib/python3.12/lib-dynload/_lzma.cpython-312-x86_64-linux-gnu.so",
+    "runner-only host library identity assistant_duplex:/usr/lib/python3.12/lib-dynload/_lzma.cpython-312-x86_64-linux-gnu.so",
+    "native identity record geometry assistant_duplex:/usr/lib/python3.12/lib-dynload/_ssl.cpython-312-x86_64-linux-gnu.so",
+    "runner-only host library identity assistant_duplex:/usr/lib/python3.12/lib-dynload/_ssl.cpython-312-x86_64-linux-gnu.so",
+    "native identity record geometry assistant_duplex:/usr/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2",
+    "runner-only host library identity assistant_duplex:/usr/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2",
+    "native identity record geometry assistant_duplex:/usr/lib/x86_64-linux-gnu/libbz2.so.1.0.4",
+    "runner-only host library identity assistant_duplex:/usr/lib/x86_64-linux-gnu/libbz2.so.1.0.4",
+    "native identity record geometry assistant_duplex:/usr/lib/x86_64-linux-gnu/libc.so.6",
+    "runner-only host library identity assistant_duplex:/usr/lib/x86_64-linux-gnu/libc.so.6",
+    "native identity record geometry assistant_duplex:/usr/lib/x86_64-linux-gnu/libcrypto.so.3",
+    "runner-only host library identity assistant_duplex:/usr/lib/x86_64-linux-gnu/libcrypto.so.3",
+    "native identity record geometry assistant_duplex:/usr/lib/x86_64-linux-gnu/libdl.so.2",
+    "runner-only host library identity assistant_duplex:/usr/lib/x86_64-linux-gnu/libdl.so.2",
+    "native identity record geometry assistant_duplex:/usr/lib/x86_64-linux-gnu/libexpat.so.1.9.1",
+    "runner-only host library identity assistant_duplex:/usr/lib/x86_64-linux-gnu/libexpat.so.1.9.1",
+    "native identity record geometry assistant_duplex:/usr/lib/x86_64-linux-gnu/libffi.so.8.1.4",
+    "runner-only host library identity assistant_duplex:/usr/lib/x86_64-linux-gnu/libffi.so.8.1.4",
+    "native identity record geometry assistant_duplex:/usr/lib/x86_64-linux-gnu/libgcc_s.so.1",
+    "runner-only host library identity assistant_duplex:/usr/lib/x86_64-linux-gnu/libgcc_s.so.1",
+    "native identity record geometry assistant_duplex:/usr/lib/x86_64-linux-gnu/liblzma.so.5.4.5",
+    "runner-only host library identity assistant_duplex:/usr/lib/x86_64-linux-gnu/liblzma.so.5.4.5",
+    "native identity record geometry assistant_duplex:/usr/lib/x86_64-linux-gnu/libm.so.6",
+    "runner-only host library identity assistant_duplex:/usr/lib/x86_64-linux-gnu/libm.so.6",
+    "native identity record geometry assistant_duplex:/usr/lib/x86_64-linux-gnu/libpthread.so.0",
+    "runner-only host library identity assistant_duplex:/usr/lib/x86_64-linux-gnu/libpthread.so.0",
+    "native identity record geometry assistant_duplex:/usr/lib/x86_64-linux-gnu/librt.so.1",
+    "runner-only host library identity assistant_duplex:/usr/lib/x86_64-linux-gnu/librt.so.1",
+    "native identity record geometry assistant_duplex:/usr/lib/x86_64-linux-gnu/libssl.so.3",
+    "runner-only host library identity assistant_duplex:/usr/lib/x86_64-linux-gnu/libssl.so.3",
+    "native identity record geometry assistant_duplex:/usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.33",
+    "runner-only host library identity assistant_duplex:/usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.33",
+    "native identity record geometry assistant_duplex:/usr/lib/x86_64-linux-gnu/libz.so.1.3",
+    "runner-only host library identity assistant_duplex:/usr/lib/x86_64-linux-gnu/libz.so.1.3",
+    "native identity record geometry assistant_duplex:runtime/numpy.libs/libgfortran-040039e1-0352e75f.so.5.0.0",
+    "all loaded frozen native bindings assistant_duplex:runtime/numpy.libs/libgfortran-040039e1-0352e75f.so.5.0.0",
+    "local admitted frozen native bytes assistant_duplex:runtime/numpy.libs/libgfortran-040039e1-0352e75f.so.5.0.0",
+    "native identity record geometry assistant_duplex:runtime/numpy.libs/libquadmath-96973f99-934c22de.so.0.0.0",
+    "all loaded frozen native bindings assistant_duplex:runtime/numpy.libs/libquadmath-96973f99-934c22de.so.0.0.0",
+    "local admitted frozen native bytes assistant_duplex:runtime/numpy.libs/libquadmath-96973f99-934c22de.so.0.0.0",
+    "native identity record geometry assistant_duplex:runtime/numpy.libs/libscipy_openblas64_-8fb3d286.so",
+    "all loaded frozen native bindings assistant_duplex:runtime/numpy.libs/libscipy_openblas64_-8fb3d286.so",
+    "local admitted frozen native bytes assistant_duplex:runtime/numpy.libs/libscipy_openblas64_-8fb3d286.so",
+    "native identity record geometry assistant_duplex:runtime/numpy/_core/_multiarray_umath.cpython-312-x86_64-linux-gnu.so",
+    "all loaded frozen native bindings assistant_duplex:runtime/numpy/_core/_multiarray_umath.cpython-312-x86_64-linux-gnu.so",
+    "local admitted frozen native bytes assistant_duplex:runtime/numpy/_core/_multiarray_umath.cpython-312-x86_64-linux-gnu.so",
+    "native identity record geometry assistant_duplex:runtime/numpy/linalg/_umath_linalg.cpython-312-x86_64-linux-gnu.so",
+    "all loaded frozen native bindings assistant_duplex:runtime/numpy/linalg/_umath_linalg.cpython-312-x86_64-linux-gnu.so",
+    "local admitted frozen native bytes assistant_duplex:runtime/numpy/linalg/_umath_linalg.cpython-312-x86_64-linux-gnu.so",
+    "native identity record geometry assistant_duplex:runtime/sherpa_onnx.libs/libasound-fb5348bf.so.2.0.0",
+    "all loaded frozen native bindings assistant_duplex:runtime/sherpa_onnx.libs/libasound-fb5348bf.so.2.0.0",
+    "local admitted frozen native bytes assistant_duplex:runtime/sherpa_onnx.libs/libasound-fb5348bf.so.2.0.0",
+    "native identity record geometry assistant_duplex:runtime/sherpa_onnx/lib/_sherpa_onnx.cpython-312-x86_64-linux-gnu.so",
+    "all loaded frozen native bindings assistant_duplex:runtime/sherpa_onnx/lib/_sherpa_onnx.cpython-312-x86_64-linux-gnu.so",
+    "local admitted frozen native bytes assistant_duplex:runtime/sherpa_onnx/lib/_sherpa_onnx.cpython-312-x86_64-linux-gnu.so",
+    "native identity record geometry assistant_duplex:runtime/sherpa_onnx/lib/libonnxruntime.so",
+    "all loaded frozen native bindings assistant_duplex:runtime/sherpa_onnx/lib/libonnxruntime.so",
+    "local admitted frozen native bytes assistant_duplex:runtime/sherpa_onnx/lib/libonnxruntime.so",
+    "native identity record geometry assistant_duplex:runtime/vosk/libvosk.so",
+    "all loaded frozen native bindings assistant_duplex:runtime/vosk/libvosk.so",
+    "local admitted frozen native bytes assistant_duplex:runtime/vosk/libvosk.so",
+    "Vosk C API loaded frozen library assistant_duplex",
+    "unavailable WER/FRR/FAR/latency remain null assistant_duplex",
+    "exact profile/continuous capture processor command assistant_duplex",
+    "actual bounded PCM process execution assistant_duplex",
+    "actual complete PCM and frame trace assistant_duplex"
+  ],
+  "cases": [
+    {
+      "case_id": "raw",
+      "pcm_sha256": "a48d9f5e939046e9a809626ff182a719f914fb263cc30a3b439788b4d2623a0b",
+      "samples": 84640,
+      "asr_text": "广州市 房地产 中介 协会 分析",
+      "normalized_hypothesis": "广州市房地产中介协会分析",
+      "cer": {
+        "deletions": 0,
+        "distance": 0,
+        "error_rate": 0.0,
+        "hypothesis_units": 12,
+        "insertions": 0,
+        "reference_units": 12,
+        "substitutions": 0
+      },
+      "wer": null,
+      "kws_events": [
+        {
+          "emitted_at_sample": 33120,
+          "event_id": "event-0",
+          "keyword": "广州市",
+          "token_timestamps_seconds": [
+            1.0399999618530273,
+            1.1999999284744263,
+            1.3199999332427979,
+            1.399999976158142,
+            1.6399999856948853,
+            1.6799999475479126
+          ],
+          "tokens": [
+            "g",
+            "uǎng",
+            "zh",
+            "ōu",
+            "sh",
+            "ì"
+          ]
+        }
+      ],
+      "kws_score": {
+        "annotation_status": "UNAVAILABLE",
+        "duplicate_target_triggers": null,
+        "emitted_events": 1,
+        "far_per_hour": null,
+        "far_zero_event_one_sided_95_upper_per_hour": null,
+        "frr": null,
+        "latency_ms": null,
+        "matched_events": null,
+        "matches": null,
+        "missed_events": null,
+        "negative_exposure_hours": null,
+        "negative_exposure_samples": null,
+        "negative_false_alarms": null,
+        "positive_events": null,
+        "unmatched_events": null,
+        "unscored_event_ids": null
+      }
+    },
+    {
+      "case_id": "call",
+      "pcm_sha256": "bc9411db16f9bc6855b2bd42c424639a272906dcf1097844de27ed9892b60616",
+      "samples": 84640,
+      "asr_text": "广州市 房地产 中介 协会 分析",
+      "normalized_hypothesis": "广州市房地产中介协会分析",
+      "cer": {
+        "deletions": 0,
+        "distance": 0,
+        "error_rate": 0.0,
+        "hypothesis_units": 12,
+        "insertions": 0,
+        "reference_units": 12,
+        "substitutions": 0
+      },
+      "wer": null,
+      "kws_events": [
+        {
+          "emitted_at_sample": 33120,
+          "event_id": "event-0",
+          "keyword": "广州市",
+          "token_timestamps_seconds": [
+            1.0399999618530273,
+            1.159999966621399,
+            1.3199999332427979,
+            1.399999976158142,
+            1.6399999856948853,
+            1.6799999475479126
+          ],
+          "tokens": [
+            "g",
+            "uǎng",
+            "zh",
+            "ōu",
+            "sh",
+            "ì"
+          ]
+        }
+      ],
+      "kws_score": {
+        "annotation_status": "UNAVAILABLE",
+        "duplicate_target_triggers": null,
+        "emitted_events": 1,
+        "far_per_hour": null,
+        "far_zero_event_one_sided_95_upper_per_hour": null,
+        "frr": null,
+        "latency_ms": null,
+        "matched_events": null,
+        "matches": null,
+        "missed_events": null,
+        "negative_exposure_hours": null,
+        "negative_exposure_samples": null,
+        "negative_false_alarms": null,
+        "positive_events": null,
+        "unmatched_events": null,
+        "unscored_event_ids": null
+      }
+    },
+    {
+      "case_id": "assistant",
+      "pcm_sha256": "c67ffea92db6ed5feab146a6ee8fc1219e831b67c693629aefb5310b25920912",
+      "samples": 84640,
+      "asr_text": "广州市 房地产 中介 协会 分析",
+      "normalized_hypothesis": "广州市房地产中介协会分析",
+      "cer": {
+        "deletions": 0,
+        "distance": 0,
+        "error_rate": 0.0,
+        "hypothesis_units": 12,
+        "insertions": 0,
+        "reference_units": 12,
+        "substitutions": 0
+      },
+      "wer": null,
+      "kws_events": [
+        {
+          "emitted_at_sample": 33120,
+          "event_id": "event-0",
+          "keyword": "广州市",
+          "token_timestamps_seconds": [
+            1.0399999618530273,
+            1.159999966621399,
+            1.3199999332427979,
+            1.399999976158142,
+            1.6399999856948853,
+            1.6799999475479126
+          ],
+          "tokens": [
+            "g",
+            "uǎng",
+            "zh",
+            "ōu",
+            "sh",
+            "ì"
+          ]
+        }
+      ],
+      "kws_score": {
+        "annotation_status": "UNAVAILABLE",
+        "duplicate_target_triggers": null,
+        "emitted_events": 1,
+        "far_per_hour": null,
+        "far_zero_event_one_sided_95_upper_per_hour": null,
+        "frr": null,
+        "latency_ms": null,
+        "matched_events": null,
+        "matches": null,
+        "missed_events": null,
+        "negative_exposure_hours": null,
+        "negative_exposure_samples": null,
+        "negative_false_alarms": null,
+        "positive_events": null,
+        "unmatched_events": null,
+        "unscored_event_ids": null
+      }
+    },
+    {
+      "case_id": "raw_duplex",
+      "pcm_sha256": "79ba900f2221e082f3bf624a912eb5e70586f1e20920131868c591bdab509ba3",
+      "samples": 100640,
+      "asr_text": "广州市 房地产 中介 机会 分析",
+      "normalized_hypothesis": "广州市房地产中介机会分析",
+      "cer": {
+        "deletions": 0,
+        "distance": 1,
+        "error_rate": 0.08333333333333333,
+        "hypothesis_units": 12,
+        "insertions": 0,
+        "reference_units": 12,
+        "substitutions": 1
+      },
+      "wer": null,
+      "kws_events": [],
+      "kws_score": {
+        "annotation_status": "UNAVAILABLE",
+        "duplicate_target_triggers": null,
+        "emitted_events": 0,
+        "far_per_hour": null,
+        "far_zero_event_one_sided_95_upper_per_hour": null,
+        "frr": null,
+        "latency_ms": null,
+        "matched_events": null,
+        "matches": null,
+        "missed_events": null,
+        "negative_exposure_hours": null,
+        "negative_exposure_samples": null,
+        "negative_false_alarms": null,
+        "positive_events": null,
+        "unmatched_events": null,
+        "unscored_event_ids": null
+      }
+    },
+    {
+      "case_id": "call_duplex",
+      "pcm_sha256": "f0345b98bbb0536271ace5d9089ee639de44bb9aae3491fcf19fb7b513cb245a",
+      "samples": 100640,
+      "asr_text": "中 是 房地产 中介 协会 分析",
+      "normalized_hypothesis": "中是房地产中介协会分析",
+      "cer": {
+        "deletions": 1,
+        "distance": 3,
+        "error_rate": 0.25,
+        "hypothesis_units": 11,
+        "insertions": 0,
+        "reference_units": 12,
+        "substitutions": 2
+      },
+      "wer": null,
+      "kws_events": [],
+      "kws_score": {
+        "annotation_status": "UNAVAILABLE",
+        "duplicate_target_triggers": null,
+        "emitted_events": 0,
+        "far_per_hour": null,
+        "far_zero_event_one_sided_95_upper_per_hour": null,
+        "frr": null,
+        "latency_ms": null,
+        "matched_events": null,
+        "matches": null,
+        "missed_events": null,
+        "negative_exposure_hours": null,
+        "negative_exposure_samples": null,
+        "negative_false_alarms": null,
+        "positive_events": null,
+        "unmatched_events": null,
+        "unscored_event_ids": null
+      }
+    },
+    {
+      "case_id": "assistant_duplex",
+      "pcm_sha256": "145742efe0e0bd9158f04973de1809861db9afb2d62374208c72517400b3f9fd",
+      "samples": 100640,
+      "asr_text": "我 中 是 房地产 中介 协会 分析",
+      "normalized_hypothesis": "我中是房地产中介协会分析",
+      "cer": {
+        "deletions": 0,
+        "distance": 3,
+        "error_rate": 0.25,
+        "hypothesis_units": 12,
+        "insertions": 0,
+        "reference_units": 12,
+        "substitutions": 3
+      },
+      "wer": null,
+      "kws_events": [],
+      "kws_score": {
+        "annotation_status": "UNAVAILABLE",
+        "duplicate_target_triggers": null,
+        "emitted_events": 0,
+        "far_per_hour": null,
+        "far_zero_event_one_sided_95_upper_per_hour": null,
+        "frr": null,
+        "latency_ms": null,
+        "matched_events": null,
+        "matches": null,
+        "missed_events": null,
+        "negative_exposure_hours": null,
+        "negative_exposure_samples": null,
+        "negative_false_alarms": null,
+        "positive_events": null,
+        "unmatched_events": null,
+        "unscored_event_ids": null
+      }
+    }
+  ],
+  "limitations": [
+    "Single original utterance and six derived views; no population ASR/KWS quality qualification.",
+    "CI host-system libraries and Python executable are runner-reported hashes only, not locally re-read CI files.",
+    "Processor/build-info binary hashes are retained runner records; this C artifact contains no processor binary to re-hash.",
+    "Frozen wheel native/model bytes are checked against the already admitted local source cache and source lock."
+  ],
+  "execution_tree": "2805a3b7363c53f53b662b70e838a7b887ba749b",
+  "canonical_readback": {
+    "verifier": {
+      "status": "EVIDENCE_READBACK_COMPLETE",
+      "cases": 6,
+      "original_utterances": 1,
+      "source_revision": "74765cfb8678f41e11166dd37316a66a2f131977",
+      "promotion_allowed": false
+    },
+    "elapsed_seconds": 0.6565150459937286,
+    "DSP_reexecuted": false,
+    "model_reexecuted": false
+  },
+  "artifact_inventory": {
+    "integrity-optimized.log": {
+      "sha256": "389409df794eaca84ee3ccfa53ba1ed27c3bbb35c5e66d3c67fdb88624b63210",
+      "bytes": 213
+    },
+    "integrity.log": {
+      "sha256": "b1039b2b82c36567758e128edbda1c0d9c111406b22bc0e8c91553bc6d7f38ab",
+      "bytes": 213
+    },
+    "prepare.log": {
+      "sha256": "43e075afcdd13430ad8abd0f306286ab75c8b8248171a37a71d73c541a0fe991",
+      "bytes": 91
+    },
+    "prepared/clean_capture.pcm": {
+      "sha256": "221ee8f4b1acd8ce3df1e179772d1bb312d104ce99c14325fda23f4ed46b8bd0",
+      "bytes": 338560
+    },
+    "prepared/clean_mono.pcm": {
+      "sha256": "a48d9f5e939046e9a809626ff182a719f914fb263cc30a3b439788b4d2623a0b",
+      "bytes": 169280
+    },
+    "prepared/duplex_capture.pcm": {
+      "sha256": "b84053ff38db5a018883cdf9e800214fd6386a6bf90fb7bfa573d854ebf1a7d0",
+      "bytes": 402560
+    },
+    "prepared/duplex_mono.pcm": {
+      "sha256": "79ba900f2221e082f3bf624a912eb5e70586f1e20920131868c591bdab509ba3",
+      "bytes": 201280
+    },
+    "prepared/duplex_render.pcm": {
+      "sha256": "9e6df9b2efbc7da168f07f1899406362e580cb80faafeaca97c3280c639c7e46",
+      "bytes": 201280
+    },
+    "prepared/keywords.txt": {
+      "sha256": "ad36f91adecfc6310c7ba5d0bc008b3ac3218d5ec63afc0508f968bac7277882",
+      "bytes": 32
+    },
+    "prepared/manifest.json": {
+      "sha256": "a7d242a3a49bf9414ec80efecf694601366cfef135ecc97962319071eba04bbd",
+      "bytes": 2354
+    },
+    "prepared/preparation.json": {
+      "sha256": "0f52472389838f6022f8ce6322fab52599179017028277ee2a006627ada0ccc2",
+      "bytes": 14841
+    },
+    "prepared/processed/assistant/command.json": {
+      "sha256": "4c75cf27749dcce0507eafa1dc9fa656236dbcfad3a1a394722e48c5820bbed6",
+      "bytes": 478
+    },
+    "prepared/processed/assistant/continuity.json": {
+      "sha256": "6bce574c2801560073e7ada1cac09171288b95c5fc2eb05dfb475f04dc04386b",
+      "bytes": 183
+    },
+    "prepared/processed/assistant/execution.json": {
+      "sha256": "01e90bcd972f0359299db42570cb39df0d9a686274286bb696e6d99f88067882",
+      "bytes": 65
+    },
+    "prepared/processed/assistant/metrics.jsonl": {
+      "sha256": "0eee9e65f2caa433fb68a1c255f6399ecc4b90a10d9ee3591dd5a155fd3f07fe",
+      "bytes": 114182
+    },
+    "prepared/processed/assistant/out.pcm": {
+      "sha256": "c67ffea92db6ed5feab146a6ee8fc1219e831b67c693629aefb5310b25920912",
+      "bytes": 169280
+    },
+    "prepared/processed/assistant/stderr.txt": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "prepared/processed/assistant/stdout.txt": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "prepared/processed/assistant_duplex/command.json": {
+      "sha256": "13d84edad0dab65cb38a37013c762c7ebba4119c102195973ae3ae95ece45ef8",
+      "bytes": 492
+    },
+    "prepared/processed/assistant_duplex/continuity.json": {
+      "sha256": "1b09b5530df7abdce286fc1d08a88975d11f2037f26850ed00a804a957a47920",
+      "bytes": 185
+    },
+    "prepared/processed/assistant_duplex/execution.json": {
+      "sha256": "8ffbac6babc3b8100101fbf4362a0eab6a165d1acb277638dfc00d74315956d4",
+      "bytes": 65
+    },
+    "prepared/processed/assistant_duplex/metrics.jsonl": {
+      "sha256": "39379ad8b423ed275e0a99047e9f7120f67ad70418a150ed480c48baa96e9d81",
+      "bytes": 141267
+    },
+    "prepared/processed/assistant_duplex/out.pcm": {
+      "sha256": "145742efe0e0bd9158f04973de1809861db9afb2d62374208c72517400b3f9fd",
+      "bytes": 201280
+    },
+    "prepared/processed/assistant_duplex/stderr.txt": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "prepared/processed/assistant_duplex/stdout.txt": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "prepared/processed/call/command.json": {
+      "sha256": "dcac105f3ec8ac83729e3175e5134738f6452bf2aa16b398377c987880967e8c",
+      "bytes": 463
+    },
+    "prepared/processed/call/continuity.json": {
+      "sha256": "6bce574c2801560073e7ada1cac09171288b95c5fc2eb05dfb475f04dc04386b",
+      "bytes": 183
+    },
+    "prepared/processed/call/execution.json": {
+      "sha256": "ffa72c0a3be11e9fd8b6b9c080238bda531f292b412fd5da144fdbb8965776c2",
+      "bytes": 64
+    },
+    "prepared/processed/call/metrics.jsonl": {
+      "sha256": "3620f8383fdacbad66ce355485ea39cfeb2aead2c6513160634d8dc6952e6f02",
+      "bytes": 114191
+    },
+    "prepared/processed/call/out.pcm": {
+      "sha256": "bc9411db16f9bc6855b2bd42c424639a272906dcf1097844de27ed9892b60616",
+      "bytes": 169280
+    },
+    "prepared/processed/call/stderr.txt": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "prepared/processed/call/stdout.txt": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "prepared/processed/call_duplex/command.json": {
+      "sha256": "04d4f8d9c4db2e8e44186436ea75b61250b2e325d327847ff0bddf5198fb5ed1",
+      "bytes": 477
+    },
+    "prepared/processed/call_duplex/continuity.json": {
+      "sha256": "1b09b5530df7abdce286fc1d08a88975d11f2037f26850ed00a804a957a47920",
+      "bytes": 185
+    },
+    "prepared/processed/call_duplex/execution.json": {
+      "sha256": "cf12dd59f7450c50deb9ca08972418f989f787d3df77d1ca975363daebd0c4dc",
+      "bytes": 65
+    },
+    "prepared/processed/call_duplex/metrics.jsonl": {
+      "sha256": "30542ef269771846c0120ee8f5fef50d41151a3c8a6120f61d9ad500016f23d6",
+      "bytes": 141002
+    },
+    "prepared/processed/call_duplex/out.pcm": {
+      "sha256": "f0345b98bbb0536271ace5d9089ee639de44bb9aae3491fcf19fb7b513cb245a",
+      "bytes": 201280
+    },
+    "prepared/processed/call_duplex/stderr.txt": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "prepared/processed/call_duplex/stdout.txt": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "readback.log": {
+      "sha256": "8511be27c39c91f948b3741a7abdcc4b6b82eae4cc5b87a72119b64339e4473c",
+      "bytes": 67
+    },
+    "result/artifact-manifest.json": {
+      "sha256": "0641010f7ca41144f79ee5db0359e04f615f1b1c55ead53283388008f001b8c4",
+      "bytes": 2022
+    },
+    "result/assistant.json": {
+      "sha256": "9895725c53d04eaf5bc29b5dd3f2de765dc94bbea96746550fd5ce480574bd1c",
+      "bytes": 8840
+    },
+    "result/assistant.log": {
+      "sha256": "4e1c26ccbe14d570456dfc4f0adfc8329ef7ecc2d28e25f04d9e705bd549626d",
+      "bytes": 1182
+    },
+    "result/assistant_duplex.json": {
+      "sha256": "3de49e02756ff5c00f0458cb73a1e221ac59471f5037f52942f3043b6484df6e",
+      "bytes": 8381
+    },
+    "result/assistant_duplex.log": {
+      "sha256": "532cf7a62268704761da4c4fc9c7fc135661be776ce0290d70cdce0c38af9287",
+      "bytes": 1182
+    },
+    "result/call.json": {
+      "sha256": "5b10239b93e36d71c2e6b8bf6c66003108c10804a8b42773d1b02f7521bddf92",
+      "bytes": 8835
+    },
+    "result/call.log": {
+      "sha256": "0a79f3251ae2afe92884bd302078fca68f717f5e2c7420669f11d2f0bf1b3942",
+      "bytes": 1182
+    },
+    "result/call_duplex.json": {
+      "sha256": "2929714fd2844ff1cf3b727b9c73008cdf492e17d33324cad7b190a5be7df440",
+      "bytes": 8368
+    },
+    "result/call_duplex.log": {
+      "sha256": "815009f4ba339aa287909ad55540515bd27186533c15f88ed3c81a248f0af9b7",
+      "bytes": 1182
+    },
+    "result/predictions.json": {
+      "sha256": "e71345793984951ff20fea6816deb349b8dcf4f36cb6acc7cbf3fb06905cb771",
+      "bytes": 9052
+    },
+    "result/progress.json": {
+      "sha256": "0b4853375b68a1e7b7b67da924fbcde3a6dd5192483776c6bb7fc21e9c53af0a",
+      "bytes": 3186
+    },
+    "result/raw.json": {
+      "sha256": "d7a529b894b7b4c5090dac24d249dd9aebd95b9ed8f190a7f39b1d298843675a",
+      "bytes": 8834
+    },
+    "result/raw.log": {
+      "sha256": "8a2b12971ff3df7fec2e804c17154fc7768df8fc6288b5adaf243519257013bd",
+      "bytes": 1181
+    },
+    "result/raw_duplex.json": {
+      "sha256": "ba44bd285f921f1f10b59190624dd82dcbb6ad4be87f6532bac021bb5efa0f1c",
+      "bytes": 8371
+    },
+    "result/raw_duplex.log": {
+      "sha256": "be814d699bf93b26308b66ba8b73cf57b3145cd1e306f586f7a2ae1aab1ffdc7",
+      "bytes": 1182
+    },
+    "result/report.json": {
+      "sha256": "db17e4263442cb8f60cbd8661e8822dfda099a7b500effea2157d8c76d8612c4",
+      "bytes": 4205
+    },
+    "result/scores.json": {
+      "sha256": "cadc528856120309cf3f34bf415e2500d180d14417297f56ee4ac81564a0a5e5",
+      "bytes": 8231
+    },
+    "run.log": {
+      "sha256": "9ced7abee99354898ea4ecb390f439cc9e0baa9241565e18b10154b2a93be1f0",
+      "bytes": 133
+    },
+    "source-receipts/assets/aishell-BAC009S0724W0121.wav.acquisition.json": {
+      "sha256": "c3d1a03f2451efd25d23a2d7606c06ef8b105f2e1f9b9a971c387342f34e2b68",
+      "bytes": 611
+    },
+    "source-receipts/assets/sherpa-onnx-kws-zipformer-zh-en-3M-2025-12-20.tar.bz2.acquisition.json": {
+      "sha256": "6d0e4112736a5f8f04e3d3ef6eb6aabf95ae8c372b23747991df7547e51a740d",
+      "bytes": 545
+    },
+    "source-receipts/assets/vosk-COPYING.txt": {
+      "sha256": "bb618af833c817ab01c1564bd3ec75ba4b4f9cf30910a4a2168e30a674ee8cc6",
+      "bytes": 10173
+    },
+    "source-receipts/assets/vosk-COPYING.txt.acquisition.json": {
+      "sha256": "905a35efe88872a90ce9f47b6418310f11735743de2898071d1b4f3fcd2a2336",
+      "bytes": 519
+    },
+    "source-receipts/assets/vosk-model-small-cn-0.22.zip.acquisition.json": {
+      "sha256": "570c21b43d51af4ee74a383b3d9f204e540a44a329182451180600de6503f3a6",
+      "bytes": 467
+    },
+    "source-receipts/assets/vosk_api.h.acquisition.json": {
+      "sha256": "e7ee5bdf27d78ba3258b47b94d3d5a868388f85c560189d1633e59861b1e3a3a",
+      "bytes": 526
+    },
+    "source-receipts/assets/wenet-LICENSE.txt": {
+      "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+      "bytes": 11357
+    },
+    "source-receipts/assets/wenet-LICENSE.txt.acquisition.json": {
+      "sha256": "4a8b20451da67d05a83ca4ac1f07d12a8c724c58414b54080e79e98ff3aa5a75",
+      "bytes": 513
+    },
+    "source-receipts/assets/wenet-transcript.txt": {
+      "sha256": "b49dc7eca7e5803a53f2b676130b63bc27aa19df2e250327fd410cfe95d79a53",
+      "bytes": 279
+    },
+    "source-receipts/assets/wenet-transcript.txt.acquisition.json": {
+      "sha256": "c6eec65e4eea372e791783081cd193bc64b1efaf56cd07f965caf27855e52efd",
+      "bytes": 591
+    },
+    "source-receipts/materialization.json": {
+      "sha256": "1f0e8ee97322df3b5aa3349e6ef60d7084afc4265c7dc4036c8d208ed607edab",
+      "bytes": 149795
+    },
+    "source-receipts/source-candidate.json": {
+      "sha256": "b7f9a5d814ee6f66a21c8bc01b9172db221f392c511953fda1f71536273938db",
+      "bytes": 154132
+    },
+    "source-receipts/source-lock.json": {
+      "sha256": "306e4a6f4f83e7e577e17037103985804d353f67d0e1d5dc3c3027f320ba64dd",
+      "bytes": 158373
+    },
+    "source-receipts/wheels/numpy-2.3.3-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl.acquisition.json": {
+      "sha256": "ee2865c1af9647951155896284665e59c558a50072f471f52eb1ed707fd800aa",
+      "bytes": 585
+    },
+    "source-receipts/wheels/sherpa_onnx-1.13.4-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl.acquisition.json": {
+      "sha256": "bb03e9886a9a103980b11522447bf9378cff0c49625d0c5b01833013026c21f5",
+      "bytes": 596
+    },
+    "source-receipts/wheels/sherpa_onnx_core-1.13.4-py3-none-manylinux2014_x86_64.whl.acquisition.json": {
+      "sha256": "d72777b8553a7dfc19cc06ae86c70b3fb72ef51e0feff8607532e33c43b7cada",
+      "bytes": 582
+    },
+    "source-receipts/wheels/vosk-0.3.45-py3-none-manylinux_2_12_x86_64.manylinux2010_x86_64.whl.acquisition.json": {
+      "sha256": "b86f0f78ac8fc477722bb0bfefe91da99e600f18eca993802a17ad35236cb607",
+      "bytes": 579
+    },
+    "source.log": {
+      "sha256": "97aaecd8d45a3ecf5bbebc8cdc07c7d98dfbf1fb9708bfbb27b5b92624ea7ce6",
+      "bytes": 111
+    },
+    "unit-optimized.log": {
+      "sha256": "f4f6d0a43e7982b8c072e18cfaa1b4b704a163a99cd9bb56597062d945f7e643",
+      "bytes": 123
+    },
+    "unit.log": {
+      "sha256": "f4f6d0a43e7982b8c072e18cfaa1b4b704a163a99cd9bb56597062d945f7e643",
+      "bytes": 123
+    }
+  },
+  "native_readback": {
+    "locally_checked_frozen_native": {
+      "runtime/numpy.libs/libgfortran-040039e1-0352e75f.so.5.0.0": {
+        "bytes": 2833617,
+        "sha256": "c6090048eccc763522c12ef016f81da6b627cb3a044f55cf0479a839c41c0980",
+        "source": "frozen-runtime"
+      },
+      "runtime/numpy.libs/libquadmath-96973f99-934c22de.so.0.0.0": {
+        "bytes": 250985,
+        "sha256": "6ed5137f412781ad7863439fb543613f620b43c32b63292a0029246162f5bbc6",
+        "source": "frozen-runtime"
+      },
+      "runtime/numpy.libs/libscipy_openblas64_-8fb3d286.so": {
+        "bytes": 25050385,
+        "sha256": "37ba6b373a22ff42844e014f5dcbb428183f2325fd993361b41fccf68241333d",
+        "source": "frozen-runtime"
+      },
+      "runtime/numpy/_core/_multiarray_umath.cpython-312-x86_64-linux-gnu.so": {
+        "bytes": 10808937,
+        "sha256": "3b52486354a16057a18768971e6522ddb682651a228186d2fb05e4358cc474de",
+        "source": "frozen-runtime"
+      },
+      "runtime/numpy/linalg/_umath_linalg.cpython-312-x86_64-linux-gnu.so": {
+        "bytes": 231833,
+        "sha256": "e3a50497a5b85d9152bb86460c2fd1815481cc0320e168b8e6ef855e264045d9",
+        "source": "frozen-runtime"
+      },
+      "runtime/sherpa_onnx.libs/libasound-fb5348bf.so.2.0.0": {
+        "bytes": 5506825,
+        "sha256": "628ac35dd48f734279e097503681b01e4ab410f0c8082b9606f152c1bd732ec6",
+        "source": "frozen-runtime"
+      },
+      "runtime/sherpa_onnx/lib/_sherpa_onnx.cpython-312-x86_64-linux-gnu.so": {
+        "bytes": 6202305,
+        "sha256": "658fc6484055892f9330566c6463e0ba258b9dcbb02bf89623d23c13b8d9f6f4",
+        "source": "frozen-runtime"
+      },
+      "runtime/sherpa_onnx/lib/libonnxruntime.so": {
+        "bytes": 26403889,
+        "sha256": "026c7d5c609323fb16506dbc3cce801bcdffdd7566fdba49a50727e2e1e881ca",
+        "source": "frozen-runtime"
+      },
+      "runtime/vosk/libvosk.so": {
+        "bytes": 25986496,
+        "sha256": "85c4654de3acdeb99abab86eeb2a6e603927d37089597c0fcc33d8638dc2ccaf",
+        "source": "frozen-runtime"
+      }
+    },
+    "runner_report_only_host_native": {
+      "/usr/lib/python3.12/lib-dynload/_bz2.cpython-312-x86_64-linux-gnu.so": [
+        {
+          "bytes": 32112,
+          "sha256": "eff8df23cdc54d38ce9ca600d07c21ccfd7f22bd52a0720e599e6828d3e2eb76",
+          "source": "host-system"
+        }
+      ],
+      "/usr/lib/python3.12/lib-dynload/_contextvars.cpython-312-x86_64-linux-gnu.so": [
+        {
+          "bytes": 14560,
+          "sha256": "da24b21e136402103121806aa5b031bc50e1576a44cd4a0e1f60bc16fd936706",
+          "source": "host-system"
+        }
+      ],
+      "/usr/lib/python3.12/lib-dynload/_ctypes.cpython-312-x86_64-linux-gnu.so": [
+        {
+          "bytes": 137968,
+          "sha256": "aad3e24f186e6c0a1c7efa8f16004f951f527db86f6451d30118657384a456c1",
+          "source": "host-system"
+        }
+      ],
+      "/usr/lib/python3.12/lib-dynload/_decimal.cpython-312-x86_64-linux-gnu.so": [
+        {
+          "bytes": 372904,
+          "sha256": "20326fc4d39abff46814b64bf5304f8898d180ae58a66b5d60c0177ae317887d",
+          "source": "host-system"
+        }
+      ],
+      "/usr/lib/python3.12/lib-dynload/_hashlib.cpython-312-x86_64-linux-gnu.so": [
+        {
+          "bytes": 64368,
+          "sha256": "8dc6cda6dd9495b95a2bfb5b26e8cf06b72f36dc0213d958b9277a958287f0fe",
+          "source": "host-system"
+        }
+      ],
+      "/usr/lib/python3.12/lib-dynload/_json.cpython-312-x86_64-linux-gnu.so": [
+        {
+          "bytes": 48952,
+          "sha256": "ca8e35c58f7bc8e27258c4af43651c941413bc6318903621253485b0395758a3",
+          "source": "host-system"
+        }
+      ],
+      "/usr/lib/python3.12/lib-dynload/_lzma.cpython-312-x86_64-linux-gnu.so": [
+        {
+          "bytes": 49256,
+          "sha256": "cb298120e40f064dc047e638d911f8b3b0abf625bf1d6bd07902b46efd820fd7",
+          "source": "host-system"
+        }
+      ],
+      "/usr/lib/python3.12/lib-dynload/_ssl.cpython-312-x86_64-linux-gnu.so": [
+        {
+          "bytes": 221360,
+          "sha256": "80c755c80688b92e0f32af9168a605f1283256077f35d30f6cf518252f2a6660",
+          "source": "host-system"
+        }
+      ],
+      "/usr/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2": [
+        {
+          "bytes": 236616,
+          "sha256": "c20a2dc8917c755f02b94049356320fe1f62ac7d9f8994731f807d9df39302da",
+          "source": "host-system"
+        }
+      ],
+      "/usr/lib/x86_64-linux-gnu/libbz2.so.1.0.4": [
+        {
+          "bytes": 78944,
+          "sha256": "cc08c9f50a8009ffd6391e0116a100369b11ca9238fa52392c019e6645b122a1",
+          "source": "host-system"
+        }
+      ],
+      "/usr/lib/x86_64-linux-gnu/libc.so.6": [
+        {
+          "bytes": 2129424,
+          "sha256": "3a15d66867d83762c7f2f1e37359cb8f6c5743edb369c65285cb0b1c4f7498bf",
+          "source": "host-system"
+        }
+      ],
+      "/usr/lib/x86_64-linux-gnu/libcrypto.so.3": [
+        {
+          "bytes": 5309400,
+          "sha256": "6866ed711dab8927e1bf82bf1cd30e828bdfc34f3cc1e83b1c9eb01ce6c37d9a",
+          "source": "host-system"
+        }
+      ],
+      "/usr/lib/x86_64-linux-gnu/libdl.so.2": [
+        {
+          "bytes": 14408,
+          "sha256": "c2994527172cc23b7fb0f7d611b71e00a37da27af12c2e5e9e0dc1a742886c96",
+          "source": "host-system"
+        }
+      ],
+      "/usr/lib/x86_64-linux-gnu/libexpat.so.1.9.1": [
+        {
+          "bytes": 186624,
+          "sha256": "286682ecbc5e59a638963b1a4e6351e65eb32fcf4bdcb9cb7569b6a61fe06a8d",
+          "source": "host-system"
+        }
+      ],
+      "/usr/lib/x86_64-linux-gnu/libffi.so.8.1.4": [
+        {
+          "bytes": 47672,
+          "sha256": "00f593fe192f2851b8ce23b25cec2488d769beb5a8f63e8c9e563071e1075153",
+          "source": "host-system"
+        }
+      ],
+      "/usr/lib/x86_64-linux-gnu/libgcc_s.so.1": [
+        {
+          "bytes": 183024,
+          "sha256": "d93224d2b0dab4247598be683adca02f5cf00586f99c187579cd7e92058fb7cb",
+          "source": "host-system"
+        }
+      ],
+      "/usr/lib/x86_64-linux-gnu/liblzma.so.5.4.5": [
+        {
+          "bytes": 202904,
+          "sha256": "26b37d25f7ca2a2d348de8ecabacda12e921cd933b21fa069a179760db77219d",
+          "source": "host-system"
+        }
+      ],
+      "/usr/lib/x86_64-linux-gnu/libm.so.6": [
+        {
+          "bytes": 952616,
+          "sha256": "fce00b6f25f459cf4ae0b7fae4257909a1a8a86f9149e7c029a5d617baf1ccd0",
+          "source": "host-system"
+        }
+      ],
+      "/usr/lib/x86_64-linux-gnu/libpthread.so.0": [
+        {
+          "bytes": 14408,
+          "sha256": "90491a21ce44efcf3bd4b65ec82501c091d7ebe7f8d9b341dd01d721001d9ecd",
+          "source": "host-system"
+        }
+      ],
+      "/usr/lib/x86_64-linux-gnu/librt.so.1": [
+        {
+          "bytes": 14624,
+          "sha256": "6d072187d88e092e81561a44c03a4a41397319022c6d43519757cc051c576d82",
+          "source": "host-system"
+        }
+      ],
+      "/usr/lib/x86_64-linux-gnu/libssl.so.3": [
+        {
+          "bytes": 696512,
+          "sha256": "a40e7b67489bbd257e432c700ff8f6a1ad796425b5eccecdc2930127fdd86624",
+          "source": "host-system"
+        }
+      ],
+      "/usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.33": [
+        {
+          "bytes": 2592224,
+          "sha256": "1fd75fe70354a416d75aef22bcae68c47bd25d20e2d0568c30b1a9838cf62f11",
+          "source": "host-system"
+        }
+      ],
+      "/usr/lib/x86_64-linux-gnu/libz.so.1.3": [
+        {
+          "bytes": 113000,
+          "sha256": "f61677c7bdb7c2aa2a243ea781bfd16afcb361cede7b4ef76127a9d8eb9a5242",
+          "source": "host-system"
+        }
+      ]
+    },
+    "runner_report_only_python": [
+      {
+        "executable_sha256": "e50d468e8b0adfb05733f5b87b3cff34829c4a8c1aea50c865aa8bdfe4bb150f",
+        "platform": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.39",
+        "version": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]"
+      }
+    ]
+  },
+  "model_bindings": {
+    "asr": "c3a0db71484b8bc53a28f00d22b979967f99bc50e9eaedb15c811e6056f7feec",
+    "kws": "19c4903d1b94212af5634cc0db50a11e81080a075b4d3847ee08a19d72c861b4"
+  },
+  "source_lock_sha256": "306e4a6f4f83e7e577e17037103985804d353f67d0e1d5dc3c3027f320ba64dd",
+  "original_utterances": 1,
+  "quality_decision": "DESCRIPTIVE_ONLY",
+  "promotion_allowed": false,
+  "pooled_view_accounting": {
+    "cer": {
+      "deletions": 1,
+      "distance": 7,
+      "error_rate": 0.09722222222222222,
+      "hypothesis_units": 71,
+      "insertions": 0,
+      "presentations": 6,
+      "reference_units": 72,
+      "substitutions": 6
+    },
+    "independence_claim": false,
+    "scope": "count accounting over presented views, not independent speakers or utterances",
+    "wer": null
+  },
+  "checked_items": 734,
+  "elapsed_seconds": 65.9798249259984,
+  "ended_at_utc": "2026-11-06T13:49:43.415350+00:00",
+  "through_first_receipt_write_elapsed_seconds": 65.98106429699692,
+  "timing_scope": "Original first artifact read through first complete receipt; final timing refresh is followed by a deadline check"
+}

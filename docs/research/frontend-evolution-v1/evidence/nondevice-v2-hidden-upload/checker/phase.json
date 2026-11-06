@@ -1,0 +1,54 @@
+{
+  "argv": [
+    "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+    "/workspace/scratch/b74ab3415ba4/dualmic-recorded-ci-independent-readback.py",
+    "--artifact-root",
+    "/workspace/scratch/b74ab3415ba4/nondevice-v2-ci-pr920-corrected/A",
+    "--checkout",
+    "/workspace/scratch/b74ab3415ba4/audio-dualmic-pr920-corrected-evidence",
+    "--execution-sha",
+    "5e5b70fb1f009b6f88b251040268bfc0956f85bc",
+    "--execution-tree",
+    "e2e2cbf0d36e3d922bd571a37f2eb758637dd14c",
+    "--label",
+    "pr920-corrected-42230060500-attempt-1",
+    "--archive",
+    "/workspace/scratch/b74ab3415ba4/nondevice-v2-ci-pr920-corrected/A.zip",
+    "--archive-sha256",
+    "8f0da48068e1af0c02d7ccab0d63a6b9c7aabdb6a7dbdfd21c7bf29fe5a66a5e",
+    "--output",
+    "/workspace/scratch/b74ab3415ba4/A-independent-pr920-corrected-42230060500/checker",
+    "--worker",
+    "--started-monotonic",
+    "52160.854509179",
+    "--started-at",
+    "2026-11-06T14:27:41.107677+00:00"
+  ],
+  "budget_seconds": 300.0,
+  "checker_sha256": "fd9f15eb867d2d37b4f2cddbe7750d9720cffd613a835e00214803c13d36f7ce",
+  "cleanup_reserve_seconds": 3.0,
+  "elapsed_seconds": 0.11515144699660596,
+  "ended_at": "2026-11-06T14:27:41.222810+00:00",
+  "error": "ValueError: worker failed; original worker log and partial result retained",
+  "execution_source_revision": "5e5b70fb1f009b6f88b251040268bfc0956f85bc",
+  "exit_code": 1,
+  "files": {
+    "readback.json": {
+      "bytes": 1106,
+      "sha256": "c6f0946fe6be863f58b8478d874b49a15c95bdb8e1c8e229c3bbd7039fd2c0f0"
+    },
+    "start.json": {
+      "bytes": 487,
+      "sha256": "b34debdfd400cc2b97ee0f8c0a83641c73277a3b9320cb89a322e5b9611ac7ad"
+    },
+    "worker.log": {
+      "bytes": 843,
+      "sha256": "5923fbe2e45c65be0070b2f38ae1d1fd9a433278fc5a9f1de3b46759a3f16a32"
+    }
+  },
+  "new_artifact_label": "pr920-corrected-42230060500-attempt-1",
+  "prior_review_not_reset": true,
+  "scope": "complete automated readback; includes worker receipt and output sealing",
+  "started_at": "2026-11-06T14:27:41.107677+00:00",
+  "status": "FAIL"
+}

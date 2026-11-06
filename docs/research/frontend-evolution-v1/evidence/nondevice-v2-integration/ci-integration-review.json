@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "result": "CI_INTEGRATION_REVIEW_RESOLVED",
+  "scope": "Targeted read-only code re-review of four identified integration corrections; not an algorithm matrix or exact-head CI gate result",
+  "reviewer": "dualmic_intercom",
+  "observed_at_utc": "2026-11-06T13:31:42.116536+00:00",
+  "worktree": "/workspace/scratch/b74ab3415ba4/audio-dualmic-nondevice-v2",
+  "git_head": "3ce56566c4c20b30eb75a93d51e454527566aa9c",
+  "working_tree_snapshot": true,
+  "files": {
+    "scripts/ci_impact.py": {
+      "sha256": "887b659b50548826512dc62f43c3f0f24f89cbce1a98be4b31cf61be4a95e668",
+      "bytes": 51641
+    },
+    ".github/workflows/quality.yml": {
+      "sha256": "46b28cde3bb90966bd0f2ad8ec2a6f238046c29148644f55e6a552194ba30cc6",
+      "bytes": 175911
+    },
+    ".github/workflows/audio-quality-gates.yml": {
+      "sha256": "92564b9265fa693cb79a2c680b1ae087c67192423e370b35d6cc49515da926f6",
+      "bytes": 19876
+    },
+    "docs/research/frontend-evolution-v1/DUALMIC_NONDEVICE_V2_USAGE.zh-CN.md": {
+      "sha256": "4d4733c7a5bb0bab2e3984288448d1c2235f47888206fbf6834a1ab79f4628eb",
+      "bytes": 9761
+    },
+    "tests/validation/mandarin_downstream.py": {
+      "sha256": "2bba610f9154e0eb3d115a361104191a7fd2f5ac0fdb4d9972dd4633599bef9c",
+      "bytes": 34249
+    }
+  },
+  "findings": [
+    {
+      "id": "canonical_metric_full_classification",
+      "status": "RESOLVED",
+      "evidence": "Exact downstream_metrics.py path is now in canonical FULL analyze branch and the existing self-test loop requires full/run_extended/run_audio; release-neutral list remains exact."
+    },
+    {
+      "id": "early_failure_artifact_retention",
+      "status": "RESOLVED",
+      "evidence": "A creates dualmic-stage before tests, tees unit/configure/build/corpus/run/readback, places corpus and result under that stage, and always uploads the entire stage. B also tees apt update/install and C bridge compilation. pipefail remains enabled."
+    },
+    {
+      "id": "usage_stage_budget",
+      "status": "RESOLVED",
+      "evidence": "All build/test/corpus/bridge/prepare/run/verify execution examples have timeout 300s. AP_SRC_SHA assignment is metadata only. No budget increase."
+    },
+    {
+      "id": "model_process_credential_environment",
+      "status": "RESOLVED",
+      "evidence": "model_environment returns only PATH=os.defpath, LANG/LC_ALL C.UTF-8, PYTHONDONTWRITEBYTECODE, PYTHONNOUSERSITE, OMP_NUM_THREADS, OPENBLAS_NUM_THREADS. model_child uses this environment and run invokes model_child; no parent os.environ copy."
+    }
+  ],
+  "remaining_findings_in_review_scope": [],
+  "tests_executed_during_this_re_review": false,
+  "model_or_DSP_execution": false,
+  "root_worktree_modified_by_reviewer": false,
+  "prior_A_independent_review_status": "REVIEW_BUDGET_EXCEEDED",
+  "prior_A_status_unchanged": true
+}

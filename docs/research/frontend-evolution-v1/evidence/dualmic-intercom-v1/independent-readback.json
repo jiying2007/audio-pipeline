@@ -1,0 +1,38 @@
+{
+  "budget_seconds": 300,
+  "checks": 43011,
+  "elapsed_seconds": 131.22470523200172,
+  "event_drop_events": {
+    "burst-loss": 1,
+    "duplicate": 1,
+    "gain-mute": 1,
+    "late": 1,
+    "normal": 1,
+    "normal-future": 1,
+    "normal-repeat": 1,
+    "reopen": 3,
+    "reorder": 1,
+    "single-loss": 1
+  },
+  "evidence": "/workspace/scratch/b74ab3415ba4/intercom-v1-evidence/formal-dbbbe7e",
+  "frontend_DSP_reexecuted": false,
+  "independent_real_opus_decode": true,
+  "manifest_sha256": "ec7599525faec15e227bb44a17ae1a9b631f17561acea52c43311b3283609c6c",
+  "post_init_identity_reexecuted": true,
+  "production_files_modified": false,
+  "raw_files": 297,
+  "report_sha256": "5715a8930e047b4c4ff0666acda36b0fbb0fdc40edac5bc378358b645fc11192",
+  "reviewed_source": "dbbbe7ecff03f0a98920cf8317f979470bcd86b4",
+  "reviewer": "dualmic_acoustic",
+  "source_files": 57,
+  "started_monotonic": 48080.530472397,
+  "started_utc": "2026-11-06T13:19:40.783638+00:00",
+  "status": "INDEPENDENT_READBACK_PASS",
+  "totals": {
+    "actual_decode_calls": 6040,
+    "direct_frames": 4864,
+    "packets": 6040,
+    "plc_calls": 8,
+    "runtime_frames": 6080
+  }
+}

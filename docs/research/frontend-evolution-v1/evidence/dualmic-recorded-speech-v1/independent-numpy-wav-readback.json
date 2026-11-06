@@ -1,0 +1,146 @@
+{
+  "source_revision": "f4f222ff3f3c65689e2462bb50277b84afb6b025",
+  "report_sha256": "8d33e84c908cc3641c7404f46a9b33708b30402038be4be9e42d6d4f4da5d02b",
+  "independent_numpy_metric_rows": 16,
+  "maximum_numeric_difference": 2.135180920959101e-12,
+  "si_sdr_formula": "raw uncentered scalar projection, epsilon 1e-12; NO mean subtraction; recorded selected delays",
+  "wav_count": 84,
+  "wav_pcm_bytes": 16128000,
+  "same_profile_input_paths_pairs": 28,
+  "worst_cases": {
+    "call": [
+      {
+        "case": "pair-0-doubletalk-nominal-call",
+        "input_si_sdr_db": 18.255477252633725,
+        "output_si_sdr_db": 5.84254875151871,
+        "improvement_db": -12.412928501115015,
+        "input_delay_samples": 0,
+        "output_delay_samples": 160
+      },
+      {
+        "case": "pair-0-doubletalk-weak-call",
+        "input_si_sdr_db": 13.065200844151912,
+        "output_si_sdr_db": 5.74057021911718,
+        "improvement_db": -7.3246306250347315,
+        "input_delay_samples": 0,
+        "output_delay_samples": 160
+      },
+      {
+        "case": "pair-2-doubletalk-nominal-call",
+        "input_si_sdr_db": 10.006817283476737,
+        "output_si_sdr_db": 7.593853894468602,
+        "improvement_db": -2.4129633890081355,
+        "input_delay_samples": 0,
+        "output_delay_samples": 160
+      },
+      {
+        "case": "pair-3-doubletalk-nominal-call",
+        "input_si_sdr_db": 3.954437230127017,
+        "output_si_sdr_db": 3.2862442144616604,
+        "improvement_db": -0.6681930156653566,
+        "input_delay_samples": 0,
+        "output_delay_samples": 160
+      },
+      {
+        "case": "pair-3-doubletalk-weak-call",
+        "input_si_sdr_db": -1.217775648491995,
+        "output_si_sdr_db": -0.7807866110054165,
+        "improvement_db": 0.4369890374865786,
+        "input_delay_samples": 0,
+        "output_delay_samples": 160
+      },
+      {
+        "case": "pair-1-doubletalk-nominal-call",
+        "input_si_sdr_db": 0.31338298889149957,
+        "output_si_sdr_db": 0.9261313359315322,
+        "improvement_db": 0.6127483470400326,
+        "input_delay_samples": 0,
+        "output_delay_samples": 160
+      },
+      {
+        "case": "pair-2-doubletalk-weak-call",
+        "input_si_sdr_db": 4.814945735988044,
+        "output_si_sdr_db": 5.907809896233912,
+        "improvement_db": 1.0928641602458686,
+        "input_delay_samples": 0,
+        "output_delay_samples": 160
+      },
+      {
+        "case": "pair-1-doubletalk-weak-call",
+        "input_si_sdr_db": -4.799910762839978,
+        "output_si_sdr_db": -3.1677790500922978,
+        "improvement_db": 1.6321317127476807,
+        "input_delay_samples": 0,
+        "output_delay_samples": 160
+      }
+    ],
+    "assistant": [
+      {
+        "case": "pair-0-doubletalk-nominal-assistant",
+        "input_si_sdr_db": 18.255477252633725,
+        "output_si_sdr_db": 6.16269671114834,
+        "improvement_db": -12.092780541485386,
+        "input_delay_samples": 0,
+        "output_delay_samples": 160
+      },
+      {
+        "case": "pair-0-doubletalk-weak-assistant",
+        "input_si_sdr_db": 13.065200844151912,
+        "output_si_sdr_db": 5.721682508002242,
+        "improvement_db": -7.343518336149669,
+        "input_delay_samples": 0,
+        "output_delay_samples": 160
+      },
+      {
+        "case": "pair-2-doubletalk-nominal-assistant",
+        "input_si_sdr_db": 10.006817283476737,
+        "output_si_sdr_db": 7.519200984412172,
+        "improvement_db": -2.487616299064565,
+        "input_delay_samples": 0,
+        "output_delay_samples": 160
+      },
+      {
+        "case": "pair-3-doubletalk-nominal-assistant",
+        "input_si_sdr_db": 3.954437230127017,
+        "output_si_sdr_db": 2.8233022609585126,
+        "improvement_db": -1.1311349691685044,
+        "input_delay_samples": 0,
+        "output_delay_samples": 160
+      },
+      {
+        "case": "pair-3-doubletalk-weak-assistant",
+        "input_si_sdr_db": -1.217775648491995,
+        "output_si_sdr_db": -1.3383047252428009,
+        "improvement_db": -0.12052907675080582,
+        "input_delay_samples": 0,
+        "output_delay_samples": 160
+      },
+      {
+        "case": "pair-1-doubletalk-nominal-assistant",
+        "input_si_sdr_db": 0.31338298889149957,
+        "output_si_sdr_db": 0.8568674963940628,
+        "improvement_db": 0.5434845075025632,
+        "input_delay_samples": 0,
+        "output_delay_samples": 160
+      },
+      {
+        "case": "pair-2-doubletalk-weak-assistant",
+        "input_si_sdr_db": 4.814945735988044,
+        "output_si_sdr_db": 5.465948710817811,
+        "improvement_db": 0.6510029748297672,
+        "input_delay_samples": 0,
+        "output_delay_samples": 160
+      },
+      {
+        "case": "pair-1-doubletalk-weak-assistant",
+        "input_si_sdr_db": -4.799910762839978,
+        "output_si_sdr_db": -3.4772010989626354,
+        "improvement_db": 1.322709663877343,
+        "input_delay_samples": 0,
+        "output_delay_samples": 160
+      }
+    ]
+  },
+  "review_elapsed_seconds": 232.6166335010057,
+  "budget_seconds": 300
+}

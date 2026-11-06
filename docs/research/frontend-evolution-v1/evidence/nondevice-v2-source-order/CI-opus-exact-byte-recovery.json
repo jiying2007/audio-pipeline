@@ -1,0 +1,14 @@
+{
+  "status": "CI_OPUS_BINARY_IDENTICAL",
+  "source_url": "https://archive.ubuntu.com/ubuntu/pool/main/o/opus/libopus0_1.4-1build1_amd64.deb",
+  "deb_sha256": "6d8da32a832e655c9603543b47a0bc90c6f60bdee0c00fe7499bd50acad566cf",
+  "deb_bytes": 208122,
+  "library_sha256": "63ddaf057d71c53090607e0467eb308640c3b39b0f189e5b937e9c397be2f676",
+  "library_bytes": 387368,
+  "copyright_sha256": "893be2dfc7b9d827675d69c43e1f172a89ef10d3745ffd15a48514c08470cace",
+  "elapsed_seconds": 0.005751283002609853,
+  "timing_scope": "corrected extraction and CI native-byte verification from retained exact package, not a fresh download",
+  "budget_seconds": 300,
+  "installed_into_host": false,
+  "code_executed": false
+}

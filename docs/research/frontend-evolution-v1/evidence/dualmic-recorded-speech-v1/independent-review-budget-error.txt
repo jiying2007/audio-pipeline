@@ -1,0 +1,9 @@
+Administrative archive of observed tool output; no reexecution.
+Traceback (most recent call last):
+  File "<stdin>", line 4, in <module>
+ValueError: original independent review budget exceeded
+
+Actual retained verifier exited 0 at total elapsed 256.4421856879999 seconds.
+Overall independent review stage, including final receipt, exceeded original 300-second budget.
+Status: REVIEW_BUDGET_EXCEEDED
+No overall phase PASS. No budget reset or additional validation.

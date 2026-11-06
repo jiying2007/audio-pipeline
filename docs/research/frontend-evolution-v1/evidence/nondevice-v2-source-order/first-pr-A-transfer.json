@@ -1,0 +1,9 @@
+{
+  "artifact_id": 13506623029,
+  "zip_bytes": 15296596,
+  "zip_sha256": "d63cc5c2a32ae7f784e47d304be9d2495d86003a7065d414c0403de73b6b14fb",
+  "extracted_files": 144,
+  "elapsed_seconds": 0.6807125010018353,
+  "budget_seconds": 300,
+  "result": "ARTIFACT_TRANSFER_VERIFIED"
+}

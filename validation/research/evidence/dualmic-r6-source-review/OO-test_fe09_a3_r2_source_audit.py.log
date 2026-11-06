@@ -1,0 +1,22 @@
+test_archived_member_rejects_replaced_blob_or_mode (__main__.SourceAuditTests.test_archived_member_rejects_replaced_blob_or_mode) ... ok
+test_audit_cli_nonpromotion_flags_and_status (__main__.SourceAuditTests.test_audit_cli_nonpromotion_flags_and_status) ... ok
+test_current_source_differences_are_reported_not_promoted (__main__.SourceAuditTests.test_current_source_differences_are_reported_not_promoted) ... ok
+test_duplicate_row_and_path_traversal_rejected (__main__.SourceAuditTests.test_duplicate_row_and_path_traversal_rejected) ... ok
+test_git_environment_disallows_network_and_credentials (__main__.SourceAuditTests.test_git_environment_disallows_network_and_credentials) ... ok
+test_invalid_ref_and_blob_id_reject (__main__.SourceAuditTests.test_invalid_ref_and_blob_id_reject) ... ok
+test_lock_missing_duplicate_and_nonfinite_json_rejected (__main__.SourceAuditTests.test_lock_missing_duplicate_and_nonfinite_json_rejected) ... ok
+test_original_baseline_or_comparison_drift_rejects (__main__.SourceAuditTests.test_original_baseline_or_comparison_drift_rejects) ... ok
+test_original_lock_contract_fixtures (__main__.SourceAuditTests.test_original_lock_contract_fixtures) ... ok
+test_original_missing_or_symlink_rejects (__main__.SourceAuditTests.test_original_missing_or_symlink_rejects) ... ok
+test_parse_nul_delimited_exact_tree (__main__.SourceAuditTests.test_parse_nul_delimited_exact_tree) ... ok
+test_positive_three_original_bytes_current_unchanged (__main__.SourceAuditTests.test_positive_three_original_bytes_current_unchanged) ... ok
+test_source_lock_replaced_bytes_rejected_before_parse (__main__.SourceAuditTests.test_source_lock_replaced_bytes_rejected_before_parse) ... ok
+test_tree_size_limit_and_duplicate_rejected (__main__.SourceAuditTests.test_tree_size_limit_and_duplicate_rejected) ... ok
+test_unregistered_change_is_not_misreported_as_identical_full_tree (__main__.SourceAuditTests.test_unregistered_change_is_not_misreported_as_identical_full_tree) ... ok
+test_wrong_bytes_length_digest_or_git_blob_rejected (__main__.SourceAuditTests.test_wrong_bytes_length_digest_or_git_blob_rejected) ... ok
+test_wrong_row_types_and_untrusted_identity_rejected (__main__.SourceAuditTests.test_wrong_row_types_and_untrusted_identity_rejected) ... ok
+
+----------------------------------------------------------------------
+Ran 17 tests in 0.007s
+
+OK

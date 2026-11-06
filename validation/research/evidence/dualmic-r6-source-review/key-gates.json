@@ -1,0 +1,107 @@
+[
+  {
+    "argv": [
+      "python3",
+      "tests/validation/frontend_evolution/fe09_b3_f0_r6_source_admission.py",
+      "--self-test"
+    ],
+    "returncode": 0,
+    "seconds": 1.984549685003003,
+    "log": "normal-fe09_b3_f0_r6_source_admission.py.log",
+    "sha256": "80ffaa14e2f47a149bfe9b6432638875a64e2143f5418899a91e9ed2e712590d"
+  },
+  {
+    "argv": [
+      "python3",
+      "tests/validation/frontend_evolution/fe09_dualmic_r6_derivation_contract.py",
+      "--self-test"
+    ],
+    "returncode": 0,
+    "seconds": 1.1315291889986838,
+    "log": "normal-fe09_dualmic_r6_derivation_contract.py.log",
+    "sha256": "4249036c34a537132c81a2658e274d672bcf3e9d860cebf484308a8b94ff97f4"
+  },
+  {
+    "argv": [
+      "python3",
+      "tests/validation/frontend_evolution/fe09_runtime_maintenance_rebind.py",
+      "--self-test"
+    ],
+    "returncode": 0,
+    "seconds": 0.21622576200024923,
+    "log": "normal-fe09_runtime_maintenance_rebind.py.log",
+    "sha256": "c75d54654025bebfab43332bd3ff484435c112f8a3dcfe8aae1ee5f416e8e7fa"
+  },
+  {
+    "argv": [
+      "python3",
+      "-O",
+      "tests/validation/frontend_evolution/fe09_b3_f0_r6_source_admission.py",
+      "--self-test"
+    ],
+    "returncode": 0,
+    "seconds": 1.9593851210011053,
+    "log": "O-fe09_b3_f0_r6_source_admission.py.log",
+    "sha256": "80ffaa14e2f47a149bfe9b6432638875a64e2143f5418899a91e9ed2e712590d"
+  },
+  {
+    "argv": [
+      "python3",
+      "-O",
+      "tests/validation/frontend_evolution/fe09_dualmic_r6_derivation_contract.py",
+      "--self-test"
+    ],
+    "returncode": 0,
+    "seconds": 1.2126008970008115,
+    "log": "O-fe09_dualmic_r6_derivation_contract.py.log",
+    "sha256": "4249036c34a537132c81a2658e274d672bcf3e9d860cebf484308a8b94ff97f4"
+  },
+  {
+    "argv": [
+      "python3",
+      "-O",
+      "tests/validation/frontend_evolution/fe09_runtime_maintenance_rebind.py",
+      "--self-test"
+    ],
+    "returncode": 0,
+    "seconds": 0.34856730899991817,
+    "log": "O-fe09_runtime_maintenance_rebind.py.log",
+    "sha256": "c75d54654025bebfab43332bd3ff484435c112f8a3dcfe8aae1ee5f416e8e7fa"
+  },
+  {
+    "argv": [
+      "python3",
+      "-OO",
+      "tests/validation/frontend_evolution/fe09_b3_f0_r6_source_admission.py",
+      "--self-test"
+    ],
+    "returncode": 0,
+    "seconds": 2.0940909189994272,
+    "log": "OO-fe09_b3_f0_r6_source_admission.py.log",
+    "sha256": "80ffaa14e2f47a149bfe9b6432638875a64e2143f5418899a91e9ed2e712590d"
+  },
+  {
+    "argv": [
+      "python3",
+      "-OO",
+      "tests/validation/frontend_evolution/fe09_dualmic_r6_derivation_contract.py",
+      "--self-test"
+    ],
+    "returncode": 0,
+    "seconds": 1.072846330000175,
+    "log": "OO-fe09_dualmic_r6_derivation_contract.py.log",
+    "sha256": "4249036c34a537132c81a2658e274d672bcf3e9d860cebf484308a8b94ff97f4"
+  },
+  {
+    "argv": [
+      "python3",
+      "-OO",
+      "tests/validation/frontend_evolution/fe09_runtime_maintenance_rebind.py",
+      "--self-test"
+    ],
+    "returncode": 0,
+    "seconds": 0.3344919449991721,
+    "log": "OO-fe09_runtime_maintenance_rebind.py.log",
+    "sha256": "c75d54654025bebfab43332bd3ff484435c112f8a3dcfe8aae1ee5f416e8e7fa"
+  }
+]

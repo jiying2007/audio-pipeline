@@ -4,7 +4,11 @@
 
 > **当前状态边界：纯技术研究。** 仓库提供可复现的 BF/AEC/NS/AGC/VAD、Runtime、公共 C API、1/2/4 麦及 ARM/SSC305 类资源实验。研究准入取决于来源与许可、角色隔离、算法回归和真实测量，不需要商业发布、SKU 审批、产品认证或固定 72 小时真机老化。Hosted/QEMU 结果不是物理设备数据；真实 HIL/声学/功耗/温升等证据缺失时应标记 `NOT_RUN`/`BLOCKED`。旧软件商用就绪和产品资格声明仅属历史档案，详见 [研究执行边界](RESEARCH_ONLY_EXECUTION.md) 与 [#882](https://github.com/jiying2007/audio-pipeline/issues/882)。
 
-## 双/四麦研究接续
+## 当前双麦识别交互与语音对讲
+
+[双麦首轮实施与证据索引](research/frontend-evolution-v1/README.md#2026-11-06-双麦识别交互与语音对讲)覆盖 SYNC 实际观察间隔、LITE/固定方向健康保护、SAFE 计数生命周期，以及同一公共前端的 CALL / ASSISTANT 配置回放。使用现有 [PCM 入口](OFFLINE_PCM_IO.md) 的 `--profile call|assistant` 显式选择用途；不指定时仍为 CALL。工程连续性、声学效果、KWS 与物理目标结果分别依其实际证据判断；保留已发现的近端幅度损失和切换边界问题。
+
+## 双/四麦历史研究接续
 
 [C4 软件资格与缺口清单](research/frontend-evolution-v1/C4_SOFTWARE_GAP_INVENTORY_20261020.md) 顶部记录已核实的阶段收口，并保留原始盘点：A1 非零左锚点根、v2.3.56 Runtime/CI 六项修复、无损证据运输，以及 A2-F0 固定前缀退休与外部锚定的 hosted 进程恢复已完成。B3-F0 [#837](https://github.com/jiying2007/audio-pipeline/issues/837) 已完成固定 C4/16kHz 实际 CALL 的 Render PRESENT/ABSENT/重入功能组合；[T3-S3-F0 资源测量](research/frontend-evolution-v1/FE09_T3S3_F0_RESOURCE_PREREGISTRATION_20261024/README.md) 需取得自身独立主线原件与门禁后才能作为有限测量完成。连续滚动、整机冷启动、完整线程栈/设备资源和公共 C4 SDK 仍须分别推进。当前任务以 [研究总索引 #657](https://github.com/jiying2007/audio-pipeline/issues/657) 及具体子任务的最新收口记录为准；历史预注册的待完成状态不覆盖后续 completed 子任务，也不等于父计划已完成。
 

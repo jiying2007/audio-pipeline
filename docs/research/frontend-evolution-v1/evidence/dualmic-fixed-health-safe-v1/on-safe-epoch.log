@@ -1,0 +1,33 @@
+safe_arm rate=8000 gap=1 safe=healthy next_bad=0 first_average_error=1 fifth_target_error=0
+safe_arm rate=8000 gap=1 safe=healthy next_bad=1 first_average_error=1 fifth_target_error=0
+safe_arm rate=8000 gap=1 safe=hard1 next_bad=0 first_average_error=1 fifth_target_error=0
+safe_arm rate=8000 gap=1 safe=hard1 next_bad=1 first_average_error=1 fifth_target_error=0
+safe_arm rate=8000 gap=4 safe=healthy next_bad=0 first_average_error=1 fifth_target_error=0
+safe_arm rate=8000 gap=4 safe=healthy next_bad=1 first_average_error=1 fifth_target_error=0
+safe_arm rate=8000 gap=4 safe=hard1 next_bad=0 first_average_error=1 fifth_target_error=0
+safe_arm rate=8000 gap=4 safe=hard1 next_bad=1 first_average_error=1 fifth_target_error=0
+safe_confirmed rate=8000 profile=0 return_quality=1 max_resumed_route_error=0
+safe_confirmed rate=8000 profile=0 return_quality=2 max_resumed_route_error=0
+safe_confirmed rate=8000 profile=1 return_quality=1 max_resumed_route_error=0
+safe_confirmed rate=8000 profile=1 return_quality=2 max_resumed_route_error=0
+safe_recovery rate=8000 profile=0 safe=healthy expected_first_observation=40 expected_eighth_observation=68 first_selected_error=0 last_average_error=1
+safe_recovery rate=8000 profile=0 safe=hard0 expected_first_observation=40 expected_eighth_observation=68 first_selected_error=0 last_average_error=1
+safe_recovery rate=8000 profile=1 safe=healthy expected_first_observation=40 expected_eighth_observation=68 first_selected_error=0 last_average_error=1
+safe_recovery rate=8000 profile=1 safe=hard0 expected_first_observation=40 expected_eighth_observation=68 first_selected_error=0 last_average_error=1
+safe_arm rate=16000 gap=1 safe=healthy next_bad=0 first_average_error=1 fifth_target_error=0
+safe_arm rate=16000 gap=1 safe=healthy next_bad=1 first_average_error=1 fifth_target_error=0
+safe_arm rate=16000 gap=1 safe=hard1 next_bad=0 first_average_error=1 fifth_target_error=0
+safe_arm rate=16000 gap=1 safe=hard1 next_bad=1 first_average_error=1 fifth_target_error=0
+safe_arm rate=16000 gap=4 safe=healthy next_bad=0 first_average_error=1 fifth_target_error=0
+safe_arm rate=16000 gap=4 safe=healthy next_bad=1 first_average_error=1 fifth_target_error=0
+safe_arm rate=16000 gap=4 safe=hard1 next_bad=0 first_average_error=1 fifth_target_error=0
+safe_arm rate=16000 gap=4 safe=hard1 next_bad=1 first_average_error=1 fifth_target_error=0
+safe_confirmed rate=16000 profile=0 return_quality=1 max_resumed_route_error=0
+safe_confirmed rate=16000 profile=0 return_quality=2 max_resumed_route_error=0
+safe_confirmed rate=16000 profile=1 return_quality=1 max_resumed_route_error=0
+safe_confirmed rate=16000 profile=1 return_quality=2 max_resumed_route_error=0
+safe_recovery rate=16000 profile=0 safe=healthy expected_first_observation=40 expected_eighth_observation=68 first_selected_error=0 last_average_error=1
+safe_recovery rate=16000 profile=0 safe=hard0 expected_first_observation=40 expected_eighth_observation=68 first_selected_error=0 last_average_error=1
+safe_recovery rate=16000 profile=1 safe=healthy expected_first_observation=40 expected_eighth_observation=68 first_selected_error=0 last_average_error=1
+safe_recovery rate=16000 profile=1 safe=hard0 expected_first_observation=40 expected_eighth_observation=68 first_selected_error=0 last_average_error=1
+beamformer public-SAFE checks=5024 failures=0

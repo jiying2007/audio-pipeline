@@ -1,0 +1,239 @@
+{
+  "commands": [
+    {
+      "argv": [
+        "python3",
+        "tests/validation/frontend_evolution/fe09_b3_f0_deadline_r6_qualification.py",
+        "--self-test"
+      ],
+      "expected_returncode": 0,
+      "returncode": 0,
+      "log": "additional-00.log",
+      "sha256": "3f351c7cfaf5f7144a106c2e3250e682cf26de34747845d36e331ea1ba174c39"
+    },
+    {
+      "argv": [
+        "python3",
+        "tests/validation/frontend_evolution/fe09_t3s3_f0_call_resource_r6_qualification.py",
+        "--self-test"
+      ],
+      "expected_returncode": 0,
+      "returncode": 0,
+      "log": "additional-01.log",
+      "sha256": "385b4797a54b2da418227a648241bb865f1c732ecc8518606fc6197a4ba46f4d"
+    },
+    {
+      "argv": [
+        "python3",
+        "tests/validation/frontend_evolution/fe09_b3_f0_r6_source_admission.py",
+        "--check-current"
+      ],
+      "expected_returncode": 0,
+      "returncode": 0,
+      "log": "additional-02.log",
+      "sha256": "3aa3a60676e17f9b713ae3c1932dbce270d252e31e81d47b4fe86cd6bead84e3"
+    },
+    {
+      "argv": [
+        "python3",
+        "tests/validation/frontend_evolution/fe09_b3_f0_r6_source_admission.py",
+        "--check"
+      ],
+      "expected_returncode": 2,
+      "returncode": 2,
+      "log": "additional-03.log",
+      "sha256": "e8190734374ea564550e405296c7e192fef4d62dc9aea2d3b371049add707857"
+    },
+    {
+      "argv": [
+        "python3",
+        "tests/validation/frontend_evolution/fe09_dualmic_r6_derivation_contract.py",
+        "--method-self-test"
+      ],
+      "expected_returncode": 0,
+      "returncode": 0,
+      "log": "additional-04.log",
+      "sha256": "e2be2fa8891456e5d63f64794aea6d41d7ddbde63c128b11e086ade5adb8878c"
+    },
+    {
+      "argv": [
+        "python3",
+        "-O",
+        "tests/validation/frontend_evolution/fe09_dualmic_r6_derivation_contract.py",
+        "--method-self-test"
+      ],
+      "expected_returncode": 0,
+      "returncode": 0,
+      "log": "additional-05.log",
+      "sha256": "e2be2fa8891456e5d63f64794aea6d41d7ddbde63c128b11e086ade5adb8878c"
+    },
+    {
+      "argv": [
+        "python3",
+        "-OO",
+        "tests/validation/frontend_evolution/fe09_dualmic_r6_derivation_contract.py",
+        "--method-self-test"
+      ],
+      "expected_returncode": 0,
+      "returncode": 0,
+      "log": "additional-06.log",
+      "sha256": "e2be2fa8891456e5d63f64794aea6d41d7ddbde63c128b11e086ade5adb8878c"
+    }
+  ],
+  "workflow_routes": [
+    {
+      "kind": "B3",
+      "version": "2.3.56",
+      "returncode": 0,
+      "stdout": "tests/validation/frontend_evolution/fe09_b3_f0_deadline_r1_qualification.py deadline-r1",
+      "stderr": ""
+    },
+    {
+      "kind": "B3",
+      "version": "2.3.57",
+      "returncode": 0,
+      "stdout": "tests/validation/frontend_evolution/fe09_b3_f0_deadline_r2_qualification.py forward-r2",
+      "stderr": ""
+    },
+    {
+      "kind": "B3",
+      "version": "2.3.58",
+      "returncode": 0,
+      "stdout": "tests/validation/frontend_evolution/fe09_b3_f0_deadline_r2_qualification.py forward-r2",
+      "stderr": ""
+    },
+    {
+      "kind": "B3",
+      "version": "2.3.59",
+      "returncode": 0,
+      "stdout": "tests/validation/frontend_evolution/fe09_b3_f0_deadline_r3_qualification.py forward-r3",
+      "stderr": ""
+    },
+    {
+      "kind": "B3",
+      "version": "2.3.60",
+      "returncode": 0,
+      "stdout": "tests/validation/frontend_evolution/fe09_b3_f0_deadline_r4_qualification.py forward-r4",
+      "stderr": ""
+    },
+    {
+      "kind": "B3",
+      "version": "2.3.61",
+      "returncode": 0,
+      "stdout": "tests/validation/frontend_evolution/fe09_b3_f0_deadline_r5_path_r1_qualification.py forward-r5-path-r1",
+      "stderr": ""
+    },
+    {
+      "kind": "B3",
+      "version": "2.3.62",
+      "returncode": 0,
+      "stdout": "tests/validation/frontend_evolution/fe09_b3_f0_deadline_r6_qualification.py forward-r6-dualmic-v1",
+      "stderr": ""
+    },
+    {
+      "kind": "B3",
+      "version": "2.3.63",
+      "returncode": 2,
+      "stdout": "",
+      "stderr": "UNREGISTERED_B3_SCIENCE_EXECUTION_VERSION:2.3.63"
+    },
+    {
+      "kind": "B3",
+      "version": "3.0.0",
+      "returncode": 2,
+      "stdout": "",
+      "stderr": "UNREGISTERED_B3_SCIENCE_EXECUTION_VERSION:3.0.0"
+    },
+    {
+      "kind": "B3",
+      "version": "2.3.62-rc",
+      "returncode": 2,
+      "stdout": "",
+      "stderr": "UNREGISTERED_B3_SCIENCE_EXECUTION_VERSION:2.3.62-rc"
+    },
+    {
+      "kind": "B3",
+      "version": "",
+      "returncode": 2,
+      "stdout": "",
+      "stderr": "UNREGISTERED_B3_SCIENCE_EXECUTION_VERSION:"
+    },
+    {
+      "kind": "F0",
+      "version": "2.3.56",
+      "returncode": 0,
+      "stdout": "tests/validation/frontend_evolution/fe09_t3s3_f0_call_resource_qualification.py original-v1",
+      "stderr": ""
+    },
+    {
+      "kind": "F0",
+      "version": "2.3.57",
+      "returncode": 0,
+      "stdout": "tests/validation/frontend_evolution/fe09_t3s3_f0_call_resource_r2_qualification.py forward-r2",
+      "stderr": ""
+    },
+    {
+      "kind": "F0",
+      "version": "2.3.58",
+      "returncode": 0,
+      "stdout": "tests/validation/frontend_evolution/fe09_t3s3_f0_call_resource_r2_qualification.py forward-r2",
+      "stderr": ""
+    },
+    {
+      "kind": "F0",
+      "version": "2.3.59",
+      "returncode": 0,
+      "stdout": "tests/validation/frontend_evolution/fe09_t3s3_f0_call_resource_r3_qualification.py forward-r3",
+      "stderr": ""
+    },
+    {
+      "kind": "F0",
+      "version": "2.3.60",
+      "returncode": 0,
+      "stdout": "tests/validation/frontend_evolution/fe09_t3s3_f0_call_resource_r4_qualification.py forward-r4",
+      "stderr": ""
+    },
+    {
+      "kind": "F0",
+      "version": "2.3.61",
+      "returncode": 0,
+      "stdout": "tests/validation/frontend_evolution/fe09_t3s3_f0_call_resource_r5_path_r1_qualification.py forward-r5-path-r1",
+      "stderr": ""
+    },
+    {
+      "kind": "F0",
+      "version": "2.3.62",
+      "returncode": 0,
+      "stdout": "tests/validation/frontend_evolution/fe09_t3s3_f0_call_resource_r6_qualification.py forward-r6-dualmic-v1",
+      "stderr": ""
+    },
+    {
+      "kind": "F0",
+      "version": "2.3.63",
+      "returncode": 2,
+      "stdout": "",
+      "stderr": "UNREGISTERED_F0_RESOURCE_EXECUTION_VERSION:2.3.63"
+    },
+    {
+      "kind": "F0",
+      "version": "3.0.0",
+      "returncode": 2,
+      "stdout": "",
+      "stderr": "UNREGISTERED_F0_RESOURCE_EXECUTION_VERSION:3.0.0"
+    },
+    {
+      "kind": "F0",
+      "version": "2.3.62-rc",
+      "returncode": 2,
+      "stdout": "",
+      "stderr": "UNREGISTERED_F0_RESOURCE_EXECUTION_VERSION:2.3.62-rc"
+    },
+    {
+      "kind": "F0",
+      "version": "",
+      "returncode": 2,
+      "stdout": "",
+      "stderr": "UNREGISTERED_F0_RESOURCE_EXECUTION_VERSION:"
+    }
+  ]
+}

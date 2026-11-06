@@ -1,0 +1,91 @@
+[  1%] Building C object CMakeFiles/audio_pipeline.dir/Unity/unity_0_c.c.o
+[  3%] Building C object CMakeFiles/audio_pipeline.dir/src/modules/ap_beamformer_module.c.o
+[  4%] Building C object CMakeFiles/audio_pipeline.dir/src/modules/ap_hpf_module.c.o
+[  6%] Building C object CMakeFiles/audio_pipeline.dir/src/modules/ap_resampler_module.c.o
+[  7%] Building C object CMakeFiles/audio_pipeline.dir/src/modules/ap_sync_module.c.o
+[  9%] Building C object CMakeFiles/audio_pipeline.dir/src/modules/ap_activity_module.c.o
+[ 10%] Building C object CMakeFiles/audio_pipeline.dir/src/modules/ap_res_module.c.o
+[ 12%] Building C object CMakeFiles/audio_pipeline.dir/src/modules/ap_ns_module.c.o
+[ 14%] Building C object CMakeFiles/audio_pipeline.dir/src/modules/ap_agc_module.c.o
+[ 15%] Building C object CMakeFiles/audio_pipeline.dir/src/modules/ap_vad_module.c.o
+[ 17%] Building C object CMakeFiles/audio_pipeline.dir/src/modules/ap_aec_module.c.o
+[ 18%] Linking C static library libaudio_pipeline.a
+[ 18%] Built target audio_pipeline
+[ 20%] Building C object CMakeFiles/ap_build_info_dump.dir/examples/build_info.c.o
+[ 21%] Building C object CMakeFiles/audio_pipeline_runtime.dir/src/platform/linux/ap_runtime.c.o
+[ 23%] Building C object CMakeFiles/ap_module_tests.dir/tests/test_modules.c.o
+[ 25%] Building C object CMakeFiles/ap_process_pcm.dir/examples/process_pcm.c.o
+[ 26%] Linking C executable ap_build_info_dump
+[ 26%] Built target ap_build_info_dump
+[ 28%] Building C object CMakeFiles/ap_sync_observation_time_tests.dir/tests/test_sync_observation_time.c.o
+[ 29%] Linking C executable ap_module_tests
+[ 29%] Built target ap_module_tests
+[ 31%] Building C object CMakeFiles/ap_beamformer_health_tests.dir/tests/test_beamformer_health.c.o
+[ 32%] Linking C executable ap_process_pcm
+[ 32%] Built target ap_process_pcm
+[ 34%] Building C object CMakeFiles/ap_echo_dynamics_tests.dir/tests/test_echo_dynamics.c.o
+[ 35%] Linking C executable ap_echo_dynamics_tests
+[ 35%] Built target ap_echo_dynamics_tests
+[ 37%] Building C object CMakeFiles/ap_build_info_tests.dir/tests/test_build_info.c.o
+[ 39%] Linking C executable ap_build_info_tests
+[ 39%] Built target ap_build_info_tests
+[ 40%] Building C object CMakeFiles/ap_tests.dir/tests/test_pipeline.c.o
+[ 42%] Linking C executable ap_sync_observation_time_tests
+[ 42%] Built target ap_sync_observation_time_tests
+[ 43%] Building C object CMakeFiles/ap_contract_tests.dir/tests/test_contracts.c.o
+[ 45%] Linking C static library libaudio_pipeline_runtime.a
+[ 46%] Linking C executable ap_tests
+[ 46%] Built target audio_pipeline_runtime
+[ 48%] Building C object CMakeFiles/ap_pipeline_control_tests.dir/tests/test_pipeline_controls.c.o
+[ 48%] Built target ap_tests
+[ 50%] Building C object CMakeFiles/ap_metamorphic_tests.dir/tests/test_metamorphic.c.o
+[ 51%] Linking C executable ap_pipeline_control_tests
+[ 53%] Linking C executable ap_metamorphic_tests
+[ 53%] Built target ap_pipeline_control_tests
+[ 54%] Linking C executable ap_contract_tests
+[ 54%] Built target ap_metamorphic_tests
+[ 56%] Building C object CMakeFiles/ap_process_pcm_io_tests.dir/tests/test_process_pcm_io.c.o
+[ 57%] Building C object CMakeFiles/ap_process_pcm_profile_tests.dir/tests/test_process_pcm_profiles.c.o
+[ 57%] Built target ap_contract_tests
+[ 59%] Building C object CMakeFiles/ap_state_size.dir/tests/print_pipeline_state.c.o
+[ 60%] Linking C executable ap_state_size
+[ 60%] Built target ap_state_size
+[ 62%] Building C object CMakeFiles/ap_consumer_smoke.dir/tests/consumer_smoke.c.o
+[ 64%] Linking C executable ap_consumer_smoke
+[ 64%] Built target ap_consumer_smoke
+[ 65%] Building C object CMakeFiles/ap_realtime_tests.dir/tests/test_realtime.c.o
+[ 67%] Linking C executable ap_realtime_tests
+[ 67%] Built target ap_realtime_tests
+[ 68%] Building C object CMakeFiles/ap_fft_tests.dir/tests/test_fft.c.o
+[ 70%] Linking C executable ap_beamformer_health_tests
+[ 73%] Linking C executable ap_process_pcm_io_tests
+[ 73%] Linking C executable ap_process_pcm_profile_tests
+[ 73%] Built target ap_beamformer_health_tests
+[ 75%] Building C object CMakeFiles/ap_noise_tracker_tests.dir/tests/test_noise_tracker.c.o
+[ 76%] Linking C executable ap_fft_tests
+[ 76%] Built target ap_process_pcm_io_tests
+[ 76%] Built target ap_process_pcm_profile_tests
+[ 78%] Building C object CMakeFiles/ap_resampler_tests.dir/tests/test_resampler.c.o
+[ 79%] Building C object CMakeFiles/ap_drift_res_tests.dir/tests/test_drift_res.c.o
+[ 79%] Built target ap_fft_tests
+[ 81%] Linking C executable ap_noise_tracker_tests
+[ 82%] Building C object CMakeFiles/ap_runtime_tests.dir/tests/test_runtime.c.o
+[ 82%] Built target ap_noise_tracker_tests
+[ 84%] Building C object CMakeFiles/ap_runtime_extended_tests.dir/tests/test_runtime_extended.c.o
+[ 85%] Linking C executable ap_resampler_tests
+[ 87%] Linking C executable ap_runtime_tests
+[ 87%] Built target ap_resampler_tests
+[ 89%] Building C object CMakeFiles/ap_runtime_interleaving_tests.dir/tests/test_runtime_interleavings.c.o
+[ 89%] Built target ap_runtime_tests
+[ 90%] Building C object CMakeFiles/ap_alsa_runtime_example_tests.dir/tests/test_alsa_runtime_example.c.o
+[ 92%] Linking C executable ap_drift_res_tests
+[ 92%] Built target ap_drift_res_tests
+[ 93%] Building C object CMakeFiles/ap_runtime_state_size.dir/tests/print_runtime_state.c.o
+[ 95%] Linking C executable ap_runtime_state_size
+[ 95%] Built target ap_runtime_state_size
+[ 96%] Linking C executable ap_runtime_extended_tests
+[ 96%] Built target ap_runtime_extended_tests
+[ 98%] Linking C executable ap_alsa_runtime_example_tests
+[ 98%] Built target ap_alsa_runtime_example_tests
+[100%] Linking C executable ap_runtime_interleaving_tests
+[100%] Built target ap_runtime_interleaving_tests

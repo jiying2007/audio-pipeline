@@ -78,7 +78,9 @@ python3 tests/validation/frontend_evolution/test_fe09_b3_f0_deadline_r1.py
 # R2 T1 verifies the separately preregistered 2/4-file source identity, never
 # runs B3/F0 DSP nor inherits its historical R1 scientific verdict.
 python3 tests/validation/frontend_evolution/fe09_b3_f0_r2_source_admission.py --self-test
-python3 tests/validation/frontend_evolution/fe09_b3_f0_r5_source_admission.py --check-current
+# R6 preserves old source gates and their rejection of newer versions. Its
+# source-only registration never turns historical results into current results.
+python3 tests/validation/frontend_evolution/fe09_b3_f0_r6_source_admission.py --check-current
 # R2 T2 executor source audit only: both derivations retain byte-exact R1
 # scientific functions and immutable resource/error budgets; NO DSP is run.
 # Source-only T3 verifier: runs original immutable T2 on frozen R2 and
@@ -107,18 +109,40 @@ python3 tests/validation/frontend_evolution/fe09_t3s3_f0_call_resource_r5_qualif
 python3 tests/validation/frontend_evolution/fe09_b3_f0_r5_path_r1_contract.py --self-test
 python3 tests/validation/frontend_evolution/fe09_b3_f0_deadline_r5_path_r1_qualification.py --self-test
 python3 tests/validation/frontend_evolution/fe09_t3s3_f0_call_resource_r5_path_r1_qualification.py --self-test
+# Independently reviewed identity derivatives; no DSP or F1/A3 execution here.
+python3 tests/validation/frontend_evolution/fe09_b3_f0_r6_source_admission.py --self-test
+python3 tests/validation/frontend_evolution/fe09_dualmic_r6_derivation_contract.py --self-test
+python3 tests/validation/frontend_evolution/fe09_b3_f0_deadline_r6_qualification.py --self-test
+python3 tests/validation/frontend_evolution/fe09_t3s3_f0_call_resource_r6_qualification.py --self-test
+source_version=$(sed -n 's/^project(audio_pipeline VERSION \([^ ]*\) LANGUAGES C)$/\1/p' CMakeLists.txt)
+case "$source_version" in
+  2.3.62)
+    f1_source=tests/validation/frontend_evolution/fe09_f1_r3_source_bridge.py
+    f1_build=tests/validation/frontend_evolution/fe09_f1_r3_build.py
+    a3_static=tests/validation/frontend_evolution/fe09_a3_r3_static_build.py
+    f1_output=f1-r3-t1
+    a3_output=a3-r3-t1
+    ;;
+  *)
+    f1_source=tests/validation/frontend_evolution/fe09_f1_r2_source_bridge.py
+    f1_build=tests/validation/frontend_evolution/fe09_f1_r2_build.py
+    a3_static=tests/validation/frontend_evolution/fe09_a3_r2_static_build.py
+    f1_output=f1-r2-t1
+    a3_output=a3-r2-t1
+    ;;
+esac
 # F1-R2-T0 reconciles source identities only; no F1 cohort or provider request.
 python3 tests/validation/frontend_evolution/test_fe09_f1_r2_source_bridge.py
 python3 -O tests/validation/frontend_evolution/test_fe09_f1_r2_source_bridge.py
 python3 -OO tests/validation/frontend_evolution/test_fe09_f1_r2_source_bridge.py
-python3 tests/validation/frontend_evolution/fe09_f1_r2_source_bridge.py --check
+python3 "$f1_source" --check
 # F1-R2-T1 compiles original private images only; never runs them.
 python3 tests/validation/frontend_evolution/test_fe09_f1_r2_build.py
 python3 -O tests/validation/frontend_evolution/test_fe09_f1_r2_build.py
 python3 -OO tests/validation/frontend_evolution/test_fe09_f1_r2_build.py
 if [ "${GITHUB_JOB:-}" = fast-code ]; then
-  python3 tests/validation/frontend_evolution/fe09_f1_r2_build.py \
-    --output "${RUNNER_TEMP:?}/f1-r2-t1-${GITHUB_RUN_ID:?}-${GITHUB_RUN_ATTEMPT:?}"
+  python3 "$f1_build" \
+    --output "${RUNNER_TEMP:?}/${f1_output}-${GITHUB_RUN_ID:?}-${GITHUB_RUN_ATTEMPT:?}"
 fi
 # A3-R2-T0: pinned original 88 source bytes and current-tree differences only.
 # No archived A3 source imports, C/DSP build, workflow or provider request.
@@ -131,8 +155,8 @@ python3 tests/validation/frontend_evolution/test_fe09_a3_r2_static_build.py
 python3 -O tests/validation/frontend_evolution/test_fe09_a3_r2_static_build.py
 python3 -OO tests/validation/frontend_evolution/test_fe09_a3_r2_static_build.py
 if [ "${GITHUB_JOB:-}" = fast-code ]; then
-  python3 tests/validation/frontend_evolution/fe09_a3_r2_static_build.py \
-    --output "${RUNNER_TEMP:?}/a3-r2-t1-${GITHUB_RUN_ID:?}-${GITHUB_RUN_ATTEMPT:?}"
+  python3 "$a3_static" \
+    --output "${RUNNER_TEMP:?}/${a3_output}-${GITHUB_RUN_ID:?}-${GITHUB_RUN_ATTEMPT:?}"
 fi
 # A3-R2-T2-S0: pure metadata syntax checks, no archived A3 guard/provider/target execution.
 python3 tests/validation/frontend_evolution/test_fe09_a3_r2_metadata_json.py

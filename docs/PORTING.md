@@ -1,5 +1,7 @@
 # Porting Guide
 
+> **Current research scope:** This is a technical-research guide. [RESEARCH_ONLY_EXECUTION.md](RESEARCH_ONLY_EXECUTION.md) owns current execution policy. GitHub Releases, shipping SKU approval and product certification are not research prerequisites. Missing device evidence limits only device claims, not independent software/acoustic experiments. Source rights, measurement integrity and blind-data isolation remain required.
+
 ## 1. Choose ABI/toolchain first
 
 Generic toolchain files describe compiler/sysroot/ABI only. CPU tuning belongs in presets or product build configuration.
@@ -14,7 +16,7 @@ Cortex-A32 armhf NEON/FP-Armv8
 AArch64 NEON/ASIMD
 ```
 
-Do not copy Cortex-A32 `-mcpu/-mfpu` flags into an A7 BSP. `ssc305-cortex-a32-low` is the conservative SSC305 product starting profile: 16 kHz/2-mic geometry, 60 ms maximum delay, 64 ms AEC tail, runtime queue depth 4 and fixed broadside delay/sum BF. Adaptive BF direction tracking remains available in generic builds but is disabled in this preset until real render-active/motor/far-field corpus evidence supports enabling it.
+Do not copy Cortex-A32 `-mcpu/-mfpu` flags into an A7 BSP. `ssc305-cortex-a32-low` is the conservative SSC305 research starting profile: 16 kHz/2-mic geometry, 60 ms maximum delay, 64 ms AEC tail, runtime queue depth 4 and fixed broadside delay/sum BF. Adaptive BF direction tracking remains available in generic builds but is disabled in this preset until real render-active/motor/far-field corpus evidence supports enabling it.
 
 ## 2. Define the product artifact
 
@@ -96,8 +98,8 @@ The bundled ALSA examples are compile/integration references, not universal prod
 
 ## 8. Validate the actual target
 
-Use Trusted Runner Readiness before HIL/certification. Run target benchmark and real route soak with the shipping compiler/kernel/DVFS/audio path and preserve exact source/toolchain/binary identity.
+Use research runner readiness before a physical HIL study. Run the target benchmark and bounded real-route endurance with the actual compiler/kernel/DVFS/audio path, preserving exact source/toolchain/binary identity.
 
-At minimum collect CPU, frame p95/p99, RSS/cache/context switches, XRUN/backpressure/overrun, thermal/power and acoustic corpus results. Formal shipping acceptance uses schema-v4 `certification/record.schema.json` and the shipping policy minimum; the checked-in Cortex-A32 LOW policy requires 72 hours.
+At minimum collect CPU, frame p95/p99, RSS/cache/context switches, XRUN/backpressure/overrun, thermal/power and acoustic corpus results. Choose the endurance interval for the stated study and retain actual timing. No commercial approval, GitHub Release or fixed 72-hour requirement is a prerequisite for research. Missing device evidence limits device claims only.
 
 QEMU and hosted CI prove correctness portability only; they never replace target-board evidence.

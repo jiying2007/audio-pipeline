@@ -1,11 +1,13 @@
 # Cross-stage acoustic quality evaluation
 
+> **Current research scope:** This is a technical-research guide. [RESEARCH_ONLY_EXECUTION.md](RESEARCH_ONLY_EXECUTION.md) owns current execution policy. GitHub Releases, shipping SKU approval and product certification are not research prerequisites. Missing device evidence limits only device claims, not independent software/acoustic experiments. Source rights, measurement integrity and blind-data isolation remain required.
+
 `audio-pipeline` distinguishes **execution/regression correctness** from
 **algorithm quality**. A deterministic output hash, no clipping, a successful
 reset, or a lower render correlation is useful evidence, but none of those alone
 proves that AEC/RES, BF, NS or VAD is good.
 
-The release-neutral repository-side ground-truth quality gate is implemented by:
+The repository-side research ground-truth quality gate is implemented by:
 
 - `tests/validation/build_quality_validation_corpus.py`
 - `tests/validation/quality_metric_support.py`
@@ -21,9 +23,9 @@ The release-neutral repository-side ground-truth quality gate is implemented by:
 
 These wrappers reuse the canonical evaluator and tuning engines under
 `validation/tools/`; they do not modify canonical validation authority or
-shipping defaults. The quality layer is **development/regression authority
-only**. Public validation, blind holdout, PCR02 capture, SSC305 HIL, soak and
-Product Certification remain separate promotion authorities.
+runtime defaults. The quality layer is **development/regression authority
+only**. Public/blind acoustic evaluation and actual PCR02/SSC305 HIL/endurance
+provide distinct evidence classes. Product certification is not research admission.
 
 ## What each algorithm must prove
 
@@ -105,7 +107,7 @@ as a **regression floor**, not as a positive quality claim:
 Positive interferer attenuation remains the optimization direction. A future BF
 candidate should improve these measurements while preserving target projection
 and SI-SDR, then pass public/blind and PCR02 real 35 mm confirmation before any
-shipping change is considered. The floor must not be silently rewritten to make
+runtime change is considered. The floor must not be silently rewritten to make
 a future regression pass.
 
 ## Current bounded tuning scope
@@ -130,7 +132,7 @@ baseline and isolates only `ns_floor` across `0.06/0.07/0.08/0.10/0.12/0.14`.
 It deliberately reuses the quality objective containing
 `p10_near_projection_gain_db`, so `0.07` must survive scale-sensitive target
 preservation as well as SI-SDR, interference, AEC, VAD and clipping constraints.
-Its purpose is candidate confirmation, not mutation of runtime or shipping
+Its purpose is candidate confirmation, not mutation of runtime or runtime
 defaults.
 
 After candidate `0d5f52491863` / `ns_floor=0.07` was terminally rejected by
@@ -143,7 +145,7 @@ scales and regression limits unchanged. Its NS axis is
 Development/Validation/Shadow quality partitions; no Full160 public metric,
 failed case, or blind evidence is fed back into the objective. A selected v2
 candidate starts a new frozen lineage and must traverse public-relative,
-blind, target/HIL and Product Certification gates independently.
+independent acoustic and target/HIL measurement requirements within the scope claimed.
 
 Formal v2 run `35824929544` selected the lower-boundary point
 `ns_floor=0.06` as candidate `ed27f3c59a63`. Because v2 deliberately
@@ -213,7 +215,7 @@ Ground-truth Development search
   -> validation-grade blind / one-way
   -> PCR02 35 mm real capture replay
   -> SSC305 HIL / soak
-  -> Product Certification
+  -> independent scope-bound research report
 ```
 
 A PASS in `Audio Quality Evaluation` means only that the repository-side

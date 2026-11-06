@@ -1,5 +1,7 @@
 # Trusted audio-validation runner admission for blind qualification
 
+> **Current research scope:** This is a technical-research guide. [RESEARCH_ONLY_EXECUTION.md](RESEARCH_ONLY_EXECUTION.md) owns current execution policy. GitHub Releases, shipping SKU approval and product certification are not research prerequisites. Missing device evidence limits only device claims, not independent software/acoustic experiments. Source rights, measurement integrity and blind-data isolation remain required.
+
 This runbook is the operator checklist for executing `Research Candidate Blind Qualification` on an isolated `audio-validation` self-hosted runner.
 
 The target operating model is **role, not service**: `audio-validation` is a capability label, not a requirement to keep a long-running GitHub Actions service online. The preferred runner is registered with GitHub using `config.sh --ephemeral`, processes one job, is automatically de-registered by GitHub, and is then cleaned up.
@@ -13,7 +15,7 @@ For the currently queued frozen research candidate qualification:
 - do not rerun or redispatch the blind workflow while the existing `qualify-blind` job is still queued;
 - do not change the candidate manifest, tuning, limits, holdout percentage, thresholds, or dataset composition;
 - do not use blind/holdout results as optimizer feedback;
-- keep the shipping authority unchanged at `v2.3.16 / 57e4c64adc1cf06819e46e24e275ecd746d5f17f / aec_mu=0.22`;
+- preserve the historical comparator identity `v2.3.16 / 57e4c64adc1cf06819e46e24e275ecd746d5f17f / aec_mu=0.22`; it grants no current publication or research admission;
 - a successful blind result can advance only to the next non-shipping gate declared by the qualification contract.
 
 The currently queued job remains compatible with the ephemeral model because it already requests exactly:
@@ -246,4 +248,4 @@ Use only the machine-readable qualification decision:
 - `BLIND_REJECTED_NON_SHIPPING`: explicit validation `FAIL` terminalizes the exact candidate/tuning identity; do not retry, reselect, sweep thresholds, or mint a replacement nonce from the same blind evidence;
 - `BLIND_QUALIFICATION_INCOMPLETE_NON_SHIPPING`: infrastructure/evidence failure is non-terminal; repair the infrastructure/evidence boundary without interpreting it as an acoustic pass or fail.
 
-Hosted CI, public/synthetic validation, QEMU, runner readiness, or ephemeral-runner success must never be used as substitutes for real PCR02/SSC305 HIL or Product Certification evidence.
+Hosted CI, public/synthetic validation, QEMU and runner readiness must never substitute for actual PCR02/SSC305 measurements. Those missing measurements limit device-specific conclusions only; product certification is not a prerequisite for acoustic or software research.

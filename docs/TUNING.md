@@ -1,6 +1,8 @@
 # Tuning Guide
 
-## Separate product decisions
+> **Current research scope:** This is a technical-research guide. [RESEARCH_ONLY_EXECUTION.md](RESEARCH_ONLY_EXECUTION.md) owns current execution policy. GitHub Releases, shipping SKU approval and product certification are not research prerequisites. Missing device evidence limits only device claims, not independent software/acoustic experiments. Source rights, measurement integrity and blind-data isolation remain required.
+
+## Separate research configuration decisions
 
 Do not tune by CPU name. Treat these independently:
 
@@ -11,7 +13,7 @@ Do not tune by CPU name. Treat these independently:
 5. FULL/LITE/SAFE overload quality;
 6. acoustic/device tuning.
 
-A Cortex-A7 may ship STANDARD if the real board meets product gates; an AArch64 product may intentionally use LOW for power.
+A Cortex-A7 may use STANDARD when actual board measurements support it; an AArch64 experiment may intentionally use LOW to study power.
 
 ## Start from measured artifact identity
 
@@ -48,20 +50,20 @@ Use a corpus containing near-only, far-only, double-talk, music/content echo and
 
 ## Boundary resampler
 
-Default `BANDLIMITED` uses small fixed FIR filters for current downsampling ratios. Prefer it for production unless target profiling and acoustic tests justify `FAST`.
+Default `BANDLIMITED` uses small fixed FIR filters for current downsampling ratios. Prefer it as the research baseline unless target profiling and acoustic tests justify `FAST`.
 
 When comparing modes record:
 
 - passband speech quality;
 - stopband alias rejection with motor/PWM/high-frequency noise;
 - algorithmic latency/filter delay;
-- CPU and state on the shipping SoC.
+- CPU and state on the actual target SoC.
 
 Do not compare FAST and BANDLIMITED by expecting sample-for-sample equality.
 
 ## Noise suppression
 
-EMA remains the default noise estimator. MCRA is an opt-in backend that must be certified on the target corpus. Tune `ns_floor` against quiet speech preservation and stationary/non-stationary noise, not synthetic noise alone.
+EMA remains the default noise estimator. MCRA is an opt-in backend that must be evaluated on an independent target corpus. Tune `ns_floor` against quiet speech preservation and stationary/non-stationary noise, not synthetic noise alone.
 
 Frequency RES requires AEC predicted echo and should not be evaluated as a standalone denoiser quality gain.
 
@@ -83,7 +85,7 @@ AGC process cadence is a 10 ms contract; do not feed arbitrary frame durations t
 
 The built-in VAD is intentionally lightweight. When NS is present it may consume upstream speech probability; without NS it uses its own noise/rms history.
 
-For product thresholds use labeled speech/non-speech data and report precision/recall/F1 by noise condition. Do not treat VAD probability as a calibrated neural posterior.
+For research thresholds use labeled speech/non-speech data and report precision/recall/F1 by noise condition. Do not treat VAD probability as a calibrated neural posterior.
 
 ## Beamformer
 
@@ -97,7 +99,7 @@ TINY disables BF tracking by policy; a build with max microphone channels=1 phys
 
 Compile-time caps can save substantial RAM, but capability removed at build time cannot be restored by runtime configuration. Choose max delay/AEC tail from real route/path measurements with margin.
 
-Current hosted proof points show full > LOW > TINY state reduction, but shipping caps must be chosen from actual product acoustics, not the hosted byte counts.
+Current hosted proof points show full > LOW > TINY state reduction, but target caps must be chosen from actual acoustics, not the hosted byte counts.
 
 ## Acceptance corpus
 
@@ -113,11 +115,11 @@ At minimum include:
 - quiet speech;
 - CPU/DDR contention.
 
-Use the canonical `validation/` corpus/report contract for repeatable result exchange and store shipping results in a `certification/` record. Hosted synthetic tests protect contracts; they do not replace listening/product corpus evaluation.
+Use the canonical `validation/` corpus/report contract for repeatable research result exchange. Preserve source/build/data hashes, measurements and failures. Hosted synthetic tests protect contracts; they do not replace listening or independent target-corpus evaluation.
 
 ## Automated dataset-driven iteration
 
-The repository has one bounded automatic tuning loop under `validation/tuning/` and `validation/tools/tuning_iteration.py`. It uses the public `ap_tuning_t` control boundary rather than private source pokes, so offline replay and product runtime use the same four supported controls. `ap_pipeline_get_tuning()` reads those four values back from the live pipeline, so a replay run or an on-device session can confirm the tuning that was actually in force instead of assuming the request was accepted.
+The repository has one bounded automatic tuning loop under `validation/tuning/` and `validation/tools/tuning_iteration.py`. It uses the public `ap_tuning_t` control boundary rather than private source pokes, so offline replay and the embedded runtime use the same four supported controls. `ap_pipeline_get_tuning()` reads those four values back from the live pipeline, so a replay run or an on-device session can confirm the tuning that was actually in force instead of assuming the request was accepted.
 
 Evidence and optimizer permissions are defined in the machine-readable `validation/research-authority.json`; `validation/tools/authority.py --self-test` keeps that source synchronized with `corpus.schema.json`.
 
@@ -129,10 +131,10 @@ The default hosted loop deliberately separates data roles:
 - development input is restricted to `regression` or `research-validation`;
 - `validation-grade` is independent evidence, not search input;
 - `validation-grade-blind` is reserved for post-candidate promotion and is never a tuning-search dataset;
-- product certification is a separate terminal authority under `certification/`, not a validation corpus tier.
+- historical certification records are not current research authority or a validation corpus tier.
 
 Candidate selection is baseline-relative and multi-metric. Pass rate, p10 speech/noise tails, ERLE, VAD and clipping participate in the objective, while validation/shadow tolerances reject a development winner that trades one metric for an unacceptable regression elsewhere.
 
 Pull requests always execute canonical acoustic regression in `Audio Quality Gates -> validation-smoke`; the bounded `call-pr-smoke-v1` neighborhood is additionally executed only when CI impact marks the change as candidate-search-relevant. `main` forces that bounded search regardless of PR classification. The standalone `.github/workflows/acoustic-tuning-iteration.yml` is manual-only in maintenance state and runs the wider `call-v1` family when a fresh verified defect or regression explicitly reopens discovery. This keeps candidate discovery fresh where it has authority while avoiding repeated search on unrelated lab/governance/certification changes.
 
-A hosted result may only become `ACOUSTIC_CANDIDATE`. It must not mutate `main`, update shipping defaults, or be described as a shipping improvement. Promotion requires the exact candidate revision to pass blind validation, target CPU/RSS/latency evidence, target HIL/soak and Product Certification. This preserves the repository's existing authority hierarchy while allowing GitHub Actions to do useful iterative search automatically.
+A hosted result may only become `ACOUSTIC_CANDIDATE`. It must not mutate `main` or silently update runtime defaults. Independent acoustic acceptance requires the declared evaluation data and criteria; device performance claims separately require actual target CPU/RSS/latency/HIL/endurance measurements. Missing device evidence does not block an unrelated correctly scoped algorithm study, and commercial certification is not a research prerequisite.

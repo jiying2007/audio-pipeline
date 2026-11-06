@@ -1,5 +1,7 @@
 # Architecture
 
+> **Current research scope:** This is a technical-research guide. [RESEARCH_ONLY_EXECUTION.md](RESEARCH_ONLY_EXECUTION.md) owns current execution policy. GitHub Releases, shipping SKU approval and product certification are not research prerequisites. Missing device evidence limits only device claims, not independent software/acoustic experiments. Source rights, measurement integrity and blind-data isolation remain required.
+
 ## Goals
 
 `audio-pipeline` is a static, bounded DSP SDK for low-compute embedded Linux. Architecture decisions optimize for deterministic 10 ms processing, caller-owned memory, compiler visibility, field diagnosability and SKU-level RAM/ROM pruning rather than dynamic graph flexibility.
@@ -140,14 +142,13 @@ lab/
   trusted execution + data materialization + target controller readiness
         v
 HIL / target resource evidence
-        v
-certification/
-  schema-v4 shipping record + lifecycle archive
+        |
+        +-> independent research reports with exact source/build/data identity
 ```
 
 `validation/research-authority.json` is the machine source of truth for corpus tiers and optimizer permissions. `validation/` owns all repository acoustic evaluation; there is no parallel `eval/` implementation. The old `certification/` product sources and the frozen authority v1 are historical provenance only; no active research acceptance or publication flow uses them. Physical target/HIL is independently authorized and never inferred from hosted validation. `lab/` owns infrastructure readiness only and cannot upgrade evidence by itself.
 
-The optimizer may search only data roles allowed by the authority contract. Validation-grade blind data is excluded from iterative search so repeated candidate feedback cannot leak the holdout. A hosted candidate must be materialized as a reviewed change/configuration before target/HIL/certification can promote it.
+The optimizer may search only data roles allowed by the authority contract. Validation-grade blind data is excluded from iterative search so repeated candidate feedback cannot leak the holdout. A hosted candidate must be materialized as a reviewed change/configuration before a separate target/HIL experiment can establish device-specific evidence. Missing target evidence does not block an independent, correctly scoped software study.
 
 PR tuning regression is part of the required `Audio Quality Gates -> validation-smoke` path. The separate Acoustic Tuning Search workflow is schedule/manual only, preventing the same PR search from executing twice.
 
@@ -164,7 +165,7 @@ Automation verifies:
 - composition and build envelopes compile/test independently;
 - state RAM, runtime RAM and final consumer ELF physically shrink for smaller products;
 - installed CMake/pkg-config consumers build outside the source tree;
-- dump/replay and certification contracts remain executable;
+- dump/replay and historical evidence-format regressions remain executable;
 - validation authority and corpus schema stay synchronized;
 - required PR acoustic regression includes bounded tuning plus independent replay;
 - QEMU executes selected ARM contracts rather than cross-compiling only.

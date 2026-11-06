@@ -96,6 +96,14 @@ FORWARD_MAINTENANCE = {
                'src/core/ap_pipeline.c': '9bbd0fd15fcec7b9624f5bc69b550db91e789167'},
      'patch': 'fe09_maintenance_forward_2_3_62.patch.b64',
      'patch_blob': '496741c0692a5b982d8b9a6cd6e246bdbcf9b519'},
+    "2.3.63": {'blobs': {'CMakeLists.txt': '4e70b751262cdb3bd96448bf21e5800c194b36d3',
+               'docs/API_CONTRACT.md': 'de14d030b05fbb776eff3f9cf52bffef8ae2aff5',
+               'include/audio_pipeline/audio_runtime.h': 'ad72e40b5b343aee4589ee50dfd07fe1a85e0ea9',
+               'src/core/ap_pipeline.c': '9bbd0fd15fcec7b9624f5bc69b550db91e789167',
+               'src/frontend/ap_beamformer.c': '9839cf6943172cd3b5aa7757e31d29e43288588b',
+               'src/platform/linux/ap_runtime.c': 'b6c36e195c1ac967e450a1e32506e0b6859a581b'},
+     'patch': 'fe09_maintenance_forward_2_3_63.patch.b64',
+     'patch_blob': 'b4c2189fbafa2ba4d9d74b2289c540e469c864f8'},
 }
 
 
@@ -136,7 +144,7 @@ DUALMIC_2_3_62_PATHS = AUDIT_2_3_59_PATHS | {"src/frontend/ap_beamformer.c", "sr
 
 
 def current_registered_paths(version: str) -> frozenset[str]:
-    if version == "2.3.62":
+    if version in ("2.3.62", "2.3.63"):
         return frozenset(DUALMIC_2_3_62_PATHS)
     return AUDIT_2_3_59_PATHS if version in ("2.3.59", "2.3.60", "2.3.61") else frozenset(CHANGED)
 
@@ -175,7 +183,7 @@ def check_forward_patch_scope(version: str, patch: bytes, destination: Path) -> 
     need(version in FORWARD_MAINTENANCE, "UNREGISTERED_FORWARD_MAINTENANCE_VERSION")
     expected = (AUDIT_2_3_59_PATHS if version in ("2.3.59", "2.3.60", "2.3.61") else
                 frozenset({"CMakeLists.txt", "src/platform/linux/ap_runtime.c"}))
-    if version == "2.3.62":
+    if version in ("2.3.62", "2.3.63"):
         expected = frozenset(DUALMIC_2_3_62_PATHS)
     inventory = subprocess.run(["git", "apply", "--numstat", "-"],
                                input=patch, cwd=destination, capture_output=True,
@@ -319,7 +327,7 @@ def self_test() -> None:
     item = policy(raw, patch)
     src = read_sources(ROOT, item)
     rejected = 0
-    audit_rejected = {"2.3.59": 0, "2.3.60": 0, "2.3.61": 0, "2.3.62": 0}
+    audit_rejected = {"2.3.59": 0, "2.3.60": 0, "2.3.61": 0, "2.3.62": 0, "2.3.63": 0}
 
     def reject(fn, reason: str | None = None, *, audit: str | None = None) -> None:
         nonlocal rejected, audit_rejected
@@ -436,6 +444,10 @@ def self_test() -> None:
                 reason = ("CURRENT_MAINTENANCE_SOURCE_DRIFT_CMakeLists.txt"
                           if next_version in FORWARD_MAINTENANCE else
                           "UNREGISTERED_FORWARD_MAINTENANCE_VERSION")
+                # R6-to-R7 changes only the CMake version at this site;
+                # the full 2.3.63 API blob is still missing and must reject.
+                if candidate_version == "2.3.62":
+                    reason = "CURRENT_MAINTENANCE_SOURCE_DRIFT_docs/API_CONTRACT.md"
                 reject(lambda: check_current(changed, item), reason, audit=candidate_version)
                 encoded = raw_file(HERE / FORWARD_MAINTENANCE[candidate_version]["patch"])
                 reject(lambda: decode_registered_forward_patch(candidate_version, encoded + b"\n"),
@@ -464,8 +476,9 @@ def self_test() -> None:
     need(audit_rejected["2.3.60"] == 12, "IO_2_3_60_NEGATIVES_INCOMPLETE")
     need(audit_rejected["2.3.61"] == 12, "PCM_IO_2_3_61_NEGATIVES_INCOMPLETE")
     need(audit_rejected["2.3.62"] == 14, "DUALMIC_2_3_62_NEGATIVES_INCOMPLETE")
+    need(audit_rejected["2.3.63"] == 14, "DUALMIC_2_3_63_NEGATIVES_INCOMPLETE")
     print("FE09_EXACT_MAINTENANCE_REBIND_SELF_TEST_PASS negatives=16 "
-          "audit2359_negatives=12 io2360_negatives=12 pcm2361_negatives=12 dualmic2362_negatives=14 preregistered=6")
+          "audit2359_negatives=12 io2360_negatives=12 pcm2361_negatives=12 dualmic2362_negatives=14 dualmic2363_negatives=14 preregistered=7")
 
 
 def main() -> None:

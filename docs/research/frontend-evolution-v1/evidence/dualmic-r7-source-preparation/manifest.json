@@ -1,0 +1,17 @@
+{
+  "files": {
+    "README.md": {
+      "bytes": 3924,
+      "sha256": "89134f332fd4836ad8552c8144983526bc1d6ad64833fbbb7d1b82406391566c"
+    },
+    "raw-records.json": {
+      "bytes": 81694,
+      "sha256": "a0267026ca9949532655fd29c0590547f5c461efb008938b4f4ee160c8741e42"
+    },
+    "receipt.json": {
+      "bytes": 2463,
+      "sha256": "e856de83910433cbb1ccf04723006f9e2de7452c83cf3838311a93b4b1ea8687"
+    }
+  },
+  "schema_version": 1
+}

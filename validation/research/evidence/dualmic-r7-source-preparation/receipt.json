@@ -1,0 +1,85 @@
+{
+  "base": "a920beed8e2c66ea9d90442d31af9632f5c75a23",
+  "budget_passed_at_receipt": true,
+  "budget_scope": "author design implementation and reviewable artifacts; final completion time reported separately",
+  "budget_seconds": 900,
+  "compiled_exceptions": 13,
+  "compiler_or_DSP_executed": false,
+  "current_preparation_check": "PASS_SOURCE_ONLY",
+  "current_preparation_source_gate": "R5",
+  "current_preparation_source_version": "2.3.61",
+  "derivation_negative_cases": 24,
+  "elapsed_seconds_at_receipt": 716.568,
+  "f0_rows": 88,
+  "first_authoring_failures_preserved": [
+    "R7 underscore delta filename identity mismatch",
+    "Runtime 2.3.62-to-2.3.63 negative first rejecting path is API after CMake version matches",
+    "New route-test expectation used wrong original B3 2.3.56 identity; original workflow unchanged"
+  ],
+  "literal_identity_functions": 2,
+  "literal_method_negative_cases": 12,
+  "normal_selftests": [
+    "source",
+    "derivation",
+    "literal-method",
+    "runtime",
+    "routes",
+    "b3-selftest",
+    "f0-selftest"
+  ],
+  "not_run": [
+    "full Verify",
+    "B3/F0 DSP collection",
+    "F1 build",
+    "A3 static compile",
+    "QEMU",
+    "DUT"
+  ],
+  "optimized_selftests": [
+    "source",
+    "derivation",
+    "runtime",
+    "routes"
+  ],
+  "original_b3_rows": 77,
+  "preserved_pins": 41,
+  "preserved_r6_source_negative_cases": 31,
+  "proposal": "79636e3c53050639cf16573aa5cd6db37b153c93",
+  "proposal_tree": "9fdbeb2a6af6672dfae96f23a23ae7931f279b3e",
+  "python_optimized_modes": [
+    "-O",
+    "-OO"
+  ],
+  "raw_bytes": 51931,
+  "raw_records": 74,
+  "runtime_negative_expectation_only_change": {
+    "first_rejecting_path": "docs/API_CONTRACT.md",
+    "input_unchanged": true,
+    "old_count_14_preserved": true,
+    "still_rejected": true,
+    "verifier_or_threshold_relaxed": false,
+    "version_pair": [
+      "2.3.62",
+      "2.3.63"
+    ]
+  },
+  "runtime_new_negative_cases": 14,
+  "runtime_new_paths": 6,
+  "runtime_old_registrations_and_patches_unchanged": 6,
+  "runtime_previous_counts": [
+    16,
+    12,
+    12,
+    12,
+    14
+  ],
+  "schema_version": 1,
+  "science_executed": false,
+  "scope": "source-only author validation; independent review and remote CI pending",
+  "shared_live_rows": 66,
+  "source_head": "70c0f6491e9959bab614b2c4719150d8f98c4d3f",
+  "source_negative_cases": 31,
+  "source_tree": "7fdf6fb2a1cee0435f46443e47a6f8f386ae2472",
+  "unchanged_classes": 8,
+  "unchanged_functions": 102
+}

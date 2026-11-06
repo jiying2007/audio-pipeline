@@ -1,14 +1,16 @@
 # PCR02 Real Capture Bundle
 
-This document defines the repository-internal real-device capture contract for PCR02 / SSC305 / dual 35 mm microphones. It is designed so one physical capture can be reused for BF, AEC, NS, VAD, replay, diagnostics and later evidence review without changing the immutable v2.3.16 release surface.
+> **Current research scope:** This is a technical-research capture guide. [RESEARCH_ONLY_EXECUTION.md](RESEARCH_ONLY_EXECUTION.md) defines current execution. Commercial publication, shipping approval and product certification are not research prerequisites. Historical schema labels identify a frozen comparator, not current admission authority.
+
+This document defines the repository-internal real-device capture contract for PCR02 / SSC305 / dual 35 mm microphones. It is designed so one physical capture can be reused for BF, AEC, NS, VAD, replay, diagnostics and later evidence review while preserving the original capture schema and frozen comparator identity.
 
 The bundle contract is `tests/validation/pcr02_capture_bundle.schema.json`; the executable helper is `tests/validation/pcr02_capture_bundle.py`; the fixed 42-slot scene plan is `tests/validation/pcr02_capture_plan.json`.
 
 A sealed bundle proves that a set of user-supplied capture files is internally consistent and hash-bound. It does **not** by itself prove HIL PASS, Extended Real PASS, Product Qualification PASS or Product Certification PASS.
 
-## Fixed product geometry
+## Fixed capture geometry
 
-Qualification-candidate captures are bound to:
+The existing 42-slot research worksheet uses:
 
 - product: PCR02;
 - SoC: SSC305;
@@ -17,10 +19,10 @@ Qualification-candidate captures are bound to:
 - sample rate: 16 kHz;
 - sample format: signed 16-bit little-endian PCM;
 - frame size: 160 samples / 10 ms;
-- immutable release: `v2.3.16`;
-- immutable release source: `57e4c64adc1cf06819e46e24e275ecd746d5f17f`.
+- historical comparator label: `v2.3.16`;
+- historical comparator source: `57e4c64adc1cf06819e46e24e275ecd746d5f17f`.
 
-Development captures may use another executable source SHA, but they still carry the v2.3.16 qualification authority as the reference product baseline. A `qualification-candidate` bundle fails closed unless the executed source and version are exactly the immutable v2.3.16 source/version.
+Use `development` for current research and record the actual executed source SHA, version and binary SHA-256. The existing schema retains `release_authority` as the frozen comparator identity; it does not require downloading or publishing a GitHub Release. The legacy `qualification-candidate` mode is only for exact historical-source comparison and still requires the original v2.3.16 source/version. Neither mode grants product approval or replaces independent measurements.
 
 ## Required bundle files
 
@@ -95,16 +97,16 @@ Optional intermediate PCM must contain the same number of samples as `mic_raw.pc
 
 ## Initialize a capture slot
 
-First compute the SHA-256 of the exact on-device audio binary and obtain its build fingerprint. For a v2.3.16 qualification-candidate capture:
+First compute the SHA-256 of the exact on-device audio binary and obtain its build fingerprint. For current research, use the actual executed build with `--purpose development`:
 
 ```bash
 python3 tests/validation/pcr02_capture_bundle.py new \
   --slot-id aec-07 \
   --capture-id pcr02-aec-07-unit01-run01 \
-  --purpose qualification-candidate \
+  --purpose development \
   --output-dir capture/pcr02-aec-07-unit01-run01 \
-  --source-sha 57e4c64adc1cf06819e46e24e275ecd746d5f17f \
-  --version 2.3.16 \
+  --source-sha <actual-executed-40-character-source-sha> \
+  --version <actual-executed-version> \
   --binary-sha256 <executed-binary-sha256> \
   --board-revision <board-revision> \
   --device-id <pseudonymous-device-id> \
@@ -156,7 +158,7 @@ python3 tests/validation/pcr02_capture_bundle.py seal \
 - sequence and monotonic timestamps are valid;
 - telemetry includes all declared signals and covers the full capture interval;
 - the scene exactly matches its 42-slot plan entry;
-- a qualification-candidate uses exact v2.3.16 source/version.
+- only the legacy `qualification-candidate` mode requires exact v2.3.16 source/version; current `development` captures bind the actual executed build.
 
 It then writes actual file byte sizes and SHA-256 hashes, derives `duration_seconds`, sets `real_capture=true`, and computes one canonical `bundle_digest_sha256` over metadata plus file bindings. A sealed manifest is treated as immutable; correcting a physical capture requires a new capture ID/run.
 
@@ -184,7 +186,7 @@ Use `--require-bit-exact` only when the complete effective runtime configuration
 
 ## APD inspection and diagnosis
 
-If the bundle includes the optional `apd` role, the file remains a normal APD v1 dump. The released tools still work directly:
+If the bundle includes the optional `apd` role, the file remains a normal APD v1 dump. The existing diagnostic tools work directly:
 
 ```bash
 python3 tools/apdump.py info capture/.../diagnostics/source.apd
@@ -215,10 +217,10 @@ The existing plan remains 42 slots rather than multiplying the scene count:
 - 14 self-noise slots: idle/straight/turning/acceleration/braking/servo/floor-transition × hard floor/carpet;
 - 12 AEC product-path slots: speaker-only/double-talk × idle/straight/turning × hard floor/carpet.
 
-The richer bundle format increases the evidence captured **inside each slot** instead of creating a much larger scene matrix. Additional rear-field, mic-fault, speaker-volume sweep or long-duration stress runs can be added later as separate development captures after the base 42-slot product set exists.
+The richer bundle format increases the evidence captured **inside each slot** instead of creating a much larger scene matrix. Additional rear-field, mic-fault, speaker-volume sweep or long-duration stress runs can be separate, explicitly designed research captures. Completing all 42 slots is not a prerequisite for an independently scoped experiment.
 
 ## Privacy and evidence boundary
 
 Raw microphones may contain private speech. Product/lab operators are responsible for consent, access control, retention, encryption at rest/in transit and secure erasure.
 
-A capture bundle is measurement evidence only. `evidence_claims.hil_pass`, `extended_real_pass`, `product_qualification_pass` and `product_certification_pass` are structurally forced to `false`. Those states can only be established by their separate reviewed workflows and retained physical evidence. Issue #58 remains the authority for the still-missing external PCR02/HIL/Extended Real/Product Certification evidence.
+A capture bundle is measurement evidence only. `evidence_claims.hil_pass`, `extended_real_pass`, `product_qualification_pass` and `product_certification_pass` are structurally forced to `false`. Independent, scope-bound research measurements establish only the acoustic or physical-device results actually observed. The product-qualification/certification flags remain false historical-format fields: their retired workflows and Issue #58 are not current research admission authorities. Missing physical evidence remains NOT_RUN or BLOCKED for the corresponding claim, without blocking unrelated software or acoustic research.

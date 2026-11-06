@@ -156,7 +156,7 @@ jobs:
             --direct-limit "$DIRECT_LIMIT" \
             --derived-limit "$DERIVED_LIMIT" \
             > extended-out/corpus-build.json
-      - name: Scenario-stratified commercial validation and blind holdout
+      - name: Scenario-stratified research validation and blind holdout
         if: inputs.profile != 'research'
         env:
           AP_VALIDATION_HOLDOUT_KEY: ${{ secrets.AP_VALIDATION_HOLDOUT_KEY }}

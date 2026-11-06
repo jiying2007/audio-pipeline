@@ -132,7 +132,8 @@ class ResearchCIBoundaryTests(unittest.TestCase):
             live = current.read_text(encoding="utf-8")
             self.assertIn("scripts/research_github_governance.py", live)
             self.assertNotIn("python3 scripts/github_governance.py", live)
-        self.assertTrue((ROOT / "scripts/github_governance.py").is_file())
+        self.assertFalse((ROOT / "scripts/github_governance.py").exists())
+        self.assertTrue((ROOT / "scripts/run_archived_governance_tests.py").is_file())
         self.assertNotIn("When a new project version reaches `main`", docs)
 
     def test_required_verify_has_no_product_release_authority(self):

@@ -356,7 +356,7 @@ jobs:
         run: cmake --preset ${{ matrix.preset }}
       - name: Build ${{ matrix.preset }}
         run: cmake --build build/${{ matrix.preset }} --parallel
-      - name: Validate SSC305 commercial build/install identity
+      - name: Validate SSC305 research build/install identity
         if: matrix.preset == 'ssc305-cortex-a32-low'
         run: |
           set -euo pipefail

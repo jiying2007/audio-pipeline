@@ -1,0 +1,18 @@
+{
+  "historical_commit": "e504368662f41d0a731f7ca777f4d62af7f92754",
+  "historical_tree": "e720700b4f4f83f242eeab8d137b61276371f937",
+  "retired_paths": {
+    ".github/program/dechorate_event_source_t1m3.json": "687f506a0c742aa600596a77781adffcc083524549cc04dee9808e6eb7bd165e",
+    ".github/program/dechorate_event_source_t1m3.py": "c8a2bfdade22d33fb40155b440d80d960524adccdef10cf9131340bbb84a81f6",
+    ".github/program/dechorate_governance_v2.json": "5e943fa006dd53851f9d84b27d29bd50173e673f6702c0a0d9e07851782e4fc6",
+    ".github/program/dechorate_governance_v2.py": "108c0e9d6fb0d268bf9301402791125d96e50d9e2139b68625b749c92d079198",
+    ".github/program/pr833_metadata_observation_d1.py": "1fb7de50f36dbf4cdb190f2244d059e7fc32237f63a69d874cd4f7de27e05b28",
+    ".github/program/test_dechorate_consumer_receipt.py": "390f48415e4295fbcfc4b92b60f50f59b4a85f1b558529d5fb418e140396dbbb",
+    ".github/program/test_dechorate_event_source_t1m3.py": "40b15e6261eabf5579791bbc3a77d004b74c3a6b8a60bd0a0663364c5068cc4b",
+    ".github/program/test_dechorate_governance_v2.py": "7db9416139b8ac75a4c547b8aff3af952a92a64d1d7721b7838bb33ddec2f3a9",
+    ".github/program/test_pr833_metadata_observation_d1.py": "82279c420e13106a5f890bf52be7b35f097cea72d2a96822c7efb83e5acb4f96",
+    ".github/workflows/ci-dechorate-governance-evidence.yml": "41deadcd708759cb8ca3d9d0349c1b51b94a50d44408f6cad68a47b8cd03696a",
+    "scripts/github_governance.py": "c292105f27126e643f8984bd0ecb52faf7beac83ddeffff9413b97a68893c4fa"
+  },
+  "scope": "offline historical protocol regression only; no live observation or scientific execution"
+}

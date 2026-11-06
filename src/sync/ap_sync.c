@@ -174,10 +174,13 @@ static void ap_sync_apply_drift(ap_sync_state_t *s, uint32_t best_delay,
                                 ap_sync_event_t *event) {
     int32_t error = (int32_t)best_delay - (int32_t)s->delay_samples;
     uint32_t corrections = 0u;
+    /* A newly established basis retains the legacy nominal credit step;
+     * never integrate time from an invalidated or unknown observation. */
+    uint64_t elapsed = sample_rate_hz / 10u;
     if (s->have_last_best_delay &&
         s->capture_total > s->last_best_capture_total) {
         const int32_t delta = (int32_t)best_delay - (int32_t)s->last_best_delay;
-        const uint64_t elapsed = s->capture_total - s->last_best_capture_total;
+        elapsed = s->capture_total - s->last_best_capture_total;
         /* Keep the original operation order for the normal 100 ms cadence.
          * Confidence rejections may extend the interval; normalize before
          * clamping so those gaps cannot manufacture an extreme rate. */
@@ -190,7 +193,12 @@ static void ap_sync_apply_drift(ap_sync_state_t *s, uint32_t best_delay,
     s->last_best_delay = best_delay;
     s->last_best_capture_total = s->capture_total;
     s->have_last_best_delay = 1u;
-    s->drift_credit += s->drift_ppm * (float)sample_rate_hz / 10000000.0f;
+    /* Integrate the accepted rate over the same valid capture interval.
+     * Preserve the original floating-point order at the normal cadence. */
+    if (elapsed == sample_rate_hz / 10u)
+        s->drift_credit += s->drift_ppm * (float)sample_rate_hz / 10000000.0f;
+    else
+        s->drift_credit += s->drift_ppm * (float)elapsed / 1000000.0f;
     if (error > 4)
         s->drift_credit += ap_sync_clamp((float)error * 0.05f, 0.0f, 0.5f);
     else if (error < -4)

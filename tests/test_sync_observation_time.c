@@ -31,6 +31,7 @@ enum { SIGNAL_MATCHED, SIGNAL_ZERO_MIC, SIGNAL_PERIODIC };
 static fixture_t fixture;
 static unsigned char saved_memory[AP_MODULE_STATE_MAX_BYTES];
 static float render[160], mic[160], reference[160];
+static FILE *continuous_trace;
 
 /* Same fixed hash family as existing engineering fixtures. A declared boxcar
  * keeps the coarse lag grid well-conditioned; no seed/parameter search. */
@@ -86,6 +87,11 @@ static observation_t step(fixture_t *f, uint32_t truth, int mode,
     f->status = result.status;
     f->next_sample += hop;
     f->frames++;
+    if (continuous_trace) {
+        const size_t bytes = ap_module_sync_state_size();
+        assert(fwrite(f->memory, 1u, bytes, continuous_trace) == bytes);
+        assert(fwrite(reference, sizeof(float), hop, continuous_trace) == hop);
+    }
     return result;
 }
 
@@ -327,6 +333,102 @@ static void test_rate_change(uint32_t old_rate, uint32_t new_rate) {
 }
 
 #if defined(AP_SYNC_TEST_INTERNAL_COUNTERS)
+static ap_sync_state_t credit_state;
+
+static ap_sync_event_t credit_step(uint32_t *at, uint32_t rate, uint32_t truth,
+                                   int mode, int tracking, int drift) {
+    ap_sync_event_t event;
+    const uint32_t hop = rate / 100u;
+    fill(*at, rate, truth, mode);
+    ap_sync_push_render(&credit_state, render, hop, *at / hop);
+    ap_sync_track_delay(&credit_state, mic, hop, rate, 20u, tracking, drift, &event);
+    *at += hop;
+    return event;
+}
+
+static uint32_t credit_prepare(uint32_t rate) {
+    const uint32_t initial = rate / 125u, hop = rate / 100u;
+    uint32_t at = 0u, i;
+    ap_sync_event_t event;
+    ap_sync_init(&credit_state, initial);
+    for (i = 0u; i < 20u; ++i) {
+        fill(at, rate, initial, SIGNAL_MATCHED);
+        ap_sync_push_render(&credit_state, render, hop, i);
+        at += hop;
+    }
+    for (i = 0u; i < 10u; ++i)
+        event = credit_step(&at, rate, initial, SIGNAL_MATCHED, 1, 1);
+    assert(event.delay_observed && !event.route_jump);
+    assert(credit_state.have_last_best_delay && credit_state.drift_credit == 0.0f);
+    return at;
+}
+
+static void require_credit(uint32_t rate, float expected) {
+    if (!isfinite(credit_state.drift_credit) ||
+        fabsf(credit_state.drift_credit - expected) > 2.0e-6f) {
+        fprintf(stderr, "credit rate=%u actual=%.9g expected=%.9g\n", rate,
+                (double)credit_state.drift_credit, (double)expected);
+        exit(EXIT_FAILURE);
+    }
+}
+
+static void test_sparse_credit(uint32_t rate) {
+    static const uint32_t intervals[] = {40u, 100u, 130u};
+    static const int rejected[] = {SIGNAL_ZERO_MIC, SIGNAL_PERIODIC};
+    uint32_t n, g, i;
+    int sign;
+    for (n = 0u; n < 3u; ++n) for (g = 0u; g < 2u; ++g)
+        for (sign = -1; sign <= 1; sign += 2) {
+            uint32_t at = credit_prepare(rate);
+            const uint32_t initial = rate / 125u;
+            ap_sync_event_t event;
+            credit_state.drift_credit = (float)sign * 0.98f;
+            for (i = 0u; i < intervals[n]; ++i) {
+                event = credit_step(&at, rate, (uint32_t)((int32_t)initial + sign),
+                    i < intervals[n] - 10u ? rejected[g] : SIGNAL_MATCHED, 1, 1);
+                if (i + 1u < intervals[n]) assert(!event.delay_observed);
+            }
+            assert(event.delay_observed && !event.route_jump);
+            /* One-sample lag innovation with alpha=0.05 contributes 0.05
+             * sample of integrated credit, independent of the valid gap. */
+            if (event.reference_sample_slips != 1u) {
+                fprintf(stderr, "sparse credit rate=%u frames=%u sign=%d slips=%u credit=%.9g\n",
+                        rate, intervals[n], sign, event.reference_sample_slips,
+                        (double)credit_state.drift_credit);
+                exit(EXIT_FAILURE);
+            }
+            assert(credit_state.delay_samples == (uint32_t)((int32_t)initial + sign));
+            require_credit(rate, (float)sign * 0.03f);
+        }
+    for (sign = -1; sign <= 1; sign += 2) {
+        uint32_t at = credit_prepare(rate);
+        ap_sync_event_t event;
+        credit_state.drift_ppm = (float)sign * 2000.0f;
+        for (i = 0u; i < 100u; ++i)
+            event = credit_step(&at, rate, rate / 125u,
+                i < 90u ? SIGNAL_ZERO_MIC : SIGNAL_MATCHED, 1, 1);
+        assert(event.delay_observed && event.reference_sample_slips == 4u);
+        assert(fabsf(credit_state.drift_credit) > 1.0f);
+    }
+    for (g = 0u; g < 2u; ++g) {
+        uint32_t at = credit_prepare(rate);
+        ap_sync_event_t event;
+        credit_state.drift_ppm = 17.0f;
+        credit_state.drift_credit = 0.2f;
+        for (i = 0u; i < 90u; ++i) {
+            event = credit_step(&at, rate, rate / 125u, SIGNAL_ZERO_MIC, g == 0u, g != 0u);
+            assert(!event.delay_observed && !event.reference_sample_slips);
+            require_credit(rate, 0.2f);
+        }
+        for (i = 0u; i < 10u; ++i)
+            event = credit_step(&at, rate, rate / 125u, SIGNAL_MATCHED, 1, 1);
+        assert(event.delay_observed && !event.reference_sample_slips);
+        assert(credit_state.drift_ppm == 17.0f);
+        require_credit(rate, 0.2f + 17.0f * (float)rate / 10000000.0f);
+    }
+    printf("sparse credit rate=%u intervals=40/100/130 signs=both gaps=both cap/invalidation PASS\n", rate);
+}
+
 static void test_counter_boundaries(uint32_t rate) {
     static ap_sync_state_t state;
     const uint32_t hop = rate / 100u, initial = rate / 125u;
@@ -371,6 +473,7 @@ static void test_counter_boundaries(uint32_t rate) {
     assert(state.have_last_best_delay && state.last_best_delay == initial);
     assert(state.last_best_capture_total == state.capture_total);
     assert(state.drift_ppm == 17.0f);
+    assert(state.drift_credit == 17.0f * (float)rate / 10000000.0f);
     for (i = 21u; i < 31u; ++i) {
         fill(i * hop, rate, initial + 1u, SIGNAL_MATCHED);
         ap_sync_push_render(&state, render, hop, i);
@@ -387,11 +490,22 @@ int main(int argc, char **argv) {
     static const uint32_t rates[] = {16000u, 8000u};
     size_t i;
     const int only_elapsed = argc == 2 && strcmp(argv[1], "elapsed") == 0;
-    const int only_continuous = argc == 2 && strcmp(argv[1], "continuous") == 0;
-    if (argc > 2 || (argc == 2 && !only_elapsed && !only_continuous)) return 2;
+    const int only_continuous = (argc == 2 || argc == 3) && strcmp(argv[1], "continuous") == 0;
+    const int only_credit = argc == 2 && strcmp(argv[1], "credit") == 0;
+    if (argc > 3 || (argc == 3 && !only_continuous) ||
+        (argc == 2 && !only_elapsed && !only_continuous && !only_credit)) return 2;
+    if (argc == 3) { continuous_trace = fopen(argv[2], "wb"); assert(continuous_trace); }
     for (i = 0u; i < sizeof(rates) / sizeof(rates[0]); ++i) {
         const uint32_t rate = rates[i];
         if (rate > AP_BUILD_MAX_INTERNAL_RATE_HZ) continue;
+        if (only_credit) {
+#if defined(AP_SYNC_TEST_INTERNAL_COUNTERS)
+            test_sparse_credit(rate);
+            continue;
+#else
+            return 2;
+#endif
+        }
         if (!only_continuous) test_elapsed(rate);
         if (!only_elapsed) test_continuous(rate);
         if (only_elapsed || only_continuous) continue;
@@ -401,12 +515,14 @@ int main(int argc, char **argv) {
         test_route(rate);
 #if defined(AP_SYNC_TEST_INTERNAL_COUNTERS)
         test_counter_boundaries(rate);
+        test_sparse_credit(rate);
 #endif
     }
-    if (!only_elapsed && !only_continuous && AP_BUILD_MAX_INTERNAL_RATE_HZ >= 16000u) {
+    if (!only_elapsed && !only_continuous && !only_credit && AP_BUILD_MAX_INTERNAL_RATE_HZ >= 16000u) {
         test_rate_change(8000u, 16000u);
         test_rate_change(16000u, 8000u);
     }
+    if (continuous_trace) assert(fclose(continuous_trace) == 0);
     printf("SYNC_OBSERVATION_TIME_PASS state_bytes=%zu\n", ap_module_sync_state_size());
     return 0;
 }

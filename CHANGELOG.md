@@ -1,3 +1,9 @@
+# 2.3.63
+
+- Integrate reference drift credit over the same elapsed capture interval used for the accepted acoustic rate observation, including confidence-rejection gaps. Preserve the exact normal 100 ms arithmetic, smoothing, clamp, feedback and per-observation slip limit.
+- Preserve the original tiny drift/route regression and the failed 2.3.62 candidate evidence; use a separate causal correction and exact R7 source registration instead of relaxing the test.
+- Retain the dual-microphone health, SAFE evidence lifecycle and CALL/ASSISTANT integration from the 2.3.62 research candidate. Source version changes do not create a release, tag or physical qualification.
+
 # 2.3.62
 
 - Normalize SYNC drift by elapsed capture samples between accepted acoustic delay observations, including low-confidence gaps; preserve the existing normal-cadence arithmetic, smoothing and correction policy.

@@ -1,5 +1,25 @@
 # Frontend Evolution v1 / 双麦与四麦开放研究
 
+## 2026-11-07 双麦真人输入阶段诊断 D1
+
+承接 #920 已完成集成后的负结果，[D1 执行前合同](DUALMIC_STAGES_D1_PLAN.zh-CN.md)
+固定 A56+C4 共 60 例，验证原始输入、配置和事件下中性阶段 taps，定位近端损伤。
+[实施前方法复审](DUALMIC_STAGES_D1_METHOD_REVIEW.zh-CN.md)明确实际原件身份、固定
+时轴和 HPF/BF 联合上游的定位边界。实时原件与结论登记 [#922](https://github.com/jiying2007/audio-pipeline/issues/922)。
+此入口不声称算法已改善，D1 没有默认参数或生产 DSP 变更；后续因果试验须另冻结。
+[首次实际结果](DUALMIC_STAGES_D1_RESULT.zh-CN.md)：60 例中性通过，独立 740 万项
+原件审计通过；英文16例双讲 NS/频域 RES 阶段共同跨度增量均正，原NS优先假设
+削弱，关注点转向 AGC 实际增益与 HPF/BF 联合上游。中文单句仍独立保留负结果。
+[首次 Verify 分类失败](DUALMIC_STAGES_D1_CI_CLASSIFICATION.zh-CN.md)保留原失败，
+仅将隔离研究构建器登记为精确 SemVer-neutral 路径并要求其单独变更也走 full CI。
+
+[D2执行前合同](DUALMIC_GAIN_D2_PLAN.zh-CN.md)随后固定原60例AGC状态轨迹，
+[真实执行结果](DUALMIC_GAIN_D2_RESULT.zh-CN.md)保留首次C编译失败及仅1字符修复。
+修复后真实执行与首次独立原件审计均通过：35916帧、8次原reset，原状态/最终Float32
+全byte复现。最终逐样本clamp改变0样本，整帧peak cap仅33帧；原关注的英文显著
+负差值主要已在state gain视图出现，但弱双讲亦有正变化，不能据此移除AGC或声称
+识别/听感改善。C无近端truth，中文负结果继续独立保留。最终head/main资格见#922。
+
 ## 2026-11-06 双麦非真机集成 V2
 
 [实施前合同](DUALMIC_NONDEVICE_V2_PLAN.zh-CN.md)承接用户“除真机外继续落地”的新授权，

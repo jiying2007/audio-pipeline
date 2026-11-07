@@ -1,0 +1,160 @@
+name: Frontend Research
+
+on:
+  pull_request:
+    paths:
+      - 'tests/validation/frontend_evolution/dualmic_stages*'
+      - 'tests/validation/frontend_evolution/test_dualmic_stages*'
+      - 'tests/validation/frontend_evolution/dualmic_gain_d2*'
+      - 'tests/validation/frontend_evolution/test_dualmic_gain_d2*'
+      - 'tools/codex_assets/dualmic_stages_build.py'
+      - 'docs/research/frontend-evolution-v1/DUALMIC_STAGES_D1_PLAN.zh-CN.md'
+      - 'docs/research/frontend-evolution-v1/dualmic-stages-d1-source-lock.json'
+      - 'docs/research/frontend-evolution-v1/DUALMIC_GAIN_D2_PLAN.zh-CN.md'
+      - 'docs/research/frontend-evolution-v1/dualmic-gain-d2-input-lock.json'
+      - '.github/workflows/frontend-research.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'tests/validation/frontend_evolution/dualmic_stages*'
+      - 'tests/validation/frontend_evolution/test_dualmic_stages*'
+      - 'tests/validation/frontend_evolution/dualmic_gain_d2*'
+      - 'tests/validation/frontend_evolution/test_dualmic_gain_d2*'
+      - 'tools/codex_assets/dualmic_stages_build.py'
+      - 'docs/research/frontend-evolution-v1/DUALMIC_STAGES_D1_PLAN.zh-CN.md'
+      - 'docs/research/frontend-evolution-v1/dualmic-stages-d1-source-lock.json'
+      - 'docs/research/frontend-evolution-v1/DUALMIC_GAIN_D2_PLAN.zh-CN.md'
+      - 'docs/research/frontend-evolution-v1/dualmic-gain-d2-input-lock.json'
+      - '.github/workflows/frontend-research.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: frontend-research-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  matrix:
+    name: ${{ matrix.experiment }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      EXECUTION_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+    strategy:
+      fail-fast: false
+      matrix:
+        experiment: [dualmic-stages-d1]
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Check source reader boundaries and exact execution checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir /tmp/ap-dualmic-d1
+          timeout 300s python3 tests/validation/frontend_evolution/test_dualmic_stages_source.py \
+            2>&1 | tee /tmp/ap-dualmic-d1/source-tests.log
+          timeout 300s python3 tests/validation/frontend_evolution/test_dualmic_gain_d2_integrity.py \
+            --output /tmp/ap-dualmic-d1/gain-integrity-tests.json \
+            2>&1 | tee /tmp/ap-dualmic-d1/gain-integrity-tests.log
+          git status --porcelain > /tmp/ap-dualmic-d1/checkout-status.txt
+          test ! -s /tmp/ap-dualmic-d1/checkout-status.txt
+          git rev-parse HEAD > /tmp/ap-dualmic-d1/source-revision.txt
+          test "$(git rev-parse HEAD)" = "$EXECUTION_SHA"
+      - name: Acquire the two hash-locked original artifacts
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          timeout 300s python3 tests/validation/frontend_evolution/dualmic_stages_source.py \
+            --output /tmp/ap-dualmic-d1/originals \
+            2>&1 | tee /tmp/ap-dualmic-d1/source.log
+      - name: Reject omitted or altered original bindings after resealing
+        shell: bash
+        run: |
+          set -euo pipefail
+          timeout 300s python3 tests/validation/frontend_evolution/test_dualmic_stages_d1_integrity.py \
+            --original-a /tmp/ap-dualmic-d1/originals/A \
+            --original-c /tmp/ap-dualmic-d1/originals/C \
+            --output /tmp/ap-dualmic-d1/integrity-tests.json \
+            2>&1 | tee /tmp/ap-dualmic-d1/integrity-tests.log
+      - name: Build exact ordinary and neutral observer processors
+        shell: bash
+        run: |
+          set -euo pipefail
+          timeout 600s python3 tools/codex_assets/dualmic_stages_build.py \
+            --source "$PWD" --source-revision "$EXECUTION_SHA" \
+            --output /tmp/ap-dualmic-d1/build \
+            2>&1 | tee /tmp/ap-dualmic-d1/build.log
+      - name: Execute all 60 original views and analyze fixed stage spans
+        shell: bash
+        run: |
+          set -euo pipefail
+          timeout 600s python3 tests/validation/frontend_evolution/dualmic_stages_d1.py run \
+            --original-a /tmp/ap-dualmic-d1/originals/A \
+            --original-c /tmp/ap-dualmic-d1/originals/C \
+            --build-dir /tmp/ap-dualmic-d1/build --output /tmp/ap-dualmic-d1/result \
+            2>&1 | tee /tmp/ap-dualmic-d1/run.log
+      - name: Reread the complete neutral evidence without DSP
+        shell: bash
+        run: |
+          set -euo pipefail
+          timeout 300s python3 tests/validation/frontend_evolution/dualmic_stages_d1.py verify \
+            --output /tmp/ap-dualmic-d1/result \
+            2>&1 | tee /tmp/ap-dualmic-d1/verify.log
+      - name: Replay exact original AGC and decompose ordered gain views
+        shell: bash
+        run: |
+          set -euo pipefail
+          timeout 900s python3 tests/validation/frontend_evolution/dualmic_gain_d2.py run \
+            --parent-result /tmp/ap-dualmic-d1/result \
+            --build-dir /tmp/ap-dualmic-d1/build --output /tmp/ap-dualmic-d1/gain-d2 \
+            2>&1 | tee /tmp/ap-dualmic-d1/gain-run.log
+      - name: Reread complete gain decomposition without DSP
+        shell: bash
+        run: |
+          set -euo pipefail
+          timeout 300s python3 tests/validation/frontend_evolution/dualmic_gain_d2.py verify \
+            --parent-result /tmp/ap-dualmic-d1/result --output /tmp/ap-dualmic-d1/gain-d2 \
+            2>&1 | tee /tmp/ap-dualmic-d1/gain-verify.log
+      - name: Preserve original bytes, diagnostics and failures
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: frontend-research-${{ matrix.experiment }}-${{ github.run_id }}-attempt-${{ github.run_attempt }}
+          path: |
+            /tmp/ap-dualmic-d1/*.log
+            /tmp/ap-dualmic-d1/*.txt
+            /tmp/ap-dualmic-d1/*.json
+            /tmp/ap-dualmic-d1/originals/
+            /tmp/ap-dualmic-d1/build/*.json
+            /tmp/ap-dualmic-d1/build/*.log
+            /tmp/ap-dualmic-d1/build/exact-source.tar
+            /tmp/ap-dualmic-d1/build/logs/
+            /tmp/ap-dualmic-d1/build/baseline-build/ap_process_pcm
+            /tmp/ap-dualmic-d1/build/baseline-build/ap_build_info_dump
+            /tmp/ap-dualmic-d1/build/baseline-build/libaudio_pipeline.a
+            /tmp/ap-dualmic-d1/build/baseline-build/generated/audio_pipeline/audio_pipeline_build.h
+            /tmp/ap-dualmic-d1/build/baseline-build/CMakeFiles/audio_pipeline.dir/flags.make
+            /tmp/ap-dualmic-d1/build/observer-build/ap_process_pcm_observer
+            /tmp/ap-dualmic-d1/build/observer-build/libaudio_pipeline.a
+            /tmp/ap-dualmic-d1/build/observer-build/generated/audio_pipeline/audio_pipeline_build.h
+            /tmp/ap-dualmic-d1/build/observer-build/CMakeFiles/audio_pipeline.dir/flags.make
+            /tmp/ap-dualmic-d1/build/observer-source/src/activity/ap_activity.c
+            /tmp/ap-dualmic-d1/build/observer-source/src/aec/ap_aec_mdf.c
+            /tmp/ap-dualmic-d1/build/observer-source/src/enhance/ap_ns.c
+            /tmp/ap-dualmic-d1/build/observer-source/src/enhance/ap_agc.c
+            /tmp/ap-dualmic-d1/build/observer-source/src/enhance/ap_res.c
+            /tmp/ap-dualmic-d1/build/observer-source/tests/validation/frontend_evolution/dualmic_stages_d1.c
+            /tmp/ap-dualmic-d1/result/
+            /tmp/ap-dualmic-d1/gain-d2/
+          include-hidden-files: true
+          retention-days: 90
+          if-no-files-found: error

@@ -35,7 +35,7 @@ DSP_ARM = ["cortex-a7-neon", "cortex-a32-neon", "aarch64-neon"]
 
 DOC_PREFIXES = ("docs/",)
 DOC_FILES = {"README.md", "README.zh-CN.md", "CHANGELOG.md", "THIRD_PARTY.md", "LICENSE", "SECURITY.md"}
-RESEARCH_REGISTRY_METADATA_FILES = {".github/research/evidence-index.json", "scripts/research_registry.py"}
+RESEARCH_REGISTRY_METADATA_FILES = {".github/research/evidence-index.json"}
 PROGRAM_ARCHIVE_GOVERNANCE_FILES = {
     ".github/program/maintenance_workflow_contract.py",
     ".github/program/terminal_workflow_retirement.py",
@@ -900,14 +900,14 @@ def self_test() -> None:
     assert analyze(["README.md"])["docs_only"]
     registry_metadata = analyze([
         ".github/research/evidence-index.json",
-        "scripts/research_registry.py",
         "docs/REPOSITORY_LIFECYCLE.md",
         "docs/REPOSITORY_LIFECYCLE.zh-CN.md",
     ])
     assert registry_metadata["docs_only"] and not registry_metadata["full"]
     assert registry_metadata["reason"] == "research registry lifecycle metadata-only change"
-    assert analyze(["scripts/research_registry.py"])["docs_only"]
-    assert analyze(["scripts/research_registry.py", "scripts/unreviewed_registry_tool.py"])["full"]
+    assert analyze([".github/research/evidence-index.json", "scripts/research_registry.py"])["full"]
+    assert analyze(["scripts/research_registry.py"])["full"]
+    assert analyze([".github/research/evidence-index.json", "scripts/unreviewed_registry_tool.py"])["full"]
     assert is_release_neutral(".github/workflows/verify.yml")
     assert is_release_neutral("ci/Dockerfile")
     assert is_release_neutral("tests/test_pipeline.c")

@@ -334,7 +334,7 @@ int main(int argc, char **argv) {
     uint16_t endian = 1u;
     int result = 2, outputs_open = 0;
     if (argc != 7 || strcmp(argv[1], "--profile") ||
-        (strcmp(argv[2], "call") && strcmp(argv[2], "assistant")) {
+        (strcmp(argv[2], "call") && strcmp(argv[2], "assistant"))) {
         fprintf(stderr, "usage: %s --profile call|assistant input.f32le reference-final.f32le control.bin empty-output-directory\n", argv[0]);
         return 2;
     }

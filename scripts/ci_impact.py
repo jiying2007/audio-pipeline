@@ -87,6 +87,8 @@ DEVICE_RESEARCH_FILES = {
     "tools/codex_assets/device_stages.py",
     "tools/codex_assets/device_timing.py",
     "tools/codex_assets/device_transition.py",
+    # FE-DUALMIC-STAGES-D1: isolated host research observer build, no SDK change.
+    "tools/codex_assets/dualmic_stages_build.py",
 }
 RELEASE_NEUTRAL_FILES = {
     "tools/codex_assets/__init__.py", "tools/codex_assets/immutable_whitespace.py",
@@ -752,9 +754,9 @@ def analyze(paths: list[str], force_full: bool = False, cmake_version_only_chang
             flags["validation"] = True
         elif p == "tools/acoustic_upgrade_decision.py":
             flags["unknown"] = True
-        elif p == "tools/runner_preflight.py":
-            # Research source-bound runner readiness is release-neutral but
-            # changes to its trust decision require the full code matrix.
+        elif p in ("tools/runner_preflight.py", "tools/codex_assets/dualmic_stages_build.py"):
+            # Research source-bound readiness and isolated observer builds are
+            # release-neutral; their source/ABI decisions require full CI.
             flags["unknown"] = True
         elif p.startswith("examples/") or p.startswith("tools/"):
             flags["bench"] = True
@@ -972,6 +974,9 @@ def self_test() -> None:
     for path in sorted(DEVICE_RESEARCH_FILES):
         assert is_release_neutral(path)
     assert not is_release_neutral("tools/codex_assets/unregistered_backend.py")
+    assert not is_release_neutral("tools/codex_assets/dualmic_stages_build_unregistered.py")
+    dualmic_observer = analyze(["tools/codex_assets/dualmic_stages_build.py"])
+    assert dualmic_observer["full"] and not dualmic_observer["docs_only"]
     assert is_release_neutral("docs/program/plan.json")
     assert is_release_neutral("docs/program/iterations/I001.json")
     assert not is_release_neutral("scripts/unregistered-program.py")

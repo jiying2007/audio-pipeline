@@ -1,0 +1,4775 @@
+{
+  "D1_SOURCE_FILES": {
+    "docs/research/frontend-evolution-v1/DUALMIC_STAGES_D1_PLAN.zh-CN.md": {
+      "bytes": 7634,
+      "sha256": "7ffdfaa3241da78aaacc8e65f6d2066b7fb061b872593bd8b396779916b9e136"
+    },
+    "docs/research/frontend-evolution-v1/dualmic-stages-d1-source-lock.json": {
+      "bytes": 1109,
+      "sha256": "3f19ef5a04d18411fc0c3b7b62dcb42a30bd1a4645ee2a6afb26af4f9b54c3bf"
+    },
+    "tests/validation/frontend_evolution/dualmic_stages_d1.c": {
+      "bytes": 15659,
+      "sha256": "d4bc211488170bd052fd8b70f31a07189169105106282105cc97365422d15b5a"
+    },
+    "tests/validation/frontend_evolution/dualmic_stages_d1.py": {
+      "bytes": 52923,
+      "sha256": "1402dc3471afaee6c5f13352234d2a1513826cb778e443f9e8e68a51e9a682fd"
+    },
+    "tests/validation/frontend_evolution/dualmic_stages_source.py": {
+      "bytes": 9422,
+      "sha256": "0aca93889d158bf29957d3df4d9b3cbaacfa1230e9896f6d4591ddbcf7b19adc"
+    },
+    "tools/codex_assets/device_capture.py": {
+      "bytes": 15452,
+      "sha256": "4e7948a50e94602aae446a247a49767627f2bf8a9fd289be0fa7e459a84f72bf"
+    },
+    "tools/codex_assets/device_exact_reference.py": {
+      "bytes": 12801,
+      "sha256": "464d02e30be165571cb51a398dca7efc79b48f264e8c685a66abce759dcfc3d3"
+    },
+    "tools/codex_assets/device_replay.py": {
+      "bytes": 20460,
+      "sha256": "2c6a90b3eaf31c85b081569e1e5d63b2b3663f36093b2a94a0f4a89da627c9de"
+    },
+    "tools/codex_assets/device_stages.py": {
+      "bytes": 13400,
+      "sha256": "e2ca2a3a55227d2ff08507696b79a7fcc29fc5a89224a5f293bc253b1b0bf6db"
+    },
+    "tools/codex_assets/dualmic_stages_build.py": {
+      "bytes": 21974,
+      "sha256": "0677b00b08b42489b4bf1383c36f6dba8680bd906ed7440a10467e23011df68c"
+    },
+    "validation/tools/run_validation_engine.py": {
+      "bytes": 54269,
+      "sha256": "9082b061e7e46aa1c48c82c0ec845524110e01e910aa51e5b83c2c9d9594789a"
+    }
+  },
+  "base_sha": "4daa7e239eebda11f6c7066df2e851269021112f",
+  "case_count": 60,
+  "cases": [
+    {
+      "catalog": {
+        "auxiliary_inputs": [],
+        "capture_only": true,
+        "case_id": "pair-0-near-only-call",
+        "data_role": "disclosed-regression",
+        "dimensions": {
+          "common_gain": 0.6270529449287688,
+          "data_role": "regression",
+          "echo_tdoa_samples": 1.4139190265868387,
+          "far_speaker": 174,
+          "far_start_sample": 0,
+          "frames": 600,
+          "human_vad_labels": false,
+          "mic_spacing_mm": 35.0,
+          "near_speaker": 84,
+          "near_start_sample": 24000,
+          "original_role": "development-diagnostic",
+          "pair": 0,
+          "pipeline_profile": "call",
+          "real_array_recording": false,
+          "recorded_speech": true,
+          "seconds": 6,
+          "source_window_samples": 64000,
+          "synthetic_propagation": true,
+          "target_tdoa_samples": 0.0
+        },
+        "frames": 600,
+        "group": "A",
+        "input_events": [],
+        "inputs": {
+          "clean_near": "result/input/cases/pair-0-near-only/clean-near.pcm",
+          "mic": "result/input/cases/pair-0-near-only/mic.pcm",
+          "render": null
+        },
+        "key": "A/pair-0-near-only-call",
+        "original_argv": [
+          "/home/runner/work/audio-pipeline/audio-pipeline/build-dualmic-recorded/ap_process_pcm",
+          "--profile",
+          "call",
+          "--sample-rate",
+          "16000",
+          "--mic-channels",
+          "2",
+          "--strict-capture-frames",
+          "--metrics-jsonl",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-0-near-only-call/metrics.jsonl",
+          "--capture-profile",
+          "default",
+          "--capture-only",
+          "/tmp/ap-dualmic-recorded-stage/result/input/cases/pair-0-near-only/mic.pcm",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-0-near-only-call/out.pcm"
+        ],
+        "original_dir": "result/replay/pair-0-near-only-call",
+        "original_prefix": "/tmp/ap-dualmic-recorded-stage/",
+        "profile": "call",
+        "samples": 96000,
+        "scenario": "near-only"
+      },
+      "clean_near": {
+        "bytes": 192000,
+        "sha256": "59a7fcb05ead3027e2271ec36985e3fc9e80f26381b0ab15c7d427350a7ffa8e"
+      },
+      "parent_taps": {
+        "agc_output.f32le": {
+          "bytes": 384000,
+          "sha256": "0e23e673e8e8cc3e9d50807114ed151539ea740d70526cc5fbfdaaefccdffd7d"
+        },
+        "control.csv": {
+          "bytes": 117183,
+          "sha256": "01eb4f3894256c9a70d8c91086c0a1e62bc6e0a9b343e6180527f7936e7e1b5d"
+        },
+        "ns_output.f32le": {
+          "bytes": 384000,
+          "sha256": "3b9805166519dc679a9166984b6c5fc50900ce4485b7f8b6123f623e800e36b2"
+        }
+      }
+    },
+    {
+      "catalog": {
+        "auxiliary_inputs": [],
+        "capture_only": true,
+        "case_id": "pair-0-near-only-assistant",
+        "data_role": "disclosed-regression",
+        "dimensions": {
+          "common_gain": 0.6270529449287688,
+          "data_role": "regression",
+          "echo_tdoa_samples": 1.4139190265868387,
+          "far_speaker": 174,
+          "far_start_sample": 0,
+          "frames": 600,
+          "human_vad_labels": false,
+          "mic_spacing_mm": 35.0,
+          "near_speaker": 84,
+          "near_start_sample": 24000,
+          "original_role": "development-diagnostic",
+          "pair": 0,
+          "pipeline_profile": "assistant",
+          "real_array_recording": false,
+          "recorded_speech": true,
+          "seconds": 6,
+          "source_window_samples": 64000,
+          "synthetic_propagation": true,
+          "target_tdoa_samples": 0.0
+        },
+        "frames": 600,
+        "group": "A",
+        "input_events": [],
+        "inputs": {
+          "clean_near": "result/input/cases/pair-0-near-only/clean-near.pcm",
+          "mic": "result/input/cases/pair-0-near-only/mic.pcm",
+          "render": null
+        },
+        "key": "A/pair-0-near-only-assistant",
+        "original_argv": [
+          "/home/runner/work/audio-pipeline/audio-pipeline/build-dualmic-recorded/ap_process_pcm",
+          "--profile",
+          "assistant",
+          "--sample-rate",
+          "16000",
+          "--mic-channels",
+          "2",
+          "--strict-capture-frames",
+          "--metrics-jsonl",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-0-near-only-assistant/metrics.jsonl",
+          "--capture-profile",
+          "default",
+          "--capture-only",
+          "/tmp/ap-dualmic-recorded-stage/result/input/cases/pair-0-near-only/mic.pcm",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-0-near-only-assistant/out.pcm"
+        ],
+        "original_dir": "result/replay/pair-0-near-only-assistant",
+        "original_prefix": "/tmp/ap-dualmic-recorded-stage/",
+        "profile": "assistant",
+        "samples": 96000,
+        "scenario": "near-only"
+      },
+      "clean_near": {
+        "bytes": 192000,
+        "sha256": "59a7fcb05ead3027e2271ec36985e3fc9e80f26381b0ab15c7d427350a7ffa8e"
+      },
+      "parent_taps": {
+        "agc_output.f32le": {
+          "bytes": 384000,
+          "sha256": "8723481b943875c24938e82aeaf9fbc1d42eee71ec86878f1b16435a2defa3c1"
+        },
+        "control.csv": {
+          "bytes": 117133,
+          "sha256": "5b1275f8564c90e8024c7d17bdca43301a0496c875fbfc5c587d4c696621eb89"
+        },
+        "ns_output.f32le": {
+          "bytes": 384000,
+          "sha256": "201d1a2f583786ccf6991e82b928f7a250d2b074125f56fab6f7d6f77168e97c"
+        }
+      }
+    },
+    {
+      "catalog": {
+        "auxiliary_inputs": [],
+        "capture_only": false,
+        "case_id": "pair-0-silent-render-call",
+        "data_role": "disclosed-regression",
+        "dimensions": {
+          "common_gain": 0.6270529449287688,
+          "data_role": "regression",
+          "echo_tdoa_samples": 1.4139190265868387,
+          "far_speaker": 174,
+          "far_start_sample": 0,
+          "frames": 600,
+          "human_vad_labels": false,
+          "mic_spacing_mm": 35.0,
+          "near_speaker": 84,
+          "near_start_sample": 24000,
+          "original_role": "development-diagnostic",
+          "pair": 0,
+          "pipeline_profile": "call",
+          "real_array_recording": false,
+          "recorded_speech": true,
+          "seconds": 6,
+          "source_window_samples": 64000,
+          "synthetic_propagation": true,
+          "target_tdoa_samples": 0.0
+        },
+        "frames": 600,
+        "group": "A",
+        "input_events": [],
+        "inputs": {
+          "clean_near": "result/input/cases/pair-0-silent-render/clean-near.pcm",
+          "mic": "result/input/cases/pair-0-silent-render/mic.pcm",
+          "render": "result/input/cases/pair-0-silent-render/render.pcm"
+        },
+        "key": "A/pair-0-silent-render-call",
+        "original_argv": [
+          "/home/runner/work/audio-pipeline/audio-pipeline/build-dualmic-recorded/ap_process_pcm",
+          "--profile",
+          "call",
+          "--sample-rate",
+          "16000",
+          "--mic-channels",
+          "2",
+          "--strict-capture-frames",
+          "--metrics-jsonl",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-0-silent-render-call/metrics.jsonl",
+          "/tmp/ap-dualmic-recorded-stage/result/input/cases/pair-0-silent-render/mic.pcm",
+          "/tmp/ap-dualmic-recorded-stage/result/input/cases/pair-0-silent-render/render.pcm",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-0-silent-render-call/out.pcm"
+        ],
+        "original_dir": "result/replay/pair-0-silent-render-call",
+        "original_prefix": "/tmp/ap-dualmic-recorded-stage/",
+        "profile": "call",
+        "samples": 96000,
+        "scenario": "silent-render"
+      },
+      "clean_near": {
+        "bytes": 192000,
+        "sha256": "59a7fcb05ead3027e2271ec36985e3fc9e80f26381b0ab15c7d427350a7ffa8e"
+      },
+      "parent_taps": {
+        "agc_output.f32le": {
+          "bytes": 384000,
+          "sha256": "0e23e673e8e8cc3e9d50807114ed151539ea740d70526cc5fbfdaaefccdffd7d"
+        },
+        "control.csv": {
+          "bytes": 124983,
+          "sha256": "afa7fa06ef4841a96732649c0d3142fda6b6b2f4c30424fa8ed13a104adf9fbc"
+        },
+        "ns_output.f32le": {
+          "bytes": 384000,
+          "sha256": "3b9805166519dc679a9166984b6c5fc50900ce4485b7f8b6123f623e800e36b2"
+        }
+      }
+    },
+    {
+      "catalog": {
+        "auxiliary_inputs": [],
+        "capture_only": false,
+        "case_id": "pair-0-silent-render-assistant",
+        "data_role": "disclosed-regression",
+        "dimensions": {
+          "common_gain": 0.6270529449287688,
+          "data_role": "regression",
+          "echo_tdoa_samples": 1.4139190265868387,
+          "far_speaker": 174,
+          "far_start_sample": 0,
+          "frames": 600,
+          "human_vad_labels": false,
+          "mic_spacing_mm": 35.0,
+          "near_speaker": 84,
+          "near_start_sample": 24000,
+          "original_role": "development-diagnostic",
+          "pair": 0,
+          "pipeline_profile": "assistant",
+          "real_array_recording": false,
+          "recorded_speech": true,
+          "seconds": 6,
+          "source_window_samples": 64000,
+          "synthetic_propagation": true,
+          "target_tdoa_samples": 0.0
+        },
+        "frames": 600,
+        "group": "A",
+        "input_events": [],
+        "inputs": {
+          "clean_near": "result/input/cases/pair-0-silent-render/clean-near.pcm",
+          "mic": "result/input/cases/pair-0-silent-render/mic.pcm",
+          "render": "result/input/cases/pair-0-silent-render/render.pcm"
+        },
+        "key": "A/pair-0-silent-render-assistant",
+        "original_argv": [
+          "/home/runner/work/audio-pipeline/audio-pipeline/build-dualmic-recorded/ap_process_pcm",
+          "--profile",
+          "assistant",
+          "--sample-rate",
+          "16000",
+          "--mic-channels",
+          "2",
+          "--strict-capture-frames",
+          "--metrics-jsonl",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-0-silent-render-assistant/metrics.jsonl",
+          "/tmp/ap-dualmic-recorded-stage/result/input/cases/pair-0-silent-render/mic.pcm",
+          "/tmp/ap-dualmic-recorded-stage/result/input/cases/pair-0-silent-render/render.pcm",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-0-silent-render-assistant/out.pcm"
+        ],
+        "original_dir": "result/replay/pair-0-silent-render-assistant",
+        "original_prefix": "/tmp/ap-dualmic-recorded-stage/",
+        "profile": "assistant",
+        "samples": 96000,
+        "scenario": "silent-render"
+      },
+      "clean_near": {
+        "bytes": 192000,
+        "sha256": "59a7fcb05ead3027e2271ec36985e3fc9e80f26381b0ab15c7d427350a7ffa8e"
+      },
+      "parent_taps": {
+        "agc_output.f32le": {
+          "bytes": 384000,
+          "sha256": "8723481b943875c24938e82aeaf9fbc1d42eee71ec86878f1b16435a2defa3c1"
+        },
+        "control.csv": {
+          "bytes": 124933,
+          "sha256": "e8324aabc6438f0098f90f97e781c3a2d1b52f4ac95973ceff158fe1cbb41574"
+        },
+        "ns_output.f32le": {
+          "bytes": 384000,
+          "sha256": "201d1a2f583786ccf6991e82b928f7a250d2b074125f56fab6f7d6f77168e97c"
+        }
+      }
+    },
+    {
+      "catalog": {
+        "auxiliary_inputs": [
+          "result/input/cases/pair-0-far-only/echo.pcm"
+        ],
+        "capture_only": false,
+        "case_id": "pair-0-far-only-call",
+        "data_role": "disclosed-regression",
+        "dimensions": {
+          "common_gain": 0.6270529449287688,
+          "data_role": "regression",
+          "echo_tdoa_samples": 1.4139190265868387,
+          "far_speaker": 174,
+          "far_start_sample": 0,
+          "frames": 600,
+          "human_vad_labels": false,
+          "mic_spacing_mm": 35.0,
+          "near_speaker": 84,
+          "near_start_sample": 24000,
+          "original_role": "development-diagnostic",
+          "pair": 0,
+          "pipeline_profile": "call",
+          "real_array_recording": false,
+          "recorded_speech": true,
+          "seconds": 6,
+          "source_window_samples": 64000,
+          "synthetic_propagation": true,
+          "target_tdoa_samples": 0.0
+        },
+        "frames": 600,
+        "group": "A",
+        "input_events": [],
+        "inputs": {
+          "clean_near": null,
+          "mic": "result/input/cases/pair-0-far-only/mic.pcm",
+          "render": "result/input/cases/pair-0-far-only/render.pcm"
+        },
+        "key": "A/pair-0-far-only-call",
+        "original_argv": [
+          "/home/runner/work/audio-pipeline/audio-pipeline/build-dualmic-recorded/ap_process_pcm",
+          "--profile",
+          "call",
+          "--sample-rate",
+          "16000",
+          "--mic-channels",
+          "2",
+          "--strict-capture-frames",
+          "--metrics-jsonl",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-0-far-only-call/metrics.jsonl",
+          "/tmp/ap-dualmic-recorded-stage/result/input/cases/pair-0-far-only/mic.pcm",
+          "/tmp/ap-dualmic-recorded-stage/result/input/cases/pair-0-far-only/render.pcm",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-0-far-only-call/out.pcm"
+        ],
+        "original_dir": "result/replay/pair-0-far-only-call",
+        "original_prefix": "/tmp/ap-dualmic-recorded-stage/",
+        "profile": "call",
+        "samples": 96000,
+        "scenario": "far-only"
+      },
+      "clean_near": null,
+      "parent_taps": {
+        "agc_output.f32le": {
+          "bytes": 384000,
+          "sha256": "97b75ca99d9867cdfe405d2f61a3cc80925adc67f49543aed4b8500029fe265c"
+        },
+        "control.csv": {
+          "bytes": 134901,
+          "sha256": "bd8b105e3bc9e453646ee67b78147094198efb2db68a359c95253dea01c17e8d"
+        },
+        "ns_output.f32le": {
+          "bytes": 384000,
+          "sha256": "0d097efd1fc8855bd1a1fd2288b2f8487844691d185e4d99150ceb3159bb4d04"
+        }
+      }
+    },
+    {
+      "catalog": {
+        "auxiliary_inputs": [
+          "result/input/cases/pair-0-far-only/echo.pcm"
+        ],
+        "capture_only": false,
+        "case_id": "pair-0-far-only-assistant",
+        "data_role": "disclosed-regression",
+        "dimensions": {
+          "common_gain": 0.6270529449287688,
+          "data_role": "regression",
+          "echo_tdoa_samples": 1.4139190265868387,
+          "far_speaker": 174,
+          "far_start_sample": 0,
+          "frames": 600,
+          "human_vad_labels": false,
+          "mic_spacing_mm": 35.0,
+          "near_speaker": 84,
+          "near_start_sample": 24000,
+          "original_role": "development-diagnostic",
+          "pair": 0,
+          "pipeline_profile": "assistant",
+          "real_array_recording": false,
+          "recorded_speech": true,
+          "seconds": 6,
+          "source_window_samples": 64000,
+          "synthetic_propagation": true,
+          "target_tdoa_samples": 0.0
+        },
+        "frames": 600,
+        "group": "A",
+        "input_events": [],
+        "inputs": {
+          "clean_near": null,
+          "mic": "result/input/cases/pair-0-far-only/mic.pcm",
+          "render": "result/input/cases/pair-0-far-only/render.pcm"
+        },
+        "key": "A/pair-0-far-only-assistant",
+        "original_argv": [
+          "/home/runner/work/audio-pipeline/audio-pipeline/build-dualmic-recorded/ap_process_pcm",
+          "--profile",
+          "assistant",
+          "--sample-rate",
+          "16000",
+          "--mic-channels",
+          "2",
+          "--strict-capture-frames",
+          "--metrics-jsonl",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-0-far-only-assistant/metrics.jsonl",
+          "/tmp/ap-dualmic-recorded-stage/result/input/cases/pair-0-far-only/mic.pcm",
+          "/tmp/ap-dualmic-recorded-stage/result/input/cases/pair-0-far-only/render.pcm",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-0-far-only-assistant/out.pcm"
+        ],
+        "original_dir": "result/replay/pair-0-far-only-assistant",
+        "original_prefix": "/tmp/ap-dualmic-recorded-stage/",
+        "profile": "assistant",
+        "samples": 96000,
+        "scenario": "far-only"
+      },
+      "clean_near": null,
+      "parent_taps": {
+        "agc_output.f32le": {
+          "bytes": 384000,
+          "sha256": "ee770592b63ed5a95f29a4dd4d0424d2a6a93df9a77623d8a14496a466b5906b"
+        },
+        "control.csv": {
+          "bytes": 134878,
+          "sha256": "25d7890e262975d61b1f981bbefe0c70b0742e8376a9c277e97de0e6e5566dcc"
+        },
+        "ns_output.f32le": {
+          "bytes": 384000,
+          "sha256": "0b874f8cf5a17046d787622d5e8449bc685e64e5c350e9f2e13cd9d2a84f092c"
+        }
+      }
+    },
+    {
+      "catalog": {
+        "auxiliary_inputs": [
+          "result/input/cases/pair-0-doubletalk-nominal/interference.pcm"
+        ],
+        "capture_only": false,
+        "case_id": "pair-0-doubletalk-nominal-call",
+        "data_role": "disclosed-regression",
+        "dimensions": {
+          "common_gain": 0.6270529449287688,
+          "data_role": "regression",
+          "echo_tdoa_samples": 1.4139190265868387,
+          "far_speaker": 174,
+          "far_start_sample": 0,
+          "frames": 600,
+          "human_vad_labels": false,
+          "mic_spacing_mm": 35.0,
+          "near_speaker": 84,
+          "near_start_sample": 24000,
+          "original_role": "development-diagnostic",
+          "pair": 0,
+          "pipeline_profile": "call",
+          "real_array_recording": false,
+          "recorded_speech": true,
+          "seconds": 6,
+          "source_window_samples": 64000,
+          "synthetic_propagation": true,
+          "target_tdoa_samples": 0.0
+        },
+        "frames": 600,
+        "group": "A",
+        "input_events": [],
+        "inputs": {
+          "clean_near": "result/input/cases/pair-0-doubletalk-nominal/clean-near.pcm",
+          "mic": "result/input/cases/pair-0-doubletalk-nominal/mic.pcm",
+          "render": "result/input/cases/pair-0-doubletalk-nominal/render.pcm"
+        },
+        "key": "A/pair-0-doubletalk-nominal-call",
+        "original_argv": [
+          "/home/runner/work/audio-pipeline/audio-pipeline/build-dualmic-recorded/ap_process_pcm",
+          "--profile",
+          "call",
+          "--sample-rate",
+          "16000",
+          "--mic-channels",
+          "2",
+          "--strict-capture-frames",
+          "--metrics-jsonl",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-0-doubletalk-nominal-call/metrics.jsonl",
+          "/tmp/ap-dualmic-recorded-stage/result/input/cases/pair-0-doubletalk-nominal/mic.pcm",
+          "/tmp/ap-dualmic-recorded-stage/result/input/cases/pair-0-doubletalk-nominal/render.pcm",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-0-doubletalk-nominal-call/out.pcm"
+        ],
+        "original_dir": "result/replay/pair-0-doubletalk-nominal-call",
+        "original_prefix": "/tmp/ap-dualmic-recorded-stage/",
+        "profile": "call",
+        "samples": 96000,
+        "scenario": "doubletalk-nominal"
+      },
+      "clean_near": {
+        "bytes": 192000,
+        "sha256": "59a7fcb05ead3027e2271ec36985e3fc9e80f26381b0ab15c7d427350a7ffa8e"
+      },
+      "parent_taps": {
+        "agc_output.f32le": {
+          "bytes": 384000,
+          "sha256": "311ef98eab309a74dce89fdb41bbdbf49bca73aa2cd72f5747979004b6283ad2"
+        },
+        "control.csv": {
+          "bytes": 133713,
+          "sha256": "ec4c9f56c7a8de9655fc27ff745f8254d2907fab126877657b88bc8f79440aab"
+        },
+        "ns_output.f32le": {
+          "bytes": 384000,
+          "sha256": "2a143866355579ef58ff8fc6ae4d441d018744c6c7fe8c857753157eaec67048"
+        }
+      }
+    },
+    {
+      "catalog": {
+        "auxiliary_inputs": [
+          "result/input/cases/pair-0-doubletalk-nominal/interference.pcm"
+        ],
+        "capture_only": false,
+        "case_id": "pair-0-doubletalk-nominal-assistant",
+        "data_role": "disclosed-regression",
+        "dimensions": {
+          "common_gain": 0.6270529449287688,
+          "data_role": "regression",
+          "echo_tdoa_samples": 1.4139190265868387,
+          "far_speaker": 174,
+          "far_start_sample": 0,
+          "frames": 600,
+          "human_vad_labels": false,
+          "mic_spacing_mm": 35.0,
+          "near_speaker": 84,
+          "near_start_sample": 24000,
+          "original_role": "development-diagnostic",
+          "pair": 0,
+          "pipeline_profile": "assistant",
+          "real_array_recording": false,
+          "recorded_speech": true,
+          "seconds": 6,
+          "source_window_samples": 64000,
+          "synthetic_propagation": true,
+          "target_tdoa_samples": 0.0
+        },
+        "frames": 600,
+        "group": "A",
+        "input_events": [],
+        "inputs": {
+          "clean_near": "result/input/cases/pair-0-doubletalk-nominal/clean-near.pcm",
+          "mic": "result/input/cases/pair-0-doubletalk-nominal/mic.pcm",
+          "render": "result/input/cases/pair-0-doubletalk-nominal/render.pcm"
+        },
+        "key": "A/pair-0-doubletalk-nominal-assistant",
+        "original_argv": [
+          "/home/runner/work/audio-pipeline/audio-pipeline/build-dualmic-recorded/ap_process_pcm",
+          "--profile",
+          "assistant",
+          "--sample-rate",
+          "16000",
+          "--mic-channels",
+          "2",
+          "--strict-capture-frames",
+          "--metrics-jsonl",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-0-doubletalk-nominal-assistant/metrics.jsonl",
+          "/tmp/ap-dualmic-recorded-stage/result/input/cases/pair-0-doubletalk-nominal/mic.pcm",
+          "/tmp/ap-dualmic-recorded-stage/result/input/cases/pair-0-doubletalk-nominal/render.pcm",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-0-doubletalk-nominal-assistant/out.pcm"
+        ],
+        "original_dir": "result/replay/pair-0-doubletalk-nominal-assistant",
+        "original_prefix": "/tmp/ap-dualmic-recorded-stage/",
+        "profile": "assistant",
+        "samples": 96000,
+        "scenario": "doubletalk-nominal"
+      },
+      "clean_near": {
+        "bytes": 192000,
+        "sha256": "59a7fcb05ead3027e2271ec36985e3fc9e80f26381b0ab15c7d427350a7ffa8e"
+      },
+      "parent_taps": {
+        "agc_output.f32le": {
+          "bytes": 384000,
+          "sha256": "3d116932bb2265739b25dcbbd7da84526b9895e7e00b196cbc3d181ee6c6fbef"
+        },
+        "control.csv": {
+          "bytes": 133610,
+          "sha256": "ead25f65fb491a1cb582b7b6e1e16c4bb4b82c5ff8cb515cff0a98b597b55837"
+        },
+        "ns_output.f32le": {
+          "bytes": 384000,
+          "sha256": "c9b73b71f37d56021c1d2480993258b0669ae58bef2090b137a05e4b488ce951"
+        }
+      }
+    },
+    {
+      "catalog": {
+        "auxiliary_inputs": [
+          "result/input/cases/pair-0-doubletalk-weak/interference.pcm"
+        ],
+        "capture_only": false,
+        "case_id": "pair-0-doubletalk-weak-call",
+        "data_role": "disclosed-regression",
+        "dimensions": {
+          "common_gain": 0.6270529449287688,
+          "data_role": "regression",
+          "echo_tdoa_samples": 1.4139190265868387,
+          "far_speaker": 174,
+          "far_start_sample": 0,
+          "frames": 600,
+          "human_vad_labels": false,
+          "mic_spacing_mm": 35.0,
+          "near_speaker": 84,
+          "near_start_sample": 24000,
+          "original_role": "development-diagnostic",
+          "pair": 0,
+          "pipeline_profile": "call",
+          "real_array_recording": false,
+          "recorded_speech": true,
+          "seconds": 6,
+          "source_window_samples": 64000,
+          "synthetic_propagation": true,
+          "target_tdoa_samples": 0.0
+        },
+        "frames": 600,
+        "group": "A",
+        "input_events": [],
+        "inputs": {
+          "clean_near": "result/input/cases/pair-0-doubletalk-weak/clean-near.pcm",
+          "mic": "result/input/cases/pair-0-doubletalk-weak/mic.pcm",
+          "render": "result/input/cases/pair-0-doubletalk-weak/render.pcm"
+        },
+        "key": "A/pair-0-doubletalk-weak-call",
+        "original_argv": [
+          "/home/runner/work/audio-pipeline/audio-pipeline/build-dualmic-recorded/ap_process_pcm",
+          "--profile",
+          "call",
+          "--sample-rate",
+          "16000",
+          "--mic-channels",
+          "2",
+          "--strict-capture-frames",
+          "--metrics-jsonl",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-0-doubletalk-weak-call/metrics.jsonl",
+          "/tmp/ap-dualmic-recorded-stage/result/input/cases/pair-0-doubletalk-weak/mic.pcm",
+          "/tmp/ap-dualmic-recorded-stage/result/input/cases/pair-0-doubletalk-weak/render.pcm",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-0-doubletalk-weak-call/out.pcm"
+        ],
+        "original_dir": "result/replay/pair-0-doubletalk-weak-call",
+        "original_prefix": "/tmp/ap-dualmic-recorded-stage/",
+        "profile": "call",
+        "samples": 96000,
+        "scenario": "doubletalk-weak"
+      },
+      "clean_near": {
+        "bytes": 192000,
+        "sha256": "957124eb1bd9f948a0e5fba868a5adecd0bceb626aa414e73919c7adc5c44a2b"
+      },
+      "parent_taps": {
+        "agc_output.f32le": {
+          "bytes": 384000,
+          "sha256": "5a4655a3b72c03a77cedd137f4bd80cb144be7b1a222b8f3a998ae030c5bb1fb"
+        },
+        "control.csv": {
+          "bytes": 133857,
+          "sha256": "ada23d17db9f5eed76b7078c6f1a2760d7951c7ceaa32c1f8921d3ac0cb0b3fa"
+        },
+        "ns_output.f32le": {
+          "bytes": 384000,
+          "sha256": "329956e525af5d23553d6db968572f46da9f2e0bca2bfafe2739e51453428675"
+        }
+      }
+    },
+    {
+      "catalog": {
+        "auxiliary_inputs": [
+          "result/input/cases/pair-0-doubletalk-weak/interference.pcm"
+        ],
+        "capture_only": false,
+        "case_id": "pair-0-doubletalk-weak-assistant",
+        "data_role": "disclosed-regression",
+        "dimensions": {
+          "common_gain": 0.6270529449287688,
+          "data_role": "regression",
+          "echo_tdoa_samples": 1.4139190265868387,
+          "far_speaker": 174,
+          "far_start_sample": 0,
+          "frames": 600,
+          "human_vad_labels": false,
+          "mic_spacing_mm": 35.0,
+          "near_speaker": 84,
+          "near_start_sample": 24000,
+          "original_role": "development-diagnostic",
+          "pair": 0,
+          "pipeline_profile": "assistant",
+          "real_array_recording": false,
+          "recorded_speech": true,
+          "seconds": 6,
+          "source_window_samples": 64000,
+          "synthetic_propagation": true,
+          "target_tdoa_samples": 0.0
+        },
+        "frames": 600,
+        "group": "A",
+        "input_events": [],
+        "inputs": {
+          "clean_near": "result/input/cases/pair-0-doubletalk-weak/clean-near.pcm",
+          "mic": "result/input/cases/pair-0-doubletalk-weak/mic.pcm",
+          "render": "result/input/cases/pair-0-doubletalk-weak/render.pcm"
+        },
+        "key": "A/pair-0-doubletalk-weak-assistant",
+        "original_argv": [
+          "/home/runner/work/audio-pipeline/audio-pipeline/build-dualmic-recorded/ap_process_pcm",
+          "--profile",
+          "assistant",
+          "--sample-rate",
+          "16000",
+          "--mic-channels",
+          "2",
+          "--strict-capture-frames",
+          "--metrics-jsonl",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-0-doubletalk-weak-assistant/metrics.jsonl",
+          "/tmp/ap-dualmic-recorded-stage/result/input/cases/pair-0-doubletalk-weak/mic.pcm",
+          "/tmp/ap-dualmic-recorded-stage/result/input/cases/pair-0-doubletalk-weak/render.pcm",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-0-doubletalk-weak-assistant/out.pcm"
+        ],
+        "original_dir": "result/replay/pair-0-doubletalk-weak-assistant",
+        "original_prefix": "/tmp/ap-dualmic-recorded-stage/",
+        "profile": "assistant",
+        "samples": 96000,
+        "scenario": "doubletalk-weak"
+      },
+      "clean_near": {
+        "bytes": 192000,
+        "sha256": "957124eb1bd9f948a0e5fba868a5adecd0bceb626aa414e73919c7adc5c44a2b"
+      },
+      "parent_taps": {
+        "agc_output.f32le": {
+          "bytes": 384000,
+          "sha256": "bb4f910265a5f660c0ed16023b47dff8543f9ce2a73f7a21cf1d6b01c440eaee"
+        },
+        "control.csv": {
+          "bytes": 133862,
+          "sha256": "71d659cf45226a7e77f509728d8c8d3bbc7a4882de1b2837602388ba7415483c"
+        },
+        "ns_output.f32le": {
+          "bytes": 384000,
+          "sha256": "8b02fe5650496b86030a0c76f599e4b71db50109e6cce4de6a73b9f174e0a8e8"
+        }
+      }
+    },
+    {
+      "catalog": {
+        "auxiliary_inputs": [
+          "result/input/cases/pair-0-path-change/echo.pcm"
+        ],
+        "capture_only": false,
+        "case_id": "pair-0-path-change-call",
+        "data_role": "disclosed-regression",
+        "dimensions": {
+          "common_gain": 0.6270529449287688,
+          "data_role": "regression",
+          "echo_tdoa_samples": 1.4139190265868387,
+          "far_speaker": 174,
+          "far_start_sample": 0,
+          "frames": 600,
+          "human_vad_labels": false,
+          "mic_spacing_mm": 35.0,
+          "near_speaker": 84,
+          "near_start_sample": 24000,
+          "original_role": "development-diagnostic",
+          "pair": 0,
+          "pipeline_profile": "call",
+          "real_array_recording": false,
+          "recorded_speech": true,
+          "seconds": 6,
+          "source_window_samples": 64000,
+          "synthetic_propagation": true,
+          "target_tdoa_samples": 0.0
+        },
+        "frames": 600,
+        "group": "A",
+        "input_events": [
+          {
+            "frame": 300,
+            "kind": "cli_echo_path_change",
+            "sample": 48000
+          }
+        ],
+        "inputs": {
+          "clean_near": null,
+          "mic": "result/input/cases/pair-0-path-change/mic.pcm",
+          "render": "result/input/cases/pair-0-path-change/render.pcm"
+        },
+        "key": "A/pair-0-path-change-call",
+        "original_argv": [
+          "/home/runner/work/audio-pipeline/audio-pipeline/build-dualmic-recorded/ap_process_pcm",
+          "--profile",
+          "call",
+          "--sample-rate",
+          "16000",
+          "--mic-channels",
+          "2",
+          "--strict-capture-frames",
+          "--metrics-jsonl",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-0-path-change-call/metrics.jsonl",
+          "--echo-path-change-frame",
+          "300",
+          "/tmp/ap-dualmic-recorded-stage/result/input/cases/pair-0-path-change/mic.pcm",
+          "/tmp/ap-dualmic-recorded-stage/result/input/cases/pair-0-path-change/render.pcm",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-0-path-change-call/out.pcm"
+        ],
+        "original_dir": "result/replay/pair-0-path-change-call",
+        "original_prefix": "/tmp/ap-dualmic-recorded-stage/",
+        "profile": "call",
+        "samples": 96000,
+        "scenario": "path-change"
+      },
+      "clean_near": null,
+      "parent_taps": {
+        "agc_output.f32le": {
+          "bytes": 384000,
+          "sha256": "7173af8ed714c4bfc994fade02753e97cbc53b12d9a77e2f59bac1cc5ffd8c3c"
+        },
+        "control.csv": {
+          "bytes": 134691,
+          "sha256": "91367c8cceafdac3aaa0ecd34c1c30d0b203ea770aab156a93c2ec81ca1e7525"
+        },
+        "ns_output.f32le": {
+          "bytes": 384000,
+          "sha256": "ea23771337eb43e8638880d3a6454911c1efc57a17f51e82fc66664b9760054a"
+        }
+      }
+    },
+    {
+      "catalog": {
+        "auxiliary_inputs": [
+          "result/input/cases/pair-0-path-change/echo.pcm"
+        ],
+        "capture_only": false,
+        "case_id": "pair-0-path-change-assistant",
+        "data_role": "disclosed-regression",
+        "dimensions": {
+          "common_gain": 0.6270529449287688,
+          "data_role": "regression",
+          "echo_tdoa_samples": 1.4139190265868387,
+          "far_speaker": 174,
+          "far_start_sample": 0,
+          "frames": 600,
+          "human_vad_labels": false,
+          "mic_spacing_mm": 35.0,
+          "near_speaker": 84,
+          "near_start_sample": 24000,
+          "original_role": "development-diagnostic",
+          "pair": 0,
+          "pipeline_profile": "assistant",
+          "real_array_recording": false,
+          "recorded_speech": true,
+          "seconds": 6,
+          "source_window_samples": 64000,
+          "synthetic_propagation": true,
+          "target_tdoa_samples": 0.0
+        },
+        "frames": 600,
+        "group": "A",
+        "input_events": [
+          {
+            "frame": 300,
+            "kind": "cli_echo_path_change",
+            "sample": 48000
+          }
+        ],
+        "inputs": {
+          "clean_near": null,
+          "mic": "result/input/cases/pair-0-path-change/mic.pcm",
+          "render": "result/input/cases/pair-0-path-change/render.pcm"
+        },
+        "key": "A/pair-0-path-change-assistant",
+        "original_argv": [
+          "/home/runner/work/audio-pipeline/audio-pipeline/build-dualmic-recorded/ap_process_pcm",
+          "--profile",
+          "assistant",
+          "--sample-rate",
+          "16000",
+          "--mic-channels",
+          "2",
+          "--strict-capture-frames",
+          "--metrics-jsonl",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-0-path-change-assistant/metrics.jsonl",
+          "--echo-path-change-frame",
+          "300",
+          "/tmp/ap-dualmic-recorded-stage/result/input/cases/pair-0-path-change/mic.pcm",
+          "/tmp/ap-dualmic-recorded-stage/result/input/cases/pair-0-path-change/render.pcm",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-0-path-change-assistant/out.pcm"
+        ],
+        "original_dir": "result/replay/pair-0-path-change-assistant",
+        "original_prefix": "/tmp/ap-dualmic-recorded-stage/",
+        "profile": "assistant",
+        "samples": 96000,
+        "scenario": "path-change"
+      },
+      "clean_near": null,
+      "parent_taps": {
+        "agc_output.f32le": {
+          "bytes": 384000,
+          "sha256": "06835fe9ccf9a3ffac719972db2364ea6fa06b7eaf11c432df193e0901c49dc7"
+        },
+        "control.csv": {
+          "bytes": 134740,
+          "sha256": "82dd73d46d9cb8710ff6b72180159a2a0f09bd4b5a944701e7374efd2c9499fb"
+        },
+        "ns_output.f32le": {
+          "bytes": 384000,
+          "sha256": "564b5d6ad1127d4dc4806d99e9242f9f83e8461d49506b20511169c5caa3642f"
+        }
+      }
+    },
+    {
+      "catalog": {
+        "auxiliary_inputs": [
+          "result/input/cases/pair-0-render-gap/echo.pcm"
+        ],
+        "capture_only": false,
+        "case_id": "pair-0-render-gap-call",
+        "data_role": "disclosed-regression",
+        "dimensions": {
+          "common_gain": 0.6270529449287688,
+          "data_role": "regression",
+          "echo_tdoa_samples": 1.4139190265868387,
+          "far_speaker": 174,
+          "far_start_sample": 0,
+          "frames": 600,
+          "human_vad_labels": false,
+          "mic_spacing_mm": 35.0,
+          "near_speaker": 84,
+          "near_start_sample": 24000,
+          "original_role": "development-diagnostic",
+          "pair": 0,
+          "pipeline_profile": "call",
+          "real_array_recording": false,
+          "recorded_speech": true,
+          "seconds": 6,
+          "source_window_samples": 64000,
+          "synthetic_propagation": true,
+          "target_tdoa_samples": 0.0
+        },
+        "frames": 600,
+        "group": "A",
+        "input_events": [
+          {
+            "flags": 2,
+            "frame": 300,
+            "kind": "cli_discontinuity",
+            "lost_frames": 4,
+            "sample": 48000
+          }
+        ],
+        "inputs": {
+          "clean_near": null,
+          "mic": "result/input/cases/pair-0-render-gap/mic.pcm",
+          "render": "result/input/cases/pair-0-render-gap/render.pcm"
+        },
+        "key": "A/pair-0-render-gap-call",
+        "original_argv": [
+          "/home/runner/work/audio-pipeline/audio-pipeline/build-dualmic-recorded/ap_process_pcm",
+          "--profile",
+          "call",
+          "--sample-rate",
+          "16000",
+          "--mic-channels",
+          "2",
+          "--strict-capture-frames",
+          "--metrics-jsonl",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-0-render-gap-call/metrics.jsonl",
+          "--discontinuity-frame",
+          "300",
+          "--discontinuity-flags",
+          "2",
+          "--discontinuity-lost-frames",
+          "4",
+          "/tmp/ap-dualmic-recorded-stage/result/input/cases/pair-0-render-gap/mic.pcm",
+          "/tmp/ap-dualmic-recorded-stage/result/input/cases/pair-0-render-gap/render.pcm",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-0-render-gap-call/out.pcm"
+        ],
+        "original_dir": "result/replay/pair-0-render-gap-call",
+        "original_prefix": "/tmp/ap-dualmic-recorded-stage/",
+        "profile": "call",
+        "samples": 96000,
+        "scenario": "render-gap"
+      },
+      "clean_near": null,
+      "parent_taps": {
+        "agc_output.f32le": {
+          "bytes": 384000,
+          "sha256": "a7b5086a370989c84e32ffc8f763923dd603ce95761149a8dcb0e183d8b50c72"
+        },
+        "control.csv": {
+          "bytes": 134462,
+          "sha256": "063d5babddb19d7e4469ff93ee13e7b5a94e0ad1adac4de4b500f9328aef8f31"
+        },
+        "ns_output.f32le": {
+          "bytes": 384000,
+          "sha256": "dc7ab6b6df89fcbe03001833eafcae2adfb85b808d3d6443d48dabb653f74dd6"
+        }
+      }
+    },
+    {
+      "catalog": {
+        "auxiliary_inputs": [
+          "result/input/cases/pair-0-render-gap/echo.pcm"
+        ],
+        "capture_only": false,
+        "case_id": "pair-0-render-gap-assistant",
+        "data_role": "disclosed-regression",
+        "dimensions": {
+          "common_gain": 0.6270529449287688,
+          "data_role": "regression",
+          "echo_tdoa_samples": 1.4139190265868387,
+          "far_speaker": 174,
+          "far_start_sample": 0,
+          "frames": 600,
+          "human_vad_labels": false,
+          "mic_spacing_mm": 35.0,
+          "near_speaker": 84,
+          "near_start_sample": 24000,
+          "original_role": "development-diagnostic",
+          "pair": 0,
+          "pipeline_profile": "assistant",
+          "real_array_recording": false,
+          "recorded_speech": true,
+          "seconds": 6,
+          "source_window_samples": 64000,
+          "synthetic_propagation": true,
+          "target_tdoa_samples": 0.0
+        },
+        "frames": 600,
+        "group": "A",
+        "input_events": [
+          {
+            "flags": 2,
+            "frame": 300,
+            "kind": "cli_discontinuity",
+            "lost_frames": 4,
+            "sample": 48000
+          }
+        ],
+        "inputs": {
+          "clean_near": null,
+          "mic": "result/input/cases/pair-0-render-gap/mic.pcm",
+          "render": "result/input/cases/pair-0-render-gap/render.pcm"
+        },
+        "key": "A/pair-0-render-gap-assistant",
+        "original_argv": [
+          "/home/runner/work/audio-pipeline/audio-pipeline/build-dualmic-recorded/ap_process_pcm",
+          "--profile",
+          "assistant",
+          "--sample-rate",
+          "16000",
+          "--mic-channels",
+          "2",
+          "--strict-capture-frames",
+          "--metrics-jsonl",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-0-render-gap-assistant/metrics.jsonl",
+          "--discontinuity-frame",
+          "300",
+          "--discontinuity-flags",
+          "2",
+          "--discontinuity-lost-frames",
+          "4",
+          "/tmp/ap-dualmic-recorded-stage/result/input/cases/pair-0-render-gap/mic.pcm",
+          "/tmp/ap-dualmic-recorded-stage/result/input/cases/pair-0-render-gap/render.pcm",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-0-render-gap-assistant/out.pcm"
+        ],
+        "original_dir": "result/replay/pair-0-render-gap-assistant",
+        "original_prefix": "/tmp/ap-dualmic-recorded-stage/",
+        "profile": "assistant",
+        "samples": 96000,
+        "scenario": "render-gap"
+      },
+      "clean_near": null,
+      "parent_taps": {
+        "agc_output.f32le": {
+          "bytes": 384000,
+          "sha256": "8e4df221a1279de50eeea206ac4d3cf746e963f7177dab64cc28c46fa5d98afc"
+        },
+        "control.csv": {
+          "bytes": 134416,
+          "sha256": "0cd88830e5ec84650dfaa8929bf469a1fe0785e8327593bbe0202a4da8ebdb47"
+        },
+        "ns_output.f32le": {
+          "bytes": 384000,
+          "sha256": "334d819868d733dcf43687b840f23b9ee3b862a070579a008afb291754dd07ca"
+        }
+      }
+    },
+    {
+      "catalog": {
+        "auxiliary_inputs": [],
+        "capture_only": true,
+        "case_id": "pair-1-near-only-call",
+        "data_role": "disclosed-regression",
+        "dimensions": {
+          "common_gain": 0.41410818097565083,
+          "data_role": "regression",
+          "echo_tdoa_samples": 1.4139190265868387,
+          "far_speaker": 422,
+          "far_start_sample": 0,
+          "frames": 600,
+          "human_vad_labels": false,
+          "mic_spacing_mm": 35.0,
+          "near_speaker": 251,
+          "near_start_sample": 24000,
+          "original_role": "development-diagnostic",
+          "pair": 1,
+          "pipeline_profile": "call",
+          "real_array_recording": false,
+          "recorded_speech": true,
+          "seconds": 6,
+          "source_window_samples": 64000,
+          "synthetic_propagation": true,
+          "target_tdoa_samples": 0.0
+        },
+        "frames": 600,
+        "group": "A",
+        "input_events": [],
+        "inputs": {
+          "clean_near": "result/input/cases/pair-1-near-only/clean-near.pcm",
+          "mic": "result/input/cases/pair-1-near-only/mic.pcm",
+          "render": null
+        },
+        "key": "A/pair-1-near-only-call",
+        "original_argv": [
+          "/home/runner/work/audio-pipeline/audio-pipeline/build-dualmic-recorded/ap_process_pcm",
+          "--profile",
+          "call",
+          "--sample-rate",
+          "16000",
+          "--mic-channels",
+          "2",
+          "--strict-capture-frames",
+          "--metrics-jsonl",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-1-near-only-call/metrics.jsonl",
+          "--capture-profile",
+          "default",
+          "--capture-only",
+          "/tmp/ap-dualmic-recorded-stage/result/input/cases/pair-1-near-only/mic.pcm",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-1-near-only-call/out.pcm"
+        ],
+        "original_dir": "result/replay/pair-1-near-only-call",
+        "original_prefix": "/tmp/ap-dualmic-recorded-stage/",
+        "profile": "call",
+        "samples": 96000,
+        "scenario": "near-only"
+      },
+      "clean_near": {
+        "bytes": 192000,
+        "sha256": "cfa6bb188bbf4a06775a79e97b7a0404f411e29337208ab2978a69d6fabac744"
+      },
+      "parent_taps": {
+        "agc_output.f32le": {
+          "bytes": 384000,
+          "sha256": "8dc5e2017b0e60df43a54c8f30cd33e15ea5265415244114e9994928ce0527e3"
+        },
+        "control.csv": {
+          "bytes": 117376,
+          "sha256": "18006e8840d158397b7067fbaab31e41b0bec95d371e6aaccc35a4d03cbf4084"
+        },
+        "ns_output.f32le": {
+          "bytes": 384000,
+          "sha256": "a6a217ac57fd0ee19fbfe3b0efaf9c5eaab1f85317923d91598ef855b6b92c8b"
+        }
+      }
+    },
+    {
+      "catalog": {
+        "auxiliary_inputs": [],
+        "capture_only": true,
+        "case_id": "pair-1-near-only-assistant",
+        "data_role": "disclosed-regression",
+        "dimensions": {
+          "common_gain": 0.41410818097565083,
+          "data_role": "regression",
+          "echo_tdoa_samples": 1.4139190265868387,
+          "far_speaker": 422,
+          "far_start_sample": 0,
+          "frames": 600,
+          "human_vad_labels": false,
+          "mic_spacing_mm": 35.0,
+          "near_speaker": 251,
+          "near_start_sample": 24000,
+          "original_role": "development-diagnostic",
+          "pair": 1,
+          "pipeline_profile": "assistant",
+          "real_array_recording": false,
+          "recorded_speech": true,
+          "seconds": 6,
+          "source_window_samples": 64000,
+          "synthetic_propagation": true,
+          "target_tdoa_samples": 0.0
+        },
+        "frames": 600,
+        "group": "A",
+        "input_events": [],
+        "inputs": {
+          "clean_near": "result/input/cases/pair-1-near-only/clean-near.pcm",
+          "mic": "result/input/cases/pair-1-near-only/mic.pcm",
+          "render": null
+        },
+        "key": "A/pair-1-near-only-assistant",
+        "original_argv": [
+          "/home/runner/work/audio-pipeline/audio-pipeline/build-dualmic-recorded/ap_process_pcm",
+          "--profile",
+          "assistant",
+          "--sample-rate",
+          "16000",
+          "--mic-channels",
+          "2",
+          "--strict-capture-frames",
+          "--metrics-jsonl",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-1-near-only-assistant/metrics.jsonl",
+          "--capture-profile",
+          "default",
+          "--capture-only",
+          "/tmp/ap-dualmic-recorded-stage/result/input/cases/pair-1-near-only/mic.pcm",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-1-near-only-assistant/out.pcm"
+        ],
+        "original_dir": "result/replay/pair-1-near-only-assistant",
+        "original_prefix": "/tmp/ap-dualmic-recorded-stage/",
+        "profile": "assistant",
+        "samples": 96000,
+        "scenario": "near-only"
+      },
+      "clean_near": {
+        "bytes": 192000,
+        "sha256": "cfa6bb188bbf4a06775a79e97b7a0404f411e29337208ab2978a69d6fabac744"
+      },
+      "parent_taps": {
+        "agc_output.f32le": {
+          "bytes": 384000,
+          "sha256": "4d69814c3be127a737034b5ced0e32abeca91afaab7e82b409cc0430696eb853"
+        },
+        "control.csv": {
+          "bytes": 117378,
+          "sha256": "2d96381469486f91ba3e007717b454ccfd9a0c108862a30522584825b5b23059"
+        },
+        "ns_output.f32le": {
+          "bytes": 384000,
+          "sha256": "d842fe50eceb0b654b90cd5cbf18c334c68aae6cceefe383355be51510c7e523"
+        }
+      }
+    },
+    {
+      "catalog": {
+        "auxiliary_inputs": [],
+        "capture_only": false,
+        "case_id": "pair-1-silent-render-call",
+        "data_role": "disclosed-regression",
+        "dimensions": {
+          "common_gain": 0.41410818097565083,
+          "data_role": "regression",
+          "echo_tdoa_samples": 1.4139190265868387,
+          "far_speaker": 422,
+          "far_start_sample": 0,
+          "frames": 600,
+          "human_vad_labels": false,
+          "mic_spacing_mm": 35.0,
+          "near_speaker": 251,
+          "near_start_sample": 24000,
+          "original_role": "development-diagnostic",
+          "pair": 1,
+          "pipeline_profile": "call",
+          "real_array_recording": false,
+          "recorded_speech": true,
+          "seconds": 6,
+          "source_window_samples": 64000,
+          "synthetic_propagation": true,
+          "target_tdoa_samples": 0.0
+        },
+        "frames": 600,
+        "group": "A",
+        "input_events": [],
+        "inputs": {
+          "clean_near": "result/input/cases/pair-1-silent-render/clean-near.pcm",
+          "mic": "result/input/cases/pair-1-silent-render/mic.pcm",
+          "render": "result/input/cases/pair-1-silent-render/render.pcm"
+        },
+        "key": "A/pair-1-silent-render-call",
+        "original_argv": [
+          "/home/runner/work/audio-pipeline/audio-pipeline/build-dualmic-recorded/ap_process_pcm",
+          "--profile",
+          "call",
+          "--sample-rate",
+          "16000",
+          "--mic-channels",
+          "2",
+          "--strict-capture-frames",
+          "--metrics-jsonl",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-1-silent-render-call/metrics.jsonl",
+          "/tmp/ap-dualmic-recorded-stage/result/input/cases/pair-1-silent-render/mic.pcm",
+          "/tmp/ap-dualmic-recorded-stage/result/input/cases/pair-1-silent-render/render.pcm",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-1-silent-render-call/out.pcm"
+        ],
+        "original_dir": "result/replay/pair-1-silent-render-call",
+        "original_prefix": "/tmp/ap-dualmic-recorded-stage/",
+        "profile": "call",
+        "samples": 96000,
+        "scenario": "silent-render"
+      },
+      "clean_near": {
+        "bytes": 192000,
+        "sha256": "cfa6bb188bbf4a06775a79e97b7a0404f411e29337208ab2978a69d6fabac744"
+      },
+      "parent_taps": {
+        "agc_output.f32le": {
+          "bytes": 384000,
+          "sha256": "8dc5e2017b0e60df43a54c8f30cd33e15ea5265415244114e9994928ce0527e3"
+        },
+        "control.csv": {
+          "bytes": 125176,
+          "sha256": "6890ef99bd9d33fc22e5e674a66c7ced6580b9e9f664817bf63f169cb46063fe"
+        },
+        "ns_output.f32le": {
+          "bytes": 384000,
+          "sha256": "a6a217ac57fd0ee19fbfe3b0efaf9c5eaab1f85317923d91598ef855b6b92c8b"
+        }
+      }
+    },
+    {
+      "catalog": {
+        "auxiliary_inputs": [],
+        "capture_only": false,
+        "case_id": "pair-1-silent-render-assistant",
+        "data_role": "disclosed-regression",
+        "dimensions": {
+          "common_gain": 0.41410818097565083,
+          "data_role": "regression",
+          "echo_tdoa_samples": 1.4139190265868387,
+          "far_speaker": 422,
+          "far_start_sample": 0,
+          "frames": 600,
+          "human_vad_labels": false,
+          "mic_spacing_mm": 35.0,
+          "near_speaker": 251,
+          "near_start_sample": 24000,
+          "original_role": "development-diagnostic",
+          "pair": 1,
+          "pipeline_profile": "assistant",
+          "real_array_recording": false,
+          "recorded_speech": true,
+          "seconds": 6,
+          "source_window_samples": 64000,
+          "synthetic_propagation": true,
+          "target_tdoa_samples": 0.0
+        },
+        "frames": 600,
+        "group": "A",
+        "input_events": [],
+        "inputs": {
+          "clean_near": "result/input/cases/pair-1-silent-render/clean-near.pcm",
+          "mic": "result/input/cases/pair-1-silent-render/mic.pcm",
+          "render": "result/input/cases/pair-1-silent-render/render.pcm"
+        },
+        "key": "A/pair-1-silent-render-assistant",
+        "original_argv": [
+          "/home/runner/work/audio-pipeline/audio-pipeline/build-dualmic-recorded/ap_process_pcm",
+          "--profile",
+          "assistant",
+          "--sample-rate",
+          "16000",
+          "--mic-channels",
+          "2",
+          "--strict-capture-frames",
+          "--metrics-jsonl",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-1-silent-render-assistant/metrics.jsonl",
+          "/tmp/ap-dualmic-recorded-stage/result/input/cases/pair-1-silent-render/mic.pcm",
+          "/tmp/ap-dualmic-recorded-stage/result/input/cases/pair-1-silent-render/render.pcm",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-1-silent-render-assistant/out.pcm"
+        ],
+        "original_dir": "result/replay/pair-1-silent-render-assistant",
+        "original_prefix": "/tmp/ap-dualmic-recorded-stage/",
+        "profile": "assistant",
+        "samples": 96000,
+        "scenario": "silent-render"
+      },
+      "clean_near": {
+        "bytes": 192000,
+        "sha256": "cfa6bb188bbf4a06775a79e97b7a0404f411e29337208ab2978a69d6fabac744"
+      },
+      "parent_taps": {
+        "agc_output.f32le": {
+          "bytes": 384000,
+          "sha256": "4d69814c3be127a737034b5ced0e32abeca91afaab7e82b409cc0430696eb853"
+        },
+        "control.csv": {
+          "bytes": 125178,
+          "sha256": "41cd90ed1c33fa2cde0f4e51978f288ca63b0ff9de2e172cdeeb6619456f7c5e"
+        },
+        "ns_output.f32le": {
+          "bytes": 384000,
+          "sha256": "d842fe50eceb0b654b90cd5cbf18c334c68aae6cceefe383355be51510c7e523"
+        }
+      }
+    },
+    {
+      "catalog": {
+        "auxiliary_inputs": [
+          "result/input/cases/pair-1-far-only/echo.pcm"
+        ],
+        "capture_only": false,
+        "case_id": "pair-1-far-only-call",
+        "data_role": "disclosed-regression",
+        "dimensions": {
+          "common_gain": 0.41410818097565083,
+          "data_role": "regression",
+          "echo_tdoa_samples": 1.4139190265868387,
+          "far_speaker": 422,
+          "far_start_sample": 0,
+          "frames": 600,
+          "human_vad_labels": false,
+          "mic_spacing_mm": 35.0,
+          "near_speaker": 251,
+          "near_start_sample": 24000,
+          "original_role": "development-diagnostic",
+          "pair": 1,
+          "pipeline_profile": "call",
+          "real_array_recording": false,
+          "recorded_speech": true,
+          "seconds": 6,
+          "source_window_samples": 64000,
+          "synthetic_propagation": true,
+          "target_tdoa_samples": 0.0
+        },
+        "frames": 600,
+        "group": "A",
+        "input_events": [],
+        "inputs": {
+          "clean_near": null,
+          "mic": "result/input/cases/pair-1-far-only/mic.pcm",
+          "render": "result/input/cases/pair-1-far-only/render.pcm"
+        },
+        "key": "A/pair-1-far-only-call",
+        "original_argv": [
+          "/home/runner/work/audio-pipeline/audio-pipeline/build-dualmic-recorded/ap_process_pcm",
+          "--profile",
+          "call",
+          "--sample-rate",
+          "16000",
+          "--mic-channels",
+          "2",
+          "--strict-capture-frames",
+          "--metrics-jsonl",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-1-far-only-call/metrics.jsonl",
+          "/tmp/ap-dualmic-recorded-stage/result/input/cases/pair-1-far-only/mic.pcm",
+          "/tmp/ap-dualmic-recorded-stage/result/input/cases/pair-1-far-only/render.pcm",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-1-far-only-call/out.pcm"
+        ],
+        "original_dir": "result/replay/pair-1-far-only-call",
+        "original_prefix": "/tmp/ap-dualmic-recorded-stage/",
+        "profile": "call",
+        "samples": 96000,
+        "scenario": "far-only"
+      },
+      "clean_near": null,
+      "parent_taps": {
+        "agc_output.f32le": {
+          "bytes": 384000,
+          "sha256": "79ac1476117e7f1ef7bbd4a03c853e280e0c07823f334a5c054505004c085b25"
+        },
+        "control.csv": {
+          "bytes": 135731,
+          "sha256": "29a561a0f87942b9d00deb5239b2ec47df59106cf7fff41add1ecd4477511834"
+        },
+        "ns_output.f32le": {
+          "bytes": 384000,
+          "sha256": "7f1a0441218ef396eed7dcec0b5c69109ea00cef0f9bc142e435fa319607edcb"
+        }
+      }
+    },
+    {
+      "catalog": {
+        "auxiliary_inputs": [
+          "result/input/cases/pair-1-far-only/echo.pcm"
+        ],
+        "capture_only": false,
+        "case_id": "pair-1-far-only-assistant",
+        "data_role": "disclosed-regression",
+        "dimensions": {
+          "common_gain": 0.41410818097565083,
+          "data_role": "regression",
+          "echo_tdoa_samples": 1.4139190265868387,
+          "far_speaker": 422,
+          "far_start_sample": 0,
+          "frames": 600,
+          "human_vad_labels": false,
+          "mic_spacing_mm": 35.0,
+          "near_speaker": 251,
+          "near_start_sample": 24000,
+          "original_role": "development-diagnostic",
+          "pair": 1,
+          "pipeline_profile": "assistant",
+          "real_array_recording": false,
+          "recorded_speech": true,
+          "seconds": 6,
+          "source_window_samples": 64000,
+          "synthetic_propagation": true,
+          "target_tdoa_samples": 0.0
+        },
+        "frames": 600,
+        "group": "A",
+        "input_events": [],
+        "inputs": {
+          "clean_near": null,
+          "mic": "result/input/cases/pair-1-far-only/mic.pcm",
+          "render": "result/input/cases/pair-1-far-only/render.pcm"
+        },
+        "key": "A/pair-1-far-only-assistant",
+        "original_argv": [
+          "/home/runner/work/audio-pipeline/audio-pipeline/build-dualmic-recorded/ap_process_pcm",
+          "--profile",
+          "assistant",
+          "--sample-rate",
+          "16000",
+          "--mic-channels",
+          "2",
+          "--strict-capture-frames",
+          "--metrics-jsonl",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-1-far-only-assistant/metrics.jsonl",
+          "/tmp/ap-dualmic-recorded-stage/result/input/cases/pair-1-far-only/mic.pcm",
+          "/tmp/ap-dualmic-recorded-stage/result/input/cases/pair-1-far-only/render.pcm",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-1-far-only-assistant/out.pcm"
+        ],
+        "original_dir": "result/replay/pair-1-far-only-assistant",
+        "original_prefix": "/tmp/ap-dualmic-recorded-stage/",
+        "profile": "assistant",
+        "samples": 96000,
+        "scenario": "far-only"
+      },
+      "clean_near": null,
+      "parent_taps": {
+        "agc_output.f32le": {
+          "bytes": 384000,
+          "sha256": "fc5848df91f188c099478e9d77982e2d306d06c138233c1a62f697d387f42af7"
+        },
+        "control.csv": {
+          "bytes": 135642,
+          "sha256": "fb899511d845c5b0576776a4398860b0328fddc6a4fee8cace5836816d2f7a2a"
+        },
+        "ns_output.f32le": {
+          "bytes": 384000,
+          "sha256": "305e876b571d43d35afaf7fb6ec6d52a60ed44808f8394e6e7764869d56a2c8d"
+        }
+      }
+    },
+    {
+      "catalog": {
+        "auxiliary_inputs": [
+          "result/input/cases/pair-1-doubletalk-nominal/interference.pcm"
+        ],
+        "capture_only": false,
+        "case_id": "pair-1-doubletalk-nominal-call",
+        "data_role": "disclosed-regression",
+        "dimensions": {
+          "common_gain": 0.41410818097565083,
+          "data_role": "regression",
+          "echo_tdoa_samples": 1.4139190265868387,
+          "far_speaker": 422,
+          "far_start_sample": 0,
+          "frames": 600,
+          "human_vad_labels": false,
+          "mic_spacing_mm": 35.0,
+          "near_speaker": 251,
+          "near_start_sample": 24000,
+          "original_role": "development-diagnostic",
+          "pair": 1,
+          "pipeline_profile": "call",
+          "real_array_recording": false,
+          "recorded_speech": true,
+          "seconds": 6,
+          "source_window_samples": 64000,
+          "synthetic_propagation": true,
+          "target_tdoa_samples": 0.0
+        },
+        "frames": 600,
+        "group": "A",
+        "input_events": [],
+        "inputs": {
+          "clean_near": "result/input/cases/pair-1-doubletalk-nominal/clean-near.pcm",
+          "mic": "result/input/cases/pair-1-doubletalk-nominal/mic.pcm",
+          "render": "result/input/cases/pair-1-doubletalk-nominal/render.pcm"
+        },
+        "key": "A/pair-1-doubletalk-nominal-call",
+        "original_argv": [
+          "/home/runner/work/audio-pipeline/audio-pipeline/build-dualmic-recorded/ap_process_pcm",
+          "--profile",
+          "call",
+          "--sample-rate",
+          "16000",
+          "--mic-channels",
+          "2",
+          "--strict-capture-frames",
+          "--metrics-jsonl",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-1-doubletalk-nominal-call/metrics.jsonl",
+          "/tmp/ap-dualmic-recorded-stage/result/input/cases/pair-1-doubletalk-nominal/mic.pcm",
+          "/tmp/ap-dualmic-recorded-stage/result/input/cases/pair-1-doubletalk-nominal/render.pcm",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-1-doubletalk-nominal-call/out.pcm"
+        ],
+        "original_dir": "result/replay/pair-1-doubletalk-nominal-call",
+        "original_prefix": "/tmp/ap-dualmic-recorded-stage/",
+        "profile": "call",
+        "samples": 96000,
+        "scenario": "doubletalk-nominal"
+      },
+      "clean_near": {
+        "bytes": 192000,
+        "sha256": "cfa6bb188bbf4a06775a79e97b7a0404f411e29337208ab2978a69d6fabac744"
+      },
+      "parent_taps": {
+        "agc_output.f32le": {
+          "bytes": 384000,
+          "sha256": "a416f03f83d39b53a4cf64fc24a50913e59142e2131f50370ed9f373da84de61"
+        },
+        "control.csv": {
+          "bytes": 134253,
+          "sha256": "b0d17569677f11dea583ae948c49e3e4d9affa3a63c7067251aee32a9514556d"
+        },
+        "ns_output.f32le": {
+          "bytes": 384000,
+          "sha256": "3df5970661fb674693010f73bec64baa2ffaa6b06c2e27e858be80b63fb532e2"
+        }
+      }
+    },
+    {
+      "catalog": {
+        "auxiliary_inputs": [
+          "result/input/cases/pair-1-doubletalk-nominal/interference.pcm"
+        ],
+        "capture_only": false,
+        "case_id": "pair-1-doubletalk-nominal-assistant",
+        "data_role": "disclosed-regression",
+        "dimensions": {
+          "common_gain": 0.41410818097565083,
+          "data_role": "regression",
+          "echo_tdoa_samples": 1.4139190265868387,
+          "far_speaker": 422,
+          "far_start_sample": 0,
+          "frames": 600,
+          "human_vad_labels": false,
+          "mic_spacing_mm": 35.0,
+          "near_speaker": 251,
+          "near_start_sample": 24000,
+          "original_role": "development-diagnostic",
+          "pair": 1,
+          "pipeline_profile": "assistant",
+          "real_array_recording": false,
+          "recorded_speech": true,
+          "seconds": 6,
+          "source_window_samples": 64000,
+          "synthetic_propagation": true,
+          "target_tdoa_samples": 0.0
+        },
+        "frames": 600,
+        "group": "A",
+        "input_events": [],
+        "inputs": {
+          "clean_near": "result/input/cases/pair-1-doubletalk-nominal/clean-near.pcm",
+          "mic": "result/input/cases/pair-1-doubletalk-nominal/mic.pcm",
+          "render": "result/input/cases/pair-1-doubletalk-nominal/render.pcm"
+        },
+        "key": "A/pair-1-doubletalk-nominal-assistant",
+        "original_argv": [
+          "/home/runner/work/audio-pipeline/audio-pipeline/build-dualmic-recorded/ap_process_pcm",
+          "--profile",
+          "assistant",
+          "--sample-rate",
+          "16000",
+          "--mic-channels",
+          "2",
+          "--strict-capture-frames",
+          "--metrics-jsonl",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-1-doubletalk-nominal-assistant/metrics.jsonl",
+          "/tmp/ap-dualmic-recorded-stage/result/input/cases/pair-1-doubletalk-nominal/mic.pcm",
+          "/tmp/ap-dualmic-recorded-stage/result/input/cases/pair-1-doubletalk-nominal/render.pcm",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-1-doubletalk-nominal-assistant/out.pcm"
+        ],
+        "original_dir": "result/replay/pair-1-doubletalk-nominal-assistant",
+        "original_prefix": "/tmp/ap-dualmic-recorded-stage/",
+        "profile": "assistant",
+        "samples": 96000,
+        "scenario": "doubletalk-nominal"
+      },
+      "clean_near": {
+        "bytes": 192000,
+        "sha256": "cfa6bb188bbf4a06775a79e97b7a0404f411e29337208ab2978a69d6fabac744"
+      },
+      "parent_taps": {
+        "agc_output.f32le": {
+          "bytes": 384000,
+          "sha256": "990921970eb08a7a99c933dd6379e7fbf6a4d5c99ab87e2fd63d398da988545b"
+        },
+        "control.csv": {
+          "bytes": 134257,
+          "sha256": "aaf5fd608cce2ded6158dca885ffc1a51ab4bb05c150f55ab9c991ff61cb33ab"
+        },
+        "ns_output.f32le": {
+          "bytes": 384000,
+          "sha256": "8f5c5df6378efd4b308f0e12829473c1ac265955807c56428b88afd4c33b5a4a"
+        }
+      }
+    },
+    {
+      "catalog": {
+        "auxiliary_inputs": [
+          "result/input/cases/pair-1-doubletalk-weak/interference.pcm"
+        ],
+        "capture_only": false,
+        "case_id": "pair-1-doubletalk-weak-call",
+        "data_role": "disclosed-regression",
+        "dimensions": {
+          "common_gain": 0.41410818097565083,
+          "data_role": "regression",
+          "echo_tdoa_samples": 1.4139190265868387,
+          "far_speaker": 422,
+          "far_start_sample": 0,
+          "frames": 600,
+          "human_vad_labels": false,
+          "mic_spacing_mm": 35.0,
+          "near_speaker": 251,
+          "near_start_sample": 24000,
+          "original_role": "development-diagnostic",
+          "pair": 1,
+          "pipeline_profile": "call",
+          "real_array_recording": false,
+          "recorded_speech": true,
+          "seconds": 6,
+          "source_window_samples": 64000,
+          "synthetic_propagation": true,
+          "target_tdoa_samples": 0.0
+        },
+        "frames": 600,
+        "group": "A",
+        "input_events": [],
+        "inputs": {
+          "clean_near": "result/input/cases/pair-1-doubletalk-weak/clean-near.pcm",
+          "mic": "result/input/cases/pair-1-doubletalk-weak/mic.pcm",
+          "render": "result/input/cases/pair-1-doubletalk-weak/render.pcm"
+        },
+        "key": "A/pair-1-doubletalk-weak-call",
+        "original_argv": [
+          "/home/runner/work/audio-pipeline/audio-pipeline/build-dualmic-recorded/ap_process_pcm",
+          "--profile",
+          "call",
+          "--sample-rate",
+          "16000",
+          "--mic-channels",
+          "2",
+          "--strict-capture-frames",
+          "--metrics-jsonl",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-1-doubletalk-weak-call/metrics.jsonl",
+          "/tmp/ap-dualmic-recorded-stage/result/input/cases/pair-1-doubletalk-weak/mic.pcm",
+          "/tmp/ap-dualmic-recorded-stage/result/input/cases/pair-1-doubletalk-weak/render.pcm",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-1-doubletalk-weak-call/out.pcm"
+        ],
+        "original_dir": "result/replay/pair-1-doubletalk-weak-call",
+        "original_prefix": "/tmp/ap-dualmic-recorded-stage/",
+        "profile": "call",
+        "samples": 96000,
+        "scenario": "doubletalk-weak"
+      },
+      "clean_near": {
+        "bytes": 192000,
+        "sha256": "cfc8359f9e80a70814dd594c338a4808ccd4734d67b967b6bc9c9f2981f5a3f3"
+      },
+      "parent_taps": {
+        "agc_output.f32le": {
+          "bytes": 384000,
+          "sha256": "5ee4c0978cf1539134829b20e3bb882499d6b20c6ef86b0952ad48eb54ade2d3"
+        },
+        "control.csv": {
+          "bytes": 135196,
+          "sha256": "427e4dbcd41ccc29b747b80ff0089e818285d94e5a18d993b780eacd9fd97386"
+        },
+        "ns_output.f32le": {
+          "bytes": 384000,
+          "sha256": "e081ccb6936e92e2313c6fdbf1825e8f5023f352bddd357a2821345227b5e270"
+        }
+      }
+    },
+    {
+      "catalog": {
+        "auxiliary_inputs": [
+          "result/input/cases/pair-1-doubletalk-weak/interference.pcm"
+        ],
+        "capture_only": false,
+        "case_id": "pair-1-doubletalk-weak-assistant",
+        "data_role": "disclosed-regression",
+        "dimensions": {
+          "common_gain": 0.41410818097565083,
+          "data_role": "regression",
+          "echo_tdoa_samples": 1.4139190265868387,
+          "far_speaker": 422,
+          "far_start_sample": 0,
+          "frames": 600,
+          "human_vad_labels": false,
+          "mic_spacing_mm": 35.0,
+          "near_speaker": 251,
+          "near_start_sample": 24000,
+          "original_role": "development-diagnostic",
+          "pair": 1,
+          "pipeline_profile": "assistant",
+          "real_array_recording": false,
+          "recorded_speech": true,
+          "seconds": 6,
+          "source_window_samples": 64000,
+          "synthetic_propagation": true,
+          "target_tdoa_samples": 0.0
+        },
+        "frames": 600,
+        "group": "A",
+        "input_events": [],
+        "inputs": {
+          "clean_near": "result/input/cases/pair-1-doubletalk-weak/clean-near.pcm",
+          "mic": "result/input/cases/pair-1-doubletalk-weak/mic.pcm",
+          "render": "result/input/cases/pair-1-doubletalk-weak/render.pcm"
+        },
+        "key": "A/pair-1-doubletalk-weak-assistant",
+        "original_argv": [
+          "/home/runner/work/audio-pipeline/audio-pipeline/build-dualmic-recorded/ap_process_pcm",
+          "--profile",
+          "assistant",
+          "--sample-rate",
+          "16000",
+          "--mic-channels",
+          "2",
+          "--strict-capture-frames",
+          "--metrics-jsonl",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-1-doubletalk-weak-assistant/metrics.jsonl",
+          "/tmp/ap-dualmic-recorded-stage/result/input/cases/pair-1-doubletalk-weak/mic.pcm",
+          "/tmp/ap-dualmic-recorded-stage/result/input/cases/pair-1-doubletalk-weak/render.pcm",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-1-doubletalk-weak-assistant/out.pcm"
+        ],
+        "original_dir": "result/replay/pair-1-doubletalk-weak-assistant",
+        "original_prefix": "/tmp/ap-dualmic-recorded-stage/",
+        "profile": "assistant",
+        "samples": 96000,
+        "scenario": "doubletalk-weak"
+      },
+      "clean_near": {
+        "bytes": 192000,
+        "sha256": "cfc8359f9e80a70814dd594c338a4808ccd4734d67b967b6bc9c9f2981f5a3f3"
+      },
+      "parent_taps": {
+        "agc_output.f32le": {
+          "bytes": 384000,
+          "sha256": "2f16b3f80dcb05c0fa7cdf979dc141209fc7d85773ad9050274e2b423235d186"
+        },
+        "control.csv": {
+          "bytes": 135166,
+          "sha256": "d7c7b94509b7e51aef10e089d44330221bd7ae25bc36032599b5ed1e2c28ae41"
+        },
+        "ns_output.f32le": {
+          "bytes": 384000,
+          "sha256": "69acfccce0bf5a189a9fd6618e97f416d078154b1e5eaab9acbfc14977534143"
+        }
+      }
+    },
+    {
+      "catalog": {
+        "auxiliary_inputs": [
+          "result/input/cases/pair-1-path-change/echo.pcm"
+        ],
+        "capture_only": false,
+        "case_id": "pair-1-path-change-call",
+        "data_role": "disclosed-regression",
+        "dimensions": {
+          "common_gain": 0.41410818097565083,
+          "data_role": "regression",
+          "echo_tdoa_samples": 1.4139190265868387,
+          "far_speaker": 422,
+          "far_start_sample": 0,
+          "frames": 600,
+          "human_vad_labels": false,
+          "mic_spacing_mm": 35.0,
+          "near_speaker": 251,
+          "near_start_sample": 24000,
+          "original_role": "development-diagnostic",
+          "pair": 1,
+          "pipeline_profile": "call",
+          "real_array_recording": false,
+          "recorded_speech": true,
+          "seconds": 6,
+          "source_window_samples": 64000,
+          "synthetic_propagation": true,
+          "target_tdoa_samples": 0.0
+        },
+        "frames": 600,
+        "group": "A",
+        "input_events": [
+          {
+            "frame": 300,
+            "kind": "cli_echo_path_change",
+            "sample": 48000
+          }
+        ],
+        "inputs": {
+          "clean_near": null,
+          "mic": "result/input/cases/pair-1-path-change/mic.pcm",
+          "render": "result/input/cases/pair-1-path-change/render.pcm"
+        },
+        "key": "A/pair-1-path-change-call",
+        "original_argv": [
+          "/home/runner/work/audio-pipeline/audio-pipeline/build-dualmic-recorded/ap_process_pcm",
+          "--profile",
+          "call",
+          "--sample-rate",
+          "16000",
+          "--mic-channels",
+          "2",
+          "--strict-capture-frames",
+          "--metrics-jsonl",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-1-path-change-call/metrics.jsonl",
+          "--echo-path-change-frame",
+          "300",
+          "/tmp/ap-dualmic-recorded-stage/result/input/cases/pair-1-path-change/mic.pcm",
+          "/tmp/ap-dualmic-recorded-stage/result/input/cases/pair-1-path-change/render.pcm",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-1-path-change-call/out.pcm"
+        ],
+        "original_dir": "result/replay/pair-1-path-change-call",
+        "original_prefix": "/tmp/ap-dualmic-recorded-stage/",
+        "profile": "call",
+        "samples": 96000,
+        "scenario": "path-change"
+      },
+      "clean_near": null,
+      "parent_taps": {
+        "agc_output.f32le": {
+          "bytes": 384000,
+          "sha256": "aa9cae54153b2b2eeb02668eefd42a1434818bbc2853854816d8a12bc6711b30"
+        },
+        "control.csv": {
+          "bytes": 135713,
+          "sha256": "c5be43225a9e54897bd49fbb715a255d190fe68fefbccc9b7f18197af171e704"
+        },
+        "ns_output.f32le": {
+          "bytes": 384000,
+          "sha256": "317c053a444b4127535f1fa0e66b6921c9e5a29ea2a0e54567722c361a7576a3"
+        }
+      }
+    },
+    {
+      "catalog": {
+        "auxiliary_inputs": [
+          "result/input/cases/pair-1-path-change/echo.pcm"
+        ],
+        "capture_only": false,
+        "case_id": "pair-1-path-change-assistant",
+        "data_role": "disclosed-regression",
+        "dimensions": {
+          "common_gain": 0.41410818097565083,
+          "data_role": "regression",
+          "echo_tdoa_samples": 1.4139190265868387,
+          "far_speaker": 422,
+          "far_start_sample": 0,
+          "frames": 600,
+          "human_vad_labels": false,
+          "mic_spacing_mm": 35.0,
+          "near_speaker": 251,
+          "near_start_sample": 24000,
+          "original_role": "development-diagnostic",
+          "pair": 1,
+          "pipeline_profile": "assistant",
+          "real_array_recording": false,
+          "recorded_speech": true,
+          "seconds": 6,
+          "source_window_samples": 64000,
+          "synthetic_propagation": true,
+          "target_tdoa_samples": 0.0
+        },
+        "frames": 600,
+        "group": "A",
+        "input_events": [
+          {
+            "frame": 300,
+            "kind": "cli_echo_path_change",
+            "sample": 48000
+          }
+        ],
+        "inputs": {
+          "clean_near": null,
+          "mic": "result/input/cases/pair-1-path-change/mic.pcm",
+          "render": "result/input/cases/pair-1-path-change/render.pcm"
+        },
+        "key": "A/pair-1-path-change-assistant",
+        "original_argv": [
+          "/home/runner/work/audio-pipeline/audio-pipeline/build-dualmic-recorded/ap_process_pcm",
+          "--profile",
+          "assistant",
+          "--sample-rate",
+          "16000",
+          "--mic-channels",
+          "2",
+          "--strict-capture-frames",
+          "--metrics-jsonl",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-1-path-change-assistant/metrics.jsonl",
+          "--echo-path-change-frame",
+          "300",
+          "/tmp/ap-dualmic-recorded-stage/result/input/cases/pair-1-path-change/mic.pcm",
+          "/tmp/ap-dualmic-recorded-stage/result/input/cases/pair-1-path-change/render.pcm",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-1-path-change-assistant/out.pcm"
+        ],
+        "original_dir": "result/replay/pair-1-path-change-assistant",
+        "original_prefix": "/tmp/ap-dualmic-recorded-stage/",
+        "profile": "assistant",
+        "samples": 96000,
+        "scenario": "path-change"
+      },
+      "clean_near": null,
+      "parent_taps": {
+        "agc_output.f32le": {
+          "bytes": 384000,
+          "sha256": "9cadd72f68ddfd619749bd2de751831826786b936c13ea51365006366c7dc4e9"
+        },
+        "control.csv": {
+          "bytes": 135607,
+          "sha256": "99df5e45f2aca048e887a24599f4bf44146075247eeb40eafad0087664c8355f"
+        },
+        "ns_output.f32le": {
+          "bytes": 384000,
+          "sha256": "97e55f6bd2bb088f73b4e28fc1800cdb16908baac0735d093de07e30b057887c"
+        }
+      }
+    },
+    {
+      "catalog": {
+        "auxiliary_inputs": [
+          "result/input/cases/pair-1-render-gap/echo.pcm"
+        ],
+        "capture_only": false,
+        "case_id": "pair-1-render-gap-call",
+        "data_role": "disclosed-regression",
+        "dimensions": {
+          "common_gain": 0.41410818097565083,
+          "data_role": "regression",
+          "echo_tdoa_samples": 1.4139190265868387,
+          "far_speaker": 422,
+          "far_start_sample": 0,
+          "frames": 600,
+          "human_vad_labels": false,
+          "mic_spacing_mm": 35.0,
+          "near_speaker": 251,
+          "near_start_sample": 24000,
+          "original_role": "development-diagnostic",
+          "pair": 1,
+          "pipeline_profile": "call",
+          "real_array_recording": false,
+          "recorded_speech": true,
+          "seconds": 6,
+          "source_window_samples": 64000,
+          "synthetic_propagation": true,
+          "target_tdoa_samples": 0.0
+        },
+        "frames": 600,
+        "group": "A",
+        "input_events": [
+          {
+            "flags": 2,
+            "frame": 300,
+            "kind": "cli_discontinuity",
+            "lost_frames": 4,
+            "sample": 48000
+          }
+        ],
+        "inputs": {
+          "clean_near": null,
+          "mic": "result/input/cases/pair-1-render-gap/mic.pcm",
+          "render": "result/input/cases/pair-1-render-gap/render.pcm"
+        },
+        "key": "A/pair-1-render-gap-call",
+        "original_argv": [
+          "/home/runner/work/audio-pipeline/audio-pipeline/build-dualmic-recorded/ap_process_pcm",
+          "--profile",
+          "call",
+          "--sample-rate",
+          "16000",
+          "--mic-channels",
+          "2",
+          "--strict-capture-frames",
+          "--metrics-jsonl",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-1-render-gap-call/metrics.jsonl",
+          "--discontinuity-frame",
+          "300",
+          "--discontinuity-flags",
+          "2",
+          "--discontinuity-lost-frames",
+          "4",
+          "/tmp/ap-dualmic-recorded-stage/result/input/cases/pair-1-render-gap/mic.pcm",
+          "/tmp/ap-dualmic-recorded-stage/result/input/cases/pair-1-render-gap/render.pcm",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-1-render-gap-call/out.pcm"
+        ],
+        "original_dir": "result/replay/pair-1-render-gap-call",
+        "original_prefix": "/tmp/ap-dualmic-recorded-stage/",
+        "profile": "call",
+        "samples": 96000,
+        "scenario": "render-gap"
+      },
+      "clean_near": null,
+      "parent_taps": {
+        "agc_output.f32le": {
+          "bytes": 384000,
+          "sha256": "4c72573532cdb4f0801055ddf30b1a6ceac35c6a8f15902d5d485a1fefaec2e9"
+        },
+        "control.csv": {
+          "bytes": 135342,
+          "sha256": "ba2a2dcf351d0a72c6927b9ac26c6846b033c77f5aaa641abd99e9d99a231f58"
+        },
+        "ns_output.f32le": {
+          "bytes": 384000,
+          "sha256": "723727f3f5b893d9c6175c0104fcf98fa9e9daf2683caf5ccf2e3dbde4acd17b"
+        }
+      }
+    },
+    {
+      "catalog": {
+        "auxiliary_inputs": [
+          "result/input/cases/pair-1-render-gap/echo.pcm"
+        ],
+        "capture_only": false,
+        "case_id": "pair-1-render-gap-assistant",
+        "data_role": "disclosed-regression",
+        "dimensions": {
+          "common_gain": 0.41410818097565083,
+          "data_role": "regression",
+          "echo_tdoa_samples": 1.4139190265868387,
+          "far_speaker": 422,
+          "far_start_sample": 0,
+          "frames": 600,
+          "human_vad_labels": false,
+          "mic_spacing_mm": 35.0,
+          "near_speaker": 251,
+          "near_start_sample": 24000,
+          "original_role": "development-diagnostic",
+          "pair": 1,
+          "pipeline_profile": "assistant",
+          "real_array_recording": false,
+          "recorded_speech": true,
+          "seconds": 6,
+          "source_window_samples": 64000,
+          "synthetic_propagation": true,
+          "target_tdoa_samples": 0.0
+        },
+        "frames": 600,
+        "group": "A",
+        "input_events": [
+          {
+            "flags": 2,
+            "frame": 300,
+            "kind": "cli_discontinuity",
+            "lost_frames": 4,
+            "sample": 48000
+          }
+        ],
+        "inputs": {
+          "clean_near": null,
+          "mic": "result/input/cases/pair-1-render-gap/mic.pcm",
+          "render": "result/input/cases/pair-1-render-gap/render.pcm"
+        },
+        "key": "A/pair-1-render-gap-assistant",
+        "original_argv": [
+          "/home/runner/work/audio-pipeline/audio-pipeline/build-dualmic-recorded/ap_process_pcm",
+          "--profile",
+          "assistant",
+          "--sample-rate",
+          "16000",
+          "--mic-channels",
+          "2",
+          "--strict-capture-frames",
+          "--metrics-jsonl",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-1-render-gap-assistant/metrics.jsonl",
+          "--discontinuity-frame",
+          "300",
+          "--discontinuity-flags",
+          "2",
+          "--discontinuity-lost-frames",
+          "4",
+          "/tmp/ap-dualmic-recorded-stage/result/input/cases/pair-1-render-gap/mic.pcm",
+          "/tmp/ap-dualmic-recorded-stage/result/input/cases/pair-1-render-gap/render.pcm",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-1-render-gap-assistant/out.pcm"
+        ],
+        "original_dir": "result/replay/pair-1-render-gap-assistant",
+        "original_prefix": "/tmp/ap-dualmic-recorded-stage/",
+        "profile": "assistant",
+        "samples": 96000,
+        "scenario": "render-gap"
+      },
+      "clean_near": null,
+      "parent_taps": {
+        "agc_output.f32le": {
+          "bytes": 384000,
+          "sha256": "aebe31f73ce0a001dbe367af08980877b51946909df1cfb70bbf8068053fbef4"
+        },
+        "control.csv": {
+          "bytes": 135250,
+          "sha256": "063b6d605e74e3f74444bb96a2403d7f9993947e71cd9b597a2da84ecd78de38"
+        },
+        "ns_output.f32le": {
+          "bytes": 384000,
+          "sha256": "96f10c3199bf8a8d2e8876c032ea2da7218c5bdec8e17fdb544c2e6234fe453c"
+        }
+      }
+    },
+    {
+      "catalog": {
+        "auxiliary_inputs": [],
+        "capture_only": true,
+        "case_id": "pair-2-near-only-call",
+        "data_role": "disclosed-regression",
+        "dimensions": {
+          "common_gain": 0.6182971318349547,
+          "data_role": "regression",
+          "echo_tdoa_samples": 1.4139190265868387,
+          "far_speaker": 777,
+          "far_start_sample": 0,
+          "frames": 600,
+          "human_vad_labels": false,
+          "mic_spacing_mm": 35.0,
+          "near_speaker": 652,
+          "near_start_sample": 24000,
+          "original_role": "speaker-disjoint-confirmation-diagnostic",
+          "pair": 2,
+          "pipeline_profile": "call",
+          "real_array_recording": false,
+          "recorded_speech": true,
+          "seconds": 6,
+          "source_window_samples": 64000,
+          "synthetic_propagation": true,
+          "target_tdoa_samples": 0.0
+        },
+        "frames": 600,
+        "group": "A",
+        "input_events": [],
+        "inputs": {
+          "clean_near": "result/input/cases/pair-2-near-only/clean-near.pcm",
+          "mic": "result/input/cases/pair-2-near-only/mic.pcm",
+          "render": null
+        },
+        "key": "A/pair-2-near-only-call",
+        "original_argv": [
+          "/home/runner/work/audio-pipeline/audio-pipeline/build-dualmic-recorded/ap_process_pcm",
+          "--profile",
+          "call",
+          "--sample-rate",
+          "16000",
+          "--mic-channels",
+          "2",
+          "--strict-capture-frames",
+          "--metrics-jsonl",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-2-near-only-call/metrics.jsonl",
+          "--capture-profile",
+          "default",
+          "--capture-only",
+          "/tmp/ap-dualmic-recorded-stage/result/input/cases/pair-2-near-only/mic.pcm",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-2-near-only-call/out.pcm"
+        ],
+        "original_dir": "result/replay/pair-2-near-only-call",
+        "original_prefix": "/tmp/ap-dualmic-recorded-stage/",
+        "profile": "call",
+        "samples": 96000,
+        "scenario": "near-only"
+      },
+      "clean_near": {
+        "bytes": 192000,
+        "sha256": "593cb0a30c52ca47d90243fecfee4f72e84a554e3156339003598256ed3c40b6"
+      },
+      "parent_taps": {
+        "agc_output.f32le": {
+          "bytes": 384000,
+          "sha256": "ec56dc391d4629c37778201ff5f1cfb48e9318c4c7257e14f8bf243a5b74f2ba"
+        },
+        "control.csv": {
+          "bytes": 117845,
+          "sha256": "7160fd444e8074d9a28c67e549421367187cb7f219cec6469116bf5f53c0120f"
+        },
+        "ns_output.f32le": {
+          "bytes": 384000,
+          "sha256": "a07f69f37b65f4663222adf88d8a81e310de3109a0ccfd9700cae107f10101ec"
+        }
+      }
+    },
+    {
+      "catalog": {
+        "auxiliary_inputs": [],
+        "capture_only": true,
+        "case_id": "pair-2-near-only-assistant",
+        "data_role": "disclosed-regression",
+        "dimensions": {
+          "common_gain": 0.6182971318349547,
+          "data_role": "regression",
+          "echo_tdoa_samples": 1.4139190265868387,
+          "far_speaker": 777,
+          "far_start_sample": 0,
+          "frames": 600,
+          "human_vad_labels": false,
+          "mic_spacing_mm": 35.0,
+          "near_speaker": 652,
+          "near_start_sample": 24000,
+          "original_role": "speaker-disjoint-confirmation-diagnostic",
+          "pair": 2,
+          "pipeline_profile": "assistant",
+          "real_array_recording": false,
+          "recorded_speech": true,
+          "seconds": 6,
+          "source_window_samples": 64000,
+          "synthetic_propagation": true,
+          "target_tdoa_samples": 0.0
+        },
+        "frames": 600,
+        "group": "A",
+        "input_events": [],
+        "inputs": {
+          "clean_near": "result/input/cases/pair-2-near-only/clean-near.pcm",
+          "mic": "result/input/cases/pair-2-near-only/mic.pcm",
+          "render": null
+        },
+        "key": "A/pair-2-near-only-assistant",
+        "original_argv": [
+          "/home/runner/work/audio-pipeline/audio-pipeline/build-dualmic-recorded/ap_process_pcm",
+          "--profile",
+          "assistant",
+          "--sample-rate",
+          "16000",
+          "--mic-channels",
+          "2",
+          "--strict-capture-frames",
+          "--metrics-jsonl",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-2-near-only-assistant/metrics.jsonl",
+          "--capture-profile",
+          "default",
+          "--capture-only",
+          "/tmp/ap-dualmic-recorded-stage/result/input/cases/pair-2-near-only/mic.pcm",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-2-near-only-assistant/out.pcm"
+        ],
+        "original_dir": "result/replay/pair-2-near-only-assistant",
+        "original_prefix": "/tmp/ap-dualmic-recorded-stage/",
+        "profile": "assistant",
+        "samples": 96000,
+        "scenario": "near-only"
+      },
+      "clean_near": {
+        "bytes": 192000,
+        "sha256": "593cb0a30c52ca47d90243fecfee4f72e84a554e3156339003598256ed3c40b6"
+      },
+      "parent_taps": {
+        "agc_output.f32le": {
+          "bytes": 384000,
+          "sha256": "0742a081674d87c082aed0c0d4cebb1a828911dddbfcd1050d18749672894637"
+        },
+        "control.csv": {
+          "bytes": 117822,
+          "sha256": "60d019a1880cb83ecb1c09ada8d927f92f06afd823f2fe9fbc2d6ea5a9a4770f"
+        },
+        "ns_output.f32le": {
+          "bytes": 384000,
+          "sha256": "eeff87eff5f0ea839234f332369ae9a8b4a5fcb828dec8ff22b33372b1e803c1"
+        }
+      }
+    },
+    {
+      "catalog": {
+        "auxiliary_inputs": [],
+        "capture_only": false,
+        "case_id": "pair-2-silent-render-call",
+        "data_role": "disclosed-regression",
+        "dimensions": {
+          "common_gain": 0.6182971318349547,
+          "data_role": "regression",
+          "echo_tdoa_samples": 1.4139190265868387,
+          "far_speaker": 777,
+          "far_start_sample": 0,
+          "frames": 600,
+          "human_vad_labels": false,
+          "mic_spacing_mm": 35.0,
+          "near_speaker": 652,
+          "near_start_sample": 24000,
+          "original_role": "speaker-disjoint-confirmation-diagnostic",
+          "pair": 2,
+          "pipeline_profile": "call",
+          "real_array_recording": false,
+          "recorded_speech": true,
+          "seconds": 6,
+          "source_window_samples": 64000,
+          "synthetic_propagation": true,
+          "target_tdoa_samples": 0.0
+        },
+        "frames": 600,
+        "group": "A",
+        "input_events": [],
+        "inputs": {
+          "clean_near": "result/input/cases/pair-2-silent-render/clean-near.pcm",
+          "mic": "result/input/cases/pair-2-silent-render/mic.pcm",
+          "render": "result/input/cases/pair-2-silent-render/render.pcm"
+        },
+        "key": "A/pair-2-silent-render-call",
+        "original_argv": [
+          "/home/runner/work/audio-pipeline/audio-pipeline/build-dualmic-recorded/ap_process_pcm",
+          "--profile",
+          "call",
+          "--sample-rate",
+          "16000",
+          "--mic-channels",
+          "2",
+          "--strict-capture-frames",
+          "--metrics-jsonl",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-2-silent-render-call/metrics.jsonl",
+          "/tmp/ap-dualmic-recorded-stage/result/input/cases/pair-2-silent-render/mic.pcm",
+          "/tmp/ap-dualmic-recorded-stage/result/input/cases/pair-2-silent-render/render.pcm",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-2-silent-render-call/out.pcm"
+        ],
+        "original_dir": "result/replay/pair-2-silent-render-call",
+        "original_prefix": "/tmp/ap-dualmic-recorded-stage/",
+        "profile": "call",
+        "samples": 96000,
+        "scenario": "silent-render"
+      },
+      "clean_near": {
+        "bytes": 192000,
+        "sha256": "593cb0a30c52ca47d90243fecfee4f72e84a554e3156339003598256ed3c40b6"
+      },
+      "parent_taps": {
+        "agc_output.f32le": {
+          "bytes": 384000,
+          "sha256": "ec56dc391d4629c37778201ff5f1cfb48e9318c4c7257e14f8bf243a5b74f2ba"
+        },
+        "control.csv": {
+          "bytes": 125645,
+          "sha256": "0412a3f485c18da4ce02338a2c98803313e59d6945ac1bf42452c24f26d48123"
+        },
+        "ns_output.f32le": {
+          "bytes": 384000,
+          "sha256": "a07f69f37b65f4663222adf88d8a81e310de3109a0ccfd9700cae107f10101ec"
+        }
+      }
+    },
+    {
+      "catalog": {
+        "auxiliary_inputs": [],
+        "capture_only": false,
+        "case_id": "pair-2-silent-render-assistant",
+        "data_role": "disclosed-regression",
+        "dimensions": {
+          "common_gain": 0.6182971318349547,
+          "data_role": "regression",
+          "echo_tdoa_samples": 1.4139190265868387,
+          "far_speaker": 777,
+          "far_start_sample": 0,
+          "frames": 600,
+          "human_vad_labels": false,
+          "mic_spacing_mm": 35.0,
+          "near_speaker": 652,
+          "near_start_sample": 24000,
+          "original_role": "speaker-disjoint-confirmation-diagnostic",
+          "pair": 2,
+          "pipeline_profile": "assistant",
+          "real_array_recording": false,
+          "recorded_speech": true,
+          "seconds": 6,
+          "source_window_samples": 64000,
+          "synthetic_propagation": true,
+          "target_tdoa_samples": 0.0
+        },
+        "frames": 600,
+        "group": "A",
+        "input_events": [],
+        "inputs": {
+          "clean_near": "result/input/cases/pair-2-silent-render/clean-near.pcm",
+          "mic": "result/input/cases/pair-2-silent-render/mic.pcm",
+          "render": "result/input/cases/pair-2-silent-render/render.pcm"
+        },
+        "key": "A/pair-2-silent-render-assistant",
+        "original_argv": [
+          "/home/runner/work/audio-pipeline/audio-pipeline/build-dualmic-recorded/ap_process_pcm",
+          "--profile",
+          "assistant",
+          "--sample-rate",
+          "16000",
+          "--mic-channels",
+          "2",
+          "--strict-capture-frames",
+          "--metrics-jsonl",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-2-silent-render-assistant/metrics.jsonl",
+          "/tmp/ap-dualmic-recorded-stage/result/input/cases/pair-2-silent-render/mic.pcm",
+          "/tmp/ap-dualmic-recorded-stage/result/input/cases/pair-2-silent-render/render.pcm",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-2-silent-render-assistant/out.pcm"
+        ],
+        "original_dir": "result/replay/pair-2-silent-render-assistant",
+        "original_prefix": "/tmp/ap-dualmic-recorded-stage/",
+        "profile": "assistant",
+        "samples": 96000,
+        "scenario": "silent-render"
+      },
+      "clean_near": {
+        "bytes": 192000,
+        "sha256": "593cb0a30c52ca47d90243fecfee4f72e84a554e3156339003598256ed3c40b6"
+      },
+      "parent_taps": {
+        "agc_output.f32le": {
+          "bytes": 384000,
+          "sha256": "0742a081674d87c082aed0c0d4cebb1a828911dddbfcd1050d18749672894637"
+        },
+        "control.csv": {
+          "bytes": 125622,
+          "sha256": "9f5278f4ccf33211b812402a0e86fd9fe933690900c6ec74a99d51c677dd78de"
+        },
+        "ns_output.f32le": {
+          "bytes": 384000,
+          "sha256": "eeff87eff5f0ea839234f332369ae9a8b4a5fcb828dec8ff22b33372b1e803c1"
+        }
+      }
+    },
+    {
+      "catalog": {
+        "auxiliary_inputs": [
+          "result/input/cases/pair-2-far-only/echo.pcm"
+        ],
+        "capture_only": false,
+        "case_id": "pair-2-far-only-call",
+        "data_role": "disclosed-regression",
+        "dimensions": {
+          "common_gain": 0.6182971318349547,
+          "data_role": "regression",
+          "echo_tdoa_samples": 1.4139190265868387,
+          "far_speaker": 777,
+          "far_start_sample": 0,
+          "frames": 600,
+          "human_vad_labels": false,
+          "mic_spacing_mm": 35.0,
+          "near_speaker": 652,
+          "near_start_sample": 24000,
+          "original_role": "speaker-disjoint-confirmation-diagnostic",
+          "pair": 2,
+          "pipeline_profile": "call",
+          "real_array_recording": false,
+          "recorded_speech": true,
+          "seconds": 6,
+          "source_window_samples": 64000,
+          "synthetic_propagation": true,
+          "target_tdoa_samples": 0.0
+        },
+        "frames": 600,
+        "group": "A",
+        "input_events": [],
+        "inputs": {
+          "clean_near": null,
+          "mic": "result/input/cases/pair-2-far-only/mic.pcm",
+          "render": "result/input/cases/pair-2-far-only/render.pcm"
+        },
+        "key": "A/pair-2-far-only-call",
+        "original_argv": [
+          "/home/runner/work/audio-pipeline/audio-pipeline/build-dualmic-recorded/ap_process_pcm",
+          "--profile",
+          "call",
+          "--sample-rate",
+          "16000",
+          "--mic-channels",
+          "2",
+          "--strict-capture-frames",
+          "--metrics-jsonl",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-2-far-only-call/metrics.jsonl",
+          "/tmp/ap-dualmic-recorded-stage/result/input/cases/pair-2-far-only/mic.pcm",
+          "/tmp/ap-dualmic-recorded-stage/result/input/cases/pair-2-far-only/render.pcm",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-2-far-only-call/out.pcm"
+        ],
+        "original_dir": "result/replay/pair-2-far-only-call",
+        "original_prefix": "/tmp/ap-dualmic-recorded-stage/",
+        "profile": "call",
+        "samples": 96000,
+        "scenario": "far-only"
+      },
+      "clean_near": null,
+      "parent_taps": {
+        "agc_output.f32le": {
+          "bytes": 384000,
+          "sha256": "be4fbb651c100770ad1a990c53c93912425aa9780ff8620f9f5b63865c523609"
+        },
+        "control.csv": {
+          "bytes": 136181,
+          "sha256": "01061a3738cea0d7ea522cc5899b2f7b50c1a20b28c226a341f9e90c8ee12905"
+        },
+        "ns_output.f32le": {
+          "bytes": 384000,
+          "sha256": "58eaeff7f693b1dda5d6f73f1799452642381aac4909f75cfc807f9fce7938fb"
+        }
+      }
+    },
+    {
+      "catalog": {
+        "auxiliary_inputs": [
+          "result/input/cases/pair-2-far-only/echo.pcm"
+        ],
+        "capture_only": false,
+        "case_id": "pair-2-far-only-assistant",
+        "data_role": "disclosed-regression",
+        "dimensions": {
+          "common_gain": 0.6182971318349547,
+          "data_role": "regression",
+          "echo_tdoa_samples": 1.4139190265868387,
+          "far_speaker": 777,
+          "far_start_sample": 0,
+          "frames": 600,
+          "human_vad_labels": false,
+          "mic_spacing_mm": 35.0,
+          "near_speaker": 652,
+          "near_start_sample": 24000,
+          "original_role": "speaker-disjoint-confirmation-diagnostic",
+          "pair": 2,
+          "pipeline_profile": "assistant",
+          "real_array_recording": false,
+          "recorded_speech": true,
+          "seconds": 6,
+          "source_window_samples": 64000,
+          "synthetic_propagation": true,
+          "target_tdoa_samples": 0.0
+        },
+        "frames": 600,
+        "group": "A",
+        "input_events": [],
+        "inputs": {
+          "clean_near": null,
+          "mic": "result/input/cases/pair-2-far-only/mic.pcm",
+          "render": "result/input/cases/pair-2-far-only/render.pcm"
+        },
+        "key": "A/pair-2-far-only-assistant",
+        "original_argv": [
+          "/home/runner/work/audio-pipeline/audio-pipeline/build-dualmic-recorded/ap_process_pcm",
+          "--profile",
+          "assistant",
+          "--sample-rate",
+          "16000",
+          "--mic-channels",
+          "2",
+          "--strict-capture-frames",
+          "--metrics-jsonl",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-2-far-only-assistant/metrics.jsonl",
+          "/tmp/ap-dualmic-recorded-stage/result/input/cases/pair-2-far-only/mic.pcm",
+          "/tmp/ap-dualmic-recorded-stage/result/input/cases/pair-2-far-only/render.pcm",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-2-far-only-assistant/out.pcm"
+        ],
+        "original_dir": "result/replay/pair-2-far-only-assistant",
+        "original_prefix": "/tmp/ap-dualmic-recorded-stage/",
+        "profile": "assistant",
+        "samples": 96000,
+        "scenario": "far-only"
+      },
+      "clean_near": null,
+      "parent_taps": {
+        "agc_output.f32le": {
+          "bytes": 384000,
+          "sha256": "f7700f3601e1fb43b186cc080576744aa52c9df047b3bdccdc1b5bb78645144d"
+        },
+        "control.csv": {
+          "bytes": 136184,
+          "sha256": "46151f625f4a03a57da1b144f46903af9ca224d67b995ef65405e8cf26bd26cc"
+        },
+        "ns_output.f32le": {
+          "bytes": 384000,
+          "sha256": "cf1cbfbcd6c47f18a5b3f95fb13d2e00c20315181891f10f2d9dd471cb695569"
+        }
+      }
+    },
+    {
+      "catalog": {
+        "auxiliary_inputs": [
+          "result/input/cases/pair-2-doubletalk-nominal/interference.pcm"
+        ],
+        "capture_only": false,
+        "case_id": "pair-2-doubletalk-nominal-call",
+        "data_role": "disclosed-regression",
+        "dimensions": {
+          "common_gain": 0.6182971318349547,
+          "data_role": "regression",
+          "echo_tdoa_samples": 1.4139190265868387,
+          "far_speaker": 777,
+          "far_start_sample": 0,
+          "frames": 600,
+          "human_vad_labels": false,
+          "mic_spacing_mm": 35.0,
+          "near_speaker": 652,
+          "near_start_sample": 24000,
+          "original_role": "speaker-disjoint-confirmation-diagnostic",
+          "pair": 2,
+          "pipeline_profile": "call",
+          "real_array_recording": false,
+          "recorded_speech": true,
+          "seconds": 6,
+          "source_window_samples": 64000,
+          "synthetic_propagation": true,
+          "target_tdoa_samples": 0.0
+        },
+        "frames": 600,
+        "group": "A",
+        "input_events": [],
+        "inputs": {
+          "clean_near": "result/input/cases/pair-2-doubletalk-nominal/clean-near.pcm",
+          "mic": "result/input/cases/pair-2-doubletalk-nominal/mic.pcm",
+          "render": "result/input/cases/pair-2-doubletalk-nominal/render.pcm"
+        },
+        "key": "A/pair-2-doubletalk-nominal-call",
+        "original_argv": [
+          "/home/runner/work/audio-pipeline/audio-pipeline/build-dualmic-recorded/ap_process_pcm",
+          "--profile",
+          "call",
+          "--sample-rate",
+          "16000",
+          "--mic-channels",
+          "2",
+          "--strict-capture-frames",
+          "--metrics-jsonl",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-2-doubletalk-nominal-call/metrics.jsonl",
+          "/tmp/ap-dualmic-recorded-stage/result/input/cases/pair-2-doubletalk-nominal/mic.pcm",
+          "/tmp/ap-dualmic-recorded-stage/result/input/cases/pair-2-doubletalk-nominal/render.pcm",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-2-doubletalk-nominal-call/out.pcm"
+        ],
+        "original_dir": "result/replay/pair-2-doubletalk-nominal-call",
+        "original_prefix": "/tmp/ap-dualmic-recorded-stage/",
+        "profile": "call",
+        "samples": 96000,
+        "scenario": "doubletalk-nominal"
+      },
+      "clean_near": {
+        "bytes": 192000,
+        "sha256": "593cb0a30c52ca47d90243fecfee4f72e84a554e3156339003598256ed3c40b6"
+      },
+      "parent_taps": {
+        "agc_output.f32le": {
+          "bytes": 384000,
+          "sha256": "829bad40b591878e6801cea76c86ee33431fa6d16a7797395a068a926392ecff"
+        },
+        "control.csv": {
+          "bytes": 134886,
+          "sha256": "a55c58975e72cf4bf627534decf8740edf7b1af60a00117cda997ea86961991d"
+        },
+        "ns_output.f32le": {
+          "bytes": 384000,
+          "sha256": "d864dc0ea5a7c6b9768cce2edf124e41609f07ddefe5e3d5dc0b0102ba98ddc9"
+        }
+      }
+    },
+    {
+      "catalog": {
+        "auxiliary_inputs": [
+          "result/input/cases/pair-2-doubletalk-nominal/interference.pcm"
+        ],
+        "capture_only": false,
+        "case_id": "pair-2-doubletalk-nominal-assistant",
+        "data_role": "disclosed-regression",
+        "dimensions": {
+          "common_gain": 0.6182971318349547,
+          "data_role": "regression",
+          "echo_tdoa_samples": 1.4139190265868387,
+          "far_speaker": 777,
+          "far_start_sample": 0,
+          "frames": 600,
+          "human_vad_labels": false,
+          "mic_spacing_mm": 35.0,
+          "near_speaker": 652,
+          "near_start_sample": 24000,
+          "original_role": "speaker-disjoint-confirmation-diagnostic",
+          "pair": 2,
+          "pipeline_profile": "assistant",
+          "real_array_recording": false,
+          "recorded_speech": true,
+          "seconds": 6,
+          "source_window_samples": 64000,
+          "synthetic_propagation": true,
+          "target_tdoa_samples": 0.0
+        },
+        "frames": 600,
+        "group": "A",
+        "input_events": [],
+        "inputs": {
+          "clean_near": "result/input/cases/pair-2-doubletalk-nominal/clean-near.pcm",
+          "mic": "result/input/cases/pair-2-doubletalk-nominal/mic.pcm",
+          "render": "result/input/cases/pair-2-doubletalk-nominal/render.pcm"
+        },
+        "key": "A/pair-2-doubletalk-nominal-assistant",
+        "original_argv": [
+          "/home/runner/work/audio-pipeline/audio-pipeline/build-dualmic-recorded/ap_process_pcm",
+          "--profile",
+          "assistant",
+          "--sample-rate",
+          "16000",
+          "--mic-channels",
+          "2",
+          "--strict-capture-frames",
+          "--metrics-jsonl",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-2-doubletalk-nominal-assistant/metrics.jsonl",
+          "/tmp/ap-dualmic-recorded-stage/result/input/cases/pair-2-doubletalk-nominal/mic.pcm",
+          "/tmp/ap-dualmic-recorded-stage/result/input/cases/pair-2-doubletalk-nominal/render.pcm",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-2-doubletalk-nominal-assistant/out.pcm"
+        ],
+        "original_dir": "result/replay/pair-2-doubletalk-nominal-assistant",
+        "original_prefix": "/tmp/ap-dualmic-recorded-stage/",
+        "profile": "assistant",
+        "samples": 96000,
+        "scenario": "doubletalk-nominal"
+      },
+      "clean_near": {
+        "bytes": 192000,
+        "sha256": "593cb0a30c52ca47d90243fecfee4f72e84a554e3156339003598256ed3c40b6"
+      },
+      "parent_taps": {
+        "agc_output.f32le": {
+          "bytes": 384000,
+          "sha256": "f94fdc5e38116bb79787db30383a783f1898c171bfb13cf79207b25eed265063"
+        },
+        "control.csv": {
+          "bytes": 134877,
+          "sha256": "a723d149232e801fac24fd2b221c6149213027202d21065befa342787ad8e37d"
+        },
+        "ns_output.f32le": {
+          "bytes": 384000,
+          "sha256": "a8283f4a7114bfe2eda26825de8d05c13fc273cd491533776164f42ef63ce98c"
+        }
+      }
+    },
+    {
+      "catalog": {
+        "auxiliary_inputs": [
+          "result/input/cases/pair-2-doubletalk-weak/interference.pcm"
+        ],
+        "capture_only": false,
+        "case_id": "pair-2-doubletalk-weak-call",
+        "data_role": "disclosed-regression",
+        "dimensions": {
+          "common_gain": 0.6182971318349547,
+          "data_role": "regression",
+          "echo_tdoa_samples": 1.4139190265868387,
+          "far_speaker": 777,
+          "far_start_sample": 0,
+          "frames": 600,
+          "human_vad_labels": false,
+          "mic_spacing_mm": 35.0,
+          "near_speaker": 652,
+          "near_start_sample": 24000,
+          "original_role": "speaker-disjoint-confirmation-diagnostic",
+          "pair": 2,
+          "pipeline_profile": "call",
+          "real_array_recording": false,
+          "recorded_speech": true,
+          "seconds": 6,
+          "source_window_samples": 64000,
+          "synthetic_propagation": true,
+          "target_tdoa_samples": 0.0
+        },
+        "frames": 600,
+        "group": "A",
+        "input_events": [],
+        "inputs": {
+          "clean_near": "result/input/cases/pair-2-doubletalk-weak/clean-near.pcm",
+          "mic": "result/input/cases/pair-2-doubletalk-weak/mic.pcm",
+          "render": "result/input/cases/pair-2-doubletalk-weak/render.pcm"
+        },
+        "key": "A/pair-2-doubletalk-weak-call",
+        "original_argv": [
+          "/home/runner/work/audio-pipeline/audio-pipeline/build-dualmic-recorded/ap_process_pcm",
+          "--profile",
+          "call",
+          "--sample-rate",
+          "16000",
+          "--mic-channels",
+          "2",
+          "--strict-capture-frames",
+          "--metrics-jsonl",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-2-doubletalk-weak-call/metrics.jsonl",
+          "/tmp/ap-dualmic-recorded-stage/result/input/cases/pair-2-doubletalk-weak/mic.pcm",
+          "/tmp/ap-dualmic-recorded-stage/result/input/cases/pair-2-doubletalk-weak/render.pcm",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-2-doubletalk-weak-call/out.pcm"
+        ],
+        "original_dir": "result/replay/pair-2-doubletalk-weak-call",
+        "original_prefix": "/tmp/ap-dualmic-recorded-stage/",
+        "profile": "call",
+        "samples": 96000,
+        "scenario": "doubletalk-weak"
+      },
+      "clean_near": {
+        "bytes": 192000,
+        "sha256": "e8f365262c13f636e76f1a20f7f0c65572693e923eb1988dd9903fe9bda3171d"
+      },
+      "parent_taps": {
+        "agc_output.f32le": {
+          "bytes": 384000,
+          "sha256": "1949a81a748b4ee63d1a2e8fe0d29986076172612567d95cdabe2027ee61276a"
+        },
+        "control.csv": {
+          "bytes": 135393,
+          "sha256": "3943124b61cb6ae97b62e3efc10d358943da4a77e30124dbb6f27f35bf95333d"
+        },
+        "ns_output.f32le": {
+          "bytes": 384000,
+          "sha256": "75043241c7b3c54284f751844028d18a7e921e012a2fa311535f36f96e377b3b"
+        }
+      }
+    },
+    {
+      "catalog": {
+        "auxiliary_inputs": [
+          "result/input/cases/pair-2-doubletalk-weak/interference.pcm"
+        ],
+        "capture_only": false,
+        "case_id": "pair-2-doubletalk-weak-assistant",
+        "data_role": "disclosed-regression",
+        "dimensions": {
+          "common_gain": 0.6182971318349547,
+          "data_role": "regression",
+          "echo_tdoa_samples": 1.4139190265868387,
+          "far_speaker": 777,
+          "far_start_sample": 0,
+          "frames": 600,
+          "human_vad_labels": false,
+          "mic_spacing_mm": 35.0,
+          "near_speaker": 652,
+          "near_start_sample": 24000,
+          "original_role": "speaker-disjoint-confirmation-diagnostic",
+          "pair": 2,
+          "pipeline_profile": "assistant",
+          "real_array_recording": false,
+          "recorded_speech": true,
+          "seconds": 6,
+          "source_window_samples": 64000,
+          "synthetic_propagation": true,
+          "target_tdoa_samples": 0.0
+        },
+        "frames": 600,
+        "group": "A",
+        "input_events": [],
+        "inputs": {
+          "clean_near": "result/input/cases/pair-2-doubletalk-weak/clean-near.pcm",
+          "mic": "result/input/cases/pair-2-doubletalk-weak/mic.pcm",
+          "render": "result/input/cases/pair-2-doubletalk-weak/render.pcm"
+        },
+        "key": "A/pair-2-doubletalk-weak-assistant",
+        "original_argv": [
+          "/home/runner/work/audio-pipeline/audio-pipeline/build-dualmic-recorded/ap_process_pcm",
+          "--profile",
+          "assistant",
+          "--sample-rate",
+          "16000",
+          "--mic-channels",
+          "2",
+          "--strict-capture-frames",
+          "--metrics-jsonl",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-2-doubletalk-weak-assistant/metrics.jsonl",
+          "/tmp/ap-dualmic-recorded-stage/result/input/cases/pair-2-doubletalk-weak/mic.pcm",
+          "/tmp/ap-dualmic-recorded-stage/result/input/cases/pair-2-doubletalk-weak/render.pcm",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-2-doubletalk-weak-assistant/out.pcm"
+        ],
+        "original_dir": "result/replay/pair-2-doubletalk-weak-assistant",
+        "original_prefix": "/tmp/ap-dualmic-recorded-stage/",
+        "profile": "assistant",
+        "samples": 96000,
+        "scenario": "doubletalk-weak"
+      },
+      "clean_near": {
+        "bytes": 192000,
+        "sha256": "e8f365262c13f636e76f1a20f7f0c65572693e923eb1988dd9903fe9bda3171d"
+      },
+      "parent_taps": {
+        "agc_output.f32le": {
+          "bytes": 384000,
+          "sha256": "5966227a9e43faf325ecfad7d95fc5684c8d0191b509d915d22d2847d803154c"
+        },
+        "control.csv": {
+          "bytes": 135421,
+          "sha256": "d4aa933a2cb40c0fe1fa62d830afd9bbb4ea3593a22ca3a56da6d3f18be919ca"
+        },
+        "ns_output.f32le": {
+          "bytes": 384000,
+          "sha256": "671404bcb64426665fddec1452c9df8d82f0dfe7a40d272f27b700c36bcc8d8e"
+        }
+      }
+    },
+    {
+      "catalog": {
+        "auxiliary_inputs": [
+          "result/input/cases/pair-2-path-change/echo.pcm"
+        ],
+        "capture_only": false,
+        "case_id": "pair-2-path-change-call",
+        "data_role": "disclosed-regression",
+        "dimensions": {
+          "common_gain": 0.6182971318349547,
+          "data_role": "regression",
+          "echo_tdoa_samples": 1.4139190265868387,
+          "far_speaker": 777,
+          "far_start_sample": 0,
+          "frames": 600,
+          "human_vad_labels": false,
+          "mic_spacing_mm": 35.0,
+          "near_speaker": 652,
+          "near_start_sample": 24000,
+          "original_role": "speaker-disjoint-confirmation-diagnostic",
+          "pair": 2,
+          "pipeline_profile": "call",
+          "real_array_recording": false,
+          "recorded_speech": true,
+          "seconds": 6,
+          "source_window_samples": 64000,
+          "synthetic_propagation": true,
+          "target_tdoa_samples": 0.0
+        },
+        "frames": 600,
+        "group": "A",
+        "input_events": [
+          {
+            "frame": 300,
+            "kind": "cli_echo_path_change",
+            "sample": 48000
+          }
+        ],
+        "inputs": {
+          "clean_near": null,
+          "mic": "result/input/cases/pair-2-path-change/mic.pcm",
+          "render": "result/input/cases/pair-2-path-change/render.pcm"
+        },
+        "key": "A/pair-2-path-change-call",
+        "original_argv": [
+          "/home/runner/work/audio-pipeline/audio-pipeline/build-dualmic-recorded/ap_process_pcm",
+          "--profile",
+          "call",
+          "--sample-rate",
+          "16000",
+          "--mic-channels",
+          "2",
+          "--strict-capture-frames",
+          "--metrics-jsonl",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-2-path-change-call/metrics.jsonl",
+          "--echo-path-change-frame",
+          "300",
+          "/tmp/ap-dualmic-recorded-stage/result/input/cases/pair-2-path-change/mic.pcm",
+          "/tmp/ap-dualmic-recorded-stage/result/input/cases/pair-2-path-change/render.pcm",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-2-path-change-call/out.pcm"
+        ],
+        "original_dir": "result/replay/pair-2-path-change-call",
+        "original_prefix": "/tmp/ap-dualmic-recorded-stage/",
+        "profile": "call",
+        "samples": 96000,
+        "scenario": "path-change"
+      },
+      "clean_near": null,
+      "parent_taps": {
+        "agc_output.f32le": {
+          "bytes": 384000,
+          "sha256": "930275d047f75602ce42f3f65304626d1ef3c6c5f81e2d104f0e719b85ab8184"
+        },
+        "control.csv": {
+          "bytes": 135986,
+          "sha256": "b486e04e78933672185e7132e0d52ed790bbd1b34677dd5f4a5e541c4b75cc6e"
+        },
+        "ns_output.f32le": {
+          "bytes": 384000,
+          "sha256": "ccb252949715b6bd99427554e764fc2cdc407d05415bc41cab7a628c6b6678de"
+        }
+      }
+    },
+    {
+      "catalog": {
+        "auxiliary_inputs": [
+          "result/input/cases/pair-2-path-change/echo.pcm"
+        ],
+        "capture_only": false,
+        "case_id": "pair-2-path-change-assistant",
+        "data_role": "disclosed-regression",
+        "dimensions": {
+          "common_gain": 0.6182971318349547,
+          "data_role": "regression",
+          "echo_tdoa_samples": 1.4139190265868387,
+          "far_speaker": 777,
+          "far_start_sample": 0,
+          "frames": 600,
+          "human_vad_labels": false,
+          "mic_spacing_mm": 35.0,
+          "near_speaker": 652,
+          "near_start_sample": 24000,
+          "original_role": "speaker-disjoint-confirmation-diagnostic",
+          "pair": 2,
+          "pipeline_profile": "assistant",
+          "real_array_recording": false,
+          "recorded_speech": true,
+          "seconds": 6,
+          "source_window_samples": 64000,
+          "synthetic_propagation": true,
+          "target_tdoa_samples": 0.0
+        },
+        "frames": 600,
+        "group": "A",
+        "input_events": [
+          {
+            "frame": 300,
+            "kind": "cli_echo_path_change",
+            "sample": 48000
+          }
+        ],
+        "inputs": {
+          "clean_near": null,
+          "mic": "result/input/cases/pair-2-path-change/mic.pcm",
+          "render": "result/input/cases/pair-2-path-change/render.pcm"
+        },
+        "key": "A/pair-2-path-change-assistant",
+        "original_argv": [
+          "/home/runner/work/audio-pipeline/audio-pipeline/build-dualmic-recorded/ap_process_pcm",
+          "--profile",
+          "assistant",
+          "--sample-rate",
+          "16000",
+          "--mic-channels",
+          "2",
+          "--strict-capture-frames",
+          "--metrics-jsonl",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-2-path-change-assistant/metrics.jsonl",
+          "--echo-path-change-frame",
+          "300",
+          "/tmp/ap-dualmic-recorded-stage/result/input/cases/pair-2-path-change/mic.pcm",
+          "/tmp/ap-dualmic-recorded-stage/result/input/cases/pair-2-path-change/render.pcm",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-2-path-change-assistant/out.pcm"
+        ],
+        "original_dir": "result/replay/pair-2-path-change-assistant",
+        "original_prefix": "/tmp/ap-dualmic-recorded-stage/",
+        "profile": "assistant",
+        "samples": 96000,
+        "scenario": "path-change"
+      },
+      "clean_near": null,
+      "parent_taps": {
+        "agc_output.f32le": {
+          "bytes": 384000,
+          "sha256": "64785c4c57df5725008db6f56cb1da25a41a079d27e7bb8d3f6c36e7b83f8aab"
+        },
+        "control.csv": {
+          "bytes": 135979,
+          "sha256": "5d465d675e38da2eb7839310633a8606306108559b2ce20dcbcc19b62c6ab823"
+        },
+        "ns_output.f32le": {
+          "bytes": 384000,
+          "sha256": "8dee3cf627d311e7f2d20f98495ccd204a587ffeb75a713e27998d5c075ae624"
+        }
+      }
+    },
+    {
+      "catalog": {
+        "auxiliary_inputs": [
+          "result/input/cases/pair-2-render-gap/echo.pcm"
+        ],
+        "capture_only": false,
+        "case_id": "pair-2-render-gap-call",
+        "data_role": "disclosed-regression",
+        "dimensions": {
+          "common_gain": 0.6182971318349547,
+          "data_role": "regression",
+          "echo_tdoa_samples": 1.4139190265868387,
+          "far_speaker": 777,
+          "far_start_sample": 0,
+          "frames": 600,
+          "human_vad_labels": false,
+          "mic_spacing_mm": 35.0,
+          "near_speaker": 652,
+          "near_start_sample": 24000,
+          "original_role": "speaker-disjoint-confirmation-diagnostic",
+          "pair": 2,
+          "pipeline_profile": "call",
+          "real_array_recording": false,
+          "recorded_speech": true,
+          "seconds": 6,
+          "source_window_samples": 64000,
+          "synthetic_propagation": true,
+          "target_tdoa_samples": 0.0
+        },
+        "frames": 600,
+        "group": "A",
+        "input_events": [
+          {
+            "flags": 2,
+            "frame": 300,
+            "kind": "cli_discontinuity",
+            "lost_frames": 4,
+            "sample": 48000
+          }
+        ],
+        "inputs": {
+          "clean_near": null,
+          "mic": "result/input/cases/pair-2-render-gap/mic.pcm",
+          "render": "result/input/cases/pair-2-render-gap/render.pcm"
+        },
+        "key": "A/pair-2-render-gap-call",
+        "original_argv": [
+          "/home/runner/work/audio-pipeline/audio-pipeline/build-dualmic-recorded/ap_process_pcm",
+          "--profile",
+          "call",
+          "--sample-rate",
+          "16000",
+          "--mic-channels",
+          "2",
+          "--strict-capture-frames",
+          "--metrics-jsonl",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-2-render-gap-call/metrics.jsonl",
+          "--discontinuity-frame",
+          "300",
+          "--discontinuity-flags",
+          "2",
+          "--discontinuity-lost-frames",
+          "4",
+          "/tmp/ap-dualmic-recorded-stage/result/input/cases/pair-2-render-gap/mic.pcm",
+          "/tmp/ap-dualmic-recorded-stage/result/input/cases/pair-2-render-gap/render.pcm",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-2-render-gap-call/out.pcm"
+        ],
+        "original_dir": "result/replay/pair-2-render-gap-call",
+        "original_prefix": "/tmp/ap-dualmic-recorded-stage/",
+        "profile": "call",
+        "samples": 96000,
+        "scenario": "render-gap"
+      },
+      "clean_near": null,
+      "parent_taps": {
+        "agc_output.f32le": {
+          "bytes": 384000,
+          "sha256": "7a16a56b442c4a5dece901769e111078c0e2a48bb3158bd937e2d8e3875ed3f6"
+        },
+        "control.csv": {
+          "bytes": 135679,
+          "sha256": "e84f0ffa1105e736e7a11261ded9dbd149a47e61f890e139d0305253d618f859"
+        },
+        "ns_output.f32le": {
+          "bytes": 384000,
+          "sha256": "d0cc65b0faec835501f505ee9e9652625809baeb7e1032f753a2dee62c5a748f"
+        }
+      }
+    },
+    {
+      "catalog": {
+        "auxiliary_inputs": [
+          "result/input/cases/pair-2-render-gap/echo.pcm"
+        ],
+        "capture_only": false,
+        "case_id": "pair-2-render-gap-assistant",
+        "data_role": "disclosed-regression",
+        "dimensions": {
+          "common_gain": 0.6182971318349547,
+          "data_role": "regression",
+          "echo_tdoa_samples": 1.4139190265868387,
+          "far_speaker": 777,
+          "far_start_sample": 0,
+          "frames": 600,
+          "human_vad_labels": false,
+          "mic_spacing_mm": 35.0,
+          "near_speaker": 652,
+          "near_start_sample": 24000,
+          "original_role": "speaker-disjoint-confirmation-diagnostic",
+          "pair": 2,
+          "pipeline_profile": "assistant",
+          "real_array_recording": false,
+          "recorded_speech": true,
+          "seconds": 6,
+          "source_window_samples": 64000,
+          "synthetic_propagation": true,
+          "target_tdoa_samples": 0.0
+        },
+        "frames": 600,
+        "group": "A",
+        "input_events": [
+          {
+            "flags": 2,
+            "frame": 300,
+            "kind": "cli_discontinuity",
+            "lost_frames": 4,
+            "sample": 48000
+          }
+        ],
+        "inputs": {
+          "clean_near": null,
+          "mic": "result/input/cases/pair-2-render-gap/mic.pcm",
+          "render": "result/input/cases/pair-2-render-gap/render.pcm"
+        },
+        "key": "A/pair-2-render-gap-assistant",
+        "original_argv": [
+          "/home/runner/work/audio-pipeline/audio-pipeline/build-dualmic-recorded/ap_process_pcm",
+          "--profile",
+          "assistant",
+          "--sample-rate",
+          "16000",
+          "--mic-channels",
+          "2",
+          "--strict-capture-frames",
+          "--metrics-jsonl",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-2-render-gap-assistant/metrics.jsonl",
+          "--discontinuity-frame",
+          "300",
+          "--discontinuity-flags",
+          "2",
+          "--discontinuity-lost-frames",
+          "4",
+          "/tmp/ap-dualmic-recorded-stage/result/input/cases/pair-2-render-gap/mic.pcm",
+          "/tmp/ap-dualmic-recorded-stage/result/input/cases/pair-2-render-gap/render.pcm",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-2-render-gap-assistant/out.pcm"
+        ],
+        "original_dir": "result/replay/pair-2-render-gap-assistant",
+        "original_prefix": "/tmp/ap-dualmic-recorded-stage/",
+        "profile": "assistant",
+        "samples": 96000,
+        "scenario": "render-gap"
+      },
+      "clean_near": null,
+      "parent_taps": {
+        "agc_output.f32le": {
+          "bytes": 384000,
+          "sha256": "3fc8fb56d2300e3f5634e83c725835f489b49f5fa82092f7a7b9a8a193bf8a2d"
+        },
+        "control.csv": {
+          "bytes": 135715,
+          "sha256": "829576945970653410fca95d81f9bce502722dc512c58de370b666a1a9d30903"
+        },
+        "ns_output.f32le": {
+          "bytes": 384000,
+          "sha256": "1e1c89367e9c7e16c5c8c1d70828845d8a40de9181370f6bf14832b3111ba507"
+        }
+      }
+    },
+    {
+      "catalog": {
+        "auxiliary_inputs": [],
+        "capture_only": true,
+        "case_id": "pair-3-near-only-call",
+        "data_role": "disclosed-regression",
+        "dimensions": {
+          "common_gain": 0.5543706293706293,
+          "data_role": "regression",
+          "echo_tdoa_samples": 1.4139190265868387,
+          "far_speaker": 1462,
+          "far_start_sample": 0,
+          "frames": 600,
+          "human_vad_labels": false,
+          "mic_spacing_mm": 35.0,
+          "near_speaker": 1272,
+          "near_start_sample": 24000,
+          "original_role": "speaker-disjoint-confirmation-diagnostic",
+          "pair": 3,
+          "pipeline_profile": "call",
+          "real_array_recording": false,
+          "recorded_speech": true,
+          "seconds": 6,
+          "source_window_samples": 64000,
+          "synthetic_propagation": true,
+          "target_tdoa_samples": 0.0
+        },
+        "frames": 600,
+        "group": "A",
+        "input_events": [],
+        "inputs": {
+          "clean_near": "result/input/cases/pair-3-near-only/clean-near.pcm",
+          "mic": "result/input/cases/pair-3-near-only/mic.pcm",
+          "render": null
+        },
+        "key": "A/pair-3-near-only-call",
+        "original_argv": [
+          "/home/runner/work/audio-pipeline/audio-pipeline/build-dualmic-recorded/ap_process_pcm",
+          "--profile",
+          "call",
+          "--sample-rate",
+          "16000",
+          "--mic-channels",
+          "2",
+          "--strict-capture-frames",
+          "--metrics-jsonl",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-3-near-only-call/metrics.jsonl",
+          "--capture-profile",
+          "default",
+          "--capture-only",
+          "/tmp/ap-dualmic-recorded-stage/result/input/cases/pair-3-near-only/mic.pcm",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-3-near-only-call/out.pcm"
+        ],
+        "original_dir": "result/replay/pair-3-near-only-call",
+        "original_prefix": "/tmp/ap-dualmic-recorded-stage/",
+        "profile": "call",
+        "samples": 96000,
+        "scenario": "near-only"
+      },
+      "clean_near": {
+        "bytes": 192000,
+        "sha256": "97aeadfa8e6b4f1ff9ea2b58f74ace8b0cb61edb7d5d1800c179578802108673"
+      },
+      "parent_taps": {
+        "agc_output.f32le": {
+          "bytes": 384000,
+          "sha256": "4118e313eabbe266c82450a543eb3c353cd39a7411d254caf962a2755d40cec4"
+        },
+        "control.csv": {
+          "bytes": 118184,
+          "sha256": "f05bc7b486a2bf60bc0c9d963ea24755e5f7320362b14644bc4a035027c9b818"
+        },
+        "ns_output.f32le": {
+          "bytes": 384000,
+          "sha256": "6b6ee0d6a4608d94e9157b79034a0de8cd226b82ad2b62ee6292046e9a3e9ce8"
+        }
+      }
+    },
+    {
+      "catalog": {
+        "auxiliary_inputs": [],
+        "capture_only": true,
+        "case_id": "pair-3-near-only-assistant",
+        "data_role": "disclosed-regression",
+        "dimensions": {
+          "common_gain": 0.5543706293706293,
+          "data_role": "regression",
+          "echo_tdoa_samples": 1.4139190265868387,
+          "far_speaker": 1462,
+          "far_start_sample": 0,
+          "frames": 600,
+          "human_vad_labels": false,
+          "mic_spacing_mm": 35.0,
+          "near_speaker": 1272,
+          "near_start_sample": 24000,
+          "original_role": "speaker-disjoint-confirmation-diagnostic",
+          "pair": 3,
+          "pipeline_profile": "assistant",
+          "real_array_recording": false,
+          "recorded_speech": true,
+          "seconds": 6,
+          "source_window_samples": 64000,
+          "synthetic_propagation": true,
+          "target_tdoa_samples": 0.0
+        },
+        "frames": 600,
+        "group": "A",
+        "input_events": [],
+        "inputs": {
+          "clean_near": "result/input/cases/pair-3-near-only/clean-near.pcm",
+          "mic": "result/input/cases/pair-3-near-only/mic.pcm",
+          "render": null
+        },
+        "key": "A/pair-3-near-only-assistant",
+        "original_argv": [
+          "/home/runner/work/audio-pipeline/audio-pipeline/build-dualmic-recorded/ap_process_pcm",
+          "--profile",
+          "assistant",
+          "--sample-rate",
+          "16000",
+          "--mic-channels",
+          "2",
+          "--strict-capture-frames",
+          "--metrics-jsonl",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-3-near-only-assistant/metrics.jsonl",
+          "--capture-profile",
+          "default",
+          "--capture-only",
+          "/tmp/ap-dualmic-recorded-stage/result/input/cases/pair-3-near-only/mic.pcm",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-3-near-only-assistant/out.pcm"
+        ],
+        "original_dir": "result/replay/pair-3-near-only-assistant",
+        "original_prefix": "/tmp/ap-dualmic-recorded-stage/",
+        "profile": "assistant",
+        "samples": 96000,
+        "scenario": "near-only"
+      },
+      "clean_near": {
+        "bytes": 192000,
+        "sha256": "97aeadfa8e6b4f1ff9ea2b58f74ace8b0cb61edb7d5d1800c179578802108673"
+      },
+      "parent_taps": {
+        "agc_output.f32le": {
+          "bytes": 384000,
+          "sha256": "f58ea2c290560eb147035c125c9641d0b25eb8fe820c8a1ee72c3b0195a85278"
+        },
+        "control.csv": {
+          "bytes": 118154,
+          "sha256": "deb725df8f92b0364e0df713208d3d985b235a05be35c1677bfabbd96f4cfdc3"
+        },
+        "ns_output.f32le": {
+          "bytes": 384000,
+          "sha256": "d862e861fffc139b9c7675c55e0aa6ae29e665a3635710a2c82a5333844acce1"
+        }
+      }
+    },
+    {
+      "catalog": {
+        "auxiliary_inputs": [],
+        "capture_only": false,
+        "case_id": "pair-3-silent-render-call",
+        "data_role": "disclosed-regression",
+        "dimensions": {
+          "common_gain": 0.5543706293706293,
+          "data_role": "regression",
+          "echo_tdoa_samples": 1.4139190265868387,
+          "far_speaker": 1462,
+          "far_start_sample": 0,
+          "frames": 600,
+          "human_vad_labels": false,
+          "mic_spacing_mm": 35.0,
+          "near_speaker": 1272,
+          "near_start_sample": 24000,
+          "original_role": "speaker-disjoint-confirmation-diagnostic",
+          "pair": 3,
+          "pipeline_profile": "call",
+          "real_array_recording": false,
+          "recorded_speech": true,
+          "seconds": 6,
+          "source_window_samples": 64000,
+          "synthetic_propagation": true,
+          "target_tdoa_samples": 0.0
+        },
+        "frames": 600,
+        "group": "A",
+        "input_events": [],
+        "inputs": {
+          "clean_near": "result/input/cases/pair-3-silent-render/clean-near.pcm",
+          "mic": "result/input/cases/pair-3-silent-render/mic.pcm",
+          "render": "result/input/cases/pair-3-silent-render/render.pcm"
+        },
+        "key": "A/pair-3-silent-render-call",
+        "original_argv": [
+          "/home/runner/work/audio-pipeline/audio-pipeline/build-dualmic-recorded/ap_process_pcm",
+          "--profile",
+          "call",
+          "--sample-rate",
+          "16000",
+          "--mic-channels",
+          "2",
+          "--strict-capture-frames",
+          "--metrics-jsonl",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-3-silent-render-call/metrics.jsonl",
+          "/tmp/ap-dualmic-recorded-stage/result/input/cases/pair-3-silent-render/mic.pcm",
+          "/tmp/ap-dualmic-recorded-stage/result/input/cases/pair-3-silent-render/render.pcm",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-3-silent-render-call/out.pcm"
+        ],
+        "original_dir": "result/replay/pair-3-silent-render-call",
+        "original_prefix": "/tmp/ap-dualmic-recorded-stage/",
+        "profile": "call",
+        "samples": 96000,
+        "scenario": "silent-render"
+      },
+      "clean_near": {
+        "bytes": 192000,
+        "sha256": "97aeadfa8e6b4f1ff9ea2b58f74ace8b0cb61edb7d5d1800c179578802108673"
+      },
+      "parent_taps": {
+        "agc_output.f32le": {
+          "bytes": 384000,
+          "sha256": "4118e313eabbe266c82450a543eb3c353cd39a7411d254caf962a2755d40cec4"
+        },
+        "control.csv": {
+          "bytes": 125984,
+          "sha256": "a13e33d7bc609b3fa6f4c505f7fd2ecd80f74d45980d4d0be6d0aef9c00da934"
+        },
+        "ns_output.f32le": {
+          "bytes": 384000,
+          "sha256": "6b6ee0d6a4608d94e9157b79034a0de8cd226b82ad2b62ee6292046e9a3e9ce8"
+        }
+      }
+    },
+    {
+      "catalog": {
+        "auxiliary_inputs": [],
+        "capture_only": false,
+        "case_id": "pair-3-silent-render-assistant",
+        "data_role": "disclosed-regression",
+        "dimensions": {
+          "common_gain": 0.5543706293706293,
+          "data_role": "regression",
+          "echo_tdoa_samples": 1.4139190265868387,
+          "far_speaker": 1462,
+          "far_start_sample": 0,
+          "frames": 600,
+          "human_vad_labels": false,
+          "mic_spacing_mm": 35.0,
+          "near_speaker": 1272,
+          "near_start_sample": 24000,
+          "original_role": "speaker-disjoint-confirmation-diagnostic",
+          "pair": 3,
+          "pipeline_profile": "assistant",
+          "real_array_recording": false,
+          "recorded_speech": true,
+          "seconds": 6,
+          "source_window_samples": 64000,
+          "synthetic_propagation": true,
+          "target_tdoa_samples": 0.0
+        },
+        "frames": 600,
+        "group": "A",
+        "input_events": [],
+        "inputs": {
+          "clean_near": "result/input/cases/pair-3-silent-render/clean-near.pcm",
+          "mic": "result/input/cases/pair-3-silent-render/mic.pcm",
+          "render": "result/input/cases/pair-3-silent-render/render.pcm"
+        },
+        "key": "A/pair-3-silent-render-assistant",
+        "original_argv": [
+          "/home/runner/work/audio-pipeline/audio-pipeline/build-dualmic-recorded/ap_process_pcm",
+          "--profile",
+          "assistant",
+          "--sample-rate",
+          "16000",
+          "--mic-channels",
+          "2",
+          "--strict-capture-frames",
+          "--metrics-jsonl",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-3-silent-render-assistant/metrics.jsonl",
+          "/tmp/ap-dualmic-recorded-stage/result/input/cases/pair-3-silent-render/mic.pcm",
+          "/tmp/ap-dualmic-recorded-stage/result/input/cases/pair-3-silent-render/render.pcm",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-3-silent-render-assistant/out.pcm"
+        ],
+        "original_dir": "result/replay/pair-3-silent-render-assistant",
+        "original_prefix": "/tmp/ap-dualmic-recorded-stage/",
+        "profile": "assistant",
+        "samples": 96000,
+        "scenario": "silent-render"
+      },
+      "clean_near": {
+        "bytes": 192000,
+        "sha256": "97aeadfa8e6b4f1ff9ea2b58f74ace8b0cb61edb7d5d1800c179578802108673"
+      },
+      "parent_taps": {
+        "agc_output.f32le": {
+          "bytes": 384000,
+          "sha256": "f58ea2c290560eb147035c125c9641d0b25eb8fe820c8a1ee72c3b0195a85278"
+        },
+        "control.csv": {
+          "bytes": 125954,
+          "sha256": "c59f1186368369f9b68b602c6fa23261ff196481b1cabfce0ea297a7f75de5de"
+        },
+        "ns_output.f32le": {
+          "bytes": 384000,
+          "sha256": "d862e861fffc139b9c7675c55e0aa6ae29e665a3635710a2c82a5333844acce1"
+        }
+      }
+    },
+    {
+      "catalog": {
+        "auxiliary_inputs": [
+          "result/input/cases/pair-3-far-only/echo.pcm"
+        ],
+        "capture_only": false,
+        "case_id": "pair-3-far-only-call",
+        "data_role": "disclosed-regression",
+        "dimensions": {
+          "common_gain": 0.5543706293706293,
+          "data_role": "regression",
+          "echo_tdoa_samples": 1.4139190265868387,
+          "far_speaker": 1462,
+          "far_start_sample": 0,
+          "frames": 600,
+          "human_vad_labels": false,
+          "mic_spacing_mm": 35.0,
+          "near_speaker": 1272,
+          "near_start_sample": 24000,
+          "original_role": "speaker-disjoint-confirmation-diagnostic",
+          "pair": 3,
+          "pipeline_profile": "call",
+          "real_array_recording": false,
+          "recorded_speech": true,
+          "seconds": 6,
+          "source_window_samples": 64000,
+          "synthetic_propagation": true,
+          "target_tdoa_samples": 0.0
+        },
+        "frames": 600,
+        "group": "A",
+        "input_events": [],
+        "inputs": {
+          "clean_near": null,
+          "mic": "result/input/cases/pair-3-far-only/mic.pcm",
+          "render": "result/input/cases/pair-3-far-only/render.pcm"
+        },
+        "key": "A/pair-3-far-only-call",
+        "original_argv": [
+          "/home/runner/work/audio-pipeline/audio-pipeline/build-dualmic-recorded/ap_process_pcm",
+          "--profile",
+          "call",
+          "--sample-rate",
+          "16000",
+          "--mic-channels",
+          "2",
+          "--strict-capture-frames",
+          "--metrics-jsonl",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-3-far-only-call/metrics.jsonl",
+          "/tmp/ap-dualmic-recorded-stage/result/input/cases/pair-3-far-only/mic.pcm",
+          "/tmp/ap-dualmic-recorded-stage/result/input/cases/pair-3-far-only/render.pcm",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-3-far-only-call/out.pcm"
+        ],
+        "original_dir": "result/replay/pair-3-far-only-call",
+        "original_prefix": "/tmp/ap-dualmic-recorded-stage/",
+        "profile": "call",
+        "samples": 96000,
+        "scenario": "far-only"
+      },
+      "clean_near": null,
+      "parent_taps": {
+        "agc_output.f32le": {
+          "bytes": 384000,
+          "sha256": "465a1cfbd6636858894f97ea0f9d5e2bc67e4893ebfdd647141f6164a5ac351c"
+        },
+        "control.csv": {
+          "bytes": 135670,
+          "sha256": "e0904ac60ac2911a1a560e3001a6560eb74214bfbbeb3cf01e750596dfa2cc4b"
+        },
+        "ns_output.f32le": {
+          "bytes": 384000,
+          "sha256": "0f3a02da247ff04ccca7dbb10676630118adc5953f464adfda8a0361a1842130"
+        }
+      }
+    },
+    {
+      "catalog": {
+        "auxiliary_inputs": [
+          "result/input/cases/pair-3-far-only/echo.pcm"
+        ],
+        "capture_only": false,
+        "case_id": "pair-3-far-only-assistant",
+        "data_role": "disclosed-regression",
+        "dimensions": {
+          "common_gain": 0.5543706293706293,
+          "data_role": "regression",
+          "echo_tdoa_samples": 1.4139190265868387,
+          "far_speaker": 1462,
+          "far_start_sample": 0,
+          "frames": 600,
+          "human_vad_labels": false,
+          "mic_spacing_mm": 35.0,
+          "near_speaker": 1272,
+          "near_start_sample": 24000,
+          "original_role": "speaker-disjoint-confirmation-diagnostic",
+          "pair": 3,
+          "pipeline_profile": "assistant",
+          "real_array_recording": false,
+          "recorded_speech": true,
+          "seconds": 6,
+          "source_window_samples": 64000,
+          "synthetic_propagation": true,
+          "target_tdoa_samples": 0.0
+        },
+        "frames": 600,
+        "group": "A",
+        "input_events": [],
+        "inputs": {
+          "clean_near": null,
+          "mic": "result/input/cases/pair-3-far-only/mic.pcm",
+          "render": "result/input/cases/pair-3-far-only/render.pcm"
+        },
+        "key": "A/pair-3-far-only-assistant",
+        "original_argv": [
+          "/home/runner/work/audio-pipeline/audio-pipeline/build-dualmic-recorded/ap_process_pcm",
+          "--profile",
+          "assistant",
+          "--sample-rate",
+          "16000",
+          "--mic-channels",
+          "2",
+          "--strict-capture-frames",
+          "--metrics-jsonl",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-3-far-only-assistant/metrics.jsonl",
+          "/tmp/ap-dualmic-recorded-stage/result/input/cases/pair-3-far-only/mic.pcm",
+          "/tmp/ap-dualmic-recorded-stage/result/input/cases/pair-3-far-only/render.pcm",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-3-far-only-assistant/out.pcm"
+        ],
+        "original_dir": "result/replay/pair-3-far-only-assistant",
+        "original_prefix": "/tmp/ap-dualmic-recorded-stage/",
+        "profile": "assistant",
+        "samples": 96000,
+        "scenario": "far-only"
+      },
+      "clean_near": null,
+      "parent_taps": {
+        "agc_output.f32le": {
+          "bytes": 384000,
+          "sha256": "3c86cd2909aeb5ade1dd0a956a85fba7baf6c84fec1b0ef8cdc761438e336acb"
+        },
+        "control.csv": {
+          "bytes": 135577,
+          "sha256": "2743960db31b43357fbd5955b89f16b74a91ec4afdcee076d09f177c9d6e2106"
+        },
+        "ns_output.f32le": {
+          "bytes": 384000,
+          "sha256": "12e30c9f86cb2044c11e24510910c2a50abf2225374331ef4e5870e5a76a997c"
+        }
+      }
+    },
+    {
+      "catalog": {
+        "auxiliary_inputs": [
+          "result/input/cases/pair-3-doubletalk-nominal/interference.pcm"
+        ],
+        "capture_only": false,
+        "case_id": "pair-3-doubletalk-nominal-call",
+        "data_role": "disclosed-regression",
+        "dimensions": {
+          "common_gain": 0.5543706293706293,
+          "data_role": "regression",
+          "echo_tdoa_samples": 1.4139190265868387,
+          "far_speaker": 1462,
+          "far_start_sample": 0,
+          "frames": 600,
+          "human_vad_labels": false,
+          "mic_spacing_mm": 35.0,
+          "near_speaker": 1272,
+          "near_start_sample": 24000,
+          "original_role": "speaker-disjoint-confirmation-diagnostic",
+          "pair": 3,
+          "pipeline_profile": "call",
+          "real_array_recording": false,
+          "recorded_speech": true,
+          "seconds": 6,
+          "source_window_samples": 64000,
+          "synthetic_propagation": true,
+          "target_tdoa_samples": 0.0
+        },
+        "frames": 600,
+        "group": "A",
+        "input_events": [],
+        "inputs": {
+          "clean_near": "result/input/cases/pair-3-doubletalk-nominal/clean-near.pcm",
+          "mic": "result/input/cases/pair-3-doubletalk-nominal/mic.pcm",
+          "render": "result/input/cases/pair-3-doubletalk-nominal/render.pcm"
+        },
+        "key": "A/pair-3-doubletalk-nominal-call",
+        "original_argv": [
+          "/home/runner/work/audio-pipeline/audio-pipeline/build-dualmic-recorded/ap_process_pcm",
+          "--profile",
+          "call",
+          "--sample-rate",
+          "16000",
+          "--mic-channels",
+          "2",
+          "--strict-capture-frames",
+          "--metrics-jsonl",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-3-doubletalk-nominal-call/metrics.jsonl",
+          "/tmp/ap-dualmic-recorded-stage/result/input/cases/pair-3-doubletalk-nominal/mic.pcm",
+          "/tmp/ap-dualmic-recorded-stage/result/input/cases/pair-3-doubletalk-nominal/render.pcm",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-3-doubletalk-nominal-call/out.pcm"
+        ],
+        "original_dir": "result/replay/pair-3-doubletalk-nominal-call",
+        "original_prefix": "/tmp/ap-dualmic-recorded-stage/",
+        "profile": "call",
+        "samples": 96000,
+        "scenario": "doubletalk-nominal"
+      },
+      "clean_near": {
+        "bytes": 192000,
+        "sha256": "97aeadfa8e6b4f1ff9ea2b58f74ace8b0cb61edb7d5d1800c179578802108673"
+      },
+      "parent_taps": {
+        "agc_output.f32le": {
+          "bytes": 384000,
+          "sha256": "6b7cf04b1dd8882fbcfbd365e4b72d3aa457071e7dd9bea595267904a508d176"
+        },
+        "control.csv": {
+          "bytes": 134547,
+          "sha256": "0edf6f311843b38dfe885b9dd0c66f313bbed231072205e8af0168eb09adf87f"
+        },
+        "ns_output.f32le": {
+          "bytes": 384000,
+          "sha256": "7e9c4d7bc8222d61f00bece728e05e7dc402ec17a4d936c1c00195af9918d4f5"
+        }
+      }
+    },
+    {
+      "catalog": {
+        "auxiliary_inputs": [
+          "result/input/cases/pair-3-doubletalk-nominal/interference.pcm"
+        ],
+        "capture_only": false,
+        "case_id": "pair-3-doubletalk-nominal-assistant",
+        "data_role": "disclosed-regression",
+        "dimensions": {
+          "common_gain": 0.5543706293706293,
+          "data_role": "regression",
+          "echo_tdoa_samples": 1.4139190265868387,
+          "far_speaker": 1462,
+          "far_start_sample": 0,
+          "frames": 600,
+          "human_vad_labels": false,
+          "mic_spacing_mm": 35.0,
+          "near_speaker": 1272,
+          "near_start_sample": 24000,
+          "original_role": "speaker-disjoint-confirmation-diagnostic",
+          "pair": 3,
+          "pipeline_profile": "assistant",
+          "real_array_recording": false,
+          "recorded_speech": true,
+          "seconds": 6,
+          "source_window_samples": 64000,
+          "synthetic_propagation": true,
+          "target_tdoa_samples": 0.0
+        },
+        "frames": 600,
+        "group": "A",
+        "input_events": [],
+        "inputs": {
+          "clean_near": "result/input/cases/pair-3-doubletalk-nominal/clean-near.pcm",
+          "mic": "result/input/cases/pair-3-doubletalk-nominal/mic.pcm",
+          "render": "result/input/cases/pair-3-doubletalk-nominal/render.pcm"
+        },
+        "key": "A/pair-3-doubletalk-nominal-assistant",
+        "original_argv": [
+          "/home/runner/work/audio-pipeline/audio-pipeline/build-dualmic-recorded/ap_process_pcm",
+          "--profile",
+          "assistant",
+          "--sample-rate",
+          "16000",
+          "--mic-channels",
+          "2",
+          "--strict-capture-frames",
+          "--metrics-jsonl",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-3-doubletalk-nominal-assistant/metrics.jsonl",
+          "/tmp/ap-dualmic-recorded-stage/result/input/cases/pair-3-doubletalk-nominal/mic.pcm",
+          "/tmp/ap-dualmic-recorded-stage/result/input/cases/pair-3-doubletalk-nominal/render.pcm",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-3-doubletalk-nominal-assistant/out.pcm"
+        ],
+        "original_dir": "result/replay/pair-3-doubletalk-nominal-assistant",
+        "original_prefix": "/tmp/ap-dualmic-recorded-stage/",
+        "profile": "assistant",
+        "samples": 96000,
+        "scenario": "doubletalk-nominal"
+      },
+      "clean_near": {
+        "bytes": 192000,
+        "sha256": "97aeadfa8e6b4f1ff9ea2b58f74ace8b0cb61edb7d5d1800c179578802108673"
+      },
+      "parent_taps": {
+        "agc_output.f32le": {
+          "bytes": 384000,
+          "sha256": "4bb719aa174b7df6044c095d9dd11f642d0685ea7e8a307b0580ba492a5b3799"
+        },
+        "control.csv": {
+          "bytes": 134465,
+          "sha256": "5a0c475eb44cb343f3d4f1b6c7839219630a38cbede934a1cec23238137b18d7"
+        },
+        "ns_output.f32le": {
+          "bytes": 384000,
+          "sha256": "cfbd5acbb0bbe68eb2ade41aebd1b1ef06bfda90e9eb4c1cea2c666cceac7a1e"
+        }
+      }
+    },
+    {
+      "catalog": {
+        "auxiliary_inputs": [
+          "result/input/cases/pair-3-doubletalk-weak/interference.pcm"
+        ],
+        "capture_only": false,
+        "case_id": "pair-3-doubletalk-weak-call",
+        "data_role": "disclosed-regression",
+        "dimensions": {
+          "common_gain": 0.5543706293706293,
+          "data_role": "regression",
+          "echo_tdoa_samples": 1.4139190265868387,
+          "far_speaker": 1462,
+          "far_start_sample": 0,
+          "frames": 600,
+          "human_vad_labels": false,
+          "mic_spacing_mm": 35.0,
+          "near_speaker": 1272,
+          "near_start_sample": 24000,
+          "original_role": "speaker-disjoint-confirmation-diagnostic",
+          "pair": 3,
+          "pipeline_profile": "call",
+          "real_array_recording": false,
+          "recorded_speech": true,
+          "seconds": 6,
+          "source_window_samples": 64000,
+          "synthetic_propagation": true,
+          "target_tdoa_samples": 0.0
+        },
+        "frames": 600,
+        "group": "A",
+        "input_events": [],
+        "inputs": {
+          "clean_near": "result/input/cases/pair-3-doubletalk-weak/clean-near.pcm",
+          "mic": "result/input/cases/pair-3-doubletalk-weak/mic.pcm",
+          "render": "result/input/cases/pair-3-doubletalk-weak/render.pcm"
+        },
+        "key": "A/pair-3-doubletalk-weak-call",
+        "original_argv": [
+          "/home/runner/work/audio-pipeline/audio-pipeline/build-dualmic-recorded/ap_process_pcm",
+          "--profile",
+          "call",
+          "--sample-rate",
+          "16000",
+          "--mic-channels",
+          "2",
+          "--strict-capture-frames",
+          "--metrics-jsonl",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-3-doubletalk-weak-call/metrics.jsonl",
+          "/tmp/ap-dualmic-recorded-stage/result/input/cases/pair-3-doubletalk-weak/mic.pcm",
+          "/tmp/ap-dualmic-recorded-stage/result/input/cases/pair-3-doubletalk-weak/render.pcm",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-3-doubletalk-weak-call/out.pcm"
+        ],
+        "original_dir": "result/replay/pair-3-doubletalk-weak-call",
+        "original_prefix": "/tmp/ap-dualmic-recorded-stage/",
+        "profile": "call",
+        "samples": 96000,
+        "scenario": "doubletalk-weak"
+      },
+      "clean_near": {
+        "bytes": 192000,
+        "sha256": "4ea7a8143c3861e54b67c97e90bff8cc07ffd15b3714422f84b1fd73af31166a"
+      },
+      "parent_taps": {
+        "agc_output.f32le": {
+          "bytes": 384000,
+          "sha256": "4e9fb1557c6fadfe9eedf2405f763586fd0eb52c86e254371c72810addad7fb7"
+        },
+        "control.csv": {
+          "bytes": 135347,
+          "sha256": "2caf387d3ddb9a0aa8d067b1b447dd7c0b0adfa5fe34e3287d150b8bad417981"
+        },
+        "ns_output.f32le": {
+          "bytes": 384000,
+          "sha256": "692c486770c3e49cda6e480e8e9fc45a34ff225b0655c2cce22ed5af8e6a6ca5"
+        }
+      }
+    },
+    {
+      "catalog": {
+        "auxiliary_inputs": [
+          "result/input/cases/pair-3-doubletalk-weak/interference.pcm"
+        ],
+        "capture_only": false,
+        "case_id": "pair-3-doubletalk-weak-assistant",
+        "data_role": "disclosed-regression",
+        "dimensions": {
+          "common_gain": 0.5543706293706293,
+          "data_role": "regression",
+          "echo_tdoa_samples": 1.4139190265868387,
+          "far_speaker": 1462,
+          "far_start_sample": 0,
+          "frames": 600,
+          "human_vad_labels": false,
+          "mic_spacing_mm": 35.0,
+          "near_speaker": 1272,
+          "near_start_sample": 24000,
+          "original_role": "speaker-disjoint-confirmation-diagnostic",
+          "pair": 3,
+          "pipeline_profile": "assistant",
+          "real_array_recording": false,
+          "recorded_speech": true,
+          "seconds": 6,
+          "source_window_samples": 64000,
+          "synthetic_propagation": true,
+          "target_tdoa_samples": 0.0
+        },
+        "frames": 600,
+        "group": "A",
+        "input_events": [],
+        "inputs": {
+          "clean_near": "result/input/cases/pair-3-doubletalk-weak/clean-near.pcm",
+          "mic": "result/input/cases/pair-3-doubletalk-weak/mic.pcm",
+          "render": "result/input/cases/pair-3-doubletalk-weak/render.pcm"
+        },
+        "key": "A/pair-3-doubletalk-weak-assistant",
+        "original_argv": [
+          "/home/runner/work/audio-pipeline/audio-pipeline/build-dualmic-recorded/ap_process_pcm",
+          "--profile",
+          "assistant",
+          "--sample-rate",
+          "16000",
+          "--mic-channels",
+          "2",
+          "--strict-capture-frames",
+          "--metrics-jsonl",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-3-doubletalk-weak-assistant/metrics.jsonl",
+          "/tmp/ap-dualmic-recorded-stage/result/input/cases/pair-3-doubletalk-weak/mic.pcm",
+          "/tmp/ap-dualmic-recorded-stage/result/input/cases/pair-3-doubletalk-weak/render.pcm",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-3-doubletalk-weak-assistant/out.pcm"
+        ],
+        "original_dir": "result/replay/pair-3-doubletalk-weak-assistant",
+        "original_prefix": "/tmp/ap-dualmic-recorded-stage/",
+        "profile": "assistant",
+        "samples": 96000,
+        "scenario": "doubletalk-weak"
+      },
+      "clean_near": {
+        "bytes": 192000,
+        "sha256": "4ea7a8143c3861e54b67c97e90bff8cc07ffd15b3714422f84b1fd73af31166a"
+      },
+      "parent_taps": {
+        "agc_output.f32le": {
+          "bytes": 384000,
+          "sha256": "79cdf8e3a6a561b2243a58c414e38122f3c73aa1c98a1d32f66dc6d9dc975039"
+        },
+        "control.csv": {
+          "bytes": 135278,
+          "sha256": "b53192d6e37b1932c43d3f5399767689d45808329df7cbb499605612c6153f66"
+        },
+        "ns_output.f32le": {
+          "bytes": 384000,
+          "sha256": "67945d03425ed037d1d5dfd548003e68ca4557b58dafe5f268918196ea0beb1c"
+        }
+      }
+    },
+    {
+      "catalog": {
+        "auxiliary_inputs": [
+          "result/input/cases/pair-3-path-change/echo.pcm"
+        ],
+        "capture_only": false,
+        "case_id": "pair-3-path-change-call",
+        "data_role": "disclosed-regression",
+        "dimensions": {
+          "common_gain": 0.5543706293706293,
+          "data_role": "regression",
+          "echo_tdoa_samples": 1.4139190265868387,
+          "far_speaker": 1462,
+          "far_start_sample": 0,
+          "frames": 600,
+          "human_vad_labels": false,
+          "mic_spacing_mm": 35.0,
+          "near_speaker": 1272,
+          "near_start_sample": 24000,
+          "original_role": "speaker-disjoint-confirmation-diagnostic",
+          "pair": 3,
+          "pipeline_profile": "call",
+          "real_array_recording": false,
+          "recorded_speech": true,
+          "seconds": 6,
+          "source_window_samples": 64000,
+          "synthetic_propagation": true,
+          "target_tdoa_samples": 0.0
+        },
+        "frames": 600,
+        "group": "A",
+        "input_events": [
+          {
+            "frame": 300,
+            "kind": "cli_echo_path_change",
+            "sample": 48000
+          }
+        ],
+        "inputs": {
+          "clean_near": null,
+          "mic": "result/input/cases/pair-3-path-change/mic.pcm",
+          "render": "result/input/cases/pair-3-path-change/render.pcm"
+        },
+        "key": "A/pair-3-path-change-call",
+        "original_argv": [
+          "/home/runner/work/audio-pipeline/audio-pipeline/build-dualmic-recorded/ap_process_pcm",
+          "--profile",
+          "call",
+          "--sample-rate",
+          "16000",
+          "--mic-channels",
+          "2",
+          "--strict-capture-frames",
+          "--metrics-jsonl",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-3-path-change-call/metrics.jsonl",
+          "--echo-path-change-frame",
+          "300",
+          "/tmp/ap-dualmic-recorded-stage/result/input/cases/pair-3-path-change/mic.pcm",
+          "/tmp/ap-dualmic-recorded-stage/result/input/cases/pair-3-path-change/render.pcm",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-3-path-change-call/out.pcm"
+        ],
+        "original_dir": "result/replay/pair-3-path-change-call",
+        "original_prefix": "/tmp/ap-dualmic-recorded-stage/",
+        "profile": "call",
+        "samples": 96000,
+        "scenario": "path-change"
+      },
+      "clean_near": null,
+      "parent_taps": {
+        "agc_output.f32le": {
+          "bytes": 384000,
+          "sha256": "804b58784542ceb329bbcd7e78634eaad1c2c95fbc11dc6cad44aac8de17978b"
+        },
+        "control.csv": {
+          "bytes": 135313,
+          "sha256": "2a8ca1fba45c49d2e08618aa01b68b151d53310ff7a350295c6fbb4f0eb78d7a"
+        },
+        "ns_output.f32le": {
+          "bytes": 384000,
+          "sha256": "74f0f31f489cb35ac29b76bb3956c552d3a14cf93e4ab64cc307a226cf568c14"
+        }
+      }
+    },
+    {
+      "catalog": {
+        "auxiliary_inputs": [
+          "result/input/cases/pair-3-path-change/echo.pcm"
+        ],
+        "capture_only": false,
+        "case_id": "pair-3-path-change-assistant",
+        "data_role": "disclosed-regression",
+        "dimensions": {
+          "common_gain": 0.5543706293706293,
+          "data_role": "regression",
+          "echo_tdoa_samples": 1.4139190265868387,
+          "far_speaker": 1462,
+          "far_start_sample": 0,
+          "frames": 600,
+          "human_vad_labels": false,
+          "mic_spacing_mm": 35.0,
+          "near_speaker": 1272,
+          "near_start_sample": 24000,
+          "original_role": "speaker-disjoint-confirmation-diagnostic",
+          "pair": 3,
+          "pipeline_profile": "assistant",
+          "real_array_recording": false,
+          "recorded_speech": true,
+          "seconds": 6,
+          "source_window_samples": 64000,
+          "synthetic_propagation": true,
+          "target_tdoa_samples": 0.0
+        },
+        "frames": 600,
+        "group": "A",
+        "input_events": [
+          {
+            "frame": 300,
+            "kind": "cli_echo_path_change",
+            "sample": 48000
+          }
+        ],
+        "inputs": {
+          "clean_near": null,
+          "mic": "result/input/cases/pair-3-path-change/mic.pcm",
+          "render": "result/input/cases/pair-3-path-change/render.pcm"
+        },
+        "key": "A/pair-3-path-change-assistant",
+        "original_argv": [
+          "/home/runner/work/audio-pipeline/audio-pipeline/build-dualmic-recorded/ap_process_pcm",
+          "--profile",
+          "assistant",
+          "--sample-rate",
+          "16000",
+          "--mic-channels",
+          "2",
+          "--strict-capture-frames",
+          "--metrics-jsonl",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-3-path-change-assistant/metrics.jsonl",
+          "--echo-path-change-frame",
+          "300",
+          "/tmp/ap-dualmic-recorded-stage/result/input/cases/pair-3-path-change/mic.pcm",
+          "/tmp/ap-dualmic-recorded-stage/result/input/cases/pair-3-path-change/render.pcm",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-3-path-change-assistant/out.pcm"
+        ],
+        "original_dir": "result/replay/pair-3-path-change-assistant",
+        "original_prefix": "/tmp/ap-dualmic-recorded-stage/",
+        "profile": "assistant",
+        "samples": 96000,
+        "scenario": "path-change"
+      },
+      "clean_near": null,
+      "parent_taps": {
+        "agc_output.f32le": {
+          "bytes": 384000,
+          "sha256": "164b5c65d58ee75489d4ac915dc7a750b55bf99b617b4f6f9a91663e2278fabb"
+        },
+        "control.csv": {
+          "bytes": 135249,
+          "sha256": "095e746c290c64bc92f9890b974cf2b05c120fd1788f6fd121bc5bc09825736a"
+        },
+        "ns_output.f32le": {
+          "bytes": 384000,
+          "sha256": "099079ac28d7b4dbd6451bf22af005069b87a111c308da4add7de3a9ba3f73d7"
+        }
+      }
+    },
+    {
+      "catalog": {
+        "auxiliary_inputs": [
+          "result/input/cases/pair-3-render-gap/echo.pcm"
+        ],
+        "capture_only": false,
+        "case_id": "pair-3-render-gap-call",
+        "data_role": "disclosed-regression",
+        "dimensions": {
+          "common_gain": 0.5543706293706293,
+          "data_role": "regression",
+          "echo_tdoa_samples": 1.4139190265868387,
+          "far_speaker": 1462,
+          "far_start_sample": 0,
+          "frames": 600,
+          "human_vad_labels": false,
+          "mic_spacing_mm": 35.0,
+          "near_speaker": 1272,
+          "near_start_sample": 24000,
+          "original_role": "speaker-disjoint-confirmation-diagnostic",
+          "pair": 3,
+          "pipeline_profile": "call",
+          "real_array_recording": false,
+          "recorded_speech": true,
+          "seconds": 6,
+          "source_window_samples": 64000,
+          "synthetic_propagation": true,
+          "target_tdoa_samples": 0.0
+        },
+        "frames": 600,
+        "group": "A",
+        "input_events": [
+          {
+            "flags": 2,
+            "frame": 300,
+            "kind": "cli_discontinuity",
+            "lost_frames": 4,
+            "sample": 48000
+          }
+        ],
+        "inputs": {
+          "clean_near": null,
+          "mic": "result/input/cases/pair-3-render-gap/mic.pcm",
+          "render": "result/input/cases/pair-3-render-gap/render.pcm"
+        },
+        "key": "A/pair-3-render-gap-call",
+        "original_argv": [
+          "/home/runner/work/audio-pipeline/audio-pipeline/build-dualmic-recorded/ap_process_pcm",
+          "--profile",
+          "call",
+          "--sample-rate",
+          "16000",
+          "--mic-channels",
+          "2",
+          "--strict-capture-frames",
+          "--metrics-jsonl",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-3-render-gap-call/metrics.jsonl",
+          "--discontinuity-frame",
+          "300",
+          "--discontinuity-flags",
+          "2",
+          "--discontinuity-lost-frames",
+          "4",
+          "/tmp/ap-dualmic-recorded-stage/result/input/cases/pair-3-render-gap/mic.pcm",
+          "/tmp/ap-dualmic-recorded-stage/result/input/cases/pair-3-render-gap/render.pcm",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-3-render-gap-call/out.pcm"
+        ],
+        "original_dir": "result/replay/pair-3-render-gap-call",
+        "original_prefix": "/tmp/ap-dualmic-recorded-stage/",
+        "profile": "call",
+        "samples": 96000,
+        "scenario": "render-gap"
+      },
+      "clean_near": null,
+      "parent_taps": {
+        "agc_output.f32le": {
+          "bytes": 384000,
+          "sha256": "fb30ae03b9813a4d80892b970d147800c6406087fa8595cfaec93368d21e1b4b"
+        },
+        "control.csv": {
+          "bytes": 135438,
+          "sha256": "9d55935fb8aaa4ae6d1638b85f5ba4abf62feca568bfabefcfcba7f3079fa81d"
+        },
+        "ns_output.f32le": {
+          "bytes": 384000,
+          "sha256": "89441aa777873d9e3144c17fa9cde89c0a6d439397b9271c8f116d89813f17b1"
+        }
+      }
+    },
+    {
+      "catalog": {
+        "auxiliary_inputs": [
+          "result/input/cases/pair-3-render-gap/echo.pcm"
+        ],
+        "capture_only": false,
+        "case_id": "pair-3-render-gap-assistant",
+        "data_role": "disclosed-regression",
+        "dimensions": {
+          "common_gain": 0.5543706293706293,
+          "data_role": "regression",
+          "echo_tdoa_samples": 1.4139190265868387,
+          "far_speaker": 1462,
+          "far_start_sample": 0,
+          "frames": 600,
+          "human_vad_labels": false,
+          "mic_spacing_mm": 35.0,
+          "near_speaker": 1272,
+          "near_start_sample": 24000,
+          "original_role": "speaker-disjoint-confirmation-diagnostic",
+          "pair": 3,
+          "pipeline_profile": "assistant",
+          "real_array_recording": false,
+          "recorded_speech": true,
+          "seconds": 6,
+          "source_window_samples": 64000,
+          "synthetic_propagation": true,
+          "target_tdoa_samples": 0.0
+        },
+        "frames": 600,
+        "group": "A",
+        "input_events": [
+          {
+            "flags": 2,
+            "frame": 300,
+            "kind": "cli_discontinuity",
+            "lost_frames": 4,
+            "sample": 48000
+          }
+        ],
+        "inputs": {
+          "clean_near": null,
+          "mic": "result/input/cases/pair-3-render-gap/mic.pcm",
+          "render": "result/input/cases/pair-3-render-gap/render.pcm"
+        },
+        "key": "A/pair-3-render-gap-assistant",
+        "original_argv": [
+          "/home/runner/work/audio-pipeline/audio-pipeline/build-dualmic-recorded/ap_process_pcm",
+          "--profile",
+          "assistant",
+          "--sample-rate",
+          "16000",
+          "--mic-channels",
+          "2",
+          "--strict-capture-frames",
+          "--metrics-jsonl",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-3-render-gap-assistant/metrics.jsonl",
+          "--discontinuity-frame",
+          "300",
+          "--discontinuity-flags",
+          "2",
+          "--discontinuity-lost-frames",
+          "4",
+          "/tmp/ap-dualmic-recorded-stage/result/input/cases/pair-3-render-gap/mic.pcm",
+          "/tmp/ap-dualmic-recorded-stage/result/input/cases/pair-3-render-gap/render.pcm",
+          "/tmp/ap-dualmic-recorded-stage/result/replay/pair-3-render-gap-assistant/out.pcm"
+        ],
+        "original_dir": "result/replay/pair-3-render-gap-assistant",
+        "original_prefix": "/tmp/ap-dualmic-recorded-stage/",
+        "profile": "assistant",
+        "samples": 96000,
+        "scenario": "render-gap"
+      },
+      "clean_near": null,
+      "parent_taps": {
+        "agc_output.f32le": {
+          "bytes": 384000,
+          "sha256": "205b45839a11141ad99f4ab31a67d86256febeea0802e93a15f71ab1a75056ca"
+        },
+        "control.csv": {
+          "bytes": 135289,
+          "sha256": "240c5e4d2653e1bdd98f4a594be108f86951d083b3c970f5a4d574d8fc7d52c8"
+        },
+        "ns_output.f32le": {
+          "bytes": 384000,
+          "sha256": "f34dc0213d5bbc84a9a69430b8df3bc5cab1cc7f4fa06df4a31a3c6ea8da6bc8"
+        }
+      }
+    },
+    {
+      "catalog": {
+        "auxiliary_inputs": [],
+        "capture_only": true,
+        "case_id": "call",
+        "data_role": "disclosed-regression",
+        "dimensions": {
+          "human_vad_labels": false,
+          "independent_original_utterances": 1,
+          "real_array_recording": false,
+          "real_farend_speech": false
+        },
+        "frames": 529,
+        "group": "C",
+        "input_events": [],
+        "inputs": {
+          "clean_near": null,
+          "mic": "prepared/clean_capture.pcm",
+          "render": null
+        },
+        "key": "C/call",
+        "original_argv": [
+          "/home/runner/work/audio-pipeline/audio-pipeline/build-validation-smoke/ap_process_pcm",
+          "--profile",
+          "call",
+          "--sample-rate",
+          "16000",
+          "--mic-channels",
+          "2",
+          "--strict-capture-frames",
+          "--metrics-jsonl",
+          "/tmp/ap-mandarin-stage/prepared/processed/call/metrics.jsonl",
+          "--capture-profile",
+          "default",
+          "--capture-only",
+          "/tmp/ap-mandarin-stage/prepared/clean_capture.pcm",
+          "/tmp/ap-mandarin-stage/prepared/processed/call/out.pcm"
+        ],
+        "original_dir": "prepared/processed/call",
+        "original_prefix": "/tmp/ap-mandarin-stage/",
+        "profile": "call",
+        "samples": 84640,
+        "scenario": "mandarin-clean"
+      },
+      "clean_near": null,
+      "parent_taps": {
+        "agc_output.f32le": {
+          "bytes": 338560,
+          "sha256": "42a47a619858dbe0c70ce1d97fce73e857d7884935058ead2843aebad08ec36b"
+        },
+        "control.csv": {
+          "bytes": 104605,
+          "sha256": "d65ee06ae70ecf73436dabba5f7fc21d59fb03c49b9dd29f6b019b42289e7295"
+        },
+        "ns_output.f32le": {
+          "bytes": 338560,
+          "sha256": "e2aef65c0878185f26f7905a2ba1f6d61670b59ce60bafaafaf6632f487e3c15"
+        }
+      }
+    },
+    {
+      "catalog": {
+        "auxiliary_inputs": [],
+        "capture_only": true,
+        "case_id": "assistant",
+        "data_role": "disclosed-regression",
+        "dimensions": {
+          "human_vad_labels": false,
+          "independent_original_utterances": 1,
+          "real_array_recording": false,
+          "real_farend_speech": false
+        },
+        "frames": 529,
+        "group": "C",
+        "input_events": [],
+        "inputs": {
+          "clean_near": null,
+          "mic": "prepared/clean_capture.pcm",
+          "render": null
+        },
+        "key": "C/assistant",
+        "original_argv": [
+          "/home/runner/work/audio-pipeline/audio-pipeline/build-validation-smoke/ap_process_pcm",
+          "--profile",
+          "assistant",
+          "--sample-rate",
+          "16000",
+          "--mic-channels",
+          "2",
+          "--strict-capture-frames",
+          "--metrics-jsonl",
+          "/tmp/ap-mandarin-stage/prepared/processed/assistant/metrics.jsonl",
+          "--capture-profile",
+          "default",
+          "--capture-only",
+          "/tmp/ap-mandarin-stage/prepared/clean_capture.pcm",
+          "/tmp/ap-mandarin-stage/prepared/processed/assistant/out.pcm"
+        ],
+        "original_dir": "prepared/processed/assistant",
+        "original_prefix": "/tmp/ap-mandarin-stage/",
+        "profile": "assistant",
+        "samples": 84640,
+        "scenario": "mandarin-clean"
+      },
+      "clean_near": null,
+      "parent_taps": {
+        "agc_output.f32le": {
+          "bytes": 338560,
+          "sha256": "877402a5ddb6ae308d0d65826e209d87ff6a467e880f24b18b23bd75716ea3fc"
+        },
+        "control.csv": {
+          "bytes": 104595,
+          "sha256": "9c9cb02cc75298ff4921634fff7556ad66d991f0c37860324cfa323f94f9f822"
+        },
+        "ns_output.f32le": {
+          "bytes": 338560,
+          "sha256": "911170c5e7d8f1976da0eaeca9ea0794a274a23aed99882d649702cb3c4587d5"
+        }
+      }
+    },
+    {
+      "catalog": {
+        "auxiliary_inputs": [],
+        "capture_only": false,
+        "case_id": "call_duplex",
+        "data_role": "disclosed-regression",
+        "dimensions": {
+          "human_vad_labels": false,
+          "independent_original_utterances": 1,
+          "real_array_recording": false,
+          "real_farend_speech": false
+        },
+        "frames": 629,
+        "group": "C",
+        "input_events": [],
+        "inputs": {
+          "clean_near": null,
+          "mic": "prepared/duplex_capture.pcm",
+          "render": "prepared/duplex_render.pcm"
+        },
+        "key": "C/call_duplex",
+        "original_argv": [
+          "/home/runner/work/audio-pipeline/audio-pipeline/build-validation-smoke/ap_process_pcm",
+          "--profile",
+          "call",
+          "--sample-rate",
+          "16000",
+          "--mic-channels",
+          "2",
+          "--strict-capture-frames",
+          "--metrics-jsonl",
+          "/tmp/ap-mandarin-stage/prepared/processed/call_duplex/metrics.jsonl",
+          "/tmp/ap-mandarin-stage/prepared/duplex_capture.pcm",
+          "/tmp/ap-mandarin-stage/prepared/duplex_render.pcm",
+          "/tmp/ap-mandarin-stage/prepared/processed/call_duplex/out.pcm"
+        ],
+        "original_dir": "prepared/processed/call_duplex",
+        "original_prefix": "/tmp/ap-mandarin-stage/",
+        "profile": "call",
+        "samples": 100640,
+        "scenario": "mandarin-duplex"
+      },
+      "clean_near": null,
+      "parent_taps": {
+        "agc_output.f32le": {
+          "bytes": 402560,
+          "sha256": "231582e34f13e0dbe9af24eaa5c13b8c8b8304ffde38263e22962937962b0dc7"
+        },
+        "control.csv": {
+          "bytes": 138189,
+          "sha256": "cbe0acd3dff05102631d3bd44b5d3e3bff8a5a074a2bed5cf2d1d00284c95e57"
+        },
+        "ns_output.f32le": {
+          "bytes": 402560,
+          "sha256": "df711fe1414acdc4a10cbf19e228a47b4f2a762c5a06d4f99c7d29630d7b760f"
+        }
+      }
+    },
+    {
+      "catalog": {
+        "auxiliary_inputs": [],
+        "capture_only": false,
+        "case_id": "assistant_duplex",
+        "data_role": "disclosed-regression",
+        "dimensions": {
+          "human_vad_labels": false,
+          "independent_original_utterances": 1,
+          "real_array_recording": false,
+          "real_farend_speech": false
+        },
+        "frames": 629,
+        "group": "C",
+        "input_events": [],
+        "inputs": {
+          "clean_near": null,
+          "mic": "prepared/duplex_capture.pcm",
+          "render": "prepared/duplex_render.pcm"
+        },
+        "key": "C/assistant_duplex",
+        "original_argv": [
+          "/home/runner/work/audio-pipeline/audio-pipeline/build-validation-smoke/ap_process_pcm",
+          "--profile",
+          "assistant",
+          "--sample-rate",
+          "16000",
+          "--mic-channels",
+          "2",
+          "--strict-capture-frames",
+          "--metrics-jsonl",
+          "/tmp/ap-mandarin-stage/prepared/processed/assistant_duplex/metrics.jsonl",
+          "/tmp/ap-mandarin-stage/prepared/duplex_capture.pcm",
+          "/tmp/ap-mandarin-stage/prepared/duplex_render.pcm",
+          "/tmp/ap-mandarin-stage/prepared/processed/assistant_duplex/out.pcm"
+        ],
+        "original_dir": "prepared/processed/assistant_duplex",
+        "original_prefix": "/tmp/ap-mandarin-stage/",
+        "profile": "assistant",
+        "samples": 100640,
+        "scenario": "mandarin-duplex"
+      },
+      "clean_near": null,
+      "parent_taps": {
+        "agc_output.f32le": {
+          "bytes": 402560,
+          "sha256": "67235460b88345a15cc401647cebadc54a0e6525feb3e549786edba34377ff14"
+        },
+        "control.csv": {
+          "bytes": 138191,
+          "sha256": "1202f06fb522df9e7273c9cf3c07f137372039776a60dd3bad127e4ec98af371"
+        },
+        "ns_output.f32le": {
+          "bytes": 402560,
+          "sha256": "529367c2108bbf8f647f705636bd7ce2f21daa25943f4bafab53e45083bbea34"
+        }
+      }
+    }
+  ],
+  "data_role": "disclosed-regression",
+  "experiment": "FE-DUALMIC-GAIN-D2",
+  "first_parent": {
+    "artifact_id": 13552165963,
+    "experiment": "FE-DUALMIC-STAGES-D1",
+    "manifest": {
+      "bytes": 337622,
+      "sha256": "190faf324499c64b4a9a268b0df8cd810082586d63ed6caef08480960369789f"
+    },
+    "report": {
+      "bytes": 3737687,
+      "sha256": "6ebc4242874563d76d3c59ccc53e4b3746b9e09cf4a6304bfeec367a4536309e"
+    },
+    "run_attempt": 1,
+    "run_id": 42318230362,
+    "source_revision": "31b949c14d473fe8221a4125adf896a75e785644",
+    "source_tree": "e568ba3bda62127a1676d894cdf768765f9ea74f",
+    "zip_bytes": 404327625,
+    "zip_sha256": "2d72315f28a5801aa6a753bdaefa7c7460c409863430843dbb074cae0efb167e"
+  },
+  "frame_samples": 160,
+  "frames": 35916,
+  "limiter_dbfs": -2,
+  "offset_samples": 160,
+  "profile_targets_dbfs": {
+    "assistant": -18,
+    "call": -20
+  },
+  "sample_rate_hz": 16000,
+  "samples": 5746560,
+  "schema_version": 1
+}

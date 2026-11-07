@@ -13,6 +13,13 @@
 [首次 Verify 分类失败](DUALMIC_STAGES_D1_CI_CLASSIFICATION.zh-CN.md)保留原失败，
 仅将隔离研究构建器登记为精确 SemVer-neutral 路径并要求其单独变更也走 full CI。
 
+[D2执行前合同](DUALMIC_GAIN_D2_PLAN.zh-CN.md)随后固定原60例AGC状态轨迹，
+[真实执行结果](DUALMIC_GAIN_D2_RESULT.zh-CN.md)保留首次C编译失败及仅1字符修复。
+修复后真实执行与首次独立原件审计均通过：35916帧、8次原reset，原状态/最终Float32
+全byte复现。最终逐样本clamp改变0样本，整帧peak cap仅33帧；原关注的英文显著
+负差值主要已在state gain视图出现，但弱双讲亦有正变化，不能据此移除AGC或声称
+识别/听感改善。C无近端truth，中文负结果继续独立保留。最终head/main资格见#922。
+
 ## 2026-11-06 双麦非真机集成 V2
 
 [实施前合同](DUALMIC_NONDEVICE_V2_PLAN.zh-CN.md)承接用户“除真机外继续落地”的新授权，

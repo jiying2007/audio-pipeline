@@ -35,7 +35,7 @@ DSP_ARM = ["cortex-a7-neon", "cortex-a32-neon", "aarch64-neon"]
 
 DOC_PREFIXES = ("docs/",)
 DOC_FILES = {"README.md", "README.zh-CN.md", "CHANGELOG.md", "THIRD_PARTY.md", "LICENSE", "SECURITY.md"}
-RESEARCH_REGISTRY_METADATA_FILES = {".github/research/evidence-index.json"}
+RESEARCH_REGISTRY_METADATA_FILES = {".github/research/evidence-index.json", "scripts/research_registry.py"}
 PROGRAM_ARCHIVE_GOVERNANCE_FILES = {
     ".github/program/maintenance_workflow_contract.py",
     ".github/program/terminal_workflow_retirement.py",
@@ -680,12 +680,14 @@ def analyze(paths: list[str], force_full: bool = False, cmake_version_only_chang
         path for path in paths
         if not (cmake_version_only_change and path == 'CMakeLists.txt')
     ]
-    if (
+    registry_metadata_only = (
         not force_full
         and effective_paths
-        and all(p in RESEARCH_REGISTRY_METADATA_FILES for p in effective_paths)
-    ):
-        return _fast_only("research registry metadata-only change", paths)
+        and any(p in RESEARCH_REGISTRY_METADATA_FILES for p in effective_paths)
+        and all(is_docs(p) or p in RESEARCH_REGISTRY_METADATA_FILES for p in effective_paths)
+    )
+    if registry_metadata_only:
+        return _fast_only("research registry lifecycle metadata-only change", paths)
     if (
         not force_full
         and effective_paths
@@ -896,6 +898,16 @@ def emit(result: dict, github_output: Path | None) -> None:
 def self_test() -> None:
     assert "D" in DIFF_FILTER, "deleted paths must participate in CI impact analysis"
     assert analyze(["README.md"])["docs_only"]
+    registry_metadata = analyze([
+        ".github/research/evidence-index.json",
+        "scripts/research_registry.py",
+        "docs/REPOSITORY_LIFECYCLE.md",
+        "docs/REPOSITORY_LIFECYCLE.zh-CN.md",
+    ])
+    assert registry_metadata["docs_only"] and not registry_metadata["full"]
+    assert registry_metadata["reason"] == "research registry lifecycle metadata-only change"
+    assert analyze(["scripts/research_registry.py"])["docs_only"]
+    assert analyze(["scripts/research_registry.py", "scripts/unreviewed_registry_tool.py"])["full"]
     assert is_release_neutral(".github/workflows/verify.yml")
     assert is_release_neutral("ci/Dockerfile")
     assert is_release_neutral("tests/test_pipeline.c")

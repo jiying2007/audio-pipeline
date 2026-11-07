@@ -5,18 +5,26 @@ on:
     paths:
       - 'tests/validation/frontend_evolution/dualmic_stages*'
       - 'tests/validation/frontend_evolution/test_dualmic_stages*'
+      - 'tests/validation/frontend_evolution/dualmic_gain_d2*'
+      - 'tests/validation/frontend_evolution/test_dualmic_gain_d2*'
       - 'tools/codex_assets/dualmic_stages_build.py'
       - 'docs/research/frontend-evolution-v1/DUALMIC_STAGES_D1_PLAN.zh-CN.md'
       - 'docs/research/frontend-evolution-v1/dualmic-stages-d1-source-lock.json'
+      - 'docs/research/frontend-evolution-v1/DUALMIC_GAIN_D2_PLAN.zh-CN.md'
+      - 'docs/research/frontend-evolution-v1/dualmic-gain-d2-input-lock.json'
       - '.github/workflows/frontend-research.yml'
   push:
     branches: [main]
     paths:
       - 'tests/validation/frontend_evolution/dualmic_stages*'
       - 'tests/validation/frontend_evolution/test_dualmic_stages*'
+      - 'tests/validation/frontend_evolution/dualmic_gain_d2*'
+      - 'tests/validation/frontend_evolution/test_dualmic_gain_d2*'
       - 'tools/codex_assets/dualmic_stages_build.py'
       - 'docs/research/frontend-evolution-v1/DUALMIC_STAGES_D1_PLAN.zh-CN.md'
       - 'docs/research/frontend-evolution-v1/dualmic-stages-d1-source-lock.json'
+      - 'docs/research/frontend-evolution-v1/DUALMIC_GAIN_D2_PLAN.zh-CN.md'
+      - 'docs/research/frontend-evolution-v1/dualmic-gain-d2-input-lock.json'
       - '.github/workflows/frontend-research.yml'
   workflow_dispatch:
 
@@ -52,6 +60,9 @@ jobs:
           mkdir /tmp/ap-dualmic-d1
           timeout 300s python3 tests/validation/frontend_evolution/test_dualmic_stages_source.py \
             2>&1 | tee /tmp/ap-dualmic-d1/source-tests.log
+          timeout 300s python3 tests/validation/frontend_evolution/test_dualmic_gain_d2_integrity.py \
+            --output /tmp/ap-dualmic-d1/gain-integrity-tests.json \
+            2>&1 | tee /tmp/ap-dualmic-d1/gain-integrity-tests.log
           git status --porcelain > /tmp/ap-dualmic-d1/checkout-status.txt
           test ! -s /tmp/ap-dualmic-d1/checkout-status.txt
           git rev-parse HEAD > /tmp/ap-dualmic-d1/source-revision.txt
@@ -98,6 +109,21 @@ jobs:
           timeout 300s python3 tests/validation/frontend_evolution/dualmic_stages_d1.py verify \
             --output /tmp/ap-dualmic-d1/result \
             2>&1 | tee /tmp/ap-dualmic-d1/verify.log
+      - name: Replay exact original AGC and decompose ordered gain views
+        shell: bash
+        run: |
+          set -euo pipefail
+          timeout 900s python3 tests/validation/frontend_evolution/dualmic_gain_d2.py run \
+            --parent-result /tmp/ap-dualmic-d1/result \
+            --build-dir /tmp/ap-dualmic-d1/build --output /tmp/ap-dualmic-d1/gain-d2 \
+            2>&1 | tee /tmp/ap-dualmic-d1/gain-run.log
+      - name: Reread complete gain decomposition without DSP
+        shell: bash
+        run: |
+          set -euo pipefail
+          timeout 300s python3 tests/validation/frontend_evolution/dualmic_gain_d2.py verify \
+            --parent-result /tmp/ap-dualmic-d1/result --output /tmp/ap-dualmic-d1/gain-d2 \
+            2>&1 | tee /tmp/ap-dualmic-d1/gain-verify.log
       - name: Preserve original bytes, diagnostics and failures
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -128,6 +154,7 @@ jobs:
             /tmp/ap-dualmic-d1/build/observer-source/src/enhance/ap_res.c
             /tmp/ap-dualmic-d1/build/observer-source/tests/validation/frontend_evolution/dualmic_stages_d1.c
             /tmp/ap-dualmic-d1/result/
+            /tmp/ap-dualmic-d1/gain-d2/
           include-hidden-files: true
           retention-days: 90
           if-no-files-found: error

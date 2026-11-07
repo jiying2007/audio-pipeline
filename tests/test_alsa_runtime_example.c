@@ -423,8 +423,14 @@ static void test_output_file(const char *scenario) {
         assert(file_close_result == EOF && file_close_errno == ENOSPC);
         assert(result != 0);
     } else {
+        /* The write callback rejects the very first output: not one byte
+         * can be accepted. Worker completion is asynchronous, however, and
+         * the EOF-triggered second input frame may be submitted before that
+         * first failed uplink write becomes visible to the control thread.
+         * Keep the failure gate, but do not mistake scheduling for a contract. */
         assert(file_error_before_close && result != 0);
-        assert(io_submitted == 1u);
+        assert(file_written_bytes == 0u);
+        assert(io_submitted == 1u || io_submitted == 2u);
     }
 }
 

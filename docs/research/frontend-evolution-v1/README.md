@@ -1,5 +1,13 @@
 # Frontend Evolution v1 / 双麦与四麦开放研究
 
+## 2026-11-07 双麦真人输入阶段诊断 D1
+
+承接 #920 已完成集成后的负结果，[D1 执行前合同](DUALMIC_STAGES_D1_PLAN.zh-CN.md)
+固定 A56+C4 共 60 例，验证原始输入、配置和事件下中性阶段 taps，定位近端损伤。
+[实施前方法复审](DUALMIC_STAGES_D1_METHOD_REVIEW.zh-CN.md)明确实际原件身份、固定
+时轴和 HPF/BF 联合上游的定位边界。实时原件与结论登记 [#922](https://github.com/jiying2007/audio-pipeline/issues/922)。
+此入口不声称算法已改善，D1 没有默认参数或生产 DSP 变更；后续因果试验须另冻结。
+
 ## 2026-11-06 双麦非真机集成 V2
 
 [实施前合同](DUALMIC_NONDEVICE_V2_PLAN.zh-CN.md)承接用户“除真机外继续落地”的新授权，

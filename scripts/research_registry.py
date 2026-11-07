@@ -86,6 +86,27 @@ def validate_registry(data: dict) -> None:
         if auto_gc and not gc_eligible:
             raise ValueError(f"auto_gc requires gc_eligible: {branch}")
 
+    # Active dependencies must point to a registered, non-terminal lifecycle
+    # record. A merged/deleted ref must not remain an active blocker, and an
+    # orphan dependency must not silently survive registry edits.
+    record_by_branch = {record["branch"]: record for record in records}
+    for index, dependency in enumerate(active_dependencies):
+        branch = dependency["branch"]
+        head_sha = dependency["head_sha"]
+        if branch is not None:
+            record = record_by_branch.get(branch)
+            if record is None:
+                raise ValueError(f"active dependency {index} has no lifecycle record: {branch}")
+        else:
+            matches = [item for item in records if item.get("head_sha") == head_sha]
+            if len(matches) != 1:
+                raise ValueError(f"active dependency {index} must identify exactly one lifecycle record")
+            record = matches[0]
+        if record.get("status") not in {"ACTIVE", "UNCLASSIFIED"}:
+            raise ValueError(f"active dependency {index} references terminal record: {record['branch']}")
+        if head_sha is not None and record.get("head_sha") != head_sha:
+            raise ValueError(f"active dependency {index} head SHA differs from lifecycle record: {record['branch']}")
+
 
 def gh_json(endpoint: str, *extra: str) -> object:
     command = ["gh", "api", endpoint, *extra]
@@ -268,10 +289,10 @@ def self_test() -> None:
     validate_registry(good)
     active = json.loads(json.dumps(good))
     active["active_dependencies"] = [{
-        "branch": "research/example-v1", "head_sha": None, "reason": "program:P002-fixture"
+        "branch": "research/active-v2", "head_sha": None, "reason": "program:P002-fixture"
     }]
     validate_registry(active)
-    assert active_dependency_reasons(active, "research/example-v1", "a" * 40) == ["program:P002-fixture"]
+    assert active_dependency_reasons(active, "research/active-v2", "b" * 40) == ["program:P002-fixture"]
     live_fixture = {
         "main": "f" * 40,
         "research/example-v1": "a" * 40,
@@ -287,6 +308,15 @@ def self_test() -> None:
         lambda d: d["records"][0].update(status="ACTIVE"),
         lambda d: d["records"][0].update(head_sha="bad"),
         lambda d: d["records"][1].update(auto_gc=True),
+        lambda d: d.update(active_dependencies=[{
+            "branch": "research/example-v1", "head_sha": "a" * 40, "reason": "stale-terminal"
+        }]),
+        lambda d: d.update(active_dependencies=[{
+            "branch": "research/missing-v1", "head_sha": None, "reason": "orphan"
+        }]),
+        lambda d: d.update(active_dependencies=[{
+            "branch": "research/active-v2", "head_sha": "c" * 40, "reason": "head-drift"
+        }]),
     ):
         clone = json.loads(json.dumps(good))
         mutation(clone)
@@ -300,6 +330,31 @@ def self_test() -> None:
         path = Path(tmp) / "registry.json"
         path.write_text(json.dumps(good), encoding="utf-8")
         assert load_registry(path)["schema_version"] == 1
+
+    # Regression: FE09 T3-S3 F0 was accepted and protected-merged, after
+    # which GitHub's delete-on-merge removed its branch. Keep the exact PR
+    # head and independent main evidence; do not leave a null-SHA ACTIVE
+    # dependency just because the remote ref is already absent.
+    canonical = load_registry(
+        Path(__file__).resolve().parents[1] / ".github/research/evidence-index.json"
+    )
+    branch = "research/fe09-t3s3-f0-call-resource-20261024"
+    terminal = next((item for item in canonical["records"] if item["branch"] == branch), None)
+    assert terminal is not None
+    assert terminal["status"] == "ACCEPTED"
+    assert terminal["head_sha"] == "5bd8e3dde8809c30b4330ea8b0badf78a40a53ae"
+    assert terminal["gc_eligible"] is True and terminal["auto_gc"] is False
+    required = {
+        "pr:844",
+        "main:92a7546a75cfe0d8aca132c7ee5996dcf0005c74",
+        "run:40111373922",
+        "run:40114080519",
+        "artifact:12566987972",
+        "artifact_sha256:e602c9de118d0b34754b67ff99f4d86f40a5e19c37abd6544619e82a52afaa02",
+        "receipt_sha256:442e7835d2a3e8208e49f3a7d2208a703619349dab0cfb10b7bc3dd95b76c802",
+    }
+    assert required.issubset(set(terminal["evidence"]))
+    assert active_dependency_reasons(canonical, branch, terminal["head_sha"]) == []
     print("research registry self-test: OK")
 
 

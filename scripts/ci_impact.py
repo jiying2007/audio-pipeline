@@ -687,7 +687,12 @@ def analyze(paths: list[str], force_full: bool = False, cmake_version_only_chang
         and all(is_docs(p) or p in RESEARCH_REGISTRY_METADATA_FILES for p in effective_paths)
     )
     if registry_metadata_only:
-        return _fast_only("research registry lifecycle metadata-only change", paths)
+        reason = (
+            "research registry metadata-only change"
+            if all(p in RESEARCH_REGISTRY_METADATA_FILES for p in effective_paths)
+            else "research registry lifecycle metadata-only change"
+        )
+        return _fast_only(reason, paths)
     if (
         not force_full
         and effective_paths
@@ -905,6 +910,8 @@ def self_test() -> None:
     ])
     assert registry_metadata["docs_only"] and not registry_metadata["full"]
     assert registry_metadata["reason"] == "research registry lifecycle metadata-only change"
+    registry_alone = analyze([".github/research/evidence-index.json"])
+    assert registry_alone["reason"] == "research registry metadata-only change"
     assert analyze([".github/research/evidence-index.json", "scripts/research_registry.py"])["full"]
     assert analyze(["scripts/research_registry.py"])["full"]
     assert analyze([".github/research/evidence-index.json", "scripts/unreviewed_registry_tool.py"])["full"]

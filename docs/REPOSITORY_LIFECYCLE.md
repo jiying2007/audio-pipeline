@@ -52,3 +52,6 @@ certification, and previous post-release summaries remain historical.
 ## Evidence retention versus branch retention
 
 Deleting a terminal research branch does not delete its commit objects immediately and does not remove referenced Actions artifacts, pull-request discussions, release assets, immutable tags, or registry lineage. Branch names are therefore not used as the long-term evidence authority.
+
+
+When GitHub's `delete_branch_on_merge` removes a merged ref, the registry must still retain the exact PR head SHA and closeout evidence. Do not set `head_sha` to null or leave a completed leaf `ACTIVE` merely because its remote branch is absent. Closeout evidence must identify the protected merge SHA, fresh-main Verify, and any required independently read-back artifact receipt. Remove the matching `active_dependencies` entry only after the leaf is actually closed and those identities are recorded. If GitHub already deleted the ref, keep `auto_gc=false`; `gc_eligible=true` records terminal eligibility without scheduling another deletion.

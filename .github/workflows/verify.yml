@@ -106,11 +106,13 @@ jobs:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           fetch-depth: 0
-      - name: Fast documentation gate
+      - name: Fast documentation and registry lifecycle gate
         run: |
           sh .github/scripts/verify-docs-gate.sh
           python3 scripts/public_surface_contract.py --self-test
           python3 scripts/public_surface_contract.py
+          python3 scripts/research_registry.py --self-test
+          python3 -m json.tool .github/research/evidence-index.json >/dev/null
 
   fast-code:
     needs: impact

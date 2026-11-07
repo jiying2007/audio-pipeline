@@ -680,12 +680,19 @@ def analyze(paths: list[str], force_full: bool = False, cmake_version_only_chang
         path for path in paths
         if not (cmake_version_only_change and path == 'CMakeLists.txt')
     ]
-    if (
+    registry_metadata_only = (
         not force_full
         and effective_paths
-        and all(p in RESEARCH_REGISTRY_METADATA_FILES for p in effective_paths)
-    ):
-        return _fast_only("research registry metadata-only change", paths)
+        and any(p in RESEARCH_REGISTRY_METADATA_FILES for p in effective_paths)
+        and all(is_docs(p) or p in RESEARCH_REGISTRY_METADATA_FILES for p in effective_paths)
+    )
+    if registry_metadata_only:
+        reason = (
+            "research registry metadata-only change"
+            if all(p in RESEARCH_REGISTRY_METADATA_FILES for p in effective_paths)
+            else "research registry lifecycle metadata-only change"
+        )
+        return _fast_only(reason, paths)
     if (
         not force_full
         and effective_paths
@@ -896,6 +903,18 @@ def emit(result: dict, github_output: Path | None) -> None:
 def self_test() -> None:
     assert "D" in DIFF_FILTER, "deleted paths must participate in CI impact analysis"
     assert analyze(["README.md"])["docs_only"]
+    registry_metadata = analyze([
+        ".github/research/evidence-index.json",
+        "docs/REPOSITORY_LIFECYCLE.md",
+        "docs/REPOSITORY_LIFECYCLE.zh-CN.md",
+    ])
+    assert registry_metadata["docs_only"] and not registry_metadata["full"]
+    assert registry_metadata["reason"] == "research registry lifecycle metadata-only change"
+    registry_alone = analyze([".github/research/evidence-index.json"])
+    assert registry_alone["reason"] == "research registry metadata-only change"
+    assert analyze([".github/research/evidence-index.json", "scripts/research_registry.py"])["full"]
+    assert analyze(["scripts/research_registry.py"])["full"]
+    assert analyze([".github/research/evidence-index.json", "scripts/unreviewed_registry_tool.py"])["full"]
     assert is_release_neutral(".github/workflows/verify.yml")
     assert is_release_neutral("ci/Dockerfile")
     assert is_release_neutral("tests/test_pipeline.c")

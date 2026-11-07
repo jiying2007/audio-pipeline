@@ -48,3 +48,6 @@ Extended Real 的合法数据/许可和实时 target HIL 是不同证据域。HI
 ## 证据保留与分支保留
 
 删除终态 research branch 不等于删除证据。被引用的 commit、Actions artifact、PR 讨论、历史 Release 资产、不可变 tag 和 registry lineage 仍然独立存在，因此长期证据权威不再依赖远端分支名。
+
+
+当 GitHub 的 `delete_branch_on_merge` 在合并后自动删除远端分支时，registry 仍必须保留精确 PR head SHA 和闭环证据。不能仅因为远端 ref 不存在就把 `head_sha` 置空，或让已经完成的子任务继续保持 `ACTIVE`。闭环证据必须记录受保护合并 SHA、合并后 fresh-main Verify，以及适用时独立回读的原始 Artifact 回执。只有子任务确实关闭且这些身份均已登记后，才能移除对应的 `active_dependencies`。若分支已由 GitHub 自动删除，应保持 `auto_gc=false`；`gc_eligible=true` 仅表示终态资格，不会再次安排删除。

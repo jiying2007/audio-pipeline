@@ -86,9 +86,9 @@ def validate_registry(data: dict) -> None:
         if auto_gc and not gc_eligible:
             raise ValueError(f"auto_gc requires gc_eligible: {branch}")
 
-    # Active dependencies must point to a registered, non-terminal lifecycle
-    # record. A merged/deleted ref must not remain an active blocker, and an
-    # orphan dependency must not silently survive registry edits.
+    # Active dependencies must identify a registered lifecycle record.
+    # A terminal branch can still be needed by an active downstream task:
+    # retaining that dependency is essential to preventing unsafe GC.
     record_by_branch = {record["branch"]: record for record in records}
     for index, dependency in enumerate(active_dependencies):
         branch = dependency["branch"]
@@ -102,8 +102,6 @@ def validate_registry(data: dict) -> None:
             if len(matches) != 1:
                 raise ValueError(f"active dependency {index} must identify exactly one lifecycle record")
             record = matches[0]
-        if record.get("status") not in {"ACTIVE", "UNCLASSIFIED"}:
-            raise ValueError(f"active dependency {index} references terminal record: {record['branch']}")
         if head_sha is not None and record.get("head_sha") != head_sha:
             raise ValueError(f"active dependency {index} head SHA differs from lifecycle record: {record['branch']}")
 
@@ -288,11 +286,18 @@ def self_test() -> None:
     }
     validate_registry(good)
     active = json.loads(json.dumps(good))
+    # A still-live downstream dependency blocks deletion even when the
+    # referenced branch has already qualified for terminal GC.
     active["active_dependencies"] = [{
-        "branch": "research/active-v2", "head_sha": None, "reason": "program:P002-fixture"
+        "branch": "research/example-v1", "head_sha": None, "reason": "program:P002-fixture"
     }]
     validate_registry(active)
-    assert active_dependency_reasons(active, "research/active-v2", "b" * 40) == ["program:P002-fixture"]
+    assert active_dependency_reasons(active, "research/example-v1", "a" * 40) == ["program:P002-fixture"]
+    active_nonterminal = json.loads(json.dumps(good))
+    active_nonterminal["active_dependencies"] = [{
+        "branch": "research/active-v2", "head_sha": None, "reason": "program:active-fixture"
+    }]
+    validate_registry(active_nonterminal)
     live_fixture = {
         "main": "f" * 40,
         "research/example-v1": "a" * 40,
@@ -303,13 +308,25 @@ def self_test() -> None:
     assert unregistered_lifecycle_refs(good, live_fixture) == [
         ("research/unregistered-v3", "c" * 40)
     ]
+    # Never delete a terminal ref if its active dependency still exists.
+    from unittest.mock import patch
+    with patch(__name__ + ".live_branch_heads", return_value=live_fixture), \
+         patch(__name__ + ".open_prs", return_value=[]), \
+         patch(__name__ + ".delete_branch", side_effect=AssertionError("dependency bypassed")):
+        blocked_plan = plan(active, "fixture/repo", auto_only=True, apply=True)
+    assert blocked_plan["blocked"] == 1 and blocked_plan["deletions"] == 0
+    assert any(
+        item["branch"] == "research/example-v1"
+        and item["action"] == "BLOCK_ACTIVE_DEPENDENCY"
+        for item in blocked_plan["actions"]
+    )
     for mutation in (
         lambda d: d["records"].append(dict(d["records"][0])),
         lambda d: d["records"][0].update(status="ACTIVE"),
         lambda d: d["records"][0].update(head_sha="bad"),
         lambda d: d["records"][1].update(auto_gc=True),
         lambda d: d.update(active_dependencies=[{
-            "branch": "research/example-v1", "head_sha": "a" * 40, "reason": "stale-terminal"
+            "branch": None, "head_sha": "c" * 40, "reason": "orphan-head"
         }]),
         lambda d: d.update(active_dependencies=[{
             "branch": "research/missing-v1", "head_sha": None, "reason": "orphan"

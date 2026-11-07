@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "experiment": "FE-DUALMIC-STAGES-D1",
+  "repository": "jiying2007/audio-pipeline",
+  "base_sha": "4daa7e239eebda11f6c7066df2e851269021112f",
+  "base_tree": "605d5660d73ffb47c9d7bc5f4c2fd82e56cdeb36",
+  "run_id": 42243575152,
+  "run_attempt": 1,
+  "source_budget_seconds": 300,
+  "max_uncompressed_bytes": 300000000,
+  "max_members": 2000,
+  "data_role": "disclosed-regression",
+  "artifacts": [
+    {
+      "key": "A",
+      "artifact_id": 13519768471,
+      "name": "dualmic-recorded-speech-42243575152-attempt-1",
+      "zip_bytes": 45182392,
+      "sha256": "17c52894802a32b9a25bb343a8e9e509459935a73985a7d997ac923665a697d8",
+      "members": 795
+    },
+    {
+      "key": "C",
+      "artifact_id": 13517113710,
+      "name": "dualmic-mandarin-42243575152-attempt-1",
+      "zip_bytes": 1368132,
+      "sha256": "22f00bcd52b8bd938c655924e2a4e4b0acf1fa061b5bbcf345bc8f5b52b903d1",
+      "members": 78
+    }
+  ],
+  "matrix": {"A_cases": 56, "C_processed_views": 4, "frames": 35916, "samples": 5746560, "aec_frames": 30058, "capture_only_frames": 5858, "standalone_res_calls": 0}
+}

@@ -603,10 +603,11 @@ class T3S1RestListVisibilityTests(A1RestListVisibilityTests):
         stage = quality.split("  frontend-s3-t3s1:\n", 1)[1].split(
             "\n  frontend-s3-t3s2a:", 1)[0]
         markers = ["id: fe09_t3s1\n", "id: fe09_t3s1_upload\n",
+                   'name: frontend-fe09-t3s1-compact-handoff-${{ github.run_id }}-attempt-${{ github.run_attempt }}',
                    "Witness exact T3-S1 upload in the pinned downloader REST list",
                    'ARTIFACT_ID: ${{ steps.fe09_t3s1_upload.outputs.artifact-id }}',
                    'RUN_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}',
-                   '--artifact-name "frontend-fe09-t3s1-compact-handoff-$GITHUB_RUN_ID"',
+                   '--artifact-name "frontend-fe09-t3s1-compact-handoff-$GITHUB_RUN_ID-attempt-$GITHUB_RUN_ATTEMPT"',
                    '--run-attempt "$GITHUB_RUN_ATTEMPT" --run-head-sha "$RUN_HEAD_SHA"',
                    '--execution-source "$GITHUB_SHA"',
                    "uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131",
@@ -624,6 +625,9 @@ class T3S1RestListVisibilityTests(A1RestListVisibilityTests):
                          "{'SHA256SUMS', *names}", "r['device_memory_admitted'] is False"):
             self.assertIn(required, stage)
         self.assertEqual(stage.count("if: steps.fe09_t3s1.outcome == 'success'"), 3)
+        self.assertNotIn('name: frontend-fe09-t3s1-compact-handoff-${{ github.run_id }}\n', stage)
+        self.assertNotIn('--artifact-name "frontend-fe09-t3s1-compact-handoff-$GITHUB_RUN_ID"', stage)
+        self.assertNotIn("overwrite:", stage)
         self.assertNotIn("continue-on-error:", stage)
 
     def test_only_exact_new_stage_name_is_admitted(self):
@@ -665,6 +669,115 @@ class T3S1RestListVisibilityTests(A1RestListVisibilityTests):
                 self.assertEqual(lines[1], f"{marker} 2 {self.HEAD} {self.SOURCE}")
             self.assertNotIn("fake-test-only-token", output.getvalue())
             self.assertNotIn("https://", output.getvalue())
+
+
+class T3S1AttemptScopedVisibilityTests(T3S1RestListVisibilityTests):
+    """Keep every legacy refusal while isolating each new T3-S1 upload attempt."""
+    NAME = "frontend-fe09-t3s1-compact-handoff-12345-attempt-2"
+
+    def previous_artifacts(self):
+        rows = []
+        for i, name in enumerate((T3S1RestListVisibilityTests.NAME,
+                                  T3S1RestListVisibilityTests.NAME + "-attempt-1")):
+            old = self.artifact()
+            old.update(id=ARTIFACT + i + 1, name=name,
+                       created_at="2026-10-22T05:59:59Z")
+            rows.append(old)
+        return rows
+
+    def test_exact_positive_attempts_are_bound_to_the_run_endpoint(self):
+        for attempt in (1, 2, 2 ** 63 - 1):
+            name = T3S1RestListVisibilityTests.NAME + f"-attempt-{attempt}"
+            record, artifact = self.run_record(), self.artifact()
+            record["run_attempt"] = attempt
+            artifact["name"] = name
+            endpoint = f"https://api.github.com/repos/{REPO}/actions/runs/{RUN}/attempts/{attempt}"
+            opener = Mock(side_effect=[self.response(record, url=endpoint),
+                                       self.listing([artifact])])
+            with self.subTest(attempt=attempt):
+                self.assertEqual(policy.check_visibility(REPO, RUN, ARTIFACT, name,
+                    "fake-test-only-token", run_attempt=attempt, run_head_sha=self.HEAD,
+                    execution_source=self.SOURCE, opener=opener, pause=Mock()), (2, DIGEST))
+            self.assertEqual(opener.call_count, 2)
+            self.assertEqual(opener.call_args_list[0].args[0].full_url, endpoint)
+
+    def test_previous_attempt_names_coexist_without_replacing_evidence(self):
+        old = self.previous_artifacts()
+        for rows in (old + [self.artifact()], [self.artifact()] + old):
+            with self.subTest(rows=rows):
+                self.assertEqual(self.check([self.response(self.run_record()),
+                                            self.listing(rows)]), (2, DIGEST))
+                self.assertEqual(len(self.opened), 2)
+                self.assertEqual(self.paused, [])
+
+    def test_previous_attempt_name_can_coexist_on_another_page(self):
+        first = self.previous_artifacts() + [
+            {"id": i + 1, "name": f"other-{i}"} for i in range(98)]
+        self.assertEqual(self.check([self.response(self.run_record()),
+            self.listing(first, total=101),
+            self.listing([self.artifact()], total=101, page=2)]), (3, DIGEST))
+        self.assertEqual(self.opened[-1], (self.LIST_URL + "2", 10))
+        self.assertEqual(self.paused, [])
+
+    def test_same_attempt_duplicate_name_still_rejected_even_if_old(self):
+        for created_at in ("2026-10-22T05:59:59Z", "2026-10-22T06:01:00Z"):
+            other = self.artifact()
+            other.update(id=ARTIFACT + 3, created_at=created_at)
+            with self.subTest(created_at=created_at), self.assertRaisesRegex(
+                    policy.NotAdmitted, "A1_ARTIFACT_NAME_OR_ID_NOT_UNIQUE"):
+                self.check([self.response(self.run_record()),
+                            self.listing([self.artifact(), other])])
+            self.assertEqual(len(self.opened), 2)
+            self.assertEqual(self.paused, [])
+
+    def test_previous_id_cannot_be_substituted_for_current_upload(self):
+        # The current expected name with another ID must fail, not be selected.
+        current = self.artifact()
+        current["id"] += 3
+        with self.assertRaisesRegex(policy.NotAdmitted, "WRONG_RUN_NAME_ID"):
+            self.check([self.response(self.run_record()), self.listing([current])])
+        self.assertEqual(len(self.opened), 2)
+        self.assertEqual(self.paused, [])
+
+    def test_expected_id_cannot_carry_a_legacy_or_other_attempt_name(self):
+        for name in (T3S1RestListVisibilityTests.NAME,
+                     T3S1RestListVisibilityTests.NAME + "-attempt-1",
+                     T3S1RestListVisibilityTests.NAME + "-attempt-3",
+                     A1RestListVisibilityTests.NAME + "-attempt-2"):
+            wrong = self.artifact()
+            wrong["name"] = name
+            with self.subTest(name=name), self.assertRaisesRegex(
+                    policy.NotAdmitted, "WRONG_RUN_NAME_ID"):
+                self.check([self.response(self.run_record()), self.listing([wrong])])
+            self.assertEqual(len(self.opened), 2)
+            self.assertEqual(self.paused, [])
+
+    def test_attempt_suffix_is_exact_and_exclusive_to_t3s1(self):
+        names = (
+            T3S1RestListVisibilityTests.NAME + "-attempt-1",
+            T3S1RestListVisibilityTests.NAME + "-attempt-3",
+            T3S1RestListVisibilityTests.NAME + "-attempt-02",
+            T3S1RestListVisibilityTests.NAME + "-attempt-2-extra",
+            T3S1RestListVisibilityTests.NAME + "-2",
+            "frontend-fe09-t3s1-compact-handoff-12346-attempt-2",
+            "frontend-fe09-t3s1-compact-handoff-extra-12345-attempt-2",
+            "frontend-fe09-t3s1-compact-handoff-012345-attempt-2",
+            NAME + "-attempt-2", B1S1_NAME + "-attempt-2",
+            A1RestListVisibilityTests.NAME + "-attempt-2",
+        )
+        for name in names:
+            opener = Mock(side_effect=AssertionError("no API for invalid name"))
+            with self.subTest(name=name), self.assertRaisesRegex(
+                    policy.NotAdmitted, "UNTRUSTED_ARGS"):
+                policy.check_visibility(REPO, RUN, ARTIFACT, name, "fake-test-only-token",
+                    run_attempt=2, run_head_sha=self.HEAD, execution_source=self.SOURCE,
+                    opener=opener, pause=Mock())
+            opener.assert_not_called()
+        for attempt in (None, True, "2", 0, -1, 1, 3, 2 ** 63):
+            with self.subTest(attempt=attempt), self.assertRaisesRegex(
+                    policy.NotAdmitted, "UNTRUSTED_ARGS"):
+                self.check([], run_attempt=attempt)
+            self.assertEqual(self.opened, [])
 
 
 if __name__ == "__main__":

@@ -44,3 +44,34 @@ attempt, head, repository IDs, actual quality execution source, original upload
 ID/name/digest and creation-time checks remain mandatory, with unchanged request
 budgets, pinned download and scientific readback. Fixed field suffixes reveal no
 response values. The original failed run/artifact remain evidence, not a pass.
+
+## 2026-11-10 T3-S1 attempt-scoped names / 保留重跑证据
+
+At PR #928 head `44b2e22597a45171fdf83d657856958ff1af4720`,
+[Verify 42847765892 attempt 1 / job 129942358773](https://github.com/jiying2007/audio-pipeline/actions/runs/42847765892/job/129942358773)
+completed T3-S1 scientific checks and uploaded Artifact `13778683373`, but the
+pinned downloader reported that its exact ID was unavailable. The one bounded
+failed-job rerun, [attempt 2 / job 129964573573](https://github.com/jiying2007/audio-pipeline/actions/runs/42847765892/job/129964573573),
+again completed those checks and uploaded Artifact `13782800825`. Its visibility
+witness correctly rejected `A1_ARTIFACT_NAME_OR_ID_NOT_UNIQUE`: both uploads had
+the same run-only name. Neither failure is relabeled as successful readback.
+
+The narrow transport fix names new T3-S1 uploads
+`frontend-fe09-t3s1-compact-handoff-<run-id>-attempt-<run-attempt>` and binds the
+witness to that exact name before making any API request. The suffix must equal
+the explicit positive integer run attempt; only T3-S1 accepts this new form.
+Historical run-only T3-S1 names retain the original strict witness for
+compatibility, including rejection of duplicate names. The current workflow
+always supplies the new form for both upload and witness.
+
+旧 attempt 原件保留，不删除、不覆盖、不放宽重复检查。列表仍完整分页读取，并按当前
+上传步骤返回的 ID 或精确名称匹配；同名不同 ID、同 ID 错名仍失败。先前 attempt 的
+不同名称可共存，但不能被选为本次上传原件。准确 run/attempt、仓库、head、实际 quality
+源码、创建时间、digest、大小和未过期条件以及原八请求/两秒/响应上限均不变。
+
+Offline tests replay all existing refusal controls with both naming forms and
+cover old-attempt coexistence, cross-page enumeration, current-name collisions,
+wrong ID/name/attempt/run and non-T3-S1 suffix rejection. Pinned upload/download,
+four-member scientific readback and R1–R9 source pins remain unchanged. New
+exact-head CI and independent readback are still required; these metadata tests
+do not establish scientific, acoustic or device qualification.

@@ -80,7 +80,7 @@ python3 tests/validation/frontend_evolution/test_fe09_b3_f0_deadline_r1.py
 python3 tests/validation/frontend_evolution/fe09_b3_f0_r2_source_admission.py --self-test
 # R6 preserves old source gates and their rejection of newer versions. Its
 # source-only registration never turns historical results into current results.
-python3 tests/validation/frontend_evolution/fe09_b3_f0_r7_source_admission.py --check-current
+python3 tests/validation/frontend_evolution/fe09_b3_f0_r8_source_admission.py --check-current
 # R2 T2 executor source audit only: both derivations retain byte-exact R1
 # scientific functions and immutable resource/error budgets; NO DSP is run.
 # Source-only T3 verifier: runs original immutable T2 on frozen R2 and
@@ -119,9 +119,21 @@ python3 tests/validation/frontend_evolution/fe09_b3_f0_r7_source_admission.py --
 python3 tests/validation/frontend_evolution/fe09_dualmic_r7_derivation_contract.py --self-test
 python3 tests/validation/frontend_evolution/fe09_b3_f0_deadline_r7_qualification.py --self-test
 python3 tests/validation/frontend_evolution/fe09_t3s3_f0_call_resource_r7_qualification.py --self-test
-python3 tests/validation/frontend_evolution/test_fe09_dualmic_r7_routes.py
+# R8 preserves prior exact gates; only the live routing test gains the new version.
+python3 tests/validation/frontend_evolution/fe09_b3_f0_r8_source_admission.py --self-test
+python3 tests/validation/frontend_evolution/fe09_dualmic_r8_derivation_contract.py --self-test
+python3 tests/validation/frontend_evolution/fe09_b3_f0_deadline_r8_qualification.py --self-test
+python3 tests/validation/frontend_evolution/fe09_t3s3_f0_call_resource_r8_qualification.py --self-test
+python3 tests/validation/frontend_evolution/test_fe09_dualmic_r8_routes.py
 source_version=$(sed -n 's/^project(audio_pipeline VERSION \([^ ]*\) LANGUAGES C)$/\1/p' CMakeLists.txt)
 case "$source_version" in
+  2.3.64)
+    f1_source=tests/validation/frontend_evolution/fe09_f1_r5_source_bridge.py
+    f1_build=tests/validation/frontend_evolution/fe09_f1_r5_build.py
+    a3_static=tests/validation/frontend_evolution/fe09_a3_r5_static_build.py
+    f1_output=f1-r5-t1
+    a3_output=a3-r5-t1
+    ;;
   2.3.63)
     f1_source=tests/validation/frontend_evolution/fe09_f1_r4_source_bridge.py
     f1_build=tests/validation/frontend_evolution/fe09_f1_r4_build.py

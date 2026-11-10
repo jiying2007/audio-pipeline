@@ -206,6 +206,18 @@ class BridgeTests(unittest.TestCase):
         transport.validate_build(identity, identity["source_revision"])
         with self.assertRaisesRegex(transport.ContractError, "source identity"):
             transport.validate_build(identity, "0" * 40)
+        for version in ("2.3.62", "2.3.65", "3.0.0", "2.3.64-rc", None,
+                        "2.3.63" if identity["version"] == "2.3.64" else "2.3.64"):
+            bad = copy.deepcopy(identity)
+            bad["version"] = version
+            with self.subTest(version=version), self.assertRaises(transport.ContractError):
+                transport.validate_build(bad, bad["source_revision"])
+        for key, value in (("module_mask", 1022), ("fast_math", 1),
+                           ("has_linux_runtime", 0)):
+            bad = copy.deepcopy(identity)
+            bad[key] = value
+            with self.subTest(envelope=key), self.assertRaises(transport.ContractError):
+                transport.validate_build(bad, bad["source_revision"])
         for key in ("effective_readback", "tuning"):
             bad = copy.deepcopy(identity)
             bad.pop(key)

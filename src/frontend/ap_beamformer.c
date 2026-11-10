@@ -343,6 +343,8 @@ void ap_beamformer_process(ap_beamformer_state_t *s,
                            float *out,
                            uint32_t n) {
     uint32_t i;
+    float next_history[AP_FRONTEND_MAX_MIC_CHANNELS][AP_BF_HISTORY];
+    int reverse;
     if (track_direction && s->fixed_health_counter != 3u) {
         /* A mode change invalidates incomplete evidence, not a confirmed route.
          * Steady tracking leaves this branch and all original fields untouched. */
@@ -384,7 +386,20 @@ void ap_beamformer_process(ap_beamformer_state_t *s,
             ap_beamformer_update_fixed_health(s, a, b, n);
     }
 
-    for (i = 0u; i < n; ++i) {
+    /* Exact input/output aliasing is supported. Preserve the raw input tails
+     * before output replaces either input, but retain the previous histories
+     * until every delayed read in this frame is complete. */
+    for (i = 0u; i < AP_BF_HISTORY; ++i) {
+        const uint32_t src = n > AP_BF_HISTORY ? n - AP_BF_HISTORY + i : i;
+        next_history[0][i] = src < n ? a[src] : 0.0f;
+        next_history[1][i] = src < n ? b[src] : 0.0f;
+    }
+    {
+        const int lag = s->fallback_active ? s->fallback_lag : s->lag;
+        reverse = (out == a && lag < 0) || (out == b && lag > 0);
+    }
+    for (uint32_t sample = 0u; sample < n; ++sample) {
+        i = reverse ? n - 1u - sample : sample;
         const int output_lag = s->fallback_active ? s->fallback_lag : s->lag;
         float x;
         float y;
@@ -409,9 +424,5 @@ void ap_beamformer_process(ap_beamformer_state_t *s,
             out[i] = 0.5f * (x + y);
         }
     }
-    for (i = 0u; i < AP_BF_HISTORY; ++i) {
-        const uint32_t src = n > AP_BF_HISTORY ? n - AP_BF_HISTORY + i : i;
-        s->history[0][i] = src < n ? a[src] : 0.0f;
-        s->history[1][i] = src < n ? b[src] : 0.0f;
-    }
+    memcpy(s->history, next_history, sizeof(next_history));
 }

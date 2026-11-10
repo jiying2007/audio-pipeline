@@ -22,6 +22,7 @@ sys.path.insert(0, str(ROOT / "tests/validation"))
 import build_validation_corpus as generator
 import downstream_metrics as metrics
 import dualmic_profile_support as profile_support
+import dualmic_source_identity as source_identity
 import mandarin_downstream_source as source
 import run_dualmic_profile_replay as profile_replay
 
@@ -51,7 +52,7 @@ BOUND_SOURCES = (
     "docs/research/frontend-evolution-v1/MANDARIN_DOWNSTREAM_V1_CONTRACT.zh-CN.md",
     "docs/research/frontend-evolution-v1/MANDARIN_DOWNSTREAM_V1_DUPLEX_ADDENDUM.zh-CN.md",
     "docs/research/frontend-evolution-v1/mandarin-downstream-v1-source-lock.json",
-)
+) + source_identity.BOUND_SOURCES
 
 
 def load_json(path):
@@ -169,7 +170,7 @@ def prepare(source_root, processor, output, revision):
         lock = source.verify(source_root)
         bound = identity(revision)
         build = profile_replay.build_identity(processor, revision)
-        source.require(build["values"].get("version") == "2.3.63", "unexpected DSP source version")
+        source_identity.verify_build(build["values"].get("version"), revision)
         data = derive_inputs(source_root)
         for key in INPUT_KEYS:
             (output / (key + ".pcm")).write_bytes(pcm_bytes(data[key]))
@@ -240,6 +241,9 @@ def verify_prepared(source_root, prepared):
         for ref in (revision, "HEAD"):
             committed = subprocess.check_output(["git", "show", ref + ":" + name], cwd=ROOT, timeout=30)
             source.require(hashlib.sha256(committed).hexdigest() == expected, "uncommitted/substituted source identity: " + name)
+    build = meta["build_identity"]["values"]
+    source.require(build.get("source_revision") == revision, "prepared build source revision mismatch")
+    source_identity.verify_build(build.get("version"), revision)
     inventory = source.file_inventory(prepared)
     source.require(set(inventory) == expected_preparation_files() | {"preparation.json"}, "preparation file membership changed")
     inventory.pop("preparation.json")

@@ -24,6 +24,8 @@ import time
 
 ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT / "validation/tools"))
+sys.path.insert(0, str(ROOT / "tests/validation"))
+import dualmic_source_identity as source_identity
 from build_validation_corpus import (echo_from_render, interleave, mix,
                                     render_signal, speech_like)
 
@@ -46,7 +48,7 @@ BOUND_SOURCES = (
     "docs/research/frontend-evolution-v1/DUALMIC_NONDEVICE_V2_PLAN.zh-CN.md",
     "docs/research/frontend-evolution-v1/DUALMIC_INTERCOM_TRANSPORT_V1_PLAN.zh-CN.md",
     "docs/research/frontend-evolution-v1/DUALMIC_INTERCOM_TRANSPORT_V1_IDENTITY_CORRECTION.zh-CN.md",
-)
+) + source_identity.BOUND_SOURCES
 
 
 class ContractError(ValueError):
@@ -394,7 +396,11 @@ def require_reference(playback: bytes, consumed_render: bytes) -> None:
 
 def validate_build(identity: dict, revision: str) -> None:
     require(identity.get("source_revision") == revision, "linked build source identity mismatch")
-    require(identity.get("version") == "2.3.63" and identity.get("module_mask") == 1023
+    try:
+        source_identity.verify_build(identity.get("version"), revision)
+    except source_identity.Rejected as exc:
+        raise ContractError(str(exc)) from exc
+    require(identity.get("module_mask") == 1023
             and identity.get("fast_math") == 0 and identity.get("has_linux_runtime") == 1,
             "unexpected source version/module/runtime envelope")
     require(identity.get("effective_readback") is True

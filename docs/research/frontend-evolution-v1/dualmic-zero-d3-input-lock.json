@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "experiment": "FE-DUALMIC-ZERO-D3-INPUT",
+  "base_sha": "8310359974a84407630e0e5c502e24f3f1c76b56",
+  "repository": "jiying2007/audio-pipeline",
+  "run_id": 42321833898,
+  "run_attempt": 1,
+  "source_revision": "cc853616685b9faf7880e6d8f8f1a89d187d342a",
+  "artifact": {
+    "artifact_id": 13553232106,
+    "name": "frontend-research-dualmic-stages-d1-42321833898-attempt-1",
+    "zip_bytes": 474165229,
+    "sha256": "a3ab7823fdcd7586c3b72eb214b5536dcfb7531fdf0b1611d49e1575a29b2c3d",
+    "members": 3551
+  },
+  "max_members": 3551,
+  "max_uncompressed_bytes": 861385743,
+  "budget_seconds": 300,
+  "total_budget_seconds": 1200,
+  "report_sha256": "f259693095d73e8cca74e15cc60f0c4e1e157cfecab32706bee35926f2fca9ea",
+  "manifest_sha256": "e43fa150e38d65ecb43020f19a403547fce9634736735b0367512040b9c58a63",
+  "helper_git_blobs": {
+    "tests/validation/frontend_evolution/dualmic_gain_d2.py": "7a002e6b56e5ac819e0125f3c15f1b4a5e72c460",
+    "tests/validation/frontend_evolution/dualmic_stages_source.py": "79407dd5db81ba4eba7f8602f048024fb45d58bc"
+  }
+}

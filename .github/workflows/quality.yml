@@ -2517,6 +2517,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          python3 tests/validation/frontend_evolution/test_fe09_a1_archive_readiness.py
           python3 tests/validation/frontend_evolution/fe09_b2s3_t3s2b1ba1_anchor_root_qualification.py --self-test
           python3 tests/validation/frontend_evolution/fe09_b2s3_t3s2b1ba1_anchor_root_qualification.py \
             --collect --output fe09-t3s2b1ba1 --execution-source "$GITHUB_SHA"
@@ -2544,7 +2545,7 @@ jobs:
             --artifact-id "$ARTIFACT_ID" --run-id "$GITHUB_RUN_ID" \
             --artifact-name "frontend-fe09-t3s2b1ba1-anchor-$GITHUB_RUN_ID" \
             --run-attempt "$GITHUB_RUN_ATTEMPT" --run-head-sha "$RUN_HEAD_SHA" \
-            --execution-source "$GITHUB_SHA"
+            --execution-source "$GITHUB_SHA" --a1-archive-ready
       - name: Download exact same-run original A1 Artifact
         if: steps.fe09_t3s2b1ba1.outcome == 'success'
         uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0

@@ -14,6 +14,7 @@ import json
 import os
 import re
 import time
+import urllib.parse
 import urllib.error
 import urllib.request
 
@@ -295,6 +296,66 @@ def check_visibility(repo: str, run_id: int, artifact_id: int,
     raise NotAdmitted("ARTIFACT_VISIBILITY_UNREACHABLE")
 
 
+
+def check_a1_archive_ready(repo, run_id, artifact_id, artifact_name, token, *,
+                           opener=None, pause=None):
+    """Probe only the exact A1 REST ZIP endpoint; never follow its signed URL.
+
+    Listing visibility is not archive readiness. A 302 is only a transport
+    witness, not digest/readback success or proof of the cause of an earlier
+    404. The pinned downloader and scientific readback remain mandatory.
+    This separate ceiling is eight 10-second requests and seven 2-second
+    pauses, inside the unchanged A1 job deadline. No response body is read.
+    """
+    checked_args(repo, run_id, artifact_id, artifact_name, token)
+    need(artifact_name == A1_PREFIX + str(run_id), "A1_ARCHIVE_STAGE_REQUIRED")
+    if opener is None:
+        opener = urllib.request.build_opener(NoRedirect()).open
+    if pause is None:
+        pause = time.sleep
+    endpoint = f"{API_URL}/repos/{repo}/actions/artifacts/{artifact_id}/zip"
+    for attempt in range(1, MAX_ATTEMPTS + 1):
+        request = urllib.request.Request(endpoint, headers={
+            "Accept": "application/vnd.github+json",
+            "Authorization": "Bearer " + token,
+            "X-GitHub-Api-Version": "2022-11-28",
+            "User-Agent": "audio-pipeline-a1-archive-readiness",
+        })
+        response = None
+        try:
+            try:
+                response = opener(request, timeout=10)
+            except urllib.error.HTTPError as error:
+                # urllib represents a deliberately unfollowed 302 as HTTPError.
+                response = error
+            status = response.code if isinstance(response, urllib.error.HTTPError) else response.status
+            need(response.url == endpoint, "A1_ARCHIVE_REDIRECT_FOLLOWED")
+            if status == 302:
+                # Inspect but never persist, print, or request the signed URL.
+                location = response.headers.get("Location", "")
+                try:
+                    target = urllib.parse.urlsplit(location)
+                    valid = (0 < len(location) <= 16384 and
+                             not any(ord(c) <= 32 or ord(c) == 127 for c in location) and
+                             target.scheme == "https" and bool(target.hostname) and
+                             target.username is None and target.password is None and
+                             target.port in (None, 443) and not target.fragment)
+                except (ValueError, TypeError):
+                    valid = False
+                need(valid, "A1_ARCHIVE_INVALID_REDIRECT")
+                return attempt
+            need(status in (404, 502, 503),
+                 "A1_ARCHIVE_HTTP_HARD_FAILURE_" + str(status))
+        except (urllib.error.URLError, TimeoutError):
+            raise NotAdmitted("A1_ARCHIVE_NETWORK_OR_TLS_FAILURE") from None
+        finally:
+            if response is not None:
+                response.close()
+        if attempt < MAX_ATTEMPTS:
+            pause(SLEEP_SECONDS)
+    raise NotAdmitted("A1_ARCHIVE_NOT_READY_WITHIN_BOUNDED_RETRY")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--artifact-id", required=True, type=int)
@@ -303,14 +364,23 @@ def main() -> None:
     parser.add_argument("--run-attempt", type=int)
     parser.add_argument("--run-head-sha")
     parser.add_argument("--execution-source")
+    parser.add_argument("--a1-archive-ready", action="store_true")
     args = parser.parse_args()
     try:
         repo = os.environ.get("GITHUB_REPOSITORY", "")
         token = os.environ.get("GH_TOKEN", "")
+        if args.a1_archive_ready:
+            need(args.artifact_name == A1_PREFIX + str(args.run_id),
+                 "A1_ARCHIVE_STAGE_REQUIRED")
         attempt, digest = check_visibility(
             repo, args.run_id, args.artifact_id,
             args.artifact_name, token, run_attempt=args.run_attempt,
             run_head_sha=args.run_head_sha, execution_source=args.execution_source)
+        if args.a1_archive_ready:
+            archive_attempt = check_a1_archive_ready(
+                repo, args.run_id, args.artifact_id, args.artifact_name, token)
+            print("FE09_A1_ARCHIVE_REDIRECT_READY_BEFORE_PINNED_DOWNLOAD",
+                  args.run_id, args.artifact_id, "requests=" + str(archive_attempt))
     except (NotAdmitted, ValueError, OSError, json.JSONDecodeError) as error:
         raise SystemExit("FE09_ARTIFACT_VISIBILITY_NOT_ADMITTED: " +
                          str(error)) from None
@@ -333,3 +403,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+

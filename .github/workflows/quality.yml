@@ -1,3 +1,6 @@
+Warning: truncated output (original token count: 45542)
+Total output lines: 3462
+
 name: Quality
 
 on:
@@ -1683,49 +1686,7 @@ jobs:
         with:
           name: frontend-fe09-t2b-b1s0-owner-spsc-${{ github.run_id }}
           path: fe09-b1s0-readback
-      - name: Check external T2B_B1S0 owner SPSC verdict and rehash
-        if: steps.fe09_b1s0.outcome == 'success'
-        shell: bash
-        run: |
-          set -euo pipefail
-          python3 - <<'PY'
-          import hashlib
-          import json
-          import os
-          from pathlib import Path
-
-          def need(cond, code):
-              if not cond:
-                  raise SystemExit(code)
-          root = Path('fe09-b1s0-readback')
-          parts = ('receipt.json', 'collect.log', 'verify.log')
-          need(root.is_dir() and
-               {p.name for p in root.iterdir()} == {'SHA256SUMS', *parts},
-               'T2B_B1S0_ARTIFACT_MEMBERS_DRIFT')
-          for name, cap in (('SHA256SUMS',1024),('receipt.json',262144),
-                            ('collect.log',2097152),('verify.log',256)):
-              p = root / name
-              need(p.is_file() and not p.is_symlink() and
-                   0 < p.stat().st_size <= cap,
-                   'T2B_B1S0_ARTIFACT_MEMBER_SIZE_' + name)
-          rows = (root / 'SHA256SUMS').read_text('ascii').splitlines()
-          need(len(rows) == 3, 'T2B_B1S0_ARTIFACT_SHA_ROWS')
-          for name, row in zip(parts, rows):
-              digest = hashlib.sha256((root / name).read_bytes()).hexdigest()
-              need(row == f'{digest}  {name}',
-                   'T2B_B1S0_INNER_SHA_DRIFT_' + name)
-          receipt = json.loads((root / 'receipt.json').read_text('utf-8'))
-          verdict = 'FE09_T2B_B1S0_OWNER_WITNESS_SPSC_CAPTURE_BF_NO_RECORDER'
-          need(type(receipt) is dict and
-               receipt.get('source_commit') == os.environ['GITHUB_SHA'] and
-               receipt.get('decision') == verdict and
-               receipt.get('qualified_after_actual_four_target_execution') is True and
-               receipt.get('source_role') == 'first-party-synthetic' and
-               receipt.get('target_order') == ['native','sanitized','arm','tsan'] and
-               receipt.get('no_cryptographic_source_auth') is True and
-               receipt.get('physical_absence_or_clock_qualified') is False and
-               receipt.get('apx3_recorder_qualified') is False,
-               'T2B_B1S0_FALSE_CONTINUITY')
+      - name: Ch…542 tokens truncated…0_FALSE_CONTINUITY')
           targets = receipt.get('target_results')
           need(type(targets) is dict and
                set(targets) == {'native','sanitized','arm','tsan'},
@@ -2517,6 +2478,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          python3 tests/validation/frontend_evolution/test_fe09_a1_archive_readiness.py
           python3 tests/validation/frontend_evolution/fe09_b2s3_t3s2b1ba1_anchor_root_qualification.py --self-test
           python3 tests/validation/frontend_evolution/fe09_b2s3_t3s2b1ba1_anchor_root_qualification.py \
             --collect --output fe09-t3s2b1ba1 --execution-source "$GITHUB_SHA"
@@ -2544,7 +2506,7 @@ jobs:
             --artifact-id "$ARTIFACT_ID" --run-id "$GITHUB_RUN_ID" \
             --artifact-name "frontend-fe09-t3s2b1ba1-anchor-$GITHUB_RUN_ID" \
             --run-attempt "$GITHUB_RUN_ATTEMPT" --run-head-sha "$RUN_HEAD_SHA" \
-            --execution-source "$GITHUB_SHA"
+            --execution-source "$GITHUB_SHA" --a1-archive-ready
       - name: Download exact same-run original A1 Artifact
         if: steps.fe09_t3s2b1ba1.outcome == 'success'
         uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
@@ -3458,3 +3420,4 @@ jobs:
           path: fe-ns-agc-vad/
           if-no-files-found: error
           retention-days: 30
+

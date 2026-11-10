@@ -780,5 +780,79 @@ class T3S1AttemptScopedVisibilityTests(T3S1RestListVisibilityTests):
             self.assertEqual(self.opened, [])
 
 
+class T2AAttemptVisibilityTests(A1RestListVisibilityTests):
+    """Run all existing REST identity/refusal tests for the observed T2A failure."""
+    NAME = "frontend-fe09-s3-t2a-controlled-restart-12345-attempt-2"
+    STAGE = "t2a"
+    PREFIX = "frontend-fe09-s3-t2a-controlled-restart-"
+    TIMEOUT = 18
+    MARKER = "FE09_S3_T2A_CONTROL_RESTART_READBACK_PASS"
+
+    def test_attempt_names_and_prior_artifacts(self):
+        old = self.artifact()
+        old.update(id=ARTIFACT + 1, name=self.PREFIX + str(RUN),
+                   created_at="2026-10-22T05:59:59Z")
+        prior = copy.deepcopy(old)
+        prior.update(id=ARTIFACT + 2, name=old["name"] + "-attempt-1")
+        self.assertEqual(self.check([self.response(self.run_record()),
+            self.listing([old, prior, self.artifact()])]), (2, DIGEST))
+        duplicate = self.artifact()
+        duplicate["id"] += 3
+        with self.assertRaisesRegex(policy.NotAdmitted, "NOT_UNIQUE"):
+            self.check([self.response(self.run_record()),
+                        self.listing([duplicate, self.artifact()])])
+        for suffix in ("", "-attempt-1", "-attempt-3", "-attempt-02",
+                       "-attempt-2-extra"):
+            name = self.PREFIX + str(RUN) + suffix
+            opener = Mock(side_effect=AssertionError("invalid name must not use API"))
+            with self.subTest(name=name), self.assertRaises(policy.NotAdmitted):
+                policy.check_visibility(REPO, RUN, ARTIFACT, name, "fake-token",
+                    run_attempt=2, run_head_sha=self.HEAD, execution_source=self.SOURCE,
+                    opener=opener)
+            opener.assert_not_called()
+        for attempt in (None, True, "2", 0, -1, 1, 3, 2 ** 63):
+            with self.subTest(attempt=attempt), self.assertRaises(policy.NotAdmitted):
+                self.check([], run_attempt=attempt)
+            self.assertEqual(self.opened, [])
+
+    def test_observed_stage_keeps_original_readback(self):
+        quality = (Path(__file__).resolve().parents[3] /
+                   ".github/workflows/quality.yml").read_text("utf-8")
+        stage = quality.split("  frontend-s3-" + self.STAGE + ":\n", 1)[1].split(
+            "\n  frontend-", 1)[0]
+        upload = "fe09_" + self.STAGE + "_upload"
+        markers = ["id: fe09_" + self.STAGE + "\n", "id: " + upload + "\n",
+                   "name: " + self.PREFIX + "${{ github.run_id }}-attempt-${{ github.run_attempt }}",
+                   "Witness exact " + self.STAGE + " upload",
+                   "ARTIFACT_ID: ${{ steps." + upload + ".outputs.artifact-id }}",
+                   'RUN_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}',
+                   '--artifact-name "' + self.PREFIX + '$GITHUB_RUN_ID-attempt-$GITHUB_RUN_ATTEMPT"',
+                   '--run-attempt "$GITHUB_RUN_ATTEMPT" --run-head-sha "$RUN_HEAD_SHA"',
+                   '--execution-source "$GITHUB_SHA"',
+                   "uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131",
+                   "artifact-ids: ${{ steps." + upload + ".outputs.artifact-id }}",
+                   "github-token: ${{ github.token }}", "repository: ${{ github.repository }}",
+                   "run-id: ${{ github.run_id }}",
+                   "--verify --output fe09-" + self.STAGE + "-readback", self.MARKER]
+        cursor = 0
+        for marker in markers:
+            cursor = stage.index(marker, cursor) + len(marker)
+        for required in ("timeout-minutes: " + str(self.TIMEOUT), "retention-days: 30",
+                         "if-no-files-found: error", "--collect --output fe09-" + self.STAGE):
+            self.assertIn(required, stage)
+        self.assertEqual(stage.count("if: steps.fe09_" + self.STAGE + ".outcome == 'success'"), 3)
+        self.assertNotIn("overwrite:", stage)
+        self.assertNotIn("continue-on-error:", stage)
+
+
+class RootAttemptVisibilityTests(T2AAttemptVisibilityTests):
+    """The same full matrix independently exercises immutable-root transport."""
+    NAME = "frontend-fe09-t3s2b1a-immutable-root-12345-attempt-2"
+    STAGE = "t3s2b1a"
+    PREFIX = "frontend-fe09-t3s2b1a-immutable-root-"
+    TIMEOUT = 30
+    MARKER = "FE09_T3S2B1A_SOURCE_IMMUTABLE_POSIX_READBACK_PASS"
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

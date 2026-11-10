@@ -1418,17 +1418,35 @@ jobs:
             --verify --output fe09-t2a --execution-source "$GITHUB_SHA"
       - name: Retain T2A exact-run quiescent restart and fail-closed evidence
         if: always() && (steps.fe09_t2a.outcome == 'success' || steps.fe09_t2a.outcome == 'failure')
+        id: fe09_t2a_upload
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: frontend-fe09-s3-t2a-controlled-restart-${{ github.run_id }}
+          name: frontend-fe09-s3-t2a-controlled-restart-${{ github.run_id }}-attempt-${{ github.run_attempt }}
           path: fe09-t2a/
           retention-days: 30
           if-no-files-found: error
+      - name: Witness exact t2a upload in the pinned downloader REST list
+        if: steps.fe09_t2a.outcome == 'success'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ARTIFACT_ID: ${{ steps.fe09_t2a_upload.outputs.artifact-id }}
+          RUN_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          python3 tests/validation/frontend_evolution/fe09_same_run_artifact_visibility.py \
+            --artifact-id "$ARTIFACT_ID" --run-id "$GITHUB_RUN_ID" \
+            --artifact-name "frontend-fe09-s3-t2a-controlled-restart-$GITHUB_RUN_ID-attempt-$GITHUB_RUN_ATTEMPT" \
+            --run-attempt "$GITHUB_RUN_ATTEMPT" --run-head-sha "$RUN_HEAD_SHA" \
+            --execution-source "$GITHUB_SHA"
       - name: Independently download exact T2A four-member Artifact
         if: steps.fe09_t2a.outcome == 'success'
         uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
-          name: frontend-fe09-s3-t2a-controlled-restart-${{ github.run_id }}
+          artifact-ids: ${{ steps.fe09_t2a_upload.outputs.artifact-id }}
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ github.run_id }}
           path: fe09-t2a-readback
       - name: Check external T2A control-only verdict and source-linked rehash
         if: steps.fe09_t2a.outcome == 'success'
@@ -2255,17 +2273,35 @@ jobs:
             --verify --output fe09-t3s2b1a --execution-source "$GITHUB_SHA"
       - name: Retain exact-run immutable FRM1 root original source and negative evidence
         if: always() && (steps.fe09_t3s2b1a.outcome == 'success' || steps.fe09_t3s2b1a.outcome == 'failure')
+        id: fe09_t3s2b1a_upload
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: frontend-fe09-t3s2b1a-immutable-root-${{ github.run_id }}
+          name: frontend-fe09-t3s2b1a-immutable-root-${{ github.run_id }}-attempt-${{ github.run_attempt }}
           path: fe09-t3s2b1a/
           retention-days: 30
           if-no-files-found: error
+      - name: Witness exact t3s2b1a upload in the pinned downloader REST list
+        if: steps.fe09_t3s2b1a.outcome == 'success'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ARTIFACT_ID: ${{ steps.fe09_t3s2b1a_upload.outputs.artifact-id }}
+          RUN_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          python3 tests/validation/frontend_evolution/fe09_same_run_artifact_visibility.py \
+            --artifact-id "$ARTIFACT_ID" --run-id "$GITHUB_RUN_ID" \
+            --artifact-name "frontend-fe09-t3s2b1a-immutable-root-$GITHUB_RUN_ID-attempt-$GITHUB_RUN_ATTEMPT" \
+            --run-attempt "$GITHUB_RUN_ATTEMPT" --run-head-sha "$RUN_HEAD_SHA" \
+            --execution-source "$GITHUB_SHA"
       - name: Download original same-run four-member root Artifact
         if: steps.fe09_t3s2b1a.outcome == 'success'
         uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
-          name: frontend-fe09-t3s2b1a-immutable-root-${{ github.run_id }}
+          artifact-ids: ${{ steps.fe09_t3s2b1a_upload.outputs.artifact-id }}
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ github.run_id }}
           path: fe09-t3s2b1a-readback
       - name: Independently rehash root receipt, reject fake rolling or powerloss authority
         if: steps.fe09_t3s2b1a.outcome == 'success'

@@ -224,6 +224,12 @@ def analyze(input_root,output,start):
             "scope":"isolated original AGC input/gate replay; not integrated 2.3.64 pipeline or acoustic qualification"}
 
 
+def verify_report(input_root,output,start):
+    report=analyze(input_root,output,start)
+    need(report==d2.read_json(output/"report.json"),"D3_READBACK_REPORT_DIFFERS")
+    return report
+
+
 def main():
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument("phase",choices=("build","run","analysis","verify"))
@@ -234,10 +240,9 @@ def main():
         if a.phase=="build": build(a.input.resolve(),output,start)
         elif a.phase=="run": run(a.input.resolve(),output,start)
         else:
-            report=analyze(a.input.resolve(),output,start)
+            report=analyze(a.input.resolve(),output,start) if a.phase=="analysis" else verify_report(a.input.resolve(),output,start)
             if a.phase=="analysis": dump(output/"report.json",report)
             else:
-                need(report==d2.read_json(output/"report.json"),"D3_READBACK_REPORT_DIFFERS")
                 dump(output/"readback.json",{"status":"PASS","DSP_executed":False,"report":descriptor(output/"report.json")})
             print(json.dumps({k:report[k] for k in ("experiment","status","case_count","totals","aggregates","promotion_allowed")},sort_keys=True))
         remaining(start,300); receipt["status"]="PASS"

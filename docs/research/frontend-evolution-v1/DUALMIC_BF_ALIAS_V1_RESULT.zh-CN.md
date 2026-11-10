@@ -18,3 +18,12 @@ public-wrapper目录保存单独的公开模块接口回归：8/16k、mic0/mic1/
 同目录host-resource.log为实际GCC14.2/x86_64/O2结果：process编译器静态栈估计384→384B，独立object text5391→5551B。不是目标板栈、最终ROM或性能实测。独立只读审核检查了补充测试与证据校验值，没有发现阻塞性逻辑问题。
 
 源码准备的独立fresh-main push Verify42827397960在精确提交5a683e001157fd9ee2f0578ecaa4d032997a6260上完成：80成功、1预期跳过、summary成功。这仅验证2.3.63源码准备主线，不替代本2.3.64候选的检查。
+
+
+## R9 单字节修正与独立主机复测
+
+原实现 PR #927 的 ea4831c72cbad6f18cdcb3222b6144a67c674493 在 Verify42837750099 因 BF 文件末尾多余空行失败，原失败与冻结证据保留。精确修正 proposal1e633c01404767a71b398ec2b44ddef8ee5b2383 仅删除一个终止 LF；未改变代码语义、参数或公共结构。R8 原件仍拒绝这些新字节，R9 用独立身份记录并验证精确差异，不做通用空白归一化。
+
+2026-11-10 已针对修正后的 BF SHA256 4e6370504effc76ff3334ecb08e7d1ad2deb408586fa5165d997ae965f244246 重新实际编译执行主机回归：O2、fast-math、ASan/UBSan 各12240帧零失败；公开 wrapper enabled、disabled、sanitized 各1440调用零失败（disabled含720成功与720拒绝检查）。独立新日志置于 evidence/dualmic-bf-alias-v1/r9-recheck，原日志不覆盖。该结果不代替新提交全量CI或受保护合并后的fresh-main验证。
+
+R9 源码准备 PR #928 已受保护合并为 c65777cf4393a67755de99f86654571f9684bb91；精确 head 的 Verify42857136010 与独立 fresh-main push Verify42864354949 均80成功、1预期跳过、summary成功。该主线仍2.3.63，不替代本次 corrected 2.3.64 实现的全量门禁。实现提交保留原 #927 head 和 R9 main 两个父历史，原白空格失败、GCC15工具链失败及artifact两次失败证据均保留。

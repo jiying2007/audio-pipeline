@@ -51,15 +51,17 @@ def reject_duplicates(pairs: list[tuple[str, object]]) -> dict:
 
 
 def checked_args(repo: str, run_id: int, artifact_id: int,
-                 artifact_name: str, token: str) -> None:
+                 artifact_name: str, token: str, *, run_attempt=None) -> None:
     need(type(repo) is str and
          re.fullmatch(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+", repo) is not None and
          type(run_id) is int and 0 < run_id < 2 ** 63 and
          type(artifact_id) is int and 0 < artifact_id < 2 ** 63 and
          type(artifact_name) is str and
-         re.fullmatch(r"(?:frontend-fe09-t2b-b1s0-owner-spsc|frontend-fe09-t2b-b1s1-source-apx3|frontend-fe09-t3s2b1ba1-anchor|frontend-fe09-t3s1-compact-handoff)-[0-9]+",
-                      artifact_name) is not None and
-         artifact_name.endswith("-" + str(run_id)) and
+         ((re.fullmatch(r"(?:frontend-fe09-t2b-b1s0-owner-spsc|frontend-fe09-t2b-b1s1-source-apx3|frontend-fe09-t3s2b1ba1-anchor|frontend-fe09-t3s1-compact-handoff)-[0-9]+",
+                        artifact_name) is not None and
+           artifact_name.endswith("-" + str(run_id))) or
+          (type(run_attempt) is int and 0 < run_attempt < 2 ** 63 and
+           artifact_name == f"{T3S1_PREFIX}{run_id}-attempt-{run_attempt}")) and
          type(token) is str and 0 < len(token) <= 2048,
          "ARTIFACT_VISIBILITY_UNTRUSTED_ARGS")
 
@@ -225,7 +227,10 @@ def check_visibility(repo: str, run_id: int, artifact_id: int,
                      delay_seconds: int = SLEEP_SECONDS,
                      run_attempt=None, run_head_sha=None,
                      execution_source=None) -> tuple[int, str]:
-    checked_args(repo, run_id, artifact_id, artifact_name, token)
+    # Current T3-S1 uploads have an attempt-scoped name. Historical run-only
+    # names retain their exact identity gate, including duplicate rejection.
+    checked_args(repo, run_id, artifact_id, artifact_name, token,
+                 run_attempt=run_attempt)
     need(type(attempts) is int and 1 <= attempts <= MAX_ATTEMPTS and
          type(delay_seconds) is int and 0 <= delay_seconds <= SLEEP_SECONDS,
          "UNBOUNDED_VISIBILITY_RETRY")

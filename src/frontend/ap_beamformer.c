@@ -426,4 +426,3 @@ void ap_beamformer_process(ap_beamformer_state_t *s,
     }
     memcpy(s->history, next_history, sizeof(next_history));
 }
-

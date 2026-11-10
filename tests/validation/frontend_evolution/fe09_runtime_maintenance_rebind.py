@@ -9,6 +9,7 @@ Neither the old source nor its preflight is presented as current execution.
 from __future__ import annotations
 
 import argparse
+import ast
 import base64
 import contextlib
 import hashlib
@@ -112,6 +113,14 @@ FORWARD_MAINTENANCE = {
            'src/platform/linux/ap_runtime.c': 'b6c36e195c1ac967e450a1e32506e0b6859a581b'},
  'patch': 'fe09_maintenance_forward_2_3_64.patch.b64',
  'patch_blob': '63f1f7c3447ac9893f0437863b499ec2c2af98bb'},
+    "2.3.64-r9": {'blobs': {'CMakeLists.txt': 'a2bda471593f32fcd96470d828839aedf286273e',
+           'docs/API_CONTRACT.md': 'de14d030b05fbb776eff3f9cf52bffef8ae2aff5',
+           'include/audio_pipeline/audio_runtime.h': 'ad72e40b5b343aee4589ee50dfd07fe1a85e0ea9',
+           'src/core/ap_pipeline.c': '9bbd0fd15fcec7b9624f5bc69b550db91e789167',
+           'src/frontend/ap_beamformer.c': 'cb9f5c3a0f8d2c910eff62e9599f866b444de3c3',
+           'src/platform/linux/ap_runtime.c': 'b6c36e195c1ac967e450a1e32506e0b6859a581b'},
+ 'patch': 'fe09_maintenance_forward_2_3_64_r9.patch.b64',
+ 'patch_blob': 'da483fe655bdf9bca61efe25bd79364bfffaba1f'},
 }
 
 
@@ -152,7 +161,7 @@ DUALMIC_2_3_62_PATHS = AUDIT_2_3_59_PATHS | {"src/frontend/ap_beamformer.c", "sr
 
 
 def current_registered_paths(version: str) -> frozenset[str]:
-    if version in ("2.3.62", "2.3.63", "2.3.64"):
+    if version in ("2.3.62", "2.3.63", "2.3.64", "2.3.64-r9"):
         return frozenset(DUALMIC_2_3_62_PATHS)
     return AUDIT_2_3_59_PATHS if version in ("2.3.59", "2.3.60", "2.3.61") else frozenset(CHANGED)
 
@@ -191,7 +200,7 @@ def check_forward_patch_scope(version: str, patch: bytes, destination: Path) -> 
     need(version in FORWARD_MAINTENANCE, "UNREGISTERED_FORWARD_MAINTENANCE_VERSION")
     expected = (AUDIT_2_3_59_PATHS if version in ("2.3.59", "2.3.60", "2.3.61") else
                 frozenset({"CMakeLists.txt", "src/platform/linux/ap_runtime.c"}))
-    if version in ("2.3.62", "2.3.63", "2.3.64"):
+    if version in ("2.3.62", "2.3.63", "2.3.64", "2.3.64-r9"):
         expected = frozenset(DUALMIC_2_3_62_PATHS)
     inventory = subprocess.run(["git", "apply", "--numstat", "-"],
                                input=patch, cwd=destination, capture_output=True,
@@ -202,11 +211,39 @@ def check_forward_patch_scope(version: str, patch: bytes, destination: Path) -> 
          "REGISTERED_FORWARD_PATCH_SCOPE_DRIFT")
 
 
+ARCHIVED_R8_REGISTRY = 'docs/research/frontend-evolution-v1/DUALMIC_2364_SOURCE_R9_20261110/R8_RUNTIME_MAINTENANCE_REBIND.py'
+ARCHIVED_R8_REGISTRY_BLOB = 'f267b7feae2dd2d070438329b810c7b2a54ba30f'
+
+
+def preserved_forward_registry() -> None:
+    # Preserve all eight earlier registrations byte-for-byte as data.
+    raw = raw_file(ROOT / ARCHIVED_R8_REGISTRY)
+    need(major.git_blob(raw) == ARCHIVED_R8_REGISTRY_BLOB,
+         "R9_HISTORICAL_REGISTRY_CHANGED")
+    tree = ast.parse(raw.decode("utf-8"))
+    entries = [node for node in tree.body if isinstance(node, ast.Assign) and
+               len(node.targets) == 1 and isinstance(node.targets[0], ast.Name) and
+               node.targets[0].id == "FORWARD_MAINTENANCE"]
+    need(len(entries) == 1, "R9_HISTORICAL_REGISTRY_SURFACE")
+    old = ast.literal_eval(entries[0].value)
+    need(len(old) == 8 and set(FORWARD_MAINTENANCE) == set(old) | {"2.3.64-r9"} and
+         all(FORWARD_MAINTENANCE[key] == value for key, value in old.items()),
+         "R9_PREVIOUS_REGISTRATIONS_CHANGED")
+
+
+def registered_source_version(revision: str) -> str:
+    return "2.3.64" if revision == "2.3.64-r9" else revision
+
+
 def current_maintenance_version(src: dict[str, str], item: dict) -> str:
     match = re.search(r"(?m)^project\(audio_pipeline VERSION ([0-9]+\.[0-9]+\.[0-9]+) LANGUAGES C\)$",
                       src["CMakeLists.txt"])
     need(match is not None, "CURRENT_VERSION_NOT_PARSED")
     version = match.group(1)
+    preserved_forward_registry()
+    # Same semantic version, distinct exact source revision. No fuzzy normalization.
+    if version == "2.3.64" and major.git_blob(src["src/frontend/ap_beamformer.c"].encode("utf-8")) == FORWARD_MAINTENANCE["2.3.64-r9"]["blobs"]["src/frontend/ap_beamformer.c"]:
+        version = "2.3.64-r9"
     if version == item["maintenance_version"]:
         wanted = {path: binding["after_blob"]
                   for path, binding in item["source_bindings"].items()}
@@ -228,7 +265,7 @@ def check_current(src: dict[str, str], item: dict) -> dict[str, str]:
     version = current_maintenance_version(src, item)
     for name, path, needle in major.PROBES:
         if name == "CMAKE_MAJOR_TWO":
-            needle = f"project(audio_pipeline VERSION {version} LANGUAGES C)"
+            needle = f"project(audio_pipeline VERSION {registered_source_version(version)} LANGUAGES C)"
         need(src[path].count(needle) == 1, "CURRENT_ARCHITECTURE_DRIFT_" + name)
     for path, anchors in recorder.ANCHORS.items():
         need(all(anchor in src[path] for anchor in anchors),
@@ -306,7 +343,8 @@ def verify(*, historical_self_tests: bool) -> dict:
     return {
         "schema_version": 1, "decision": item["decision"],
         "maintenance_version": item["maintenance_version"],
-        "active_current_version": version,
+        "active_current_version": registered_source_version(version),
+        "active_current_source_revision": version,
         "registered_forward_patch_blob": (
             FORWARD_MAINTENANCE[version]["patch_blob"]
             if version in FORWARD_MAINTENANCE else None),
@@ -335,7 +373,7 @@ def self_test() -> None:
     item = policy(raw, patch)
     src = read_sources(ROOT, item)
     rejected = 0
-    audit_rejected = {"2.3.59": 0, "2.3.60": 0, "2.3.61": 0, "2.3.62": 0, "2.3.63": 0, "2.3.64": 0}
+    audit_rejected = {"2.3.59": 0, "2.3.60": 0, "2.3.61": 0, "2.3.62": 0, "2.3.63": 0, "2.3.64": 0, "2.3.64-r9": 0}
 
     def reject(fn, reason: str | None = None, *, audit: str | None = None) -> None:
         nonlocal rejected, audit_rejected
@@ -442,12 +480,14 @@ def self_test() -> None:
                    audit=candidate_version if candidate_version in audit_rejected else None)
             if candidate_version in audit_rejected:
                 for path in sorted(current_registered_paths(candidate_version) - {"src/platform/linux/ap_runtime.c"}):
-                    changed = {**candidate, path: candidate[path] + "\n"}
+                    # A single LF is the intentionally retained R8 revision, not an unknown mutation.
+                    suffix = "\n# unregistered change\n" if candidate_version == "2.3.64-r9" and path == "src/frontend/ap_beamformer.c" else "\n"
+                    changed = {**candidate, path: candidate[path] + suffix}
                     reject(lambda bad=changed: check_current(bad, item),
                            "CURRENT_MAINTENANCE_SOURCE_DRIFT_" + path, audit=candidate_version)
-                next_version = "2.3." + str(int(candidate_version.rsplit(".", 1)[1]) + 1)
+                next_version = "2.3." + str(int(registered_source_version(candidate_version).rsplit(".", 1)[1]) + 1)
                 changed = {**candidate, "CMakeLists.txt": candidate["CMakeLists.txt"].replace(
-                    "VERSION " + candidate_version, "VERSION " + next_version, 1)}
+                    "VERSION " + registered_source_version(candidate_version), "VERSION " + next_version, 1)}
                 # A version-only edit never borrows another registered full source.
                 reason = ("CURRENT_MAINTENANCE_SOURCE_DRIFT_CMakeLists.txt"
                           if next_version in FORWARD_MAINTENANCE else
@@ -486,8 +526,9 @@ def self_test() -> None:
     need(audit_rejected["2.3.62"] == 14, "DUALMIC_2_3_62_NEGATIVES_INCOMPLETE")
     need(audit_rejected["2.3.63"] == 14, "DUALMIC_2_3_63_NEGATIVES_INCOMPLETE")
     need(audit_rejected["2.3.64"] == 14, "DUALMIC_2_3_64_NEGATIVES_INCOMPLETE")
+    need(audit_rejected["2.3.64-r9"] == 14, "DUALMIC_2_3_64_R9_NEGATIVES_INCOMPLETE")
     print("FE09_EXACT_MAINTENANCE_REBIND_SELF_TEST_PASS negatives=16 "
-          "audit2359_negatives=12 io2360_negatives=12 pcm2361_negatives=12 dualmic2362_negatives=14 dualmic2363_negatives=14 dualmic2364_negatives=14 preregistered=8")
+          "audit2359_negatives=12 io2360_negatives=12 pcm2361_negatives=12 dualmic2362_negatives=14 dualmic2363_negatives=14 dualmic2364_negatives=14 dualmic2364r9_negatives=14 preregistered=9")
 
 
 def main() -> None:

@@ -104,6 +104,14 @@ FORWARD_MAINTENANCE = {
                'src/platform/linux/ap_runtime.c': 'b6c36e195c1ac967e450a1e32506e0b6859a581b'},
      'patch': 'fe09_maintenance_forward_2_3_63.patch.b64',
      'patch_blob': 'b4c2189fbafa2ba4d9d74b2289c540e469c864f8'},
+    "2.3.64": {'blobs': {'CMakeLists.txt': 'a2bda471593f32fcd96470d828839aedf286273e',
+           'docs/API_CONTRACT.md': 'de14d030b05fbb776eff3f9cf52bffef8ae2aff5',
+           'include/audio_pipeline/audio_runtime.h': 'ad72e40b5b343aee4589ee50dfd07fe1a85e0ea9',
+           'src/core/ap_pipeline.c': '9bbd0fd15fcec7b9624f5bc69b550db91e789167',
+           'src/frontend/ap_beamformer.c': '1a0bba87671ab996c6cc594fd0ed412f72977dfe',
+           'src/platform/linux/ap_runtime.c': 'b6c36e195c1ac967e450a1e32506e0b6859a581b'},
+ 'patch': 'fe09_maintenance_forward_2_3_64.patch.b64',
+ 'patch_blob': '63f1f7c3447ac9893f0437863b499ec2c2af98bb'},
 }
 
 
@@ -144,7 +152,7 @@ DUALMIC_2_3_62_PATHS = AUDIT_2_3_59_PATHS | {"src/frontend/ap_beamformer.c", "sr
 
 
 def current_registered_paths(version: str) -> frozenset[str]:
-    if version in ("2.3.62", "2.3.63"):
+    if version in ("2.3.62", "2.3.63", "2.3.64"):
         return frozenset(DUALMIC_2_3_62_PATHS)
     return AUDIT_2_3_59_PATHS if version in ("2.3.59", "2.3.60", "2.3.61") else frozenset(CHANGED)
 
@@ -183,7 +191,7 @@ def check_forward_patch_scope(version: str, patch: bytes, destination: Path) -> 
     need(version in FORWARD_MAINTENANCE, "UNREGISTERED_FORWARD_MAINTENANCE_VERSION")
     expected = (AUDIT_2_3_59_PATHS if version in ("2.3.59", "2.3.60", "2.3.61") else
                 frozenset({"CMakeLists.txt", "src/platform/linux/ap_runtime.c"}))
-    if version in ("2.3.62", "2.3.63"):
+    if version in ("2.3.62", "2.3.63", "2.3.64"):
         expected = frozenset(DUALMIC_2_3_62_PATHS)
     inventory = subprocess.run(["git", "apply", "--numstat", "-"],
                                input=patch, cwd=destination, capture_output=True,
@@ -327,7 +335,7 @@ def self_test() -> None:
     item = policy(raw, patch)
     src = read_sources(ROOT, item)
     rejected = 0
-    audit_rejected = {"2.3.59": 0, "2.3.60": 0, "2.3.61": 0, "2.3.62": 0, "2.3.63": 0}
+    audit_rejected = {"2.3.59": 0, "2.3.60": 0, "2.3.61": 0, "2.3.62": 0, "2.3.63": 0, "2.3.64": 0}
 
     def reject(fn, reason: str | None = None, *, audit: str | None = None) -> None:
         nonlocal rejected, audit_rejected
@@ -477,8 +485,9 @@ def self_test() -> None:
     need(audit_rejected["2.3.61"] == 12, "PCM_IO_2_3_61_NEGATIVES_INCOMPLETE")
     need(audit_rejected["2.3.62"] == 14, "DUALMIC_2_3_62_NEGATIVES_INCOMPLETE")
     need(audit_rejected["2.3.63"] == 14, "DUALMIC_2_3_63_NEGATIVES_INCOMPLETE")
+    need(audit_rejected["2.3.64"] == 14, "DUALMIC_2_3_64_NEGATIVES_INCOMPLETE")
     print("FE09_EXACT_MAINTENANCE_REBIND_SELF_TEST_PASS negatives=16 "
-          "audit2359_negatives=12 io2360_negatives=12 pcm2361_negatives=12 dualmic2362_negatives=14 dualmic2363_negatives=14 preregistered=7")
+          "audit2359_negatives=12 io2360_negatives=12 pcm2361_negatives=12 dualmic2362_negatives=14 dualmic2363_negatives=14 dualmic2364_negatives=14 preregistered=8")
 
 
 def main() -> None:

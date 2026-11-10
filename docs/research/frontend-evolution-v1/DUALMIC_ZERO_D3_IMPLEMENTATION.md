@@ -1,0 +1,13 @@
+# D3 isolated implementation freeze
+
+Source base: input-admission head047c1c2a48daea4b1d63024e1e871a0def0479ab; method/input freeze bfc066da9e95035530bace2468e5d31bdabb1a5a. Original D2 input admission actually passed in Frontend Research42905401988/job130142035841:38.457682s/300s, full3551members/861385743bytes and exact old D2 report readback. No DSP result exists yet.
+
+The new C runner links the retained original D2 static library for its baseline, and compiles a separate candidate from exact old cc853616:src/enhance/ap_agc.c. The only semantic source delta is an upward-update guard when peak==0; three exported names are renamed to avoid symbol collision. Original ap_enhance.h is hash-checked against retained production source metadata; state sizeof==12 and float32 little endian are mandatory. No production file is edited.
+
+Actual compilation is cc -std=c11 -O2 -ffp-contract=off -Wall -Wextra -Werror -DAP_BUILD_STAGE_AGC=1, isolated original header, candidate, runner and retained original static library, -lm. Compiler identity/version/argv are saved. We do not claim the current compiler is the old compiler; baseline full output/state must nevertheless reproduce original D2 exactly or fail. No compiler/flag changes after scores without a new prospective identity.
+
+Each of60original cases is a continuous stream with original profile, gates, frame count and reset events. Inputs and original outputs are finite checked before either arm updates. Trace stores baseline-before/after and candidate-before/after complete12B states, both actually applied gains, and allow/reset/exact-zero flags:68bytes/frame. Candidate arithmetic is independently recomputed with the existing D2 Float32 observer, modified only to hold an upward update on exact-zero frames. Candidate nonzero frames use their own prior state; same equations do not imply same numeric gain as baseline. Original baseline constants/gain states are compared to saved D2 gain.csv, never a newly generated reference.
+
+Self-tests use allzero, signedzero, tiny nonzero, alternating nonzero; gain0.25/1/8; both gates; NaN and infinities rejected. The original eight resets remain in full replay. Full input/output/trace and source/build/commands/logs are retained. Every60case has complete fixed common-span and one-second-window canonical measurement; baseline endpoint must equal original D2 report. No human/physical/ASR inference.
+
+Build/run/analysis/readback remain separately bounded300s including final writes; existing research job remains20min. Execution requires independent implementation review before the workflow is enabled. All failure codes and first outcomes retained. No candidate selection or default promotion is defined.

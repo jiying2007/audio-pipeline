@@ -88,6 +88,8 @@ jobs:
         run: |
           set -euo pipefail
           mkdir /tmp/ap-dualmic-intercom-stage
+          timeout 300s python3 tests/validation/test_dualmic_source_identity.py
+          timeout 300s python3 -O tests/validation/test_dualmic_source_identity.py
           timeout 300s sudo apt-get update -qq \
             2>&1 | tee /tmp/ap-dualmic-intercom-stage/package-index.log
           timeout 300s sudo apt-get install -y --no-install-recommends libopus0 \

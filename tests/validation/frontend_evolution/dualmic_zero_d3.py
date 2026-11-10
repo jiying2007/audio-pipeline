@@ -46,6 +46,11 @@ def original(input_root):
     prior, parent = input_root / "original/gain-d2", input_root / "original/result"
     need(digest(prior / "report.json") == lock["report_sha256"] and
          digest(prior / "artifact-manifest.json") == lock["manifest_sha256"], "D3_ORIGINAL_REPORT_CHANGED")
+    manifest=d2.read_json(prior/"artifact-manifest.json")
+    need(manifest["files"]==d2.payload_inventory(prior),"D3_ORIGINAL_D2_PAYLOAD_CHANGED")
+    binding=d2.read_json(prior/"parent-binding.json")
+    need(descriptor(parent/"build/build-manifest.json")==binding["build_manifest"],
+         "D3_ORIGINAL_PARENT_BUILD_CHANGED")
     old_lock = d2.input_lock()
     need((prior / "input-lock.json").read_bytes() == (ROOT / d2.LOCK_NAME).read_bytes(), "D3_INPUT_LOCK_CHANGED")
     return prior, parent, old_lock
@@ -57,7 +62,7 @@ def command(argv, log, start):
     with log.open("wb") as stream:
         r = subprocess.run(argv, cwd=ROOT, env=env, stdout=stream, stderr=subprocess.STDOUT,
                            timeout=remaining(start,300), check=False)
-    dump(log.with_suffix(".json"), {"argv": argv, "returncode": r.returncode,
+    dump(log.with_name(log.stem+"-command.json"), {"argv": argv, "returncode": r.returncode,
                                    "elapsed_seconds": time.monotonic()-begin})
     need(r.returncode == 0, "D3_COMMAND_FAILED")
     remaining(start,300)
@@ -80,7 +85,11 @@ def build(input_root, output, start):
         candidate=candidate.replace(name,"d3"+name[2:])
     (output/"source/candidate.c").write_text(candidate)
     revision=git("rev-parse","HEAD").decode().strip()
-    for name,dest in ((C_PATH,"runner.c"),(PY_PATH,"driver.py")):
+    for name,dest in ((C_PATH,"runner.c"),(PY_PATH,"driver.py"),
+                      ("tests/validation/frontend_evolution/test_dualmic_zero_d3_integrity.py","integrity.py"),
+                      ("tests/validation/frontend_evolution/dualmic_zero_d3_source.py","admission.py"),
+                      (admission.LOCK_PATH,"input-lock.json"),(admission.PLAN_PATH,"plan.md"),
+                      ("docs/research/frontend-evolution-v1/DUALMIC_ZERO_D3_IMPLEMENTATION.md","implementation.md")):
         raw=git("show",revision+":"+name)
         need(raw==(ROOT/name).read_bytes(),"D3_UNCOMMITTED_EXECUTOR")
         (output/"source"/dest).write_bytes(raw)
@@ -111,11 +120,40 @@ def verify_build(output):
          b["program"]==descriptor(output/"replay"),"D3_BUILD_IDENTITY")
     actual={p.relative_to(output).as_posix():descriptor(p) for p in (output/"source").rglob("*") if p.is_file()}
     need(actual==b["source_files"],"D3_BUILD_SOURCE_CHANGED")
+    for saved,revision,remote in (("runner.c",b["source_revision"],C_PATH),
+                                  ("driver.py",b["source_revision"],PY_PATH),
+                                  ("integrity.py",b["source_revision"],"tests/validation/frontend_evolution/test_dualmic_zero_d3_integrity.py"),
+                                  ("admission.py",b["source_revision"],"tests/validation/frontend_evolution/dualmic_zero_d3_source.py"),
+                                  ("input-lock.json",b["source_revision"],admission.LOCK_PATH),
+                                  ("plan.md",b["source_revision"],admission.PLAN_PATH),
+                                  ("implementation.md",b["source_revision"],"docs/research/frontend-evolution-v1/DUALMIC_ZERO_D3_IMPLEMENTATION.md"),
+                                  ("baseline.c",OLD,"src/enhance/ap_agc.c"),
+                                  ("enhance/ap_enhance.h",OLD,"src/enhance/ap_enhance.h")):
+        need((output/"source"/saved).read_bytes()==git("show",revision+":"+remote),
+             "D3_RETAINED_SOURCE_NOT_COMMITTED")
+    baseline=(output/"source/baseline.c").read_text()
+    need(baseline.count(BEFORE)==1 and b["intervention_before"]==BEFORE and
+         b["intervention_after"]==AFTER,"D3_INTERVENTION_CONTRACT")
+    expected=baseline.replace(BEFORE,AFTER)
+    for name in ("ap_agc_init","ap_agc_process_controlled","ap_agc_process"):
+        expected=expected.replace(name,"d3"+name[2:])
+    need((output/"source/candidate.c").read_text()==expected,"D3_CANDIDATE_NOT_EXACT_DERIVATION")
+    for filename in ("build-command.json","compiler-command.json","self-test-command.json"):
+        receipt=d2.read_json(output/filename)
+        need(receipt["returncode"]==0 and 0 <= receipt["elapsed_seconds"] <= 300,
+             "D3_BUILD_COMMAND_FAILED")
+    need(d2.read_json(output/"build-command.json")["argv"]==b["command"],"D3_BUILD_COMMAND_CHANGED")
     return b
 
 
+def phase_pass(output,phase):
+    r=d2.read_json(output/(phase+"-phase.json"))
+    need(r["phase"]==phase and r["status"]=="PASS" and r["budget_seconds"]==300 and
+         0 <= r["elapsed_seconds"] <= 300,"D3_PHASE_FAILED_OR_OVER_BUDGET")
+
+
 def run(input_root,output,start):
-    prior,parent,lock=original(input_root); verify_build(output)
+    prior,parent,lock=original(input_root); verify_build(output); phase_pass(output,"build")
     (output/"cases").mkdir(exist_ok=False)
     completed=[]
     for entry in lock["cases"]:
@@ -136,6 +174,10 @@ def run(input_root,output,start):
 
 def analyze(input_root,output,start):
     prior,parent,lock=original(input_root); b=verify_build(output)
+    phase_pass(output,"build"); phase_pass(output,"run")
+    library=d2.read_json(prior/"build-manifest.json")["parent_plain"]["library"]
+    need(descriptor(output/"source/original-library.a")=={k:library[k] for k in ("bytes","sha256")},
+         "D3_BASELINE_LIBRARY_NOT_ORIGINAL")
     need(d2.read_json(output/"run-index.json")["completed"]==[e["catalog"]["key"] for e in lock["cases"]],
          "D3_RUN_MATRIX_CHANGED")
     old_report=d2.read_json(prior/"report.json"); cases=[]; totals={"frames":0,"resets":0,"zero_frames":0,"held_updates":0}
@@ -143,9 +185,9 @@ def analyze(input_root,output,start):
         case=entry["catalog"]; folder=output/"cases"/case["key"]; taps=parent/"cases"/case["key"]/"taps"
         for name,expected in entry["parent_taps"].items():
             need(descriptor(taps/name)==expected,"D3_CHANGED_INPUT")
-        need({x.name for x in folder.iterdir()} == {"control.bin","baseline.f32le","candidate.f32le","trace.bin","execution.log","execution.json"} and
+        need({x.name for x in folder.iterdir()} == {"control.bin","baseline.f32le","candidate.f32le","trace.bin","execution.log","execution-command.json"} and
              all(x.is_file() and not x.is_symlink() for x in folder.iterdir()),"D3_CASE_FILE_MEMBERSHIP")
-        execution=d2.read_json(folder/"execution.json")
+        execution=d2.read_json(folder/"execution-command.json")
         need(execution["returncode"]==0 and 0 <= execution["elapsed_seconds"] <= 300,"D3_EXECUTION_FAILED")
         controls=d2.control_bytes(taps/"control.csv",case)
         need((folder/"control.bin").read_bytes()==controls,"D3_CONTROLS_CHANGED")
@@ -225,6 +267,7 @@ def analyze(input_root,output,start):
 
 
 def verify_report(input_root,output,start):
+    phase_pass(output,"analysis")
     report=analyze(input_root,output,start)
     need(report==d2.read_json(output/"report.json"),"D3_READBACK_REPORT_DIFFERS")
     return report

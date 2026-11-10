@@ -137,7 +137,10 @@ def check_a1_visibility(repo, run_id, artifact_id, artifact_name, token, *,
 
     The run-attempt lookup and EVERY list page share the existing eight-request
     ceiling. A missing item can consume another request after the same 2s pause;
-    pagination never resets the budget. No scientific command is run here.
+    pagination never resets the budget. A1 alone may discard an inconsistent
+    snapshot and restart page 1 within this same ceiling. No partial snapshot
+    can succeed; observed identity/schema conflicts still fail immediately.
+    No scientific command is run here.
     """
     need(type(run_attempt) is int and 0 < run_attempt < 2 ** 63 and
          all(type(value) is str and re.fullmatch(r"[0-9a-f]{40}", value)
@@ -186,17 +189,13 @@ def check_a1_visibility(repo, run_id, artifact_id, artifact_name, token, *,
                  "A1_ARTIFACT_LIST_SCHEMA_OR_BOUND_INVALID")
             if total is None:
                 total = payload["total_count"]
-            need(payload["total_count"] == total and
-                 len(payload["artifacts"]) == min(100, max(0, total - 100 * (page - 1))),
-                 "A1_ARTIFACT_LIST_INCOMPLETE_OR_CHANGED")
+            complete_page = (payload["total_count"] == total and
+                len(payload["artifacts"]) == min(100, max(0, total - 100 * (page - 1))))
             rows.extend(payload["artifacts"])
             need(all(type(row) is dict and type(row.get("id")) is int and
                      0 < row["id"] < 2 ** 63 and type(row.get("name")) is str
                      for row in rows) and len({row["id"] for row in rows}) == len(rows),
                  "A1_ARTIFACT_LIST_DUPLICATE_OR_INVALID_ID")
-            if len(rows) < total:
-                page += 1
-                continue
             matches = [row for row in rows
                        if row["id"] == artifact_id or row["name"] == artifact_name]
             if matches:
@@ -213,6 +212,18 @@ def check_a1_visibility(repo, run_id, artifact_id, artifact_name, token, *,
                      utc_timestamp(artifact.get("created_at")) >=
                      utc_timestamp(run["run_started_at"]),
                      "A1_ARTIFACT_WRONG_SOURCE_OR_PREVIOUS_ATTEMPT")
+            if not complete_page:
+                # Never accept rows from a partial/changing enumeration. Only
+                # A1 may restart, after all observed conflicts above refuse.
+                need(artifact_name == A1_PREFIX + str(run_id) and attempt < attempts,
+                     "A1_ARTIFACT_LIST_INCOMPLETE_OR_CHANGED")
+                rows, total, page = [], None, 1
+                pause(delay_seconds)
+                continue
+            if len(rows) < total:
+                page += 1
+                continue
+            if matches:
                 return attempt, digest
             rows, total, page = [], None, 1
         except urllib.error.HTTPError as error:

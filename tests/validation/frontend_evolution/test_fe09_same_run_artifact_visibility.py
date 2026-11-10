@@ -514,7 +514,7 @@ class A1RestListVisibilityTests(unittest.TestCase):
         for last in ([conflicting], [self.artifact()], []):
             with self.assertRaises(policy.NotAdmitted):
                 self.check([self.response(self.run_record()), self.listing(first, total=101),
-                            self.listing(last, total=101, page=2)])
+                            self.listing(last, total=101, page=2)], attempts=3)
 
     def test_pagination_never_resets_eight_request_budget(self):
         replies = [self.response(self.run_record())]
@@ -532,7 +532,7 @@ class A1RestListVisibilityTests(unittest.TestCase):
                         {"total_count": 1, "artifacts": []},
                         {"total_count": 2, "artifacts": [self.artifact()] * 2}):
             with self.subTest(payload=payload), self.assertRaises(policy.NotAdmitted):
-                self.check([self.response(self.run_record()), self.response(payload, page=1)])
+                self.check([self.response(self.run_record()), self.response(payload, page=1)], attempts=2)
 
     def test_hard_http_network_and_redirect_fail_without_retry(self):
         for error in (http_error(401), http_error(403), http_error(429),
@@ -852,6 +852,92 @@ class RootAttemptVisibilityTests(T2AAttemptVisibilityTests):
     PREFIX = "frontend-fe09-t3s2b1a-immutable-root-"
     TIMEOUT = 30
     MARKER = "FE09_T3S2B1A_SOURCE_IMMUTABLE_POSIX_READBACK_PASS"
+
+
+
+class A1SnapshotRestartTests(unittest.TestCase):
+    """Synthetic transport only: a restarted snapshot is never merged with old rows."""
+    NAME = A1RestListVisibilityTests.NAME
+    HEAD = A1RestListVisibilityTests.HEAD
+    SOURCE = A1RestListVisibilityTests.SOURCE
+    ATTEMPT = A1RestListVisibilityTests.ATTEMPT
+    RUN_URL = A1RestListVisibilityTests.RUN_URL
+    LIST_URL = A1RestListVisibilityTests.LIST_URL
+    run_record = A1RestListVisibilityTests.run_record
+    artifact = A1RestListVisibilityTests.artifact
+    response = A1RestListVisibilityTests.response
+    listing = A1RestListVisibilityTests.listing
+    check = A1RestListVisibilityTests.check
+
+    def test_partial_matching_row_is_not_success_until_complete_snapshot(self):
+        got = self.check([self.response(self.run_record()),
+                          self.listing(total=2), self.listing()])
+        self.assertEqual(got, (3, DIGEST))
+        self.assertEqual(self.opened, [(self.RUN_URL, 10),
+            (self.LIST_URL + "1", 10), (self.LIST_URL + "1", 10)])
+        self.assertEqual(self.paused, [2])
+
+    def test_changed_total_restarts_page_one_and_discards_old_rows(self):
+        first = [{"id": i + 1, "name": f"other-{i}"} for i in range(100)]
+        first[0] = self.artifact()
+        got = self.check([self.response(self.run_record()),
+            self.listing(first, total=101), self.listing([], total=100, page=2),
+            self.listing()])
+        self.assertEqual(got, (4, DIGEST))
+        self.assertEqual([url[-1] for url, _ in self.opened[1:]], ["1", "2", "1"])
+        self.assertEqual(self.paused, [2])
+
+    def test_stale_match_cannot_survive_restart(self):
+        with self.assertRaisesRegex(policy.NotAdmitted, "NOT_VISIBLE"):
+            self.check([self.response(self.run_record()), self.listing(total=2),
+                        self.listing([])], attempts=3)
+        self.assertEqual(len(self.opened), 3)
+        self.assertEqual(self.paused, [2])
+
+    def test_incomplete_exhaustion_uses_existing_total_request_budget(self):
+        with self.assertRaisesRegex(policy.NotAdmitted, "LIST_INCOMPLETE_OR_CHANGED"):
+            self.check([self.response(self.run_record())] + [self.listing(total=2)] * 7)
+        self.assertEqual(len(self.opened), 8)
+        self.assertEqual(self.paused, [2] * 6)
+
+    def test_http_and_snapshot_retries_share_budget(self):
+        with self.assertRaisesRegex(policy.NotAdmitted, "LIST_INCOMPLETE_OR_CHANGED"):
+            self.check([http_error(503), self.response(self.run_record()),
+                        self.listing(total=2)], attempts=3)
+        self.assertEqual(len(self.opened), 3)
+        self.assertEqual(self.paused, [2])
+
+    def test_incomplete_snapshot_does_not_retry_observed_identity_conflict(self):
+        for mutate in (lambda a: a.update(id=ARTIFACT + 1),
+                       lambda a: a.update(name="wrong"),
+                       lambda a: a.update(expired=True),
+                       lambda a: a.update(digest="bad"),
+                       lambda a: a.update(created_at="2026-10-22T05:59:59Z"),
+                       lambda a: a["workflow_run"].update(head_sha="d" * 40)):
+            artifact = self.artifact(); mutate(artifact)
+            with self.assertRaises(policy.NotAdmitted):
+                self.check([self.response(self.run_record()),
+                            self.listing([artifact], total=2), self.listing()])
+            self.assertEqual(len(self.opened), 2)
+            self.assertEqual(self.paused, [])
+
+    def test_incomplete_snapshot_does_not_retry_duplicates_or_invalid_rows(self):
+        for rows in ([self.artifact()] * 2, [{"id": True, "name": "bad"}],
+                     [None], [self.artifact(), dict(self.artifact(), id=ARTIFACT+1)]):
+            with self.assertRaises(policy.NotAdmitted):
+                self.check([self.response(self.run_record()),
+                            self.listing(rows, total=3), self.listing()])
+            self.assertEqual(len(self.opened), 2)
+            self.assertEqual(self.paused, [])
+
+    def test_other_rest_stages_remain_immediate_refusal(self):
+        for name in (policy.T3S1_PREFIX + str(RUN),
+                     *(f"{prefix}{RUN}-attempt-2" for prefix in policy.ATTEMPT_PREFIXES)):
+            self.NAME = name
+            with self.assertRaisesRegex(policy.NotAdmitted, "LIST_INCOMPLETE_OR_CHANGED"):
+                self.check([self.response(self.run_record()), self.listing(total=2), self.listing()])
+            self.assertEqual(len(self.opened), 2)
+            self.assertEqual(self.paused, [])
 
 
 if __name__ == "__main__":

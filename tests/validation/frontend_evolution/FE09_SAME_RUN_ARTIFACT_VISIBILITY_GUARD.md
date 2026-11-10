@@ -75,3 +75,39 @@ wrong ID/name/attempt/run and non-T3-S1 suffix rejection. Pinned upload/download
 four-member scientific readback and R1–R9 source pins remain unchanged. New
 exact-head CI and independent readback are still required; these metadata tests
 do not establish scientific, acoustic or device qualification.
+
+
+## 2026-11-10 A1 strict snapshot restart / 严格完整快照重试
+
+Frozen base: `43197447f5821abae06cab81b8c24761f4a68f84` (includes #932).
+Concrete failure: PR #933 head `1a3ca400cdc62e6dd1caf98995955af5644d96da`,
+[Verify 42909847685 / A1 job 130159135728](https://github.com/jiying2007/audio-pipeline/actions/runs/42909847685/job/130159135728),
+reported `A1_ARTIFACT_LIST_INCOMPLETE_OR_CHANGED` after upload `13807331430`
+(37,898 bytes, SHA256 `4e347ae81a3f6701129d93ed2237b2cc2480243283acd0ebd1d3f693eb376e00`).
+The response pages were not retained, so neither a changed total across pages
+nor a single-page total/row mismatch is established as the root cause. That run
+remains failed, and this change does not rewrite or delete its artifact.
+
+Hypothesis: concurrent publication can expose a transient inconsistent REST
+list. A1 alone now discards every accumulated row and restarts at page 1 after
+the existing two-second pause. The run-attempt lookup, every page, HTTP retry
+and snapshot restart share the original **eight total requests**; pagination
+and restarts never reset it. Request timeout (10 seconds), list response cap
+(256 KiB), other metadata cap (64 KiB), page/total bounds and job deadline are
+unchanged. Archive readiness retains its separate existing budget and still
+runs only after complete list admission.
+
+Acceptance still requires a complete enumeration with consistent total and
+exact page sizes, unique IDs and exactly one selected ID/name, plus unchanged
+run/attempt/head/repository/execution-source/time/digest/size/expiration checks.
+Observed invalid IDs, duplicates, name collisions and selected-artifact identity
+conflicts refuse before any restart. No row from a discarded snapshot can
+qualify a later empty snapshot. Exhaustion never admits a partial list; an
+inconsistent final page retains `A1_ARTIFACT_LIST_INCOMPLETE_OR_CHANGED`.
+Non-A1 stages keep immediate refusal on inconsistent lists. Pinned download,
+archive readiness and all scientific readback commands remain unchanged.
+
+离线元数据夹具覆盖：单页不完整后恢复、跨页 total 变化后从第一页重读、丢弃旧匹配项、
+八请求耗尽、HTTP 与快照共享预算、冲突/重复/坏行立即拒绝，以及其它阶段不扩展重试。
+这些仅是传输控制测试，不是新科学、声学或物理设备证据。原失败保持 FAIL；新代码仍须
+独立审查、准确 head 的必需 CI/summary 和保护合并后的 fresh-main 检验。

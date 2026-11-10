@@ -1,6 +1,6 @@
 # D3: exact-zero upward-update intervention result
 
-Status: CONTROLLED_DIAGNOSIS_NO_PROMOTION. This is an executed result, not NOT_RUN. No production defaults or DSP source changed.
+Status: CONTROLLED_DIAGNOSIS_NO_PROMOTION. This is an executed result, not NOT_RUN. No production defaults or production DSP source changed.
 
 ## Prospective identity and actual evidence
 

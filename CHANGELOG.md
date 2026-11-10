@@ -1,3 +1,8 @@
+# 2.3.64
+
+- Preserve exact input/output aliasing in the two-microphone beamformer without overwriting delayed input samples or raw next-frame history. Keep disjoint processing byte-identical and public state/API/ABI unchanged.
+- Add routing, direction, rate and repeated-frame alias equivalence regressions. This candidate requires its own source admission and protected verification; no acoustic promotion or physical qualification is inferred.
+
 # 2.3.63
 
 - Integrate reference drift credit over the same elapsed capture interval used for the accepted acoustic rate observation, including confidence-rejection gaps. Preserve the exact normal 100 ms arithmetic, smoothing, clamp, feedback and per-observation slip limit.

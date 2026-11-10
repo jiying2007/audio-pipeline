@@ -1,0 +1,5 @@
+mismatch rate=8000 lag=-8 alias=0 track=0 route=0 frame=0
+mismatch rate=8000 lag=-8 alias=0 track=0 route=0 frame=1
+mismatch rate=8000 lag=-8 alias=0 track=0 route=0 frame=2
+mismatch rate=8000 lag=-8 alias=0 track=0 route=0 frame=3
+cases=12240 failures=10368 state_bytes=180

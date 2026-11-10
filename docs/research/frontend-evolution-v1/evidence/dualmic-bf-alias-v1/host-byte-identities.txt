@@ -1,0 +1,8 @@
+These are measured host file identities, not a checksum inventory of this directory.
+Raw disjoint traces and binaries are not committed. Reproducer is tests/test_beamformer_alias.c.
+Baseline is src/frontend/ap_beamformer.c at 7c82ecf101ad9660398c387caebae7932998c1ab, verified Git blob 9839cf6943172cd3b5aa7757e31d29e43288588b.
+5dcd320ebdc587c5e62831dc5cf708315bb1235762036705816cbce489a9a47b  baseline.c
+7038fa60ffbcd979fb8b63a608a48c2b0110669c60d1b587459bf5bc2363cbe3  src/frontend/ap_beamformer.c
+b24b4aa5e7bfb40b4e5ab29b4bbf8cd497416ad0f6f95934b609c595ea34a561  repro.c
+c68a56e64099412fd5c03413adc83f2be294b82615adc2084f2121ae69021bc0  baseline-disjoint.bin
+c68a56e64099412fd5c03413adc83f2be294b82615adc2084f2121ae69021bc0  candidate-disjoint.bin

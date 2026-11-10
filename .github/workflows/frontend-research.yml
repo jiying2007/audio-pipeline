@@ -38,7 +38,7 @@ on:
     inputs:
       experiment:
         type: choice
-        options: [dualmic-stages-d1, dualmic-zero-d3-input]
+        options: [dualmic-stages-d1, dualmic-zero-d3-input, dualmic-zero-d3]
         default: dualmic-stages-d1
         required: true
 
@@ -57,6 +57,7 @@ jobs:
     outputs:
       d1: ${{ steps.select.outputs.d1 }}
       d3: ${{ steps.select.outputs.d3 }}
+      d3_execute: ${{ steps.select.outputs.d3_execute }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
@@ -77,12 +78,14 @@ jobs:
           event = os.environ['EVENT_NAME']
           if event == 'workflow_dispatch':
               d1 = os.environ['SELECTED_EXPERIMENT'] == 'dualmic-stages-d1'
-              d3 = os.environ['SELECTED_EXPERIMENT'] == 'dualmic-zero-d3-input'
+              d3 = os.environ['SELECTED_EXPERIMENT'] in ('dualmic-zero-d3-input', 'dualmic-zero-d3')
+              d3_execute = os.environ['SELECTED_EXPERIMENT'] == 'dualmic-zero-d3'
               if not (d1 or d3):
                   raise SystemExit('unknown experiment')
           else:
               paths = subprocess.check_output(['git','diff','--name-only',os.environ['BASE_SHA'],'HEAD']).decode().splitlines()
               d3 = any('dualmic_zero_d3' in p or 'DUALMIC_ZERO_D3' in p or 'dualmic-zero-d3' in p for p in paths)
+              d3_execute = d3 and Path('tests/validation/frontend_evolution/dualmic_zero_d3.c').is_file()
               d1 = any(('dualmic_stages' in p or 'dualmic_gain_d2' in p or
                         'DUALMIC_STAGES_D1' in p or 'DUALMIC_GAIN_D2' in p or
                         'dualmic-stages-d1' in p or 'dualmic-gain-d2' in p) for p in paths)
@@ -99,7 +102,7 @@ jobs:
                   else:
                       d1 = True
           with open(os.environ['GITHUB_OUTPUT'],'a') as out:
-              out.write('d1='+str(d1).lower()+'\nd3='+str(d3).lower()+'\n')
+              out.write('d1='+str(d1).lower()+'\nd3='+str(d3).lower()+'\nd3_execute='+str(d3_execute).lower()+'\n')
           PY
   matrix:
     needs: scope
@@ -254,14 +257,57 @@ jobs:
           timeout 300s python3 tests/validation/frontend_evolution/dualmic_zero_d3_source.py \
             --output /tmp/ap-dualmic-d3/input \
             2>&1 | tee /tmp/ap-dualmic-d3/admission.log
-      - name: Preserve original input admission or first failure
+      - name: Build reviewed isolated D3 arms and execute engineering controls
+        if: needs.scope.outputs.d3_execute == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          timeout 300s python3 tests/validation/frontend_evolution/dualmic_zero_d3.py build \
+            --input /tmp/ap-dualmic-d3/input --output /tmp/ap-dualmic-d3/result \
+            2>&1 | tee /tmp/ap-dualmic-d3/build.log
+      - name: Execute all 60 original continuous two-arm streams
+        if: needs.scope.outputs.d3_execute == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          timeout 300s python3 tests/validation/frontend_evolution/dualmic_zero_d3.py run \
+            --input /tmp/ap-dualmic-d3/input --output /tmp/ap-dualmic-d3/result \
+            2>&1 | tee /tmp/ap-dualmic-d3/run.log
+      - name: Audit complete state arithmetic and canonical fixed windows
+        if: needs.scope.outputs.d3_execute == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          timeout 300s python3 tests/validation/frontend_evolution/dualmic_zero_d3.py analysis \
+            --input /tmp/ap-dualmic-d3/input --output /tmp/ap-dualmic-d3/result \
+            2>&1 | tee /tmp/ap-dualmic-d3/analysis.log
+      - name: Read back every saved D3 output without DSP
+        if: needs.scope.outputs.d3_execute == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          timeout 300s python3 tests/validation/frontend_evolution/dualmic_zero_d3.py verify \
+            --input /tmp/ap-dualmic-d3/input --output /tmp/ap-dualmic-d3/result \
+            2>&1 | tee /tmp/ap-dualmic-d3/verify.log
+      - name: Reject eight actual-evidence mutations without changing originals
+        if: needs.scope.outputs.d3_execute == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          timeout 300s python3 tests/validation/frontend_evolution/test_dualmic_zero_d3_integrity.py \
+            --input /tmp/ap-dualmic-d3/input --output /tmp/ap-dualmic-d3/result \
+            --receipt /tmp/ap-dualmic-d3/integrity.json \
+            2>&1 | tee /tmp/ap-dualmic-d3/integrity.log
+      - name: Preserve original input admission, all D3 evidence or first failure
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: frontend-research-dualmic-zero-d3-input-${{ github.run_id }}-attempt-${{ github.run_attempt }}
+          name: frontend-research-dualmic-zero-d3-${{ github.run_id }}-attempt-${{ github.run_attempt }}
           path: |
             /tmp/ap-dualmic-d3/*.log
+            /tmp/ap-dualmic-d3/*.json
             /tmp/ap-dualmic-d3/input/*.json
+            /tmp/ap-dualmic-d3/result/
           include-hidden-files: true
           retention-days: 90
           if-no-files-found: error

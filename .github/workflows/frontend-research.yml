@@ -289,7 +289,7 @@ jobs:
           timeout 300s python3 tests/validation/frontend_evolution/dualmic_zero_d3.py verify \
             --input /tmp/ap-dualmic-d3/input --output /tmp/ap-dualmic-d3/result \
             2>&1 | tee /tmp/ap-dualmic-d3/verify.log
-      - name: Reject eight actual-evidence mutations without changing originals
+      - name: Reject fifteen actual-evidence mutations without changing originals
         if: needs.scope.outputs.d3_execute == 'true'
         shell: bash
         run: |

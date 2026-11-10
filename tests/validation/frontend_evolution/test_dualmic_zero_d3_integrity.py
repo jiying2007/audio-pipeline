@@ -28,6 +28,13 @@ def main():
         ("source", "source/candidate.c", "append"),
         ("report", "report.json", "report"),
         ("added_member", "cases/"+key+"/unlisted.bin", "add"),
+        ("output_root_member", "unlisted.bin", "add"),
+        ("case_root_member", "cases/unlisted.bin", "add"),
+        ("self_consistent_build_argv", "build.json", "argv"),
+        ("source_tree", "build.json", "tree"),
+        ("source_revision", "build.json", "revision"),
+        ("failed_run_phase", "run-phase.json", "phase"),
+        ("resealed_extra_source", "source/extra.h", "source_extra"),
     ]
     records=[]; receipt={"experiment":d3.EXPERIMENT,"status":"FAIL","tests":records,"budget_seconds":300}
     try:
@@ -41,6 +48,17 @@ def main():
                 elif kind=="delete": path.unlink()
                 elif kind=="append": path.write_bytes(path.read_bytes()+b"\n")
                 elif kind=="add": path.write_bytes(b"unlisted")
+                elif kind=="argv":
+                    b=d3.d2.read_json(path); b["command"][2]="-O3"; dump(path,b)
+                    r=d3.d2.read_json(copy/"build-command.json"); r["argv"]=b["command"]; dump(copy/"build-command.json",r)
+                elif kind in ("tree","revision"):
+                    b=d3.d2.read_json(path); b["source_tree" if kind=="tree" else "source_revision"]="0"*40; dump(path,b)
+                elif kind=="phase":
+                    r=d3.d2.read_json(path); r["status"]="FAIL"; dump(path,r)
+                elif kind=="source_extra":
+                    path.write_bytes(b"unlisted")
+                    b=d3.d2.read_json(copy/"build.json"); b["source_files"]["source/extra.h"]=d3.descriptor(path)
+                    dump(copy/"build.json",b)
                 else:
                     report=d3.d2.read_json(path); report["promotion_allowed"]=True; dump(path,report)
                 try:
@@ -50,7 +68,7 @@ def main():
                                     "reason":str(error)})
                 else:
                     raise ValueError("D3_TAMPER_NOT_REJECTED:"+name)
-        need(len(records)==8,"D3_NEGATIVE_MATRIX_INCOMPLETE")
+        need(len(records)==15,"D3_NEGATIVE_MATRIX_INCOMPLETE")
         receipt["status"]="PASS"
     finally:
         receipt["elapsed_seconds"]=time.monotonic()-start

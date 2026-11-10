@@ -20,9 +20,12 @@ need = source.need
 
 
 def frozen_lock():
-    for name in (LOCK_PATH, PLAN_PATH):
-        raw = subprocess.check_output(["git", "show", FREEZE + ":" + name], cwd=ROOT, timeout=30)
-        need((ROOT / name).read_bytes() == raw, "D3_FROZEN_CONTRACT_CHANGED")
+    pinned = {LOCK_PATH: "d973fcd88a52787b6026ddb8add815c5f4475e54",
+              PLAN_PATH: "070545d075cc32ccdf33cd532d450170419be986"}
+    for name, expected in pinned.items():
+        raw = (ROOT / name).read_bytes()
+        blob = hashlib.sha1(b"blob " + str(len(raw)).encode() + b"\0" + raw).hexdigest()
+        need(blob == expected, "D3_FROZEN_CONTRACT_CHANGED")
     lock = json.loads((ROOT / LOCK_PATH).read_bytes())
     for name, expected in lock["helper_git_blobs"].items():
         raw = (ROOT / name).read_bytes()

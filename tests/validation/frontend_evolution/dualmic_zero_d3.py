@@ -13,6 +13,7 @@ import statistics
 import struct
 import subprocess
 import time
+import tarfile
 
 import dualmic_gain_d2 as d2
 import dualmic_zero_d3_source as admission
@@ -23,6 +24,8 @@ C_PATH = "tests/validation/frontend_evolution/dualmic_zero_d3.c"
 PY_PATH = "tests/validation/frontend_evolution/dualmic_zero_d3.py"
 OLD = "cc853616685b9faf7880e6d8f8f1a89d187d342a"
 EXPERIMENT = "FE-DUALMIC-ZERO-D3"
+EXECUTION_ROOT = Path("/tmp/ap-dualmic-d3/result")
+INPUT_ROOT = Path("/tmp/ap-dualmic-d3/input")
 BEFORE = "    state->gain += alpha * (target_gain - state->gain);"
 AFTER = "    if (peak != 0.0f || target_gain < state->gain) state->gain += alpha * (target_gain - state->gain);"
 
@@ -68,14 +71,45 @@ def command(argv, log, start):
     remaining(start,300)
 
 
+def old_sources(input_root,parent):
+    manifest=d2.read_json(parent/"build/build-manifest.json")
+    spec=manifest["source_archive"]
+    archive=d2.safe(input_root/"original/build",spec["path"])
+    need(descriptor(archive)=={k:spec[k] for k in ("bytes","sha256")},"D3_ORIGINAL_SOURCE_ARCHIVE")
+    result={}
+    with tarfile.open(archive,"r:") as stream:
+        for name in ("src/enhance/ap_agc.c","src/enhance/ap_enhance.h"):
+            members=[m for m in stream.getmembers() if m.name==name]
+            need(len(members)==1 and members[0].isfile() and
+                 0 < members[0].size <= 262144,"D3_EXACT_ARCHIVE_SOURCE_MEMBER")
+            f=stream.extractfile(members[0])
+            need(f is not None,"D3_MISSING_ARCHIVE_MEMBER")
+            raw=f.read(members[0].size+1)
+            need(len(raw)==members[0].size,"D3_TRUNCATED_ARCHIVE_SOURCE")
+            import hashlib
+            need(hashlib.sha256(raw).hexdigest()==manifest["production_files"][name]["sha256"],
+                 "D3_ARCHIVED_PRODUCTION_SOURCE_CHANGED")
+            result[name]=raw
+    return result
+
+
+def compile_argv(compiler):
+    return [compiler,"-std=c11","-O2","-ffp-contract=off","-Wall","-Wextra","-Werror",
+            "-DAP_BUILD_STAGE_AGC=1","-I"+str(EXECUTION_ROOT/"source"),str(EXECUTION_ROOT/"source/runner.c"),
+            str(EXECUTION_ROOT/"source/candidate.c"),str(EXECUTION_ROOT/"source/original-library.a"),
+            "-lm","-o",str(EXECUTION_ROOT/"replay")]
+
+
 def build(input_root, output, start):
+    need(output==EXECUTION_ROOT and input_root==INPUT_ROOT,"D3_FROZEN_EXECUTION_ROOT")
     prior, parent, lock = original(input_root)
+    archived=old_sources(input_root,parent)
     output.mkdir(parents=True,exist_ok=False)
     (output/"source/enhance").mkdir(parents=True)
     identity, old_build = d2.verify_sources(prior, lock)
     production = d2.read_json(parent/"build/build-manifest.json")["production_files"]
     for remote, dest in (("src/enhance/ap_agc.c","baseline.c"),("src/enhance/ap_enhance.h","enhance/ap_enhance.h")):
-        raw = git("show",OLD+":"+remote)
+        raw = archived[remote]
         p=output/"source"/dest; p.write_bytes(raw)
         need(digest(p)==production[remote]["sha256"],"D3_ORIGINAL_PRODUCTION_SOURCE_CHANGED")
     src=(output/"source/baseline.c").read_text()
@@ -101,25 +135,33 @@ def build(input_root, output, start):
     compiler=shutil.which("cc")
     need(compiler is not None,"D3_COMPILER_MISSING")
     command([compiler,"--version"],output/"compiler.log",start)
-    argv=[compiler,"-std=c11","-O2","-ffp-contract=off","-Wall","-Wextra","-Werror",
-          "-DAP_BUILD_STAGE_AGC=1","-I"+str(output/"source"),str(output/"source/runner.c"),
-          str(output/"source/candidate.c"),str(output/"source/original-library.a"),"-lm","-o",str(output/"replay")]
+    argv=compile_argv(compiler)
     command(argv,output/"build.log",start)
     command([str(output/"replay"),"--self-test"],output/"self-test.log",start)
     files={p.relative_to(output).as_posix():descriptor(p) for p in (output/"source").rglob("*") if p.is_file()}
     dump(output/"build.json",{"experiment":EXPERIMENT,"source_revision":revision,
          "source_tree":git("rev-parse","HEAD^{tree}").decode().strip(),"original_source":OLD,
-         "compiler":descriptor(Path(compiler)),"command":argv,"source_files":files,
+         "compiler":descriptor(Path(compiler)),"compiler_path":compiler,"command":argv,"source_files":files,
          "program":descriptor(output/"replay"),"intervention_before":BEFORE,"intervention_after":AFTER,
          "original_D2_library_used":True,"same_old_compiler_claim":False,"promotion_allowed":False})
 
 
-def verify_build(output):
+def verify_build(input_root,output):
     b=d2.read_json(output/"build.json")
+    head=git("rev-parse","HEAD").decode().strip()
+    tree=git("rev-parse","HEAD^{tree}").decode().strip()
+    need(b["source_revision"]==head and b["source_tree"]==tree and
+         (output/"source/driver.py").read_bytes()==(ROOT/PY_PATH).read_bytes(),"D3_REVIEWED_SOURCE_IDENTITY")
+    archived=old_sources(input_root,input_root/"original/result")
     need(b["experiment"]==EXPERIMENT and b["original_source"]==OLD and
          b["program"]==descriptor(output/"replay"),"D3_BUILD_IDENTITY")
     actual={p.relative_to(output).as_posix():descriptor(p) for p in (output/"source").rglob("*") if p.is_file()}
-    need(actual==b["source_files"],"D3_BUILD_SOURCE_CHANGED")
+    expected_sources={"source/"+n for n in ("runner.c","driver.py","integrity.py","admission.py",
+                      "input-lock.json","plan.md","implementation.md","baseline.c","candidate.c",
+                      "original-library.a","enhance/ap_enhance.h")}
+    need(set(actual)==expected_sources and actual==b["source_files"] and
+         {x.relative_to(output/"source").as_posix() for x in (output/"source").rglob("*") if x.is_dir()}=={"enhance"},
+         "D3_BUILD_SOURCE_CHANGED")
     for saved,revision,remote in (("runner.c",b["source_revision"],C_PATH),
                                   ("driver.py",b["source_revision"],PY_PATH),
                                   ("integrity.py",b["source_revision"],"tests/validation/frontend_evolution/test_dualmic_zero_d3_integrity.py"),
@@ -127,10 +169,11 @@ def verify_build(output):
                                   ("input-lock.json",b["source_revision"],admission.LOCK_PATH),
                                   ("plan.md",b["source_revision"],admission.PLAN_PATH),
                                   ("implementation.md",b["source_revision"],"docs/research/frontend-evolution-v1/DUALMIC_ZERO_D3_IMPLEMENTATION.md"),
-                                  ("baseline.c",OLD,"src/enhance/ap_agc.c"),
-                                  ("enhance/ap_enhance.h",OLD,"src/enhance/ap_enhance.h")):
+                                  ):
         need((output/"source"/saved).read_bytes()==git("show",revision+":"+remote),
              "D3_RETAINED_SOURCE_NOT_COMMITTED")
+    for saved,name in (("baseline.c","src/enhance/ap_agc.c"),("enhance/ap_enhance.h","src/enhance/ap_enhance.h")):
+        need((output/"source"/saved).read_bytes()==archived[name],"D3_RETAINED_ARCHIVE_SOURCE_CHANGED")
     baseline=(output/"source/baseline.c").read_text()
     need(baseline.count(BEFORE)==1 and b["intervention_before"]==BEFORE and
          b["intervention_after"]==AFTER,"D3_INTERVENTION_CONTRACT")
@@ -142,7 +185,13 @@ def verify_build(output):
         receipt=d2.read_json(output/filename)
         need(receipt["returncode"]==0 and 0 <= receipt["elapsed_seconds"] <= 300,
              "D3_BUILD_COMMAND_FAILED")
-    need(d2.read_json(output/"build-command.json")["argv"]==b["command"],"D3_BUILD_COMMAND_CHANGED")
+    compiler=shutil.which("cc")
+    need(compiler==b["compiler_path"] and descriptor(Path(compiler))==b["compiler"],"D3_COMPILER_IDENTITY")
+    need(d2.read_json(output/"build-command.json")["argv"]==b["command"]==compile_argv(compiler),
+         "D3_BUILD_COMMAND_CHANGED")
+    need(d2.read_json(output/"compiler-command.json")["argv"]==[compiler,"--version"] and
+         d2.read_json(output/"self-test-command.json")["argv"]==[str(EXECUTION_ROOT/"replay"),"--self-test"],
+         "D3_BUILD_CONTROL_COMMAND_CHANGED")
     return b
 
 
@@ -153,7 +202,8 @@ def phase_pass(output,phase):
 
 
 def run(input_root,output,start):
-    prior,parent,lock=original(input_root); verify_build(output); phase_pass(output,"build")
+    need(output==EXECUTION_ROOT and input_root==INPUT_ROOT,"D3_FROZEN_EXECUTION_ROOT")
+    prior,parent,lock=original(input_root); verify_build(input_root,output); phase_pass(output,"build")
     (output/"cases").mkdir(exist_ok=False)
     completed=[]
     for entry in lock["cases"]:
@@ -173,13 +223,24 @@ def run(input_root,output,start):
 
 
 def analyze(input_root,output,start):
-    prior,parent,lock=original(input_root); b=verify_build(output)
+    prior,parent,lock=original(input_root); b=verify_build(input_root,output)
     phase_pass(output,"build"); phase_pass(output,"run")
     library=d2.read_json(prior/"build-manifest.json")["parent_plain"]["library"]
     need(descriptor(output/"source/original-library.a")=={k:library[k] for k in ("bytes","sha256")},
          "D3_BASELINE_LIBRARY_NOT_ORIGINAL")
     need(d2.read_json(output/"run-index.json")["completed"]==[e["catalog"]["key"] for e in lock["cases"]],
          "D3_RUN_MATRIX_CHANGED")
+    allowed={"source","cases","compiler.log","compiler-command.json","build.log","build-command.json",
+             "self-test.log","self-test-command.json","build.json","replay","build-phase.json",
+             "run-index.json","run-phase.json","analysis-phase.json","report.json","readback.json","verify-phase.json"}
+    need({x.name for x in output.iterdir()} <= allowed and
+         all(not x.is_symlink() for x in output.rglob("*")),"D3_OUTPUT_ROOT_MEMBERSHIP")
+    expected_files={e["catalog"]["key"]+"/"+name for e in lock["cases"] for name in
+                    ("control.bin","baseline.f32le","candidate.f32le","trace.bin","execution.log","execution-command.json")}
+    expected_dirs={e["catalog"]["key"] for e in lock["cases"]}|{"A","C"}
+    need(d2.file_set(output/"cases")==expected_files and
+         {x.relative_to(output/"cases").as_posix() for x in (output/"cases").rglob("*") if x.is_dir()}==expected_dirs,
+         "D3_CASE_ROOT_MEMBERSHIP")
     old_report=d2.read_json(prior/"report.json"); cases=[]; totals={"frames":0,"resets":0,"zero_frames":0,"held_updates":0}
     for entry,old_case in zip(lock["cases"],old_report["cases"]):
         case=entry["catalog"]; folder=output/"cases"/case["key"]; taps=parent/"cases"/case["key"]/"taps"
@@ -189,6 +250,13 @@ def analyze(input_root,output,start):
              all(x.is_file() and not x.is_symlink() for x in folder.iterdir()),"D3_CASE_FILE_MEMBERSHIP")
         execution=d2.read_json(folder/"execution-command.json")
         need(execution["returncode"]==0 and 0 <= execution["elapsed_seconds"] <= 300,"D3_EXECUTION_FAILED")
+        fixed_case=EXECUTION_ROOT/"cases"/case["key"]
+        fixed_taps=INPUT_ROOT/"original/result/cases"/case["key"]/"taps"
+        expected_argv=[str(EXECUTION_ROOT/"replay"),str(fixed_taps/"ns_output.f32le"),
+                       str(fixed_taps/"agc_output.f32le"),str(fixed_case/"control.bin"),
+                       str(fixed_case/"baseline.f32le"),str(fixed_case/"candidate.f32le"),
+                       str(fixed_case/"trace.bin"),case["profile"],str(case["frames"])]
+        need(execution["argv"]==expected_argv,"D3_EXECUTION_COMMAND_CHANGED")
         controls=d2.control_bytes(taps/"control.csv",case)
         need((folder/"control.bin").read_bytes()==controls,"D3_CONTROLS_CHANGED")
         raw=(taps/"ns_output.f32le").read_bytes()

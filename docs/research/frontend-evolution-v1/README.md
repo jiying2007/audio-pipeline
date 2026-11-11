@@ -1,5 +1,16 @@
 # Frontend Evolution v1 / 双麦与四麦开放研究
 
+## 2026-11-11 双麦帧内增益过渡候选 D6
+
+[D6执行前合同](DUALMIC_GAIN_RAMP_D6_PLAN.zh-CN.md)与[实施说明](DUALMIC_GAIN_RAMP_D6_IMPLEMENTATION.zh-CN.md)
+冻结唯一输出域160样点线性增益过渡，原12-byte AGC状态、target/alpha/gate参数及安全cap不变。
+[完整输入锁](dualmic-gain-ramp-d6-input-lock.json)绑定原D2全部60视图/362窗和23个完整依赖。
+发展屏障要求全部可评分共同跨度/固定窗SI-SDR不退化、双讲至少一例共同跨度严格正、
+全24个远端相关视图原RMS指标/peak不增及每例clamp不增；严格正值不等于实质改善。
+当前为**已冻结、实施待独立源码审查、NOT_RUN**，不与D3/D5混合，不改生产或推广默认。
+实际后续身份与失败记录见 [#942](https://github.com/jiying2007/audio-pipeline/issues/942)。
+
+
 ## 2026-11-11 双麦 target gate 单一结构诊断 D5
 
 [D5 冻结合同](DUALMIC_TARGET_GATE_D5_PLAN.zh-CN.md)与[实施说明](DUALMIC_TARGET_GATE_D5_IMPLEMENTATION.zh-CN.md)

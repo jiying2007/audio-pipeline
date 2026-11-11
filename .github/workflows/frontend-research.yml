@@ -24,6 +24,10 @@ on:
       - 'tests/validation/frontend_evolution/test_dualmic_target_gate_d5*'
       - 'docs/research/frontend-evolution-v1/DUALMIC_TARGET_GATE_D5*'
       - 'docs/research/frontend-evolution-v1/dualmic-target-gate-d5*'
+      - 'tests/validation/frontend_evolution/dualmic_gain_ramp_d6*'
+      - 'tests/validation/frontend_evolution/test_dualmic_gain_ramp_d6*'
+      - 'docs/research/frontend-evolution-v1/DUALMIC_GAIN_RAMP_D6*'
+      - 'docs/research/frontend-evolution-v1/dualmic-gain-ramp-d6*'
       - '.github/workflows/frontend-research.yml'
   push:
     branches: [main]
@@ -49,12 +53,16 @@ on:
       - 'tests/validation/frontend_evolution/test_dualmic_target_gate_d5*'
       - 'docs/research/frontend-evolution-v1/DUALMIC_TARGET_GATE_D5*'
       - 'docs/research/frontend-evolution-v1/dualmic-target-gate-d5*'
+      - 'tests/validation/frontend_evolution/dualmic_gain_ramp_d6*'
+      - 'tests/validation/frontend_evolution/test_dualmic_gain_ramp_d6*'
+      - 'docs/research/frontend-evolution-v1/DUALMIC_GAIN_RAMP_D6*'
+      - 'docs/research/frontend-evolution-v1/dualmic-gain-ramp-d6*'
       - '.github/workflows/frontend-research.yml'
   workflow_dispatch:
     inputs:
       experiment:
         type: choice
-        options: [dualmic-stages-d1, dualmic-zero-d3-input, dualmic-zero-d3, dualmic-window-d4, dualmic-target-gate-d5]
+        options: [dualmic-stages-d1, dualmic-zero-d3-input, dualmic-zero-d3, dualmic-window-d4, dualmic-target-gate-d5, dualmic-gain-ramp-d6]
         default: dualmic-stages-d1
         required: true
 
@@ -76,6 +84,7 @@ jobs:
       d3_execute: ${{ steps.select.outputs.d3_execute }}
       d4: ${{ steps.select.outputs.d4 }}
       d5: ${{ steps.select.outputs.d5 }}
+      d6: ${{ steps.select.outputs.d6 }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
@@ -100,13 +109,15 @@ jobs:
               d3_execute = os.environ['SELECTED_EXPERIMENT'] == 'dualmic-zero-d3'
               d4 = os.environ['SELECTED_EXPERIMENT'] == 'dualmic-window-d4'
               d5 = os.environ['SELECTED_EXPERIMENT'] == 'dualmic-target-gate-d5'
-              if not (d1 or d3 or d4 or d5):
+              d6 = os.environ['SELECTED_EXPERIMENT'] == 'dualmic-gain-ramp-d6'
+              if not (d1 or d3 or d4 or d5 or d6):
                   raise SystemExit('unknown experiment')
           else:
               paths = subprocess.check_output(['git','diff','--name-only',os.environ['BASE_SHA'],'HEAD']).decode().splitlines()
               d3 = any('dualmic_zero_d3' in p or 'DUALMIC_ZERO_D3' in p or 'dualmic-zero-d3' in p for p in paths)
               d4 = any('dualmic_window_d4' in p or 'DUALMIC_WINDOW_D4' in p or 'dualmic-window-d4' in p for p in paths)
               d5 = any('dualmic_target_gate_d5' in p or 'DUALMIC_TARGET_GATE_D5' in p or 'dualmic-target-gate-d5' in p for p in paths)
+              d6 = any('dualmic_gain_ramp_d6' in p or 'DUALMIC_GAIN_RAMP_D6' in p or 'dualmic-gain-ramp-d6' in p for p in paths)
               d3_execute = d3 and Path('tests/validation/frontend_evolution/dualmic_zero_d3.c').is_file()
               d1 = any(('dualmic_stages' in p or 'dualmic_gain_d2' in p or
                         'DUALMIC_STAGES_D1' in p or 'DUALMIC_GAIN_D2' in p or
@@ -114,37 +125,49 @@ jobs:
               if '.github/workflows/frontend-research.yml' in paths:
                   prior_workflow = subprocess.check_output(['git','show',os.environ['BASE_SHA']+':.github/workflows/frontend-research.yml']).decode()
                   current_workflow = Path('.github/workflows/frontend-research.yml').read_text()
-                  marker = '\n  dualmic-target-gate-d5:\n'
-                  if current_workflow.split(marker,1)[-1] != prior_workflow.split(marker,1)[-1]:
-                      d5 = True
-                  if d5 and not (d1 or d3 or d4):
-                      if current_workflow.count(marker) != 1:
-                          raise SystemExit('D5_JOB_MISSING_OR_DUPLICATE')
-                      old = subprocess.check_output(['git','show','e0f2be9bf6273baa46149062ec7ea700cd76387e:.github/workflows/frontend-research.yml']).decode()
-                      new = Path('.github/workflows/frontend-research.yml').read_text()
-                      original = old.split('  matrix:\n',1)[1]
-                      current = new.split('  matrix:\n',1)[1].split('\n  dualmic-target-gate-d5:\n',1)[0]
-                      if current != original:
-                          raise SystemExit('D5_ONLY_CHANGE_MODIFIED_HISTORICAL_JOBS')
-                  elif (d3 or d4) and not d1:
-                      # D3/D4-only additions must not change the existing D1 job.
-                      old = subprocess.check_output(['git','show','8310359974a84407630e0e5c502e24f3f1c76b56:.github/workflows/frontend-research.yml']).decode()
-                      new = Path('.github/workflows/frontend-research.yml').read_text()
-                      original = old.split('  matrix:\n',1)[1]
-                      current = new.split('  matrix:\n',1)[1].split('\n  dualmic-zero-d3-input:\n',1)[0]
-                      current = current.replace("    needs: scope\n    if: needs.scope.outputs.d1 == 'true'\n", '', 1)
-                      if current.rstrip() != original.rstrip():
-                          raise SystemExit('D3_ONLY_CHANGE_MODIFIED_ORIGINAL_D1_JOB')
-                      if d4 and not d3:
-                          base = subprocess.check_output(['git','show','dec7bf7c94f0e2a99d415eb497357e2ea44a5dcc:.github/workflows/frontend-research.yml']).decode()
-                          original_d3 = base.split('\n  dualmic-zero-d3-input:\n',1)[1]
-                          current_d3 = new.split('\n  dualmic-zero-d3-input:\n',1)[1].split('\n  dualmic-window-d4:\n',1)[0]
-                          if original_d3.rstrip() != current_d3.rstrip():
-                              raise SystemExit('D4_ONLY_CHANGE_MODIFIED_ORIGINAL_D3_JOB')
+                  d6_marker = '\n  dualmic-gain-ramp-d6:\n'
+                  if current_workflow.split(d6_marker,1)[-1] != prior_workflow.split(d6_marker,1)[-1]:
+                      d6 = True
+                  if d6 and not (d1 or d3 or d4 or d5):
+                      if current_workflow.count(d6_marker) != 1:
+                          raise SystemExit('D6_JOB_MISSING_OR_DUPLICATE')
+                      frozen = subprocess.check_output(['git','show','6c7752800838f2c7fd707593c658f250a071e98c:.github/workflows/frontend-research.yml']).decode()
+                      original_jobs = frozen.split('  matrix:\n',1)[1]
+                      current_jobs = current_workflow.split('  matrix:\n',1)[1].split(d6_marker,1)[0]
+                      if current_jobs != original_jobs:
+                          raise SystemExit('D6_ONLY_CHANGE_MODIFIED_HISTORICAL_JOBS')
                   else:
-                      d1 = True
+                      marker = '\n  dualmic-target-gate-d5:\n'
+                      if current_workflow.split(marker,1)[-1] != prior_workflow.split(marker,1)[-1]:
+                          d5 = True
+                      if d5 and not (d1 or d3 or d4):
+                          if current_workflow.count(marker) != 1:
+                              raise SystemExit('D5_JOB_MISSING_OR_DUPLICATE')
+                          old = subprocess.check_output(['git','show','e0f2be9bf6273baa46149062ec7ea700cd76387e:.github/workflows/frontend-research.yml']).decode()
+                          new = Path('.github/workflows/frontend-research.yml').read_text()
+                          original = old.split('  matrix:\n',1)[1]
+                          current = new.split('  matrix:\n',1)[1].split('\n  dualmic-target-gate-d5:\n',1)[0]
+                          if current != original:
+                              raise SystemExit('D5_ONLY_CHANGE_MODIFIED_HISTORICAL_JOBS')
+                      elif (d3 or d4) and not d1:
+                          # D3/D4-only additions must not change the existing D1 job.
+                          old = subprocess.check_output(['git','show','8310359974a84407630e0e5c502e24f3f1c76b56:.github/workflows/frontend-research.yml']).decode()
+                          new = Path('.github/workflows/frontend-research.yml').read_text()
+                          original = old.split('  matrix:\n',1)[1]
+                          current = new.split('  matrix:\n',1)[1].split('\n  dualmic-zero-d3-input:\n',1)[0]
+                          current = current.replace("    needs: scope\n    if: needs.scope.outputs.d1 == 'true'\n", '', 1)
+                          if current.rstrip() != original.rstrip():
+                              raise SystemExit('D3_ONLY_CHANGE_MODIFIED_ORIGINAL_D1_JOB')
+                          if d4 and not d3:
+                              base = subprocess.check_output(['git','show','dec7bf7c94f0e2a99d415eb497357e2ea44a5dcc:.github/workflows/frontend-research.yml']).decode()
+                              original_d3 = base.split('\n  dualmic-zero-d3-input:\n',1)[1]
+                              current_d3 = new.split('\n  dualmic-zero-d3-input:\n',1)[1].split('\n  dualmic-window-d4:\n',1)[0]
+                              if original_d3.rstrip() != current_d3.rstrip():
+                                  raise SystemExit('D4_ONLY_CHANGE_MODIFIED_ORIGINAL_D3_JOB')
+                      else:
+                          d1 = True
           with open(os.environ['GITHUB_OUTPUT'],'a') as out:
-              out.write('d1='+str(d1).lower()+'\nd3='+str(d3).lower()+'\nd3_execute='+str(d3_execute).lower()+'\nd4='+str(d4).lower()+'\nd5='+str(d5).lower()+'\n')
+              out.write('d1='+str(d1).lower()+'\nd3='+str(d3).lower()+'\nd3_execute='+str(d3_execute).lower()+'\nd4='+str(d4).lower()+'\nd5='+str(d5).lower()+'\nd6='+str(d6).lower()+'\n')
           PY
   matrix:
     needs: scope
@@ -507,6 +530,92 @@ jobs:
             /tmp/ap-dualmic-d5/*.json
             /tmp/ap-dualmic-d5/input/*.json
             /tmp/ap-dualmic-d5/result/
+          include-hidden-files: true
+          retention-days: 90
+          if-no-files-found: error
+
+  dualmic-gain-ramp-d6:
+    needs: scope
+    if: needs.scope.outputs.d6 == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+      EXECUTION_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Check D6 engineering controls and unchanged original reader
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir /tmp/ap-dualmic-d6
+          test "$(git rev-parse HEAD)" = "$EXECUTION_SHA"
+          test -z "$(git status --porcelain)"
+          timeout 300s python3 tests/validation/frontend_evolution/test_dualmic_gain_ramp_d6.py --self-test \
+            2>&1 | tee /tmp/ap-dualmic-d6/controls.log
+          timeout 300s python3 tests/validation/frontend_evolution/test_dualmic_zero_d3_source.py \
+            2>&1 | tee /tmp/ap-dualmic-d6/source-tests.log
+          timeout 300s python3 tests/validation/frontend_evolution/test_dualmic_stages_source.py \
+            2>&1 | tee /tmp/ap-dualmic-d6/archive-tests.log
+      - name: Admit original D2 with the unchanged exact archive reader
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          timeout 300s python3 tests/validation/frontend_evolution/dualmic_zero_d3_source.py \
+            --output /tmp/ap-dualmic-d6/input \
+            2>&1 | tee /tmp/ap-dualmic-d6/admission.log
+      - name: Build one isolated D6 candidate and execute engineering controls
+        shell: bash
+        run: |
+          set -euo pipefail
+          timeout 300s python3 tests/validation/frontend_evolution/dualmic_gain_ramp_d6.py build \
+            --input /tmp/ap-dualmic-d6/input --output /tmp/ap-dualmic-d6/result \
+            2>&1 | tee /tmp/ap-dualmic-d6/build.log
+      - name: Execute all 60 continuous original-input two-arm streams
+        shell: bash
+        run: |
+          set -euo pipefail
+          timeout 300s python3 tests/validation/frontend_evolution/dualmic_gain_ramp_d6.py run \
+            --input /tmp/ap-dualmic-d6/input --output /tmp/ap-dualmic-d6/result \
+            2>&1 | tee /tmp/ap-dualmic-d6/run.log
+      - name: Audit original states, actual coefficients, canonical levels and fixed screen
+        shell: bash
+        run: |
+          set -euo pipefail
+          timeout 300s python3 tests/validation/frontend_evolution/dualmic_gain_ramp_d6.py analysis \
+            --input /tmp/ap-dualmic-d6/input --output /tmp/ap-dualmic-d6/result \
+            2>&1 | tee /tmp/ap-dualmic-d6/analysis.log
+      - name: Read back every D6 byte and fixed score without DSP
+        shell: bash
+        run: |
+          set -euo pipefail
+          timeout 300s python3 tests/validation/frontend_evolution/dualmic_gain_ramp_d6.py verify \
+            --input /tmp/ap-dualmic-d6/input --output /tmp/ap-dualmic-d6/result \
+            2>&1 | tee /tmp/ap-dualmic-d6/verify.log
+      - name: Reject exact-reason actual evidence corruptions after qualified baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          timeout 300s python3 tests/validation/frontend_evolution/test_dualmic_gain_ramp_d6.py \
+            --input /tmp/ap-dualmic-d6/input --output /tmp/ap-dualmic-d6/result \
+            --receipt /tmp/ap-dualmic-d6/integrity.json \
+            2>&1 | tee /tmp/ap-dualmic-d6/integrity.log
+      - name: Preserve D6 original admission, complete evidence and first failure
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: frontend-research-dualmic-gain-ramp-d6-${{ github.run_id }}-attempt-${{ github.run_attempt }}
+          path: |
+            /tmp/ap-dualmic-d6/*.log
+            /tmp/ap-dualmic-d6/*.json
+            /tmp/ap-dualmic-d6/input/*.json
+            /tmp/ap-dualmic-d6/result/
           include-hidden-files: true
           retention-days: 90
           if-no-files-found: error

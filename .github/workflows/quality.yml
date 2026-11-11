@@ -1307,18 +1307,36 @@ jobs:
           python3 tests/validation/frontend_evolution/fe09_runtime_source_boundary.py t2f0 \
             --verify --output fe09-t2-f0 --execution-source "$GITHUB_SHA"
       - name: Retain T2 F0 exact-run negative feasibility and failure evidence
+        id: fe09_t2_f0_upload
         if: always() && (steps.fe09_t2_f0.outcome == 'success' || steps.fe09_t2_f0.outcome == 'failure')
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: frontend-fe09-s3-t2-f0-render-feasibility-${{ github.run_id }}
+          name: frontend-fe09-s3-t2-f0-render-feasibility-${{ github.run_id }}-attempt-${{ github.run_attempt }}
           path: fe09-t2-f0/
           retention-days: 30
           if-no-files-found: error
+      - name: Witness exact t2-f0 upload in the pinned downloader REST list
+        if: steps.fe09_t2_f0.outcome == 'success'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ARTIFACT_ID: ${{ steps.fe09_t2_f0_upload.outputs.artifact-id }}
+          RUN_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          python3 tests/validation/frontend_evolution/fe09_same_run_artifact_visibility.py \
+            --artifact-id "$ARTIFACT_ID" --run-id "$GITHUB_RUN_ID" \
+            --artifact-name "frontend-fe09-s3-t2-f0-render-feasibility-$GITHUB_RUN_ID-attempt-$GITHUB_RUN_ATTEMPT" \
+            --run-attempt "$GITHUB_RUN_ATTEMPT" --run-head-sha "$RUN_HEAD_SHA" \
+            --execution-source "$GITHUB_SHA"
       - name: Independently download exact T2 F0 four-member Artifact
         if: steps.fe09_t2_f0.outcome == 'success'
         uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
-          name: frontend-fe09-s3-t2-f0-render-feasibility-${{ github.run_id }}
+          artifact-ids: ${{ steps.fe09_t2_f0_upload.outputs.artifact-id }}
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ github.run_id }}
           path: fe09-t2-f0-readback
       - name: Check external T2 F0 negative-only verdict and source-linked rehash
         if: steps.fe09_t2_f0.outcome == 'success'

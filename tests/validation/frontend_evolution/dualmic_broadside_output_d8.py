@@ -618,12 +618,13 @@ def retain_case(case):
     proof = directory/"retention.json"
     directory.mkdir(parents=True,exist_ok=False)
     dump(proof,receipt,compact=True)
-    for operation in operations:
-        source = Path(operation["source"])
-        if operation["action"] == "move":
-            build.retain_move(source,Path(operation["destination"]),operation["identity"],proof)
-        else:
-            build.discard_equal(source,Path(operation["equal_to"]),proof)
+    with build.budget().retirement(proof):
+        for operation in operations:
+            source = Path(operation["source"])
+            if operation["action"] == "move":
+                build.retain_move(source,Path(operation["destination"]),operation["identity"],proof)
+            else:
+                build.discard_equal(source,Path(operation["equal_to"]),proof)
     check_retention(case,receipt)
 
 def retained_case(case,built=None):

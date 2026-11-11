@@ -316,11 +316,15 @@ def category(path):
     need(path.is_relative_to(OUTPUT) and path != OUTPUT, "D8_WRITE_ESCAPE")
     need(path.resolve(strict=False) == path, "D8_WRITE_ESCAPE")
     name = path.relative_to(OUTPUT).as_posix()
-    parts = PurePosixPath(name).parts
     for parent in [path, *path.parents]:
         if parent == OUTPUT.parent:
             break
         need(not parent.is_symlink(), "D8_OUTPUT_SYMLINK")
+    return _category_name(name)
+
+def _category_name(name):
+    """Pure classifier, only after a target or complete no-follow walk is checked."""
+    parts = PurePosixPath(name).parts
     if parts[0] == "build":
         return "all_source_archive_derived_build_provenance"
     if len(parts) >= 3 and parts[:2] == ("scratch", "current"):
@@ -373,27 +377,45 @@ class ByteBudget:
         self.next_token = 0
         self.case_state = None
         self.next_case = 0
+        self.retiring = None
 
     def measured(self):
         totals = dict.fromkeys(CAPS, 0)
         files = {}
         if self.root.exists():
-            need(self.root.is_dir() and not self.root.is_symlink(), "D8_OUTPUT_SYMLINK")
-            for p in self.root.rglob("*"):
-                need(not p.is_symlink(), "D8_OUTPUT_SYMLINK")
-                if p.is_dir():
-                    continue
-                need(p.is_file() and p.stat().st_nlink == 1, "D8_REGULAR_FILE")
-                size = p.stat().st_size
-                files[str(p)] = size
-                totals[category(p)] += size
-                if p == self.root / "build/exact-source.tar":
-                    need(size <= SOURCE_LIMIT, "D8_SOURCE_ARCHIVE_BOUND")
+            need(self.root.resolve(strict=True) == self.root and
+                 self.root.is_dir() and not self.root.is_symlink(), "D8_OUTPUT_SYMLINK")
+            pending = [self.root]
+            while pending:
+                job_remaining()
+                directory = pending.pop()
+                # Resolve the root/ancestor chain once, then classify every
+                # descendant by its own lstat without following symlinks.
+                with os.scandir(directory) as entries:
+                    for entry in entries:
+                        info = entry.stat(follow_symlinks=False)
+                        need(not stat.S_ISLNK(info.st_mode), "D8_OUTPUT_SYMLINK")
+                        path = Path(entry.path)
+                        if stat.S_ISDIR(info.st_mode):
+                            pending.append(path)
+                            continue
+                        need(stat.S_ISREG(info.st_mode) and info.st_nlink == 1, "D8_REGULAR_FILE")
+                        size = info.st_size
+                        files[str(path)] = size
+                        totals[_category_name(path.relative_to(self.root).as_posix())] += size
+                        if path == self.root / "build/exact-source.tar":
+                            need(size <= SOURCE_LIMIT, "D8_SOURCE_ARCHIVE_BOUND")
         return totals, files
 
     def check(self):
         job_remaining()
+        if self.retiring is not None:
+            return self._retirement_check()
         totals, files = self.measured()
+        return self._check_snapshot(totals, files)
+
+    def _check_snapshot(self, totals, files):
+        totals = dict(totals)
         # max final size per path avoids counting the same already-written prefix
         # twice, while concurrent reservations for distinct files remain additive.
         planned = {}
@@ -405,7 +427,8 @@ class ByteBudget:
         if self.case_state is not None:
             state = self.case_state
             ancillary = sum(max(0, size - state["initial"].get(path, 0)) for path, size in files.items()
-                            if path not in state["scientific"] and category(path) in (
+                            if path not in state["scientific"] and
+                            _category_name(Path(path).relative_to(self.root).as_posix()) in (
                             "all_current_case_transient_and_failure_prefix",
                             "all_reports_receipts_logs_negatives_seals_completion"))
             for path, maximum in planned.items():
@@ -423,6 +446,7 @@ class ByteBudget:
 
     @contextlib.contextmanager
     def reserve(self, bounds):
+        need(self.retiring is None, "D8_RETIREMENT_WRITE")
         checked = {}
         for path, maximum in bounds.items():
             p = Path(path).absolute()
@@ -501,17 +525,115 @@ class ByteBudget:
         self.check()
         return expected, frame_count * (320 if mode == "plain" else 640)
 
-    def transfer(self, source, destination, size):
+    @contextlib.contextmanager
+    def retirement(self, receipt_path):
+        """Only the recorded atomic moves/unlinks may occur inside this scope."""
+        state = self.case_state
+        need(self.retiring is None and not self.reservations and state is not None and
+             state["forms"] == set(FORMS) and ACTIVE_PHASE is not None and ACTIVE_PHASE.name == "run" and
+             CLIENT.current["command_deadline"] is None, "D8_RETIREMENT_STATE")
+        job_remaining()
+        receipt_path = Path(receipt_path).absolute()
+        need(receipt_path.is_relative_to(OUTPUT / "cases") and receipt_path.name == "retention.json",
+             "D8_FORGED_DEDUP")
+        category(receipt_path)
+        receipt_identity = desc(receipt_path)
+        receipt = read(receipt_path)
+        operations, measured = receipt.get("operations", []), receipt.get("measured_files", {})
+        scientific = set(state["scientific"])
+        need(len(scientific) == 42 and set(measured) == scientific and len(operations) == 42 and
+             {x.get("source") for x in operations} == scientific and
+             sum(x.get("action") == "move" for x in operations) == 21 and
+             sum(x.get("action") == "discard_equal" for x in operations) == 21, "D8_FORGED_DEDUP")
+        for operation in operations:
+            action = operation["action"]
+            expected = {"action", "source", "identity", "destination" if action == "move" else "equal_to"}
+            need(set(operation) == expected and operation["identity"] == measured[operation["source"]] and
+                 set(operation["identity"]) == {"bytes", "sha256"} and
+                 type(operation["identity"]["bytes"]) is int and operation["identity"]["bytes"] >= 0 and
+                 re.fullmatch(r"[0-9a-f]{64}", operation["identity"]["sha256"]) is not None,
+                 "D8_FORGED_DEDUP")
+            source = Path(operation["source"])
+            need(source.is_relative_to(OUTPUT / "scratch/current") and str(source.absolute()) == str(source),
+                 "D8_RETENTION_SOURCE")
+            category(source)
         totals, files = self.measured()
+        self._check_snapshot(totals, files)
+        scratch_files = {name for name in files if Path(name).is_relative_to(OUTPUT / "scratch/current")}
+        need(scratch_files == scientific and
+             all(files[name] == measured[name]["bytes"] for name in scientific), "D8_RETENTION_SOURCE")
+        self.retiring = {"receipt": str(receipt_path), "receipt_identity": receipt_identity,
+                         "operations": operations, "index": 0, "totals": totals, "files": files}
+        try:
+            yield self
+            job_remaining()
+            ledger = self.retiring
+            need(ledger["index"] == 42 and not self.reservations, "D8_RETIREMENT_SEQUENCE")
+            need(desc(receipt_path) == receipt_identity, "D8_FORGED_DEDUP")
+            actual_totals, actual_files = self.measured()
+            need(actual_files == ledger["files"] and actual_totals == ledger["totals"],
+                 "D8_RETIREMENT_RECONCILIATION")
+            self._check_snapshot(actual_totals, actual_files)
+        finally:
+            # Reset before an ordinary failure receipt can be written. Never
+            # perform reconciliation, hashing or cleanup merely due to expiry.
+            self.retiring = None
+
+    def _retirement_check(self, totals=None):
+        job_remaining()
+        need(self.retiring is not None and self.case_state is not None and not self.reservations,
+             "D8_RETIREMENT_STATE")
+        values = dict(self.retiring["totals"] if totals is None else totals)
+        # Only registered scientific files move/disappear. Their destinations
+        # join scientific immediately after a successful rename. The ancillary
+        # byte set is therefore unchanged from the full entry check.
+        key = "all_current_case_transient_and_failure_prefix"
+        values[key] = max(values[key], 25600 * self.case_state["frames"] + 8388608)
+        check_category_totals(values)
+        job_remaining()
+        return {"categories": values, "total": sum(values.values()),
+                "ceiling": sum(CAPS.values()), "headroom": OUTPUT_LIMIT - sum(CAPS.values())}
+
+    def _retirement_operation(self, receipt_path, operation):
+        if self.retiring is None:
+            return
+        ledger = self.retiring
+        need(str(Path(receipt_path).absolute()) == ledger["receipt"] and ledger["index"] < 42 and
+             operation == ledger["operations"][ledger["index"]], "D8_RETIREMENT_SEQUENCE")
+        need(ledger["files"].get(operation["source"]) == operation["identity"]["bytes"],
+             "D8_RETENTION_SOURCE")
+
+    def _retirement_commit(self, source, destination, size):
+        if self.retiring is None:
+            return
+        ledger = self.retiring
+        need(ledger["files"].pop(str(source), None) == size, "D8_RETENTION_SOURCE")
+        ledger["totals"][category(source)] -= size
+        if destination is not None:
+            need(str(destination) not in ledger["files"], "D8_RETENTION_DESTINATION")
+            ledger["files"][str(destination)] = size
+            ledger["totals"][category(destination)] += size
+        ledger["index"] += 1
+        self._retirement_check()
+
+    def transfer(self, source, destination, size):
+        if self.retiring is None:
+            totals, files = self.measured()
+        else:
+            totals, files = dict(self.retiring["totals"]), self.retiring["files"]
         need(files.get(str(source)) == size and str(destination) not in files, "D8_RETENTION_SOURCE")
         totals[category(source)] -= size
         totals[category(destination)] += size
-        check_category_totals(totals)
+        if self.retiring is None:
+            check_category_totals(totals)
+        else:
+            self._retirement_check(totals)
 
 def _recorded_operation(source, receipt_path, operation):
     receipt_path = Path(receipt_path).absolute()
     need(receipt_path.is_relative_to(OUTPUT / "cases") and receipt_path.name == "retention.json", "D8_FORGED_DEDUP")
     category(receipt_path)
+    budget()._retirement_operation(receipt_path, operation)
     value = read(receipt_path)
     identity = operation["identity"]
     need(value.get("measured_files", {}).get(str(source)) == identity and
@@ -543,6 +665,7 @@ def retain_move(source, destination, descriptor, receipt_path):
     budget().transfer(source, destination, descriptor["bytes"])
     job_remaining()
     os.rename(source, destination)  # no copy fallback
+    budget()._retirement_commit(source, destination, descriptor["bytes"])
     if budget().case_state is not None:
         budget().case_state["scientific"].add(str(destination))
     need(desc(destination) == descriptor, "D8_RETENTION_SOURCE")
@@ -561,6 +684,7 @@ def discard_equal(source, other, receipt_path):
     need(desc(source) == identity == desc(other), "D8_RETENTION_SOURCE")
     job_remaining()
     source.unlink()
+    budget()._retirement_commit(source, None, identity["bytes"])
     budget().check()
     return identity
 
@@ -736,6 +860,7 @@ class Phase:
     def run(self, label, argv, *, cwd=ROOT, env=None, scientific=None,
             stdout_limit=1048576, stderr_limit=1048576):
         need(ACTIVE_PHASE is self and not FINISHED, "D8_COMMAND_STATE")
+        need(budget().retiring is None, "D8_RETIREMENT_WRITE")
         need(isinstance(argv, list) and all(type(x) is str for x in argv), "D8_ARGV_SCHEMA")
         need(re.fullmatch(r"[A-Za-z0-9_.-]+", label) is not None, "D8_COMMAND_LABEL")
         need(type(stdout_limit) is int and type(stderr_limit) is int and
@@ -1342,6 +1467,7 @@ def header_expected(root, revision, info):
 
 
 def tool_write(path, raw, *, replace=False):
+    need(budget().retiring is None, "D8_RETIREMENT_WRITE")
     path = Path(path)
     need(path.is_relative_to(TOOL) and len(raw) <= 16777216, "D8_TOOL_FILE_BOUND")
     actual = tool_inventory()

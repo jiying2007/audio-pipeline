@@ -46,6 +46,8 @@ near-only/silent-render 的所有已记录 stream、PCM、metrics、control，�
 - source archive、四个生成形态的 source/build provenance 与实际 compile recipe 有界保留；所有 repository runtime imports 都属于冻结 closure。
 - 完整 tool inventory 每次命令后重新测量；相同状态经实际 descriptor/bytes 相等检查后只存一次完整 inventory，command receipt 使用有界 descriptor 引用。科学 command receipt 的 64 KiB 上限不是依赖平均值。
 
+retirement 仅在四个 child quiescent、42-source proof 已写入且没有 writer reservation 后进入。入口对整个结果树实测一次，事务内只准按 proof 的固定序列执行同文件系统 move/逐 byte 证明相等的 unlink，不准启动 child、写入新文件或新 reservation；每步保持实测路径/大小/category ledger，并在 rename 前检查 destination 类别。成功出口再次完整实测并核对 exact map。普通失败先清除 ledger，再由正常失败路径计量实际前缀；期限已到不做补测或补写。此局部优化把每例 retirement 的63次全树遍历变成2次，其他检查不取消，也不预先宣称能在300秒内完成。
+
 analysis seal 闭合全部当时 core evidence；verify 从实际保留内容重新分析并比较 report。negative 完成后，finalizer 检查全部七个 phase PASS、精确文件/目录集合、negative fixture descriptors、seals、summary 与 completion 自身 byte accounting。completion 必须存在并经读回，才能发 FINISH ACK。stdout 是有界 compact projection，不复制巨大逐 frame JSON；完整报告与二进制 trace 仍在 artifact 中。
 
 ## 5. 固定评价与保守 veto

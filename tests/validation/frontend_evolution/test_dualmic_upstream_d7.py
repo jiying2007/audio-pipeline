@@ -90,6 +90,7 @@ def engineering_supervisor(parent_phase):
     probe.logs = root / "logs"
     probe.logs.mkdir()
     probe.started = time.monotonic() - 299.8
+    began = time.monotonic()
     try:
         probe.run("deadline", [sys.executable, "-c", "import time; time.sleep(2)"])
     except TimeoutError as error:
@@ -98,9 +99,9 @@ def engineering_supervisor(parent_phase):
         raise ValueError("D7_ENGINEERING_TIMEOUT_NOT_ENFORCED")
     first = copy.deepcopy(probe.report["first_failure"])
     receipt = b.read(probe.logs / "deadline.command.json")
-    b.need(receipt["status"] == "FAIL" and receipt["timed_out"] is True and
-           0 < receipt["timeout_seconds"] <= 0.21 and
-           receipt["elapsed_seconds"] < 2, "D7_ENGINEERING_TIMEOUT_RECEIPT")
+    b.need(receipt["status"] == "FAIL" and receipt["lifecycle"] == "PENDING" and
+           0 < receipt["timeout_seconds"] <= 0.21 and time.monotonic() - began < 2 and
+           first["reason"] == "D7_COMMAND_TIMEOUT", "D7_ENGINEERING_TIMEOUT_RECEIPT")
     probe.started = time.monotonic()
     try:
         probe.run("second-failure", [sys.executable, "-c", "raise SystemExit(7)"])
@@ -110,7 +111,7 @@ def engineering_supervisor(parent_phase):
         raise ValueError("D7_ENGINEERING_EXIT_NOT_ENFORCED")
     b.need(probe.report["first_failure"] == first, "D7_ENGINEERING_FIRST_FAILURE")
     result = {"status": "PASS", "actual_timeout": receipt["timeout_seconds"],
-              "first_failure_preserved": True, "expected_failed_commands": 2}
+              "first_failure_preserved": True, "expired_receipt_not_rewritten": True, "expected_failed_commands": 2}
     b.dump(root / "receipt.json", result)
     parent_phase.remaining()
     return result

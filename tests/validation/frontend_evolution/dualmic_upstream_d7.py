@@ -347,6 +347,25 @@ def association(rows, first, last):
         "hard_fault": histogram(r["after"]["fallback_hard_fault"] for r in selected),
         "strong_channel": histogram(r["after"]["fallback_strong_channel"] for r in selected),
         "score_updates": sum(r["score_update"] for r in selected),
+        "actual_state_counters": {key: {
+            "before": histogram(r["before"][key] for r in selected),
+            "after": histogram(r["after"][key] for r in selected),
+            "within_frame_change_count": sum(r["before"][key] != r["after"][key] for r in selected),
+            "first_before": selected[0]["before"][key],
+            "last_after": selected[-1]["after"][key]}
+            for key in ("counter", "score_updates", "fallback_recovery_count",
+                        "fallback_hard_arm_count", "fixed_health_counter")},
+        "actual_cadence": {
+            "tracking_counter_mod4_before": histogram(r["before"]["counter"] & 3 for r in selected),
+            "tracking_counter_mod4_after": histogram(r["after"]["counter"] & 3 for r in selected),
+            "counter_delta_mod_u32": histogram(
+                (r["after"]["counter"] - r["before"]["counter"]) & 0xffffffff for r in selected),
+            "observed_score_updates_delta": histogram(
+                r["after"]["score_updates"] - r["before"]["score_updates"] for r in selected),
+            "tracking_update_frames": [r["frame"] for r in selected if r["score_update"]],
+            "cadence_frame_lists_origin": "source-defined cadence reconstructed from actual state; not accepted health evidence",
+            "inferred_fixed_health_call_frames": [r["frame"] for r in selected
+                if not r["track_direction"] and (r["after"]["fixed_health_counter"] & 3) == 0]},
         "resets": sum(r["reset"] for r in selected),
         "tracked_lag_transitions": sum(r["before"]["lag"] != r["after"]["lag"] for r in selected),
         "effective_lag_transitions": sum(r["effective_lag_before"] != r["effective_output_lag"] for r in selected),
@@ -549,7 +568,19 @@ def verify(phase):
     check_seal()
     return report
 
-def complete_report():
+def bounded_output():
+    payload = build.inventory(OUTPUT)
+    need(sum(v["bytes"] for v in payload["files"].values()) <= build.OUTPUT_LIMIT,
+         "D7_OUTPUT_BYTES_BOUND")
+    return payload
+
+def finalize_analysis(phase):
+    # Called after the terminal analysis receipt, before its alarm is restored.
+    dump(OUTPUT / "seal.json", seal_payload())
+    bounded_output()
+    phase.remaining()
+
+def complete_report(phase):
     negative = read(OUTPUT / "negative-tests.json")
     names = contract()["test_contract"]["actual_negative_categories"]
     need(negative["status"] == "PASS" and negative["count"] == 51 and
@@ -557,11 +588,34 @@ def complete_report():
          all(r["status"] == "PASS" and r["untouched_guard_passed"] is True and
              r["observed_reason"] == r["expected_reason"] for r in negative["targeted_mutations"]),
          "D7_NEGATIVE_RECEIPT")
-    payload = build.inventory(OUTPUT)
-    need(sum(v["bytes"] for v in payload["files"].values()) <= build.OUTPUT_LIMIT, "D7_OUTPUT_BYTES_BOUND")
+    payload = bounded_output()
     dump(OUTPUT / "completion.json", {"experiment": EXPERIMENT, "status": "PASS",
          "complete_payload": payload, "promotion_allowed": False,
+         "requires_successful_workflow_conclusion": True,
          "independent_audit": "not executed by this driver; separately authored read-only audit still required"})
+    # The final receipt is itself part of the 512 MiB bound. Rehash after its
+    # close and require every pre-existing file/directory still to match.
+    final_payload = bounded_output()
+    need("completion.json" in final_payload["files"], "D7_FINAL_COMPLETION_MISSING")
+    del final_payload["files"]["completion.json"]
+    need(final_payload == payload, "D7_FINAL_OUTPUT_CLOSURE")
+    phase.remaining()
+
+def finalize_negative(phase, report, started):
+    # The negative phase's terminal receipt already exists. All final hashes,
+    # summaries and completion I/O still share this same 300-second alarm.
+    build.check_phase(OUTPUT, "verify")
+    build.check_phase(OUTPUT, "negative")
+    check_readback(read(OUTPUT / "readback.json"))
+    check_seal()
+    summary = {k: report[k] for k in
+        ("experiment", "status", "totals", "aggregates", "actual_mode_census",
+         "measurement_valid", "promotion_allowed", "models_executed")}
+    dump(OUTPUT / "summary.json", summary)
+    complete_report(phase)
+    need(time.monotonic() - started <= 1200, "D7_TOTAL_JOB_BUDGET")
+    print(json.dumps(summary, sort_keys=True))
+    phase.remaining()
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
@@ -577,41 +631,33 @@ def main():
     try:
         need(os.environ.get("GITHUB_ACTIONS") == "true", "D7_ACTIONS_ONLY")
         admit()
-        built = build.build()
-        need(built["source"]["revision"] == args.source_revision, "D7_EXECUTION_HEAD")
+        built = build.build(args.source_revision)
         run(built)
         with Phase("analysis") as phase:
             report = analyze(phase)
             dump(OUTPUT / "report.json", report, compact=True)
-        dump(OUTPUT / "seal.json", seal_payload())
+            phase.finalizer = finalize_analysis
         with Phase("verify") as phase:
             verify(phase)
             dump(OUTPUT / "readback.json", {"experiment": EXPERIMENT, "status": "PASS",
                 "DSP_executed": False, "models_executed": False,
                 "report": desc(OUTPUT / "report.json"), "seal": desc(OUTPUT / "seal.json")})
-        # This imports only the current retained test module. It does not start
-        # another interpreter or assign a hidden 300-second child timeout.
-        import test_dualmic_upstream_d7 as tests
         with Phase("negative") as phase:
+            # Same retained interpreter/module; no hidden 300-second child.
+            import test_dualmic_upstream_d7 as tests
             tests.actual_negatives(phase)
-        build.check_phase(OUTPUT, "verify")
-        build.check_phase(OUTPUT, "negative")
-        check_readback(read(OUTPUT / "readback.json"))
-        check_seal()
-        need(time.monotonic() - started <= 1200, "D7_TOTAL_JOB_BUDGET")
-        dump(OUTPUT / "summary.json", {k: report[k] for k in
-            ("experiment", "status", "totals", "aggregates", "actual_mode_census",
-             "measurement_valid", "promotion_allowed", "models_executed")})
-        complete_report()
-        need(time.monotonic() - started <= 1200, "D7_TOTAL_JOB_BUDGET")
-        print(json.dumps(read(OUTPUT / "summary.json"), sort_keys=True))
+            phase.finalizer = lambda current: finalize_negative(current, report, started)
         return 0
     except BaseException as error:
         first = {"experiment": EXPERIMENT, "status": "MEASUREMENT_INVALID",
                  "type": type(error).__name__,
                  "reason": str(error) if isinstance(error, (ValueError, TimeoutError)) else "execution failed",
-                 "elapsed_seconds": time.monotonic() - started, "promotion_allowed": False}
-        dump(OUTPUT / "first-failure.json", first)
+                 "elapsed_seconds": time.monotonic() - started, "promotion_allowed": False,
+                 "phase": getattr(error, "d7_phase", None), "target": getattr(error, "d7_target", None),
+                 "first_failure": getattr(error, "d7_first_failure", None)}
+        # Phase preserves failure receipts only within its original deadline.
+        # After expiry, retain its initial FAIL/partial evidence and report the
+        # original exception to the Actions log, without starting extra I/O work.
         print(json.dumps(first), file=sys.stderr)
         return 1
 

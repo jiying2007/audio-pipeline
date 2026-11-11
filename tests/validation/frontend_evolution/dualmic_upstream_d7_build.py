@@ -137,42 +137,116 @@ class Phase:
         need(left > 0, "D7_PHASE_TIMEOUT:" + self.name)
         return left
 
+    def _remember_failure(self, error, stage):
+        self.report["status"] = "FAIL"
+        if self.report["first_failure"] is None:
+            self.report["first_failure"] = {
+                "stage": stage, "type": type(error).__name__,
+                "reason": str(error) if isinstance(error, (ValueError, TimeoutError)) else "phase failed"}
+        # Carry the original failure to the root log even when later deadline
+        # cleanup cannot safely perform any additional file writes.
+        error.d7_first_failure = dict(self.report["first_failure"])
+        error.d7_phase = self.name
+        error.d7_target = str(self.path)
+
+    def _preserve_failure(self):
+        # Never extend the phase to hash/rewrite after hard expiry. The initial
+        # incomplete receipt/partial logs survive; the original exception reaches
+        # the job log. A successful prefix never qualifies a failed job. Cleanup
+        # errors never replace the first failure.
+        if not self.alarm_armed or time.monotonic() - self.started >= 300:
+            return
+        try:
+            self.report["elapsed_seconds"] = time.monotonic() - self.started
+            if self.owned_receipt:
+                dump(self.path, self.report, replace=True)
+                self.remaining()
+            first_path = self.root / "first-failure.json"
+            if not first_path.exists():
+                dump(first_path, {"experiment": EXPERIMENT, "status": "MEASUREMENT_INVALID",
+                     "phase": self.name, "target": str(self.path),
+                     "first_failure": self.report["first_failure"], "promotion_allowed": False})
+                self.remaining()
+        except BaseException:
+            pass
+
+    def _restore_alarm(self):
+        signal.setitimer(signal.ITIMER_REAL, 0)
+        signal.signal(signal.SIGALRM, self.old_handler)
+        if self.old_timer[0] > 0:
+            left = max(0.000001, self.old_timer[0] - (time.monotonic() - self.started))
+            signal.setitimer(signal.ITIMER_REAL, left, self.old_timer[1])
+
     def __enter__(self):
         self.started = time.monotonic()
-        self.root.mkdir(parents=True, exist_ok=True)
         self.path = self.root / (self.name + "-phase.json")
-        need(not self.path.exists(), "D7_PHASE_ALREADY_EXISTS")
         self.logs = self.root / (self.name + "-logs")
-        self.logs.mkdir()
-        dump(self.path, self.report)
+        self.owned_receipt = False
+        self.alarm_armed = False
+        self.finalizer = None
         self.old_handler = signal.getsignal(signal.SIGALRM)
-        signal.signal(signal.SIGALRM, self.alarm)
-        signal.setitimer(signal.ITIMER_REAL, 300)
-        return self
+        self.old_timer = signal.getitimer(signal.ITIMER_REAL)
+        try:
+            signal.signal(signal.SIGALRM, self.alarm)
+            # Arm before the first mkdir/open/write, not after the initial receipt.
+            signal.setitimer(signal.ITIMER_REAL, self.remaining())
+            self.alarm_armed = True
+            self.root.mkdir(parents=True, exist_ok=True)
+            need(not self.path.exists(), "D7_PHASE_ALREADY_EXISTS")
+            self.logs.mkdir()
+            with self.path.open("x", encoding="utf-8") as out:
+                self.owned_receipt = True
+                json.dump(self.report, out, indent=2, sort_keys=True, allow_nan=False)
+                out.write("\n")
+            self.remaining()
+            return self
+        except BaseException as error:
+            self._remember_failure(error, "enter")
+            try:
+                self._preserve_failure()
+            finally:
+                with contextlib.suppress(BaseException):
+                    self._restore_alarm()
+            raise
 
     def alarm(self, signum, frame):
         raise TimeoutError("D7_PHASE_TIMEOUT:" + self.name)
 
     def __exit__(self, kind, error, tb):
-        signal.setitimer(signal.ITIMER_REAL, 0)
-        signal.signal(signal.SIGALRM, self.old_handler)
-        elapsed = time.monotonic() - self.started
-        if error is None and elapsed <= 300:
-            self.report["status"] = "PASS"
-        elif self.report["first_failure"] is None:
-            self.report["first_failure"] = {
-                "type": kind.__name__ if kind else "TimeoutError",
-                "reason": str(error) if isinstance(error, (ValueError, TimeoutError)) else "phase failed"}
-        self.report["elapsed_seconds"] = elapsed
-        self.report["elapsed_scope"] = "through first terminal receipt write; final write deadline checked"
-        dump(self.path, self.report, replace=True)
-        if time.monotonic() - self.started > 300:
-            self.report["status"] = "FAIL"
-            if self.report["first_failure"] is None:
-                self.report["first_failure"] = {"type": "TimeoutError", "reason": "D7_FINAL_WRITE_TIMEOUT"}
-            dump(self.path, self.report, replace=True)
+        primary_error = error
+        try:
+            if error is not None:
+                self._remember_failure(error, "body")
+            self.remaining()
             if error is None:
-                raise TimeoutError("D7_FINAL_WRITE_TIMEOUT")
+                self.report["status"] = "PASS"
+            self.report["elapsed_seconds"] = time.monotonic() - self.started
+            self.report["elapsed_scope"] = (
+                "through terminal receipt preparation; the same hard deadline "
+                "also covers terminal receipt I/O and finalizer")
+            dump(self.path, self.report, replace=True)
+            self.remaining()
+            # A terminal finalizer can bind the terminal phase receipt without
+            # moving manifest/summary work outside this phase's hard deadline.
+            if error is None and self.finalizer is not None:
+                self.finalizer(self)
+                self.remaining()
+        except BaseException as terminal_error:
+            primary_error = error if error is not None else terminal_error
+            self._remember_failure(error if error is not None else terminal_error, "terminal")
+            self._preserve_failure()
+            if error is None:
+                raise
+            # Returning False below propagates the original body failure,
+            # including a timeout, rather than a secondary cleanup exception.
+        finally:
+            try:
+                self._restore_alarm()
+            except BaseException as restore_error:
+                if primary_error is None:
+                    self._remember_failure(restore_error, "restore")
+                    raise
+                # The original body/terminal failure still propagates unchanged.
         return False
 
     def run(self, label, argv, *, cwd=ROOT, env=None):
@@ -188,9 +262,14 @@ class Phase:
         receipt["environment"] = {"keys": sorted(effective_env), "LC_ALL": effective_env.get("LC_ALL"),
             "AP_D1_STAGE_DIR": effective_env.get("AP_D1_STAGE_DIR"),
             "AP_D7_STAGE_DIR": effective_env.get("AP_D7_STAGE_DIR")}
+        receipt["lifecycle"] = "PENDING"
+        dump(receipt_path, receipt)
+        self.report["commands"].append(receipt_path.relative_to(self.root).as_posix())
         process = None
         try:
             with stdout.open("xb") as out, stderr.open("xb") as err:
+                limit = min(30.0, self.remaining())
+                receipt["timeout_seconds"] = limit
                 process = subprocess.Popen(argv, cwd=cwd, env=effective_env,
                     stdout=out, stderr=err, start_new_session=True)
                 try:
@@ -211,11 +290,15 @@ class Phase:
                                                 "reason": receipt["reason"]}
             raise
         finally:
-            receipt["elapsed_seconds"] = time.monotonic() - begin
-            receipt["stdout"] = desc(stdout) if stdout.is_file() else None
-            receipt["stderr"] = desc(stderr) if stderr.is_file() else None
-            dump(receipt_path, receipt)
-            self.report["commands"].append(receipt_path.relative_to(self.root).as_posix())
+            # Keep the original FAIL/PENDING command receipt after phase expiry;
+            # do not begin extra hashing or receipt I/O outside the hard budget.
+            if time.monotonic() - self.started < 300:
+                receipt["elapsed_seconds"] = time.monotonic() - begin
+                receipt["lifecycle"] = "TERMINAL"
+                receipt["stdout"] = desc(stdout) if stdout.is_file() else None
+                receipt["stderr"] = desc(stderr) if stderr.is_file() else None
+                dump(receipt_path, receipt, replace=True)
+                self.remaining()
         self.remaining()
         return stdout.read_bytes()
 
@@ -395,7 +478,8 @@ def observer_argv(compiler, source, build, actual_flags):
 
 def check_command(path, argv=None):
     receipt = read(path)
-    need(receipt["status"] == "PASS" and receipt["returncode"] == 0 and receipt["timed_out"] is False
+    need(receipt["status"] == "PASS" and receipt["lifecycle"] == "TERMINAL" and
+         receipt["returncode"] == 0 and receipt["timed_out"] is False
          and 0 < receipt["timeout_seconds"] <= 30 and 0 <= receipt["elapsed_seconds"] <= 30,
          "D7_FAILED_COMMAND")
     if argv is not None:
@@ -472,12 +556,13 @@ def check_compile_closure(build_root, identity, kind):
     return {"compile_commands": desc(build / "compile_commands.json"),
             "dependency_files": {p.relative_to(build).as_posix(): desc(p) for p in dependencies}}
 
-def build():
+def build(expected_revision):
     root = OUTPUT / "build"
     root.mkdir()
     report = {"experiment": EXPERIMENT, "status": "FAIL", "programs": {}, "commands": {}}
     with Phase("plain-build") as phase:
         identity = source_identity(phase)
+        need(identity["revision"] == expected_revision, "D7_EXECUTION_HEAD")
         report["source"] = identity
         report["compiler"], report["cmake"] = tool_identity("cc"), tool_identity("cmake")
         compiler, cmake = report["compiler"]["resolved_path"], report["cmake"]["resolved_path"]

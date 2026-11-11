@@ -139,3 +139,24 @@ D7-only先检查从matrix到旧D6末尾整段与e348逐byte相同，然后所有
 
 本提交仅实施待审查代码，无PR、dispatch或实验执行。最终准确HEAD的实现审查、实际Actions、
 独立原件审计、保护合并及fresh-main门禁仍是后续独立步骤。无生产修改、SDK bump、tag或发布。
+
+## 实现静态复审修订（仍未执行）
+
+首次实现head a99a88c的静态审查发现三类真实实现缺口：phase起始/终态写盘未完整处于硬alarm内；
+seal、summary及completion收尾在phase外，且512MiB计量漏掉completion自身；
+固定窗/whole缺少已有完整帧状态中的recovery、arm、fixed-health和counter/cadence汇总。
+这些不是声学负结果，也不调整冻结合同。
+
+修订在首个mkdir/open/write之前装上同一300秒alarm，只在终态receipt、finalizer与最后边界检查之后恢复。
+enter失败安全恢复handler；终态写盘/收尾失败仍保存最早错误，不让清理错误替换它。
+时间耗尽后不启动额外hash/receipt写盘，不补一个清理预算；初始PENDING/FAIL或部分证据保留，
+最早错误、phase和目标继续送到Actions日志。失败job的已成功前缀回执不能自证整轮成功。
+phase.elapsed_seconds诚实标记为终态回执准备时的已用时间；同一硬deadline还覆盖后续终态I/O与finalizer，
+不把这个早于最终写盘的时间戳宣称为完整最终耗时。
+
+analysis seal在该phase的终态finalizer内生成。negative的终态finalizer在原300秒内完成
+回执检查、summary、completion和全部最终hash；completion关闭后再次核全目录字节数及原payload不变，
+512MiB计量包含completion本身。没有新增phase或延长20分钟job。
+每个固定窗及whole补上counter/score_updates/recovery/arm/fixed-health的before/after直方图、
+首末状态和变化次数，以及counter模4、实际更新delta、全部tracking更新帧，以及由真实mode/counter按源码重建的fixed-health调用节奏（不声称有效health证据）。
+评分、窗口、样本、原件中性桥及51类负例保持原定义；所有新增执行证明仍待准确head批准后的真实Actions。

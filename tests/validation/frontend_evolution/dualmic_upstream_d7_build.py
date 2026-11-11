@@ -143,6 +143,8 @@ class Phase:
             self.report["first_failure"] = {
                 "stage": stage, "type": type(error).__name__,
                 "reason": str(error) if isinstance(error, (ValueError, TimeoutError)) else "phase failed"}
+            if hasattr(error, "d7_build_flags"):
+                self.report["first_failure"]["build_flags"] = error.d7_build_flags
         # Carry the original failure to the root log even when later deadline
         # cleanup cannot safely perform any additional file writes.
         error.d7_first_failure = dict(self.report["first_failure"])
@@ -447,28 +449,67 @@ def configure_argv(cmake, compiler, source, build, revision):
         "-DAP_NS_ESTIMATOR=EMA", "-DAP_SIMD_BACKEND=SCALAR", "-DAP_RESAMPLER_MODE=BANDLIMITED",
         "-DAP_BUILD_SOURCE_REVISION=" + revision]
 
-def flags(build):
+# Exact generator orderings, not set/subset acceptance. CMake 3.25.3 adds
+# the standard in AddCompileOptions after target options; CMake 3.31.6 and
+# 4.1.2 add it in AddLanguageFlags before target options. All seven tokens,
+# multiplicities and each complete sequence are fixed; actual order is retained.
+C_FLAG_SEQUENCES = (
+    ("-O3", "-DNDEBUG", "-Wall", "-Wextra", "-Wpedantic", "-Werror", "-std=c11"),
+    ("-O3", "-DNDEBUG", "-std=c11", "-Wall", "-Wextra", "-Wpedantic", "-Werror"),
+)
+
+def flags_error(category, observed, expected):
+    detail = {"category": category, "observed": observed, "expected": expected}
+    encoded = json.dumps(detail, ensure_ascii=True, sort_keys=True)
+    if len(encoded) > 4096:
+        detail = {"category": category, "detail_truncated": True,
+                  "prefix": encoded[:3072], "full_observation": "retained flags.make"}
+    error = ValueError("D7_BUILD_FLAGS")
+    error.d7_build_flags = detail
+    raise error
+
+def parse_flags(text, build):
     result = {}
-    text = (build / "CMakeFiles/audio_pipeline.dir/flags.make").read_text()
     for key in ("C_DEFINES", "C_INCLUDES", "C_FLAGS"):
         values = [line.split("=", 1)[1].strip() for line in text.splitlines() if line.startswith(key + " =")]
-        need(len(values) == 1, "D7_BUILD_FLAGS")
-        result[key] = shlex.split(values[0])
-    need("-O3" in result["C_FLAGS"] and "-DNDEBUG" in result["C_FLAGS"] and
-         "-Werror" in result["C_FLAGS"] and "-ffast-math" not in result["C_FLAGS"], "D7_BUILD_FLAGS")
+        if len(values) != 1:
+            flags_error("parse", {"field": key, "assignments": values}, "exactly one assignment")
+        try:
+            result[key] = shlex.split(values[0])
+        except ValueError:
+            flags_error("parse", {"field": key, "assignment": values[0]}, "valid shell token quoting")
     required = {"-DAP_BUILD_STAGE_HPF=1", "-DAP_BUILD_STAGE_BF=1", "-DAP_BUILD_STAGE_SYNC=1",
                 "-DAP_BUILD_BF_DIRECTION_TRACKING=1", "-DAP_BUILD_ACTIVITY=1",
                 "-DAP_BUILD_STAGE_AEC=1", "-DAP_BUILD_STAGE_RES=1", "-DAP_BUILD_STAGE_NS=1",
                 "-DAP_BUILD_STAGE_AGC=1", "-DAP_BUILD_AEC_MDF=1", "-DAP_BUILD_STAGE_VAD=1",
                 "-DAP_BUILD_NS_EMA=1", "-DAP_BUILD_RESAMPLER_BANDLIMITED=1"}
-    need(required == set(result["C_DEFINES"]) and len(result["C_DEFINES"]) == len(required), "D7_BUILD_FLAGS")
-    need(result["C_FLAGS"] == ["-O3", "-DNDEBUG", "-Wall", "-Wextra", "-Wpedantic", "-Werror", "-std=c11"],
-         "D7_BUILD_FLAGS")
+    if required != set(result["C_DEFINES"]) or len(result["C_DEFINES"]) != len(required):
+        flags_error("defines", result["C_DEFINES"], sorted(required))
+    if tuple(result["C_FLAGS"]) not in C_FLAG_SEQUENCES:
+        flags_error("flags", result["C_FLAGS"], C_FLAG_SEQUENCES)
     kind = build.name.removesuffix("-build")
     source = build.parent / (kind + "-source")
-    need(result["C_INCLUDES"] == ["-I" + str(build / "generated"), "-I" + str(source / "include"),
-                                 "-I" + str(source / "src")], "D7_BUILD_FLAGS")
+    includes = ["-I" + str(build / "generated"), "-I" + str(source / "include"),
+                "-I" + str(source / "src")]
+    if result["C_INCLUDES"] != includes:
+        flags_error("includes", result["C_INCLUDES"], includes)
     return result
+
+def flags(build):
+    path = build / "CMakeFiles/audio_pipeline.dir/flags.make"
+    try:
+        return parse_flags(path.read_text(), build)
+    except ValueError as error:
+        if str(error) == "D7_BUILD_FLAGS":
+            # No extra I/O here: the existing phase/root failure path persists
+            # and prints this bounded detail without changing the first reason.
+            error.d7_build_flags.update({
+                "target": str(path),
+                "cmake_version_receipt": str(OUTPUT / "plain-build-logs/cmake-version.command.json"),
+                "cmake_version_stdout": str(OUTPUT / "plain-build-logs/cmake-version.stdout"),
+                "configure_receipt": str(OUTPUT / (build.name + "-logs/configure.command.json")),
+                "actual_argv": str(build / "compile_commands.json")})
+        raise
 
 def observer_argv(compiler, source, build, actual_flags):
     return [compiler, *actual_flags["C_DEFINES"], *actual_flags["C_INCLUDES"],
@@ -571,6 +612,8 @@ def build(expected_revision):
         compiler_target = phase.run("compiler-target", [compiler, "-dumpmachine"]).decode().strip()
         need("Free Software Foundation" in version_text, "D7_COMPILER_FAMILY")
         phase.run("cmake-version", [cmake, "--version"])
+        import test_dualmic_upstream_d7 as tests
+        report["engineering_flags"] = tests.engineering_flags(phase)
         archive = root / "exact-source.tar"
         phase.run("archive", ["git", "-C", str(ROOT), "-c", "tar.umask=0022", "archive", "--format=tar", "--output=" + str(archive),
                               identity["revision"], "--", *sorted(identity["files"])])
@@ -683,6 +726,10 @@ def verify_build(phase):
     check_source_identity(report["source"], identity)
     need(report["status"] == "BUILT", "D7_FAILED_BUILD")
     check_compiler_identity(report["compiler"], report["cmake"])
+    flags_tests = read(OUTPUT / "plain-build-logs/flags-probes/receipt.json")
+    need(flags_tests == report["engineering_flags"] and flags_tests["status"] == "PASS" and
+         flags_tests["accepted_sequences"] == 2 and flags_tests["rejected_fixtures"] == 105 and
+         flags_tests["first_failure_preserved"] is True, "D7_ENGINEERING_FLAGS")
     root = OUTPUT / "build"
     measured_inventory = inventory(root)
     del measured_inventory["files"]["build.json"]

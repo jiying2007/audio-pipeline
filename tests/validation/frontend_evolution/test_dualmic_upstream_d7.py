@@ -82,6 +82,105 @@ def output_at(root):
     finally:
         d7.OUTPUT = original
 
+def engineering_flags(parent_phase):
+    """Synthetic parser fixtures, not observed compiler argv or acoustic evidence."""
+    root = parent_phase.logs / "flags-probes"
+    root.mkdir()
+    definitions = [
+        "-DAP_BUILD_ACTIVITY=1", "-DAP_BUILD_AEC_MDF=1", "-DAP_BUILD_BF_DIRECTION_TRACKING=1",
+        "-DAP_BUILD_NS_EMA=1", "-DAP_BUILD_RESAMPLER_BANDLIMITED=1", "-DAP_BUILD_STAGE_AEC=1",
+        "-DAP_BUILD_STAGE_AGC=1", "-DAP_BUILD_STAGE_BF=1", "-DAP_BUILD_STAGE_HPF=1",
+        "-DAP_BUILD_STAGE_NS=1", "-DAP_BUILD_STAGE_RES=1", "-DAP_BUILD_STAGE_SYNC=1",
+        "-DAP_BUILD_STAGE_VAD=1"]
+    sequences = [
+        ["-O3", "-DNDEBUG", "-Wall", "-Wextra", "-Wpedantic", "-Werror", "-std=c11"],
+        ["-O3", "-DNDEBUG", "-std=c11", "-Wall", "-Wextra", "-Wpedantic", "-Werror"]]
+    records = []
+    last_error = None
+
+    def exercise(label, sequence, category=None, mutate=None, raw_change=None):
+        nonlocal last_error
+        parent_phase.remaining()
+        build = root / label / "plain-build"
+        source = build.parent / "plain-source"
+        path = build / "CMakeFiles/audio_pipeline.dir/flags.make"
+        path.parent.mkdir(parents=True)
+        value = {"C_DEFINES": list(definitions), "C_FLAGS": list(sequence),
+                 "C_INCLUDES": ["-I" + str(build / "generated"), "-I" + str(source / "include"),
+                                "-I" + str(source / "src")]}
+        if mutate is not None:
+            mutate(value)
+        text = "".join(key + " = " + " ".join(value[key]) + "\n"
+                       for key in ("C_DEFINES", "C_INCLUDES", "C_FLAGS"))
+        if raw_change is not None:
+            text = raw_change(text)
+        path.write_text(text)
+        try:
+            actual = b.flags(build)
+        except ValueError as error:
+            b.need(category is not None and str(error) == "D7_BUILD_FLAGS" and
+                   error.d7_build_flags["category"] == category, "D7_ENGINEERING_FLAGS_REASON")
+            b.need(error.d7_build_flags["target"] == str(path) and
+                   len(json.dumps(error.d7_build_flags, ensure_ascii=True)) <= 8192,
+                   "D7_ENGINEERING_FLAGS_DIAGNOSTIC")
+            last_error = error
+            outcome = {"expected_reason": "D7_BUILD_FLAGS", "category": category,
+                       "diagnostic": error.d7_build_flags}
+        else:
+            b.need(category is None and actual == value, "D7_ENGINEERING_FLAGS_ACCEPTANCE")
+            outcome = {"actual_tokens_preserved": True, "expected": value}
+        records.append({"label": label, "scope": "synthetic parser fixture",
+                        "file": path.relative_to(root).as_posix(), **b.desc(path), **outcome})
+        parent_phase.remaining()
+
+    for n, sequence in enumerate(sequences):
+        prefix = str(n) + "-"
+        exercise(prefix + "accepted", sequence)
+        for i in range(7):
+            exercise(prefix + "missing-" + str(i), sequence[:i] + sequence[i+1:], "flags")
+            exercise(prefix + "duplicate-" + str(i), sequence + [sequence[i]], "flags")
+        for i, extra in enumerate(("-funexpected", "-ffast-math", "-O2", "-std=gnu11", "-Wno-error")):
+            exercise(prefix + "extra-" + str(i), sequence + [extra], "flags")
+        for before, after in (("-O3", "-O2"), ("-std=c11", "-std=gnu11"), ("-Werror", "-Wno-error")):
+            exercise(prefix + "replace-" + before[1:], [after if v == before else v for v in sequence], "flags")
+        exercise(prefix + "wrong-order", [sequence[1], sequence[0], *sequence[2:]], "flags")
+    for field, category, count in (("C_DEFINES", "defines", 13), ("C_INCLUDES", "includes", 3)):
+        for i in range(count):
+            exercise(field + "-missing-" + str(i), sequences[0], category,
+                     mutate=lambda v, field=field, i=i: v[field].pop(i))
+            exercise(field + "-duplicate-" + str(i), sequences[0], category,
+                     mutate=lambda v, field=field, i=i: v[field].append(v[field][i]))
+            exercise(field + "-replace-" + str(i), sequences[0], category,
+                     mutate=lambda v, field=field, i=i: v[field].__setitem__(i, v[field][i] + "-unexpected"))
+        exercise(field + "-extra", sequences[0], category,
+                 mutate=lambda v, field=field: v[field].append("-unexpected"))
+    exercise("include-order", sequences[0], "includes",
+             mutate=lambda v: v["C_INCLUDES"].reverse())
+    for field in ("C_DEFINES", "C_INCLUDES", "C_FLAGS"):
+        exercise(field + "-missing-assignment", sequences[0], "parse",
+                 raw_change=lambda text, field=field: "\n".join(
+                     line for line in text.splitlines() if not line.startswith(field + " =")))
+        exercise(field + "-duplicate-assignment", sequences[0], "parse",
+                 raw_change=lambda text, field=field: text + field + " =\n")
+    exercise("unclosed-quote", sequences[0], "parse", raw_change=lambda text: text.replace("C_FLAGS =", "C_FLAGS = '", 1))
+    exercise("bounded-diagnostic", sequences[0] + ["x" * 10000], "flags")
+    b.need(last_error.d7_build_flags.get("detail_truncated") is True, "D7_ENGINEERING_FLAGS_DIAGNOSTIC")
+    probe = b.Phase("flags-failure-probe", root=root)
+    probe.path = root / "not-a-run-receipt.json"
+    probe._remember_failure(last_error, "body")
+    first = copy.deepcopy(probe.report["first_failure"])
+    second = ValueError("later failure")
+    probe._remember_failure(second, "terminal")
+    b.need(probe.report["first_failure"] == first == second.d7_first_failure and
+           first["reason"] == "D7_BUILD_FLAGS" and "build_flags" in first, "D7_ENGINEERING_FIRST_FAILURE")
+    result = {"status": "PASS", "scope": "synthetic flags parser/first-failure tests; no compiler execution",
+              "accepted_sequences": 2, "rejected_fixtures": len(records) - 2,
+              "first_failure_preserved": True, "fixtures": records}
+    b.need(len(records) == 107, "D7_ENGINEERING_FLAGS_COUNT")
+    b.dump(root / "receipt.json", result)
+    parent_phase.remaining()
+    return result
+
 def engineering_supervisor(parent_phase):
     """Actual child timeout with <1s remaining, plus preserved first failure."""
     root = parent_phase.logs / "supervisor-probes"

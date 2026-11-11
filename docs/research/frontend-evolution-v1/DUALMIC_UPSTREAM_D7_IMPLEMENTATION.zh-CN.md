@@ -1,6 +1,7 @@
 # D7 HPF/BF 中性观察实现说明
 
-状态：两次实际执行均为 MEASUREMENT_INVALID；末节 Unity/依赖路径修订仍为 NOT_EXECUTED。
+状态：fee863bf首次实际程序回执有效，前两次失败原件保留；末节日志序列化修订尚未执行。
+首次来源、完整stdout及独立审计缺口见[结果记录](DUALMIC_UPSTREAM_D7_RESULT.zh-CN.md)。
 追踪 [#944](https://github.com/jiying2007/audio-pipeline/issues/944) 与 [PR #945](https://github.com/jiying2007/audio-pipeline/pull/945)；
 总研究 #657 继续开放。首次失败与实际通过的准入前缀见末节，不宣称取得新阶段声学结果。
 冻结 commit `4b7f4496d9d9fef5589456f4ac377ddfa29e24e3` 的
@@ -339,3 +340,39 @@ symlink/file/dir/后接../和outside路径。临时symlink测试结束即移除�
 freeze、production、旧D1 builder、D7 C/driver/workflow、原DSP构建的configure/compiler argv、
 全部300/30/20与16/512MiB预算、中性三方byte桥、60视图/362窗均保持。
 本次修订仍待准确detached commit独立审查，尚未执行；更新活动PR分支前必须另获授权。
+
+
+## 已验证对象的完整日志序列化（实现待审查）
+
+正常准确新head的PR资格运行仍执行同一冻结D7，不增加变体、实验或工作流。
+只在原negative终态finalizer内、completion闭包完成后，将已有report/receipt对象
+投影为有限canonical JSON（sort_keys、紧凑分隔、ASCII escape、allow_nan=false），不重算任何评分、
+状态、窗口、aggregate或阈值。每例只省略两字段：完整frame_associations与original_D1_stages；
+其它原case字段全部保持原值及原序，包含60个whole、60个common、362个window association、
+五lane全部原分数/窗口、四个stage_changes、来源放置、事件、样本/帧计数及波形/state descriptors。
+省略明确标记，窗口边际直方图不能支持窗口内onset/转向对应的结论。
+
+完整report顶层元数据/aggregate、原source/freeze/input身份、51负例原记录及qualification、
+7个phase原回执与每条command原回执（含argv/耗时/log hashes），readback原回执、
+seal descriptor、完整completion原回执及build/compiler provenance一起复制。
+不称这是另一个作者的binary审计。当前run/source/attempt与预计上传artifact名称明确绑定；
+artifact ID/hash在上传前尚不存在，必须由接收端在成功job后核实实际Actions API，不能预造。
+first fee的原件身份与未读成员限制不被后继新run替换。
+
+原始canonical字节流硬上限16MiB，仅作为这次额外stdout transport的上限，
+不改冻结16MiB源/512MiB新结果预算。每块固定6144原始bytes（尾块可短），base64编码；
+BEGIN/END声明source/run、原始bytes/chunks及整个原始字节SHA256，逐块带从0开始的index。
+全部编码、大小检查和内存roundtrip先成功才打印BEGIN；超限失败，不截断。
+必须同时取得完整匹配END、所有唯一有序chunks、准确字节数/hash及最终job success才可消费。
+接收端先重组/校验原始字节，再JSON解析，不对重新序列化的JSON算替代hash。
+
+导出仅占内存/stdout，不在completion后写新result文件，因此无封存循环或未登记payload。
+所有读取、hash、JSON编码、分块与print/flush仍在同一原300秒SIGALRM内；
+最终再次检查原1200秒总边界。超时/写失败仍使job失败并走既有最早错误保全；
+之前打印summary或写过completion的PASS前缀不够，甚至END存在也不能覆盖最终job失败。
+
+新测试仅为内存transport工程控制：保留原对象/null/case序、finite canonical JSON、
+准确byte-limit、五种chunk边界roundtrip，以及14个超限/非有限、缺失或不匹配END、
+missing/extra/duplicate/reordered chunk、base64/byte/count/digest错误拒绝。
+不运行新DSP或打分，不修改原107 flags、110+15 generated、51类实际证据负例。
+本次source编码改动尚待准确detached commit独立审查，分支更新后正常head资格运行的结果按新身份另记。

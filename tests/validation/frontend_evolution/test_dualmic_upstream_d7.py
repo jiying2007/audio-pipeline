@@ -353,6 +353,67 @@ def engineering_generated(parent_phase, identity):
     parent_phase.remaining()
     return result
 
+def engineering_export():
+    """In-memory transport controls only; no DSP/scoring/files or result claims."""
+    records = []
+    def reject(label, reason, action):
+        try:
+            action()
+        except ValueError as error:
+            b.need(str(error) == reason, "D7_EXPORT_TEST_REASON")
+        else:
+            raise ValueError("D7_EXPORT_TEST_ACCEPTED")
+        records.append({"label": label, "expected_reason": reason})
+    fixture = {"key": "second", "stages": {"x": {"common": {"near_si_sdr_db": None,
+               "near_si_sdr_null_reason": "fixture"}, "one_second_windows": [{"value": -0.25}]}},
+               "whole_association": {"frames": 2}, "common_association": {"frames": 1},
+               "window_associations": [{"physical_sample_range": [0, 160]}],
+               "frame_associations": [{"omitted": True}], "original_D1_stages": {"omitted": True}}
+    before = copy.deepcopy(fixture)
+    projected = d7.export_case(fixture)
+    b.need(projected == {key: value for key, value in fixture.items()
+                        if key not in ("frame_associations", "original_D1_stages")} and fixture == before and
+           projected["stages"] is fixture["stages"] and projected["window_associations"] is fixture["window_associations"],
+           "D7_EXPORT_TEST_PROJECTION")
+    ordered = [d7.export_case(fixture), d7.export_case({**fixture, "key": "first"})]
+    b.need([row["key"] for row in ordered] == ["second", "first"], "D7_EXPORT_TEST_ORDER")
+    value = {"unicode": "中文", "null": None, "negative": -0.25, "ordered": ordered}
+    raw = d7.encode_export(value)
+    b.need(json.loads(raw) == value and d7.encode_export(json.loads(raw)) == raw, "D7_EXPORT_TEST_JSON")
+    b.need(d7.encode_export(value, limit=len(raw)) == raw, "D7_EXPORT_TEST_BOUNDARY")
+    reject("over-bound", "D7_EXPORT_BYTES_BOUND", lambda: d7.encode_export(value, limit=len(raw)-1))
+    for label, number in (("nan", float("nan")), ("positive-infinity", float("inf")), ("negative-infinity", -float("inf"))):
+        reject(label, "D7_EXPORT_JSON", lambda number=number: d7.encode_export({"value": number}))
+    for size in (1, d7.EXPORT_CHUNK_BYTES-1, d7.EXPORT_CHUNK_BYTES, d7.EXPORT_CHUNK_BYTES+1,
+                 2*d7.EXPORT_CHUNK_BYTES):
+        data = b"x" * size
+        manifest, chunks = d7.export_chunks(data)
+        b.need(d7.decode_export(manifest, chunks, manifest) == data and
+               all(set(row) == {"index", "base64"} for row in chunks), "D7_EXPORT_TEST_ROUNDTRIP")
+    data = b"x" * (d7.EXPORT_CHUNK_BYTES + 1)
+    manifest, chunks = d7.export_chunks(data)
+    reject("missing-end", "D7_EXPORT_END", lambda: d7.decode_export(manifest, chunks, None))
+    reject("wrong-end", "D7_EXPORT_END", lambda: d7.decode_export(manifest, chunks, {**manifest, "sha256": "0"*64}))
+    reject("missing-chunk", "D7_EXPORT_CHUNKS", lambda: d7.decode_export(manifest, chunks[:-1], manifest))
+    reject("extra-chunk", "D7_EXPORT_CHUNKS", lambda: d7.decode_export(manifest, chunks + [chunks[-1]], manifest))
+    reject("duplicate-index", "D7_EXPORT_ORDER", lambda: d7.decode_export(manifest, [chunks[0], chunks[0]], manifest))
+    reject("reordered", "D7_EXPORT_ORDER", lambda: d7.decode_export(manifest, chunks[::-1], manifest))
+    reject("invalid-base64", "D7_EXPORT_BASE64",
+           lambda: d7.decode_export(manifest, [{**chunks[0], "base64": "!"}, chunks[1]], manifest))
+    changed = [{**chunks[0], "base64": ("A" if chunks[0]["base64"][0] != "A" else "B") + chunks[0]["base64"][1:]}, chunks[1]]
+    reject("digest-mismatch", "D7_EXPORT_DIGEST", lambda: d7.decode_export(manifest, changed, manifest))
+    wrong_bytes = {**manifest, "raw_bytes": manifest["raw_bytes"] + 1}
+    reject("byte-mismatch", "D7_EXPORT_CHUNKS", lambda: d7.decode_export(wrong_bytes, chunks, wrong_bytes))
+    wrong_count = {**manifest, "chunk_count": manifest["chunk_count"] + 1}
+    reject("count-mismatch", "D7_EXPORT_CHUNKS", lambda: d7.decode_export(wrong_count, chunks, wrong_count))
+    b.need(len(records) == 14, "D7_EXPORT_TEST_COUNT")
+    return {"status": "PASS", "scope": "synthetic in-memory transport, not independent binary audit",
+            "raw_byte_limit": d7.EXPORT_LIMIT, "chunk_bytes": d7.EXPORT_CHUNK_BYTES,
+            "positive_checks": ["unchanged projection/nulls", "case order", "finite canonical JSON",
+                                "exact byte limit", "five chunk boundary roundtrips"],
+            "rejections": records}
+
+
 def engineering_supervisor(parent_phase):
     """Actual child timeout with <1s remaining, plus preserved first failure."""
     root = parent_phase.logs / "supervisor-probes"

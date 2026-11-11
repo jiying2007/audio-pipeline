@@ -2,6 +2,8 @@
 """Neutral D7 HPF/BF observation. No candidate, quality gate, or model run."""
 from __future__ import annotations
 import argparse
+import base64
+import hashlib
 from array import array
 import copy
 import csv
@@ -601,6 +603,117 @@ def complete_report(phase):
     need(final_payload == payload, "D7_FINAL_OUTPUT_CLOSURE")
     phase.remaining()
 
+# Transport only. These projections copy existing verified objects unchanged;
+# frame rows and old downstream stage scores remain in the full archive.
+EXPORT_LIMIT = 16 * 1024 * 1024
+EXPORT_CHUNK_BYTES = 6144
+EXPORT_OMITTED_CASE_FIELDS = ("frame_associations", "original_D1_stages")
+EXPORT_PHASES = ("admission", "plain-build", "observer-build", "run", "analysis", "verify", "negative")
+
+def export_case(case):
+    return {key: value for key, value in case.items() if key not in EXPORT_OMITTED_CASE_FIELDS}
+
+def encode_export(value, limit=EXPORT_LIMIT):
+    try:
+        raw = json.dumps(value, sort_keys=True, separators=(",", ":"),
+                         ensure_ascii=True, allow_nan=False).encode("ascii")
+    except (ValueError, TypeError) as error:
+        raise ValueError("D7_EXPORT_JSON") from error
+    need(len(raw) <= limit, "D7_EXPORT_BYTES_BOUND")
+    return raw
+
+def export_chunks(raw):
+    need(0 < len(raw) <= EXPORT_LIMIT, "D7_EXPORT_BYTES_BOUND")
+    chunks = [{"index": i // EXPORT_CHUNK_BYTES,
+               "base64": base64.b64encode(raw[i:i+EXPORT_CHUNK_BYTES]).decode("ascii")}
+              for i in range(0, len(raw), EXPORT_CHUNK_BYTES)]
+    manifest = {"format": "D7_EXISTING_REPORT_EXPORT_V1", "encoding": "base64",
+                "raw_bytes": len(raw), "chunk_bytes": EXPORT_CHUNK_BYTES,
+                "chunk_count": len(chunks), "sha256": hashlib.sha256(raw).hexdigest()}
+    return manifest, chunks
+
+def decode_export(manifest, chunks, end):
+    # Framing validation only; consumer must separately confirm job success.
+    need(end == manifest, "D7_EXPORT_END")
+    need(manifest["format"] == "D7_EXISTING_REPORT_EXPORT_V1" and manifest["encoding"] == "base64" and
+         manifest["chunk_bytes"] == EXPORT_CHUNK_BYTES and
+         0 < manifest["raw_bytes"] <= EXPORT_LIMIT and
+         manifest["chunk_count"] == (manifest["raw_bytes"] + EXPORT_CHUNK_BYTES - 1) // EXPORT_CHUNK_BYTES and
+         len(chunks) == manifest["chunk_count"], "D7_EXPORT_CHUNKS")
+    pieces = []
+    for i, row in enumerate(chunks):
+        need(set(row) == {"index", "base64"} and row["index"] == i, "D7_EXPORT_ORDER")
+        try:
+            piece = base64.b64decode(row["base64"], validate=True)
+        except ValueError as error:
+            raise ValueError("D7_EXPORT_BASE64") from error
+        expected = min(EXPORT_CHUNK_BYTES, manifest["raw_bytes"] - i * EXPORT_CHUNK_BYTES)
+        need(len(piece) == expected, "D7_EXPORT_CHUNKS")
+        pieces.append(piece)
+    raw = b"".join(pieces)
+    need(hashlib.sha256(raw).hexdigest() == manifest["sha256"], "D7_EXPORT_DIGEST")
+    return raw
+
+def existing_report_export(report, transport_tests):
+    projected = {key: value for key, value in report.items() if key != "cases"}
+    projected["cases"] = [export_case(case) for case in report["cases"]]
+    need(len(projected["cases"]) == 60 and
+         sum(len(case["window_associations"]) for case in projected["cases"]) == 362,
+         "D7_EXPORT_COMPLETENESS")
+    phases, commands = {}, {}
+    for name in EXPORT_PHASES:
+        path = OUTPUT / (name + "-phase.json")
+        value = build.check_phase(OUTPUT, name)
+        phases[name] = {"identity": desc(path), "value": value}
+        for member in value["commands"]:
+            commands[member] = {"identity": desc(OUTPUT / member),
+                                "value": build.check_command(OUTPUT / member)}
+    built = read(OUTPUT / "build/build.json")
+    build_keys = ("compiler", "cmake", "build_info", "plain_flags", "observer_flags", "system_search_roots",
+                  "source_archive", "programs", "engineering", "engineering_supervisor")
+    run_id, attempt = os.environ["GITHUB_RUN_ID"], os.environ["GITHUB_RUN_ATTEMPT"]
+    need(run_id.isdecimal() and attempt.isdecimal(), "D7_EXPORT_RUN_ID")
+    return {"format": "D7_EXISTING_REPORT_EXPORT_V1",
+        "scope": "current run verified existing objects; serialization only, not an independent binary audit",
+        "requires_successful_workflow_conclusion": True,
+        "run_identity": {"repository": os.environ["GITHUB_REPOSITORY"],
+                         "run_id": run_id, "run_attempt": attempt,
+                         "source_revision": report["source"]["revision"],
+                         "expected_artifact_name": "frontend-research-dualmic-upstream-d7-" + run_id + "-attempt-" + attempt,
+                         "artifact_id": None, "artifact_sha256": None,
+                         "artifact_binding": "upload follows; receiver must bind completed Actions API metadata"},
+        "report_identity": desc(OUTPUT / "report.json"),
+        "report": projected,
+        "omitted_case_fields": list(EXPORT_OMITTED_CASE_FIELDS),
+        "omission_boundary": "no exact within-window onset/transition claim without frame rows; binary history/EMA remains archive-only",
+        "phases": phases, "command_receipts": commands,
+        "negative_tests": {"identity": desc(OUTPUT / "negative-tests.json"), "value": read(OUTPUT / "negative-tests.json")},
+        "readback": {"identity": desc(OUTPUT / "readback.json"), "value": read(OUTPUT / "readback.json")},
+        "seal_identity": desc(OUTPUT / "seal.json"),
+        "completion": {"identity": desc(OUTPUT / "completion.json"), "value": read(OUTPUT / "completion.json")},
+        "build_provenance": {"identity": desc(OUTPUT / "build/build.json"),
+                             "fields": {key: built[key] for key in build_keys}},
+        "transport_engineering": transport_tests}
+
+def emit_existing_report(phase, report):
+    import test_dualmic_upstream_d7 as tests
+    controls = tests.engineering_export()
+    raw = encode_export(existing_report_export(report, controls))
+    manifest, chunks = export_chunks(raw)
+    need(decode_export(manifest, chunks, manifest) == raw, "D7_EXPORT_ROUNDTRIP")
+    manifest.update(source_revision=report["source"]["revision"],
+                    run_id=os.environ["GITHUB_RUN_ID"], run_attempt=os.environ["GITHUB_RUN_ATTEMPT"],
+                    requires_successful_workflow_conclusion=True)
+    # Fully encode, bound and self-check before printing BEGIN. No truncation or
+    # partial stream can qualify: consumer needs matching END, digest and job success.
+    phase.remaining()
+    print("D7_EXPORT_BEGIN " + json.dumps(manifest, sort_keys=True, separators=(",", ":")))
+    for chunk in chunks:
+        phase.remaining()
+        print("D7_EXPORT_CHUNK " + json.dumps(chunk, sort_keys=True, separators=(",", ":")))
+    print("D7_EXPORT_END " + json.dumps(manifest, sort_keys=True, separators=(",", ":")), flush=True)
+    phase.remaining()
+
 def finalize_negative(phase, report, started):
     # The negative phase's terminal receipt already exists. All final hashes,
     # summaries and completion I/O still share this same 300-second alarm.
@@ -615,6 +728,8 @@ def finalize_negative(phase, report, started):
     complete_report(phase)
     need(time.monotonic() - started <= 1200, "D7_TOTAL_JOB_BUDGET")
     print(json.dumps(summary, sort_keys=True))
+    emit_existing_report(phase, report)
+    need(time.monotonic() - started <= 1200, "D7_TOTAL_JOB_BUDGET")
     phase.remaining()
 
 def main():

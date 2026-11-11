@@ -365,9 +365,14 @@ real-robot qualification or the frozen NS research program.
 独立主线 Verify 和 Release 验证后，以新的 R3 身份实际执行原三目标覆盖与预算。
 源码检查通过不代表新测量通过，也不产生四麦公共 SDK、SSC305 HIL 或产品资格。
 
-## D7 双麦上游分离观测（待执行）
+## D7 双麦上游分离观测
 
 [D7冻结合同](DUALMIC_UPSTREAM_D7_PLAN.zh-CN.md)与[实现说明](DUALMIC_UPSTREAM_D7_IMPLEMENTATION.zh-CN.md)
-在[#944](https://github.com/jiying2007/audio-pipeline/issues/944)追踪。新增真实HPF双路输入/输出、BF输出及完整状态，
-先要求当前plain/observer/原A/C端点和旧D1七lane/control逐byte相同，再做原固定窗与实际状态关联。
-这是候选数0的中性诊断，不重开S003或D3/D5/D6等既闭合拒绝线，不声明质量改善；当前实现尚未执行。
+在[#944](https://github.com/jiying2007/audio-pipeline/issues/944)追踪。
+[首次实际结果](DUALMIC_UPSTREAM_D7_RESULT.zh-CN.md)保全fee863bf/run43055603884程序有效回执：
+60视图、35916帧、362固定窗，当前plain/observer/原A/C端点及旧D1七lane/control的严格中性路径完成，
+状态为UPSTREAM_OBSERVATION_VALID_NO_PROMOTION。原51负例/预算属于程序验证路径，独立二进制原件审计仍未完成。
+[全部首次stdout聚合](dualmic-upstream-d7-first-stdout.json)保留18组完整精度、正负值和null。
+首次stdout不含lag/route窗口状态，不据分数臆造echo-following或near-onset因果；
+后继只序列化自身已验证的固定报告，按新run身份另读，不冒充首次ZIP独立审计。
+这是候选数0的中性诊断，不重开S003或D3/D5/D6等闭合拒绝线，不声明听感/识别或真机质量改善。

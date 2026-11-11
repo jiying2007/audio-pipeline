@@ -28,6 +28,10 @@ on:
       - 'tests/validation/frontend_evolution/test_dualmic_gain_ramp_d6*'
       - 'docs/research/frontend-evolution-v1/DUALMIC_GAIN_RAMP_D6*'
       - 'docs/research/frontend-evolution-v1/dualmic-gain-ramp-d6*'
+      - 'tests/validation/frontend_evolution/dualmic_upstream_d7*'
+      - 'tests/validation/frontend_evolution/test_dualmic_upstream_d7*'
+      - 'docs/research/frontend-evolution-v1/DUALMIC_UPSTREAM_D7*'
+      - 'docs/research/frontend-evolution-v1/dualmic-upstream-d7*'
       - '.github/workflows/frontend-research.yml'
   push:
     branches: [main]
@@ -57,12 +61,16 @@ on:
       - 'tests/validation/frontend_evolution/test_dualmic_gain_ramp_d6*'
       - 'docs/research/frontend-evolution-v1/DUALMIC_GAIN_RAMP_D6*'
       - 'docs/research/frontend-evolution-v1/dualmic-gain-ramp-d6*'
+      - 'tests/validation/frontend_evolution/dualmic_upstream_d7*'
+      - 'tests/validation/frontend_evolution/test_dualmic_upstream_d7*'
+      - 'docs/research/frontend-evolution-v1/DUALMIC_UPSTREAM_D7*'
+      - 'docs/research/frontend-evolution-v1/dualmic-upstream-d7*'
       - '.github/workflows/frontend-research.yml'
   workflow_dispatch:
     inputs:
       experiment:
         type: choice
-        options: [dualmic-stages-d1, dualmic-zero-d3-input, dualmic-zero-d3, dualmic-window-d4, dualmic-target-gate-d5, dualmic-gain-ramp-d6]
+        options: [dualmic-stages-d1, dualmic-zero-d3-input, dualmic-zero-d3, dualmic-window-d4, dualmic-target-gate-d5, dualmic-gain-ramp-d6, dualmic-upstream-d7]
         default: dualmic-stages-d1
         required: true
 
@@ -85,6 +93,7 @@ jobs:
       d4: ${{ steps.select.outputs.d4 }}
       d5: ${{ steps.select.outputs.d5 }}
       d6: ${{ steps.select.outputs.d6 }}
+      d7: ${{ steps.select.outputs.d7 }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
@@ -103,6 +112,37 @@ jobs:
           import os, subprocess
           from pathlib import Path
           event = os.environ['EVENT_NAME']
+          # D7-only selection exits before historical selectors inspect appended jobs.
+          # Historical jobs below matrix remain byte-identical to e348843.
+          import time
+          scope_start = time.monotonic()
+          def d7_git(*args):
+              left = 300 - (time.monotonic() - scope_start)
+              if left <= 0:
+                  raise SystemExit('D7_SCOPE_TIMEOUT')
+              return subprocess.check_output(['git', *args], timeout=min(30, left)).decode()
+          d7 = event == 'workflow_dispatch' and os.environ['SELECTED_EXPERIMENT'] == 'dualmic-upstream-d7'
+          if event != 'workflow_dispatch':
+              d7_paths = d7_git('diff', '--name-only', os.environ['BASE_SHA'], 'HEAD').splitlines()
+              d7 = any('dualmic_upstream_d7' in p or 'DUALMIC_UPSTREAM_D7' in p or 'dualmic-upstream-d7' in p for p in d7_paths)
+              if '.github/workflows/frontend-research.yml' in d7_paths:
+                  d7_prior = d7_git('show', os.environ['BASE_SHA'] + ':.github/workflows/frontend-research.yml')
+                  d7_current = Path('.github/workflows/frontend-research.yml').read_text()
+                  d7_marker = '\n  dualmic-upstream-d7:\n'
+                  if d7_current.split(d7_marker, 1)[-1] != d7_prior.split(d7_marker, 1)[-1]:
+                      d7 = True
+              if d7 and any(not ('dualmic_upstream_d7' in p or 'DUALMIC_UPSTREAM_D7' in p or 'dualmic-upstream-d7' in p or p in (
+                      '.github/workflows/frontend-research.yml', 'docs/research/frontend-evolution-v1/README.md')) for p in d7_paths):
+                  raise SystemExit('D7_REQUIRES_SEPARATE_RESEARCH_CHANGE')
+          if d7:
+              frozen_workflow = d7_git('show', 'e348843a570503728930f06451633262b2546fa5:.github/workflows/frontend-research.yml')
+              current_workflow = Path('.github/workflows/frontend-research.yml').read_text()
+              marker = '\n  dualmic-upstream-d7:\n'
+              if current_workflow.count(marker) != 1 or current_workflow.split('  matrix:\n', 1)[1].split(marker, 1)[0] != frozen_workflow.split('  matrix:\n', 1)[1]:
+                  raise SystemExit('D7_HISTORICAL_JOBS_CHANGED')
+              with open(os.environ['GITHUB_OUTPUT'], 'a') as out:
+                  out.write('d1=false\nd3=false\nd3_execute=false\nd4=false\nd5=false\nd6=false\nd7=true\n')
+              raise SystemExit(0)
           if event == 'workflow_dispatch':
               d1 = os.environ['SELECTED_EXPERIMENT'] == 'dualmic-stages-d1'
               d3 = os.environ['SELECTED_EXPERIMENT'] in ('dualmic-zero-d3-input', 'dualmic-zero-d3')
@@ -167,6 +207,7 @@ jobs:
                       else:
                           d1 = True
           with open(os.environ['GITHUB_OUTPUT'],'a') as out:
+              out.write('d7=false\n')
               out.write('d1='+str(d1).lower()+'\nd3='+str(d3).lower()+'\nd3_execute='+str(d3_execute).lower()+'\nd4='+str(d4).lower()+'\nd5='+str(d5).lower()+'\nd6='+str(d6).lower()+'\n')
           PY
   matrix:
@@ -616,6 +657,41 @@ jobs:
             /tmp/ap-dualmic-d6/*.json
             /tmp/ap-dualmic-d6/input/*.json
             /tmp/ap-dualmic-d6/result/
+          include-hidden-files: true
+          retention-days: 90
+          if-no-files-found: error
+
+  dualmic-upstream-d7:
+    needs: scope
+    if: needs.scope.outputs.d7 == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      EXECUTION_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Admit originals, build two current CLIs, observe and verify all D7 evidence
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python3 -B tests/validation/frontend_evolution/dualmic_upstream_d7.py all \
+            --source-revision "$EXECUTION_SHA"
+      - name: Preserve complete original ZIP, new evidence and first failure
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: frontend-research-dualmic-upstream-d7-${{ github.run_id }}-attempt-${{ github.run_attempt }}
+          path: |
+            /tmp/ap-dualmic-d7/input/original.zip
+            /tmp/ap-dualmic-d7/input/*.json
+            /tmp/ap-dualmic-d7/result/
           include-hidden-files: true
           retention-days: 90
           if-no-files-found: error

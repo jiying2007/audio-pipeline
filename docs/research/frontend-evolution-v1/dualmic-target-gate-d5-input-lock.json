@@ -1,0 +1,16 @@
+{
+  "experiment": "FE-DUALMIC-TARGET-GATE-D5",
+  "base_sha": "e0f2be9bf6273baa46149062ec7ea700cd76387e",
+  "case_count": 60,
+  "window_count": 362,
+  "frames": 35916,
+  "samples": 5746560,
+  "resets": 8,
+  "candidates": 1,
+  "subprocess_seconds": 30,
+  "canonical_offset_samples": 160,
+  "intervention_remove": "        if (!allow_gain_increase && target_gain > 1.0f) target_gain = 1.0f;",
+  "candidate_parameters_changed": false,
+  "models_executed": false,
+  "promotion_allowed": false
+}

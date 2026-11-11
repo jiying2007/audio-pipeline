@@ -52,7 +52,10 @@ def git(*args):
     return subprocess.check_output(["git", *args], cwd=ROOT, timeout=30).decode().strip()
 
 def source_names(lock):
-    return {SELF, TEST, PLAN, LOCK, WORKFLOW, *lock["helper_git_blobs"]}
+    old_lock=d2.input_lock()
+    return {SELF, TEST, PLAN, LOCK, WORKFLOW, *lock["helper_git_blobs"],
+            admission.PLAN_PATH, admission.LOCK_PATH, *old_lock["D1_SOURCE_FILES"],
+            d2.SELF_NAME, d2.C_NAME, d2.TEST_NAME, d2.LOCK_NAME, d2.PLAN_NAME}
 
 def source_proof(lock):
     names = source_names(lock)
@@ -248,7 +251,10 @@ def verify(input_root,output,start):
     phase_pass(output,"analysis")
     lock=frozen()
     allowed={"source",*COPIES,"report.json","analysis-phase.json","verify-phase.json","readback.json"}
-    need({p.name for p in output.iterdir()} <= allowed and
+    need(output.is_dir() and not output.is_symlink() and
+         {p.name for p in output.iterdir()} <= allowed and
+         (output/"source").is_dir() and not (output/"source").is_symlink() and
+         all(p.is_file() for p in output.iterdir() if p.name != "source") and
          all(not p.is_symlink() for p in output.rglob("*")), "D4_OUTPUT_MEMBERS")
     names=source_names(lock)
     need(d2.file_set(output/"source") == names, "D4_SOURCE_MEMBERS")
@@ -275,12 +281,14 @@ def main():
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument("phase",choices=("analysis","verify"))
     p.add_argument("--input",required=True,type=Path);p.add_argument("--output",required=True,type=Path)
-    a=p.parse_args();start=time.monotonic();output=a.output.resolve();input_root=a.input.resolve()
+    a=p.parse_args();start=time.monotonic();output=a.output.absolute();input_root=a.input.resolve()
+    can_write=False
     receipt={"phase":a.phase,"status":"FAIL","budget_seconds":300}
     try:
         if a.phase == "analysis":
-            need(not output.exists(),"D4_FRESH_OUTPUT_REQUIRED")
+            need(not output.exists() and not output.is_symlink(),"D4_FRESH_OUTPUT_REQUIRED")
             output.mkdir(parents=True)
+            can_write=True
             report=payload(input_root,start)
             for name in source_names(frozen()):
                 dest=output/"source"/name;dest.parent.mkdir(parents=True,exist_ok=True)
@@ -289,6 +297,11 @@ def main():
                 shutil.copyfile(input_root/origin,output/dest)
             dump(output/"report.json",report)
         else:
+            need(output.is_dir() and not output.is_symlink() and
+                 not (output/"verify-phase.json").exists() and not (output/"verify-phase.json").is_symlink() and
+                 not (output/"readback.json").exists() and not (output/"readback.json").is_symlink(),
+                 "D4_NEW_VERIFY_RECEIPT_REQUIRED")
+            can_write=True
             report=verify(input_root,output,start)
             dump(output/"readback.json",{"status":"PASS","report":descriptor(output/"report.json"),
                                         "DSP_executed":False,"models_executed":False})
@@ -298,13 +311,13 @@ def main():
         receipt.update(reason=str(error),error_type=type(error).__name__)
         raise
     finally:
-        output.mkdir(parents=True,exist_ok=True)
-        receipt["elapsed_seconds"]=time.monotonic()-start
-        dump(output/(a.phase+"-phase.json"),receipt)
-        if time.monotonic()-start>300:
-            receipt.update(status="FAIL",reason="D4_FINAL_WRITE_BUDGET_EXCEEDED")
+        if can_write:
+            receipt["elapsed_seconds"]=time.monotonic()-start
             dump(output/(a.phase+"-phase.json"),receipt)
-            raise ValueError(receipt["reason"])
+            if time.monotonic()-start>300:
+                receipt.update(status="FAIL",reason="D4_FINAL_WRITE_BUDGET_EXCEEDED")
+                dump(output/(a.phase+"-phase.json"),receipt)
+                raise ValueError(receipt["reason"])
 
 if __name__=="__main__":
     main()

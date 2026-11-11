@@ -9,6 +9,7 @@ import shutil
 import tempfile
 import time
 import unittest
+from unittest.mock import patch
 
 import dualmic_window_d4 as d4
 
@@ -52,6 +53,35 @@ class Controls(unittest.TestCase):
         self.assertEqual(frames,[[1,101],[101,201],[201,301],[301,401],[401,501],[501,600]])
         self.assertEqual(sum(b-a for a,b in frames),599)
 
+    def test_existing_analysis_is_not_overwritten(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            output=Path(tmp)/"result";output.mkdir()
+            marker=output/"analysis-phase.json";marker.write_bytes(b"original")
+            with patch("sys.argv",["d4","analysis","--input",tmp,"--output",str(output)]):
+                with self.assertRaisesRegex(ValueError,"D4_FRESH_OUTPUT_REQUIRED"):
+                    d4.main()
+            self.assertEqual(marker.read_bytes(),b"original")
+            self.assertEqual({p.name for p in output.iterdir()},{"analysis-phase.json"})
+    def test_existing_readback_is_not_overwritten(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            output=Path(tmp)/"result";output.mkdir()
+            marker=output/"readback.json";marker.write_bytes(b"original")
+            with patch("sys.argv",["d4","verify","--input",tmp,"--output",str(output)]):
+                with self.assertRaisesRegex(ValueError,"D4_NEW_VERIFY_RECEIPT_REQUIRED"):
+                    d4.main()
+            self.assertEqual(marker.read_bytes(),b"original")
+            self.assertEqual({p.name for p in output.iterdir()},{"readback.json"})
+    def test_output_symlink_is_not_written(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            target=Path(tmp)/"original";target.mkdir()
+            marker=target/"keep";marker.write_bytes(b"original")
+            output=Path(tmp)/"link";output.symlink_to(target,target_is_directory=True)
+            with patch("sys.argv",["d4","analysis","--input",tmp,"--output",str(output)]):
+                with self.assertRaisesRegex(ValueError,"D4_FRESH_OUTPUT_REQUIRED"):
+                    d4.main()
+            self.assertEqual({p.name for p in target.iterdir()},{"keep"})
+            self.assertEqual(marker.read_bytes(),b"original")
+
 def mutate(report,kind):
     windows=report["cases"][0]["windows"]
     if kind=="window_offset": windows[0]["gain"]["original_frame_range"][0]-=1
@@ -79,17 +109,25 @@ def mutate(report,kind):
 
 def negatives(input_root,original,receipt_path):
     start=time.monotonic()
-    d4.need(d4.d2.read_json(original/"readback.json")["status"]=="PASS","D4_QUALIFIED_ORIGINAL_REQUIRED")
     kinds=("window_offset","missing_window","duplicate_window","swapped_windows","gain_count",
            "cross_reset","score","null","revision","tree","root_member","source_member",
-           "saved_admission","saved_report","saved_contract")
+           "saved_admission","saved_report","saved_contract","root_type")
+    expected={kind:"D4_READBACK_DIFFERS" for kind in kinds}
+    expected.update(root_member="D4_OUTPUT_MEMBERS",root_type="D4_OUTPUT_MEMBERS",source_member="D4_SOURCE_MEMBERS",
+                    saved_admission="D4_SAVED_INPUT_CHANGED",saved_report="D4_SAVED_INPUT_CHANGED",
+                    saved_contract="D4_SAVED_SOURCE_CHANGED")
     records=[];receipt={"experiment":d4.EXPERIMENT,"status":"FAIL","budget_seconds":300,"tests":records}
     try:
+        d4.need(d4.d2.read_json(original/"readback.json")["status"]=="PASS","D4_QUALIFIED_ORIGINAL_REQUIRED")
+        d4.verify(input_root,original,start)
+        receipt["unmodified_baseline_verified"]=True
         for kind in kinds:
             d4.remaining(start,300)
             with tempfile.TemporaryDirectory(prefix="d4-negative-") as tmp:
                 output=Path(tmp)/"result";shutil.copytree(original,output)
-                if kind=="root_member": (output/"extra.bin").write_bytes(b"unlisted")
+                if kind=="root_type":
+                    p=output/"verify-phase.json";p.unlink();p.mkdir();(p/"extra.bin").write_bytes(b"unlisted")
+                elif kind=="root_member": (output/"extra.bin").write_bytes(b"unlisted")
                 elif kind=="source_member": (output/"source/extra.py").write_bytes(b"unlisted")
                 elif kind=="saved_admission":
                     r=d4.d2.read_json(output/"admission.json");r["source_revision"]="0"*40
@@ -103,11 +141,13 @@ def negatives(input_root,original,receipt_path):
                     r=d4.d2.read_json(output/"report.json");mutate(r,kind);d4.dump(output/"report.json",r)
                 try:
                     d4.verify(input_root,output,start)
-                except (ValueError,AssertionError,OSError) as error:
-                    records.append({"name":kind,"rejected":True,"reason":str(error),"error_type":type(error).__name__})
+                except ValueError as error:
+                    d4.need(str(error) == expected[kind], "D4_UNEXPECTED_REJECTION:"+kind+":"+str(error))
+                    records.append({"name":kind,"rejected":True,"reason":str(error),
+                                    "expected_reason":expected[kind],"error_type":type(error).__name__})
                 else:
                     raise ValueError("D4_MUTATION_NOT_REJECTED:"+kind)
-        d4.need(len(records)==15,"D4_NEGATIVE_COUNT")
+        d4.need(len(records)==16,"D4_NEGATIVE_COUNT")
         receipt["status"]="PASS"
     finally:
         receipt["elapsed_seconds"]=time.monotonic()-start;d4.dump(receipt_path,receipt)

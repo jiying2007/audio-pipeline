@@ -378,7 +378,7 @@ jobs:
           timeout 300s python3 tests/validation/frontend_evolution/dualmic_window_d4.py verify \
             --input /tmp/ap-dualmic-d4/input --output /tmp/ap-dualmic-d4/result \
             2>&1 | tee /tmp/ap-dualmic-d4/verify.log
-      - name: Reject fifteen actual saved-evidence mutations
+      - name: Reject sixteen actual saved-evidence mutations
         shell: bash
         run: |
           set -euo pipefail

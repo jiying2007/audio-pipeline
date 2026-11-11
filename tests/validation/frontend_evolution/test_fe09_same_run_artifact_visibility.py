@@ -856,6 +856,15 @@ class T2F0AttemptVisibilityTests(T2AAttemptVisibilityTests):
     MARKER = "FE09_S3_T2_F0_NEGATIVE_REACHABILITY_READBACK_PASS"
 
 
+class T2C0AttemptVisibilityTests(T2AAttemptVisibilityTests):
+    """Exercise the complete strict REST matrix for the observed T2-C0 failure."""
+    NAME = "frontend-fe09-s3-t2c0-owner-fallback-12345-attempt-2"
+    STAGE = "t2c0"
+    PREFIX = "frontend-fe09-s3-t2c0-owner-fallback-"
+    TIMEOUT = 25
+    MARKER = "FE09_T2C0_EXACT_SOURCE_LOGICAL_ACK_READBACK_PASS"
+
+
 class RootAttemptVisibilityTests(T2AAttemptVisibilityTests):
     """The same full matrix independently exercises immutable-root transport."""
     NAME = "frontend-fe09-t3s2b1a-immutable-root-12345-attempt-2"
@@ -953,3 +962,4 @@ class A1SnapshotRestartTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
+

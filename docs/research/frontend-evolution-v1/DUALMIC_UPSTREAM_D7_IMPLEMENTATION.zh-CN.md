@@ -1,6 +1,6 @@
 # D7 HPF/BF 中性观察实现说明
 
-状态：首次执行 MEASUREMENT_INVALID；下述 flags 兼容修订仍为 NOT_EXECUTED。
+状态：两次实际执行均为 MEASUREMENT_INVALID；末节 Unity/依赖路径修订仍为 NOT_EXECUTED。
 追踪 [#944](https://github.com/jiying2007/audio-pipeline/issues/944) 与 [PR #945](https://github.com/jiying2007/audio-pipeline/pull/945)；
 总研究 #657 继续开放。首次失败与实际通过的准入前缀见末节，不宣称取得新阶段声学结果。
 冻结 commit `4b7f4496d9d9fef5589456f4ac377ddfa29e24e3` 的
@@ -230,10 +230,112 @@ plain-build原300秒phase内增加107个明确标为synthetic parser fixture的�
 替代flags和不支持的重排、全部宏/include缺失/重复/替代、extra include/宏、
 include顺序、缺失/重复赋值、破损quote及超长诊断。
 另检查首次D7_BUILD_FLAGS详情不会被后继失败覆盖；receipt纳入原输出闭包和readback。
-这些新增测试已写入源码，但本修订尚未执行，不写PASS结果。
+a3dea0ad提交时这些新增测试尚未执行；其后第二次运行已推进到Unity守卫，见后节。
+不把这一控制流前缀称为完整pipeline PASS或独立artifact审计通过。
 原51类真实证据篡改的类别、实现与拒绝理由保持原字节。
 
 冻结两文件、旧D1 builder、全部生产源码、D7 C/driver、现有workflow与全部
 300秒phase/30秒child/20分钟job/16MiB source/512MiB新结果上限不变。
 下一次运行仍须从完整原件准入开始，任何中性桥、数值或预算失败照原规则停止。
 本说明只是保全失败及提出可审查修订，不把未运行阶段晋升为合格。
+
+
+## 第二次真实失败与一次性生成证据核查（2026-11-11）
+
+### 第二份失败原件
+
+执行head a3dea0ad4560f8c198247c288e3525dcc6824a8e，
+[Research run43052616782 / attempt1](https://github.com/jiying2007/audio-pipeline/actions/runs/43052616782)，
+[job130633682097](https://github.com/jiying2007/audio-pipeline/actions/runs/43052616782/job/130633682097)。
+原D2读取器再次输出完整准入成功，elapsed52.365775539秒；
+根首次失败 MEASUREMENT_INVALID / ValueError / D7_GENERATED_UNITY，
+plain-build / body，根elapsed59.402543490999996秒，退出码1。
+按准确源码控制流，107个flags工程fixtures与实际plain flags守卫已返回，随后才到Unity检查；
+这些回执未另经二进制artifact审计，不代替后续原件中性或完整测量资格。
+
+[失败artifact13871015523](https://github.com/jiying2007/audio-pipeline/actions/runs/43052616782/artifacts/13871015523)
+名称frontend-research-dualmic-upstream-d7-43052616782-attempt-1，485个上传文件，
+474702632 bytes，上传/API SHA256
+23775f6be36e594b2bb3ba069906951d48bc7feddd0ae37b3a4990b1275ca42c，
+expires_at=2027-02-09T15:52:09Z。保留这份及第一次失败artifact，不覆盖。
+本次只读job/API和公开源码，没有解包读取实际Unity/depfile；
+未取得新HPF/BF音频、state、固定窗或51类实际负例结果。
+
+### 同一工具链的一次性源码核查
+
+1. Unity文档：CMake3.31.6
+   [WriteUnitySource/WriteUnitySourceInclude](https://github.com/Kitware/CMake/blob/v3.31.6/Source/cmLocalGenerator.cxx#L3085-L3166)
+   在每条include前输出完整固定注释
+   /* NOLINTNEXTLINE(bugprone-suspicious-include,misc-include-cleaner) */。
+   旧守卫只删除文件头与include，必然把这条生成注释作为额外代码拒绝。
+   CMake3.25.3对应函数没有这条注释；4.1.2同3.31.6，且本配置未开启relocatable，
+   默认仍为绝对路径。这是确定的源码兼容缺陷，不冒称实际artifact内注释已直接观测。
+2. Unity来源：固定生产CMakeLists中完整AP_SOURCES按append顺序有17个非module源；
+   [batch与filter规则](https://github.com/Kitware/CMake/blob/v3.31.6/Source/cmLocalGenerator.cxx#L3187-L3351)
+   保持该顺序，batch32产生唯一unity_0_c.c，10个module源由SKIP_UNITY_BUILD_INCLUSION排除。
+   无unique-ID、before/after include代码或多配置条件。
+3. 依赖路径：冻结D1 helper第21行include ../../../examples/process_pcm.c。
+   [GCC13.3 files.cc](https://github.com/gcc-mirror/gcc/blob/releases/gcc-13.3.0/libcpp/files.cc#L376-L422)
+   对普通Linux非system include保留拼接路径，
+   [mkdeps apply_vpath](https://github.com/gcc-mirror/gcc/blob/releases/gcc-13.3.0/libcpp/mkdeps.cc#L185-L217)
+   仅去leading ./，不消去嵌入的../。旧dependency guard使用词法relative_to，
+   会误拒绝source/tests/validation/frontend_evolution/../../../examples/process_pcm.c，
+   尽管它仍是冻结源目录内的准确examples/process_pcm.c。这是一起处理的已知下一处风险，
+   不等失败后再盲目重跑。未声称读到了本轮observer.d，observer尚未构建。
+4. compile_commands：
+   [CMake3.31.6 target generator](https://github.com/Kitware/CMake/blob/v3.31.6/Source/cmMakefileTargetGenerator.cxx#L1039-L1078)
+   使用source.GetFullPath、current binary directory和command string，符合现有字段检查；
+   导出command发生在后续Make依赖flags追加之前，完整实际命令仍留在verbose编译日志，
+   不把compile_commands单独冒称含全部-MD/-MT/-MF。
+5. depfile：
+   [target generator](https://github.com/Kitware/CMake/blob/v3.31.6/Source/cmMakefileTargetGenerator.cxx#L968-L981)
+   生成obj+.d，
+   [GNU.cmake](https://github.com/Kitware/CMake/blob/v3.31.6/Modules/Compiler/GNU.cmake#L43-L53)
+   为-MD/-MT/-MF，现有*.o.d选择正确。manual observer仍使用原-MMD/-MF。
+6. generated header：固定template有39个变量，与header_expected完整键集一致；
+   [ConfigureFile/ConfigureString](https://github.com/Kitware/CMake/blob/v3.31.6/Source/cmMakefile.cxx#L3985-L4155)
+   的@ONLY变量替换与Linux LF符合原byte比较。生产CMake的config digest字段顺序、
+   Linux runtime/tracking默认值和cap/partitions整数计算均逐项相符。
+
+这次审查没有发现第三处确定性的生成证据误拒绝；这不是运行通过保证，
+后续真实编译、工程控制、原件中性、完整分析和预算仍全部需执行。
+
+### 窄修订，不改变生成代码、编译配方或冻结测量
+
+Unity现在按固定CMakeLists blob和17个准确有序路径重建两种完整文档byte模板：
+旧版无逐include注释、新版每条include前为上述唯一固定注释。
+只允许固定unity_0_c.c；不能任意去注释、忽略额外语句、放行subset/duplicate/reorder、
+替换路径、BOM、CRLF或其它空白。没有改写真正生成的Unity文件。
+
+依赖读取保留每个原始raw spelling，同时逐组件解析。source/build根内不允许任何symlink；
+遇../只在当前冻结根内退一级，禁止越根后再进入；必须是准确identity成员或两个已知generated种类的
+真实普通文件。source文件字节仍由原archive/source/逆变换闭包核验；
+不是只靠规范化后的同名路径接受被替换正文。
+相对路径按实际编译cwd解析：CMake .o.d用build，manual observer.d用原ROOT。
+依赖文件自身保持原字节，报告另加raw/canonical/member映射。
+
+原先把所有其它绝对路径都忽略为system的分支不再保留。
+plain-build在原300秒内增加一次实际GNU身份查询：
+resolved compiler -E -x c /dev/null -v，仍由原Phase.run施加min(30,remaining)。
+查询空输入，仅取得真实system include search roots，不能改变真正编译的flags或DSP。
+准确stdout/stderr/argv/timeout回执留存，严格解析唯一include-search段，
+每个已存在根须canonically位于/usr内；外部system依赖的raw与resolved普通文件均须
+位于实际查询的根中，不能将repo根越界重新分类为system。
+readback再次核对真实编译器query argv、log hashes和roots。system headers不宣称历史环境相同。
+
+新增110个持久化合成工程fixtures（92个Unity文档、18个依赖路径），在原plain-build阶段运行，
+覆盖完整两种文档、每源missing/duplicate、顺序、额外statement/define/comment/include、
+未知或helper源、../Unity路径、混合/错误注释、BOM/CRLF，
+以及实际intra-root ../规范化与escape/re-entry、missing/非成员/非普通文件、
+symlink/file/dir/后接../和outside路径。临时symlink测试结束即移除并保留metadata，
+不把symlink混入最终证据闭包。另有15个查询parser控制（用实际已查询roots构造正例，拒绝缺失/重复/倒序markers、空根、
+未缩进/相对/不存在/非目录/非usr/整usr/重复/损坏root），不再启动第二次compiler查询。
+同时验证生成错误详情不会被后继错误覆盖。
+这只是解析/闭包测试，不编译合成源，不冒称实际Unity/依赖文件或声学证据。
+新增生成错误使用原phase首失败与Actions日志通道保留有界target、观测prefix/hash及期待身份，
+不在deadline后追加I/O。
+
+修订仅涉及新D7 builder/tests/本文。原107 flags fixtures与原51实际负例不变；
+freeze、production、旧D1 builder、D7 C/driver/workflow、原DSP构建的configure/compiler argv、
+全部300/30/20与16/512MiB预算、中性三方byte桥、60视图/362窗均保持。
+本次修订仍待准确detached commit独立审查，尚未执行；更新活动PR分支前必须另获授权。

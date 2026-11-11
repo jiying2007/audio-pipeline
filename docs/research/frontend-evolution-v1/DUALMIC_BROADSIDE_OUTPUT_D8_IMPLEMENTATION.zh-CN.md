@@ -1,6 +1,6 @@
 # D8 broadside 输出：实现与证据边界
 
-状态：**SOURCE_AUTHORED_NOT_RUN**。这份文件说明已编写的研究实现，不是构建、测试、DSP 运行或结果通过声明。发布到会触发 CI 的 ref 之前须完成独立的 exact-head 源码复核。生产版本、默认配置、API 与生产树不变。
+状态：**FIRST_ATTEMPT_MEASUREMENT_INVALID_BEFORE_BUILD**。首次已审核的 CI 尝试完成了原始 D3 输入准入，但在 D8 合同比较处停止，未进入构建、测试或 D8 DSP。此次失败及其证据保留在第 8 节；修正仍须独立 exact-head 复核后才可发布。生产版本、默认配置、API 与生产树不变。
 
 ## 1. 冻结合同与单一干预
 
@@ -76,4 +76,24 @@ R3 的四个固定无 DSP fixtures 由 supervisor 创建，一个 group 同时�
 
 ## 7. 运行与结论仍待独立复核
 
-本实现只通过连接器写入 detached Git objects；没有启动 CI、构建、测试或 DSP。所有工程计数、预算、source guards 与科学结果在运行前都是待验证要求。独立 source review、exact-head required checks、artifact 全闭包读回及新鲜 main 资格检查是不同证据，不能互相替代。实际结果将单独记录；本文件没有预先宣称 candidate 改善，也不作真实阵列、时钟、校准、ASR、听感或临床结论。
+实现准备和修正均只通过 GitHub 连接器写入 detached Git objects。首次经过独立 source review 的 CI 尝试已在构建前失败，详见第 8 节；未产生 D8 科学评分或候选改善结论。所有尚未执行的工程计数、预算与 scientific checks 仍是待验证要求。独立 source review、exact-head required checks、artifact 全闭包读回及新鲜 main 资格检查是不同证据，不能互相替代。本文件不作真实阵列、时钟、校准、ASR、听感或临床结论。
+
+## 8. 首次尝试：完整保留的构建前失败
+
+2026-11-11 的 [Frontend Research run43115604725](https://github.com/jiying2007/audio-pipeline/actions/runs/43115604725)，attempt1，head `e4d0b8dfb30169e5628ee2bd31ed8df54f7d65e3`，D8 job `130842741497` 已完成，结论 failure。scope job 成功，历史 D1/D3/D4/D5/D6/D7 jobs 全部 skipped；D8 failure-evidence upload 成功。此记录不覆盖独立的 Verify gate。
+
+原 D3 准入报告 `INPUT_ADMITTED_NO_DSP_EXECUTION`、`original_D2_readback_exact=true`，用时44.84039957秒；原件474165229 bytes、3551 members、861385743 extracted bytes、60 cases/35916 frames/5746560 samples 均按原合同验证。之后 D8 停于 `MEASUREMENT_INVALID / D8_FULL_ORIGINAL_LOCK`，未开始 D8 build、tests、四形态 replay 或科学 scoring。这是实现 guard 失败，不是有效实验的 NO_ADVANCE，也不能据此判断候选质量。
+
+具体原因：冻结的 D8 `original_admission` 比原 D3 lock 多三个明确 metadata annotations：
+`admission_freeze`、`fresh_full_original_D2_readback_required`、`required_status`。
+首次实现只验证/移除了前两个，就把仍带 `required_status` 的对象与原 D3 对象做全对象 equality，因此必然拒绝。
+通过连接器重新比较冻结 JSON，`required_status="INPUT_ADMITTED_NO_DSP_EXECUTION"` 是唯一差异；完整嵌套 D2 case/input lock 没有差异。
+修正明确验证并移除第三 annotation，然后仍比较每一个原始字段及完整嵌套 D2 对象，不改合同、不改数据、不放宽比较、不改候选参数。补充 focused engineering controls 覆盖 pristine、wrong/missing status、altered/missing original field 及 nested D2 drift，保持既有76个 fixed negative 类别。
+
+[失败 artifact13897369988](https://github.com/jiying2007/audio-pipeline/actions/runs/43115604725/artifacts/13897369988)：
+- name：`frontend-research-dualmic-broadside-output-d8-43115604725-attempt-1`
+- uploaded ZIP：473258336 bytes；SHA256 `87d7f34796b1a97cc626dd39d73b30576dd29cb4e9cba8dc1278520f46d7fa1d`
+- upload log 报告8 files；API 读取时 unexpired，expires_at `2027-02-09T22:54:23Z`。
+- 完整 decoded job log 按连接器返回文本的 UTF-8（含其 BOM）计31980 bytes，SHA256 `2627e0b1344b926ed2efc5040967fa694c816eecb803dfd895acae0528624e37`。这不是 GitHub 压缩 log archive 的 hash。
+
+上述 artifact 身份/上传成功来自实际 job log 与 artifact API；没有把 metadata 查询说成独立打开或重算了 artifact 的8个 members。首败不能被后续修正或重试覆盖；新的发布/运行须有新的 exact-head 复核，并保留本次记录。

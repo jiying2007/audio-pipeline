@@ -1080,9 +1080,90 @@ def engineering_observer_receipts(phase):
     phase.remaining()
     return result
 
+
+def engineering_original_locks(phase):
+    """Regression for the three D8 annotations on the complete original locks."""
+    root = b.OUTPUT / "negatives" / "engineering-original-locks"
+    root.mkdir()
+    lock_path = b.ROOT / b.LOCK
+    frozen = b.read(lock_path)
+    value = {key: frozen[key] for key in
+             ("original_admission", "original_d2_case_input_lock")}
+    # Independent, unchanged historical helpers provide the full authorities.
+    # Do not derive either expected object by deleting fields from the fixture.
+    expected_admission = b.admission.frozen_lock()
+    expected_d2 = b.d2.input_lock()
+    authorities_before = encode([expected_admission, expected_d2])
+    pristine = root / "pristine.json"
+    pristine_identity = _store(pristine, encode(value))
+
+    def guard(path):
+        saved = _json(path.read_bytes())
+        return b.check_original_locks(
+            saved["original_admission"], saved["original_d2_case_input_lock"],
+            expected_admission, expected_d2, b.admission.FREEZE)
+
+    b.need(guard(pristine) is True, "D8_ENGINEERING_ORIGINAL_LOCK_PRISTINE")
+    b.need(value["original_admission"]["required_status"] ==
+           "INPUT_ADMITTED_NO_DSP_EXECUTION", "D8_ENGINEERING_ORIGINAL_LOCK_PRISTINE")
+    old_hash = value["original_admission"]["artifact"]["sha256"]
+    b.need(isinstance(old_hash, str) and len(old_hash) == 64,
+           "D8_ENGINEERING_ORIGINAL_LOCK_PRISTINE")
+    changed_hash = ("1" if old_hash[0] == "0" else "0") + old_hash[1:]
+    frame_count = value["original_d2_case_input_lock"]["cases"][0]["catalog"]["frames"]
+    b.need(type(frame_count) is int, "D8_ENGINEERING_ORIGINAL_LOCK_PRISTINE")
+    mutations = (
+        ("wrong-required-status", "replace", ["original_admission", "required_status"],
+         "INPUT_ADMITTED"),
+        ("missing-required-status", "delete", ["original_admission", "required_status"], None),
+        ("altered-original-field", "replace", ["original_admission", "artifact", "sha256"],
+         changed_hash),
+        ("missing-original-field", "delete", ["original_admission", "report_sha256"], None),
+        ("nested-D2-drift", "replace",
+         ["original_d2_case_input_lock", "cases", 0, "catalog", "frames"], frame_count + 1),
+    )
+    records = []
+    for label, operation, path, replacement in mutations:
+        phase.remaining()
+        b.need(guard(pristine) is True, "D8_ENGINEERING_ORIGINAL_LOCK_PRISTINE")
+        mutant = copy.deepcopy(value)
+        if operation == "delete":
+            parent = _at(mutant, path[:-1])
+            b.need(path[-1] in parent, "D8_ENGINEERING_ORIGINAL_LOCK_PRISTINE")
+            del parent[path[-1]]
+        else:
+            _set(mutant, path, replacement)
+        raw = encode(mutant)
+        b.need(raw != pristine.read_bytes(), "D8_NEGATIVE_NO_MUTATION:" + label)
+        target = root / (label + ".json")
+        identity = _store(target, raw)
+        outcome = _expect_reason(label, lambda target=target: guard(target),
+                                 phase, "D8_FULL_ORIGINAL_LOCK")
+        b.need(b.desc(pristine) == pristine_identity and b.desc(target) == identity and
+               encode([expected_admission, expected_d2]) == authorities_before,
+               "D8_ENGINEERING_ORIGINAL_LOCK_MUTATED_AUTHORITY")
+        records.append({"label": label, "operation": operation, "path": path,
+                        "scope": "isolated mutation of actual frozen contract metadata",
+                        "untouched_guard_passed": True,
+                        "fixture": {"path": target.relative_to(b.OUTPUT).as_posix(), **identity},
+                        **outcome})
+    result = {"status": "PASS", "scope": "full original-lock metadata regression, no DSP or audio claim",
+              "guard": "dualmic_broadside_output_d8_build.check_original_locks",
+              "origin": {"path": str(lock_path), **b.desc(lock_path)},
+              "pristine": {"path": pristine.relative_to(b.OUTPUT).as_posix(), **pristine_identity},
+              "authorities": ["dualmic_zero_d3_source.frozen_lock", "dualmic_gain_d2.input_lock"],
+              "pristine_passed": True, "rejected_mutants": len(records), "records": records,
+              "full_original_admission_equality_required": True,
+              "full_nested_D2_equality_required": True,
+              "frozen_scientific_negative_category_added": False}
+    _store(root / "receipt.json", encode(result))
+    phase.remaining()
+    return result
+
 def engineering_controls(phase):
     # No mutation of D7 globals, no compiler flags, and no subprocess launch.
     return {
+        "original_locks": engineering_original_locks(phase),
         "observer_receipts": engineering_observer_receipts(phase),
         "strict_flags": engineering_flags(phase),
         "generated_unity": engineering_unity(phase),

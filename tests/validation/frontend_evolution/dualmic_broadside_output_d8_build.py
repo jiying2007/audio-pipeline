@@ -221,6 +221,19 @@ def exact_closure(root, files, reason, limit=SOURCE_LIMIT):
     return check_closure_record(inventory(root), files, reason, limit)
 
 
+def check_original_locks(original_admission, original_d2, expected_admission, expected_d2, admission_freeze):
+    """Validate only the three D8 annotations, then compare both original objects whole."""
+    need(type(original_admission) is dict and type(original_d2) is dict and
+         type(expected_admission) is dict and type(expected_d2) is dict,
+         "D8_FULL_ORIGINAL_LOCK")
+    saved = dict(original_admission)
+    need(saved.pop("admission_freeze", None) == admission_freeze and
+         saved.pop("required_status", None) == "INPUT_ADMITTED_NO_DSP_EXECUTION" and
+         saved.pop("fresh_full_original_D2_readback_required", None) is True and
+         saved == expected_admission and original_d2 == expected_d2,
+         "D8_FULL_ORIGINAL_LOCK")
+    return True
+
 def contract():
     for name, expected in PINS.items():
         need(blob((ROOT / name).read_bytes()) == expected, "D8_FROZEN_CONTRACT_CHANGED")
@@ -229,13 +242,8 @@ def contract():
          lock["base_tree"] == BASE_TREE and lock["candidates"] == 1, "D8_CONTRACT_IDENTITY")
     need(CASE_KEYS == [entry["catalog"]["key"] for entry in lock["original_d2_case_input_lock"]["cases"]],
          "D8_CASE_PATH")
-    old = admission.frozen_lock()
-    # The D8 document carries two explicit readback additions, never a subset
-    # comparison that would accept changed or missing original admission fields.
-    saved = dict(lock["original_admission"])
-    need(saved.pop("admission_freeze") == admission.FREEZE and
-         saved.pop("fresh_full_original_D2_readback_required") is True and saved == old and
-         lock["original_d2_case_input_lock"] == d2.input_lock(), "D8_FULL_ORIGINAL_LOCK")
+    check_original_locks(lock["original_admission"], lock["original_d2_case_input_lock"],
+                         admission.frozen_lock(), d2.input_lock(), admission.FREEZE)
     need(lock["budgets"]["categories"] == CAPS and sum(CAPS.values()) == 535454336 and
          lock["budgets"]["headroom"] == OUTPUT_LIMIT - sum(CAPS.values()),
          "D8_BYTE_BUDGET_CONTRACT")

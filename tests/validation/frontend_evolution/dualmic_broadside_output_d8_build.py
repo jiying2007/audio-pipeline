@@ -1493,13 +1493,15 @@ def retain_tool_outputs(identity):
     return {"complete_tool_inventory": complete, "selected_files": selected}
 
 def build(expected_revision):
-    need(not (OUTPUT / "build").exists() and (not TOOL.exists() or not tool_inventory()["files"]),
-         "D8_NEW_BUILD_REQUIRED")
-    lock = contract()
     report = {"experiment": EXPERIMENT, "freeze": FREEZE, "status": "FAIL", "programs": {},
               "forms": {}, "build_infos": {}, "source_transforms": {},
               "toolchain_aggregate_prewrite_guarantee": False}
     with Phase("baseline-build") as phase:
+        # Setup inventory and immutable contract/helper readback are protected
+        # work, so the phase lease must be acknowledged before their first I/O.
+        need(not (OUTPUT / "build").exists() and (not TOOL.exists() or not tool_inventory()["files"]),
+             "D8_NEW_BUILD_REQUIRED")
+        lock = contract()
         prepare_tool_environment()
         identity = source_identity(phase)
         need(identity["revision"] == expected_revision, "D8_EXECUTION_HEAD")

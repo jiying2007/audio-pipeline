@@ -6696,7 +6696,8 @@
       ]
     ],
     "unity_forms": "exact D7 proven complete old and NOLINTNEXTLINE templates only; no arbitrary comment stripping",
-    "D7_contract_mutation_or_zero_candidate_bypass": false
+    "D7_contract_mutation_or_zero_candidate_bypass": false,
+    "opaque_toolchain_aggregate_prewrite_guarantee": false
   },
   "source_closure": {
     "frozen_helpers": [
@@ -6809,6 +6810,7 @@
       "tests/validation/frontend_evolution/dualmic_broadside_output_d8.c",
       "tests/validation/frontend_evolution/dualmic_broadside_output_d8.py",
       "tests/validation/frontend_evolution/dualmic_broadside_output_d8_build.py",
+      "tests/validation/frontend_evolution/dualmic_broadside_output_d8_supervise.py",
       "tests/validation/frontend_evolution/test_dualmic_broadside_output_d8.py",
       "docs/research/frontend-evolution-v1/DUALMIC_BROADSIDE_OUTPUT_D8_PLAN.zh-CN.md",
       "docs/research/frontend-evolution-v1/dualmic-broadside-output-d8-input-lock.json",
@@ -6829,7 +6831,7 @@
       "negative"
     ],
     "subprocess_timeout": "min(30.0, remaining_phase_seconds, remaining_job_seconds)",
-    "start": "before first I/O",
+    "start": "monotonic root start before repository imports and experimental source/data/network/log I/O; interpreter/bootstrap loading explicitly outside experimental I/O",
     "end": "after all writes, seals, completion, stdout flush and final bounds",
     "source_archive_bytes": 16777216,
     "new_result_closure_bytes": 536870912,
@@ -6856,9 +6858,122 @@
     "control_per_frame_bytes": 1024,
     "per_case_csv_file_limit": "frames*1024 INCLUDING header; each data line <=1024 including newline",
     "per_case_metrics_file_limit": "frames*2048 including every newline; each record <=2048",
-    "all_writes_and_transients_counted": true,
+    "all_writes_and_transients_counted": false,
     "no_truncation_or_cap_relaxation": true,
-    "feasibility": "implementation must prove actual file-category exclusivity and max one-case footprint before execution; any overrun is invalid, not a reason to loosen"
+    "feasibility": "Implementation must prove exact category exclusivity,629-frame scientific scratch and own-writer reservations before execution. Toolchain temporary bytes are explicitly posthoc verified; no claim that RLIMIT_FSIZE or RLIMIT_NOFILE bounds aggregate creation.",
+    "retained_result_and_scientific_scratch_all_writes_counted": true,
+    "toolchain_temporary_aggregate_prewrite_guarantee": false,
+    "scope": "Unchanged512MiB closure includes all retained results, scientific case scratch, own-writer transient/failure/final files. Explicit separate toolchain workspace has lowered perprocess/perfile/time controls and posthoc total inventory, not an aggregate prewrite quota.",
+    "toolchain_temporary": {
+      "root": "/tmp/ap-dualmic-d8/toolchain",
+      "acceptance_bytes": 134217728,
+      "acceptance_scope": "posthoc logical-byte inventory after each external tool command and before selecting retained provenance; deleted or between-check transient peaks are not measured",
+      "aggregate_prewrite_guarantee": false,
+      "single_file_bytes": 16777216,
+      "address_space_bytes": 536870912,
+      "open_files": 128,
+      "uid_processes_and_threads": 128,
+      "core_bytes": 0,
+      "command_seconds": "min(30, absolute phase deadline-now, absolute root deadline-now)",
+      "serial_commands": true,
+      "preconditions": [
+        "unprivileged Linux process",
+        "no capability elevation",
+        "all required inherited/effective rlimits recorded",
+        "requested hardlimits installed or fail closed",
+        "known direct GNU/CMake/git commands only",
+        "no daemonization/setsid/setpgid/escaped descendants"
+      ],
+      "free_space_before_input_bytes": 4294967296,
+      "free_space_before_each_child_or_copy_bytes": 2147483648,
+      "free_space_is_reservation": false,
+      "not_uploaded": true,
+      "no_failure_cleanup": true,
+      "temporary_overshoot_possible": true,
+      "overshoot_action": "MEASUREMENT_INVALID on first detected overshoot; stop before retention or further command, preserve prefix, no silent cleanup to pass",
+      "no_new_privileges": true,
+      "no_ptrace_mount_quota": true
+    },
+    "main_worker_limits": {
+      "address_space_bytes": 1073741824,
+      "open_files": 128,
+      "uid_processes_and_threads": 128,
+      "single_file_bytes": 536870912,
+      "core_bytes": 0,
+      "source_of_smaller_limits": "scientific child caps320F/640F and tool child16MiB supersede inherited file ceiling",
+      "inherited_lower_limits": "never raised; record effective stricter limits and fail closed if required installation unavailable"
+    },
+    "supervisor_limits": {
+      "address_space_bytes": 134217728,
+      "open_files": 128,
+      "core_bytes": 0,
+      "lowering_order": "fork from original inherited limits before independently lowering parent/worker hard limits; never try to raise an inherited lower hard limit"
+    },
+    "scientific_scratch_proof": {
+      "catalog_frame_min": 529,
+      "catalog_frame_max": 629,
+      "plain_regular_file_count": 2,
+      "observed_regular_file_count": 19,
+      "plain_RLIMIT_FSIZE": "320*F",
+      "observed_RLIMIT_FSIZE": "640*F",
+      "four_form_file_upper_bound": "2*2*(320*F)+2*19*(640*F)=25600*F",
+      "maximum_four_form_bytes": 16102400,
+      "remaining_scratch_bytes": 9063424,
+      "closed_original_writer_sources": true,
+      "reserve_before_first_form": true,
+      "no_new_input_or_output_targets": true,
+      "stdout_stderr": "pipes with separately prechecked bounded sink; no regular-file child logs",
+      "dedup": "only after measured equality and descriptor write; atomic rename transfers category without duplicate bytes",
+      "CLI_metrics_max_bytes_per_frame": 314,
+      "D1_control_header_bytes": 455,
+      "D1_control_max_bytes_per_frame": 440,
+      "D1_observer_receipt_max_bytes": 2019,
+      "D1_observer_receipt_reserved_bytes": 4096,
+      "D8_observer_receipt_cap_bytes": 4096,
+      "ancillary_joint_reservation_bytes": 8388608,
+      "maximum_total_reserved_bytes": 24491008,
+      "unallocated_scratch_headroom_bytes": 674816,
+      "preconditions": [
+        "exact source and resolved dependencies",
+        "F529..629 original matrix only",
+        "mic input640F bytes",
+        "sealed allowlist environment without LD_*",
+        "unique empty real no-symlink target directories",
+        "RLIMIT_CORE=0",
+        "exact42 regular scientific files acrossfourforms",
+        "no retry or new prefix",
+        "no copying extra scientific outputs"
+      ]
+    },
+    "supervision": {
+      "source": "tests/validation/frontend_evolution/dualmic_broadside_output_d8_supervise.py",
+      "single_experimental_worker": true,
+      "main_worker_30_second_exception": "one long-lived main experiment process isolated solely for external fail-stop supervision; not an additional DSP/analysis child or phase worker",
+      "root_absolute_seconds": 1200,
+      "phase_order": [
+        "admission",
+        "baseline-build",
+        "candidate-build",
+        "run",
+        "analysis",
+        "verify",
+        "negative"
+      ],
+      "phase_max_seconds": 300,
+      "command_max_seconds": 30,
+      "launch": "supervisor outside worker's fresh session/process group; fork worker then lower hardlimits separately",
+      "worker_descendants": "all inherit same worker group; no start_new_session/process_group/group-changing preexec/shell job control; D7 launch paths never used",
+      "protocol": "bounded sequence-numbered phase and command messages over private inherited IPC; supervisor validates ordered state and returns absolute deadlines; ACK required before protected phase I/O and command Popen; no phase transition with active command",
+      "deadline_immutability": "root never resets; phase=min(start+300,root); command=min(start+30,phase,root); a later request cannot erase or extend an earlier active deadline",
+      "fatal_action": "at first scheduled supervisor wake at or after earliest active deadline, SIGKILL entire worker group; no catchable timeout exception, graceful request or new cleanup allowance",
+      "after_expiry": "no hashing, inventory, receipt rewrite, finalization or stdout write initiated after detected expiry; existing bounded PENDING/failure prefix retained",
+      "ordinary_failure": "first failure may be recorded only while all existing deadlines remain live; no retries or replacement prefix",
+      "completion": "last negative phase and root deadlines remain armed through final writes, seal/completion, bounded stdout drain/flush, worker exit and check for leftover descendants; missing terminal completion or leftover descendants prevents success",
+      "termination_limit": "scheduler/kernel latency and already-issued kernel I/O can finish later; no instantaneous physical cessation guarantee",
+      "process_group_limit": "reviewed known-tool launch requirement and runtime group assertions, not syscall confinement; snapshots cannot prove arbitrary code never escaped; unexpected descendants or detected escape fail stop and are reported",
+      "stdout_total_bytes": 4194304,
+      "no_ptrace_mount_quota_privileges": true
+    }
   },
   "workflow": {
     "path": ".github/workflows/frontend-research.yml",
@@ -7054,7 +7169,7 @@
       "cases/{key}/candidate/metrics.jsonl": "candidate metrics retained once after exact plain/observed comparison",
       "cases/{key}/candidate/control.csv": "actual candidate D1 control CSV",
       "cases/{key}/retention.json": "all per-form actual measured descriptors, byte comparisons and original/final pointers before deleting duplicates",
-      "build/**": "archive, selected source, all four derived sources/build outputs and provenance",
+      "build/**": "retained archive, selected source, four derived sources, selected exact build outputs and all source/build provenance; copied from separate toolchain workspace only after total posthoc inventory and own-writer reservation",
       "*-logs/**": "actual bounded command logs/receipts",
       "*-phase.json": "phase receipt",
       "input-binding.json": "complete original binding",
@@ -7090,7 +7205,10 @@
       "candidate-observed",
       "candidate-d1",
       "candidate-upstream"
-    ]
+    ],
+    "toolchain_temporary_root": "/tmp/ap-dualmic-d8/toolchain",
+    "toolchain_temporary_not_uploaded": true,
+    "toolchain_failure_cleanup": false
   },
   "tests": {
     "engineering": [
@@ -7105,7 +7223,10 @@
       "threshold just below/at/above1dB and0dB; strict projection >-120; None/NaN/Inf",
       "all-zero output cannot pass using canonical zero-dB SI-SDR",
       "category overflow incl headers/finalwrites/scratch and first-failure hard deadlines",
-      "dedup pointer identities and absent AEC semantics"
+      "dedup pointer identities and absent AEC semantics",
+      "external supervisor ACK protocol, ordered phases, immutable absolute root/phase/command deadlines, child group continuity and fail-stop kill without finally/finalization writes",
+      "scientific42-file closed-writer and RLIMIT_FSIZE proof with ancillary8MiB reservation",
+      "tool posthoc inventory and lower-only rlimits, free-space checks do not claim aggregate reservation"
     ],
     "negative_categories": [
       "raw_left",
@@ -7187,5 +7308,24 @@
     ],
     "qualification": "untouched guard first passes; isolated persisted corruption must reject exact implementation-review-frozen intended reason, never I/O/timeout/unrelated exception",
     "independent_audit": "separately authored read-only original-byte/identity/waveform/state/window audit; no DSP/model rerun; scope and actual result reported distinctly"
-  }
+  },
+  "contract_revision": 2,
+  "contract_history": [
+    {
+      "revision": 1,
+      "commit": "14083f84b8ec213d85f10cf31a56e42a774410f5",
+      "tree": "557af79b66f5d916e111e8fd2b257d2042f8c76d",
+      "plan_sha256": "c12c808a3faa2c178becb262053c84c4f2ec1dcc272f548063ef6761eaaa706c",
+      "lock_sha256": "9c6359b578f99e7e06fc89c98c85a1fa70d6d8799d7c24dfae070cb16b39244d",
+      "review": "METHOD_ACCEPTED_FOR_IMPLEMENTATION_ONLY",
+      "execution": "NOT_RUN",
+      "preserved": true
+    },
+    {
+      "revision": 2,
+      "status": "PRE_EXECUTION_RESOURCE_TIMEOUT_AMENDMENT_PENDING_REVIEW",
+      "reason": "Per-file and open-FD limits do not prove aggregate prewrite limits for opaque compiler/CMake temporary outputs; caught timeout exceptions permit admission finally writes. No DSP or source-candidate outcome was observed before this amendment.",
+      "science_or_input_changes": false
+    }
+  ]
 }

@@ -89,6 +89,16 @@ class Controls(unittest.TestCase):
                 negatives(Path(tmp),Path(tmp)/"missing",receipt)
             self.assertEqual(receipt.read_bytes(),b"original")
 
+    def test_dangling_negative_receipt_symlink_cli(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            target=Path(tmp)/"must-not-be-created.json"
+            receipt=Path(tmp)/"link.json";receipt.symlink_to(target)
+            with patch("sys.argv",["test","--input",tmp,"--output",tmp,"--receipt",str(receipt)]):
+                with self.assertRaisesRegex(ValueError,"D4_FRESH_NEGATIVE_RECEIPT_REQUIRED"):
+                    cli()
+            self.assertFalse(target.exists())
+            self.assertTrue(receipt.is_symlink())
+
 def mutate(report,kind):
     windows=report["cases"][0]["windows"]
     if kind=="window_offset": windows[0]["gain"]["original_frame_range"][0]-=1
@@ -172,7 +182,7 @@ def negatives(input_root,original,receipt_path):
             d4.dump(receipt_path,receipt);raise ValueError(receipt["reason"])
     print(json.dumps(receipt,sort_keys=True))
 
-if __name__=="__main__":
+def cli():
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument("--self-test",action="store_true")
     p.add_argument("--input",type=Path);p.add_argument("--output",type=Path);p.add_argument("--receipt",type=Path)
@@ -181,4 +191,7 @@ if __name__=="__main__":
         result=unittest.TextTestRunner(verbosity=2).run(unittest.defaultTestLoader.loadTestsFromTestCase(Controls))
         raise SystemExit(0 if result.wasSuccessful() else 1)
     d4.need(args.input is not None and args.output is not None and args.receipt is not None,"D4_REQUIRED_PATHS")
-    negatives(args.input.resolve(),args.output.resolve(),args.receipt.resolve())
+    negatives(args.input.resolve(),args.output.resolve(),args.receipt.absolute())
+
+if __name__=="__main__":
+    cli()

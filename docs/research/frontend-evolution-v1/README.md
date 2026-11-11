@@ -364,3 +364,10 @@ real-robot qualification or the frozen NS research program.
 资格 PR 只建立源码身份和派生执行器审查；2.3.59 的 B3/F0 测量必须在该资格经受保护合并、
 独立主线 Verify 和 Release 验证后，以新的 R3 身份实际执行原三目标覆盖与预算。
 源码检查通过不代表新测量通过，也不产生四麦公共 SDK、SSC305 HIL 或产品资格。
+
+## D7 双麦上游分离观测（待执行）
+
+[D7冻结合同](DUALMIC_UPSTREAM_D7_PLAN.zh-CN.md)与[实现说明](DUALMIC_UPSTREAM_D7_IMPLEMENTATION.zh-CN.md)
+在[#944](https://github.com/jiying2007/audio-pipeline/issues/944)追踪。新增真实HPF双路输入/输出、BF输出及完整状态，
+先要求当前plain/observer/原A/C端点和旧D1七lane/control逐byte相同，再做原固定窗与实际状态关联。
+这是候选数0的中性诊断，不重开S003或D3/D5/D6等既闭合拒绝线，不声明质量改善；当前实现尚未执行。

@@ -5,7 +5,10 @@
 [D5 冻结合同](DUALMIC_TARGET_GATE_D5_PLAN.zh-CN.md)与[实施说明](DUALMIC_TARGET_GATE_D5_IMPLEMENTATION.zh-CN.md)
 只删除隔离研究候选的 target unity cap，保留原 output gate、peak/clamp 及全部参数。
 原 D2 60视图/362窗、完整12-byte状态和固定评分作为权威；全量近端电平、远端/中文能量与 null 保留。
-测量为总干预效应，不是纯延迟历史。当前为实现候选 / NOT_RUN，不作默认、听感或识别推广。
+测量为总干预效应，不是纯延迟历史。[首次实际结果](DUALMIC_TARGET_GATE_D5_RESULT.zh-CN.md)
+绑定5fae6b95/run42964359158：60视图/362窗及32实际负例通过；nominal CALL共同跨度ΔSI-SDR中位−0.438dB，
+weak CALL/ASSISTANT中位+0.288/+0.975dB，同时远端相关RMS上升、peak cap33→57、末端clamp0→3。
+完整不利值和28个null保留；不作默认、听感或识别推广，后继head/main工程资格独立核对。
 原件、审查与精确CI身份见 [#938](https://github.com/jiying2007/audio-pipeline/issues/938)。
 
 ## 2026-11-11 双麦固定窗口定位 D4

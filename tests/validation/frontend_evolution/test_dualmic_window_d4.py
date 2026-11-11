@@ -82,6 +82,13 @@ class Controls(unittest.TestCase):
             self.assertEqual({p.name for p in target.iterdir()},{"keep"})
             self.assertEqual(marker.read_bytes(),b"original")
 
+    def test_existing_negative_receipt_is_not_overwritten(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            receipt=Path(tmp)/"integrity.json";receipt.write_bytes(b"original")
+            with self.assertRaisesRegex(ValueError,"D4_FRESH_NEGATIVE_RECEIPT_REQUIRED"):
+                negatives(Path(tmp),Path(tmp)/"missing",receipt)
+            self.assertEqual(receipt.read_bytes(),b"original")
+
 def mutate(report,kind):
     windows=report["cases"][0]["windows"]
     if kind=="window_offset": windows[0]["gain"]["original_frame_range"][0]-=1
@@ -109,6 +116,7 @@ def mutate(report,kind):
 
 def negatives(input_root,original,receipt_path):
     start=time.monotonic()
+    d4.need(not receipt_path.exists() and not receipt_path.is_symlink(),"D4_FRESH_NEGATIVE_RECEIPT_REQUIRED")
     kinds=("window_offset","missing_window","duplicate_window","swapped_windows","gain_count",
            "cross_reset","score","null","revision","tree","root_member","source_member",
            "saved_admission","saved_report","saved_contract","root_type")
@@ -118,7 +126,12 @@ def negatives(input_root,original,receipt_path):
                     saved_contract="D4_SAVED_SOURCE_CHANGED")
     records=[];receipt={"experiment":d4.EXPERIMENT,"status":"FAIL","budget_seconds":300,"tests":records}
     try:
-        d4.need(d4.d2.read_json(original/"readback.json")["status"]=="PASS","D4_QUALIFIED_ORIGINAL_REQUIRED")
+        d4.phase_pass(original,"verify")
+        readback=d4.d2.read_json(original/"readback.json")
+        d4.need(readback["status"]=="PASS" and
+                readback["report"]==d4.descriptor(original/"report.json") and
+                readback["DSP_executed"] is False and readback["models_executed"] is False,
+                "D4_QUALIFIED_ORIGINAL_REQUIRED")
         d4.verify(input_root,original,start)
         receipt["unmodified_baseline_verified"]=True
         for kind in kinds:
@@ -149,6 +162,9 @@ def negatives(input_root,original,receipt_path):
                     raise ValueError("D4_MUTATION_NOT_REJECTED:"+kind)
         d4.need(len(records)==16,"D4_NEGATIVE_COUNT")
         receipt["status"]="PASS"
+    except Exception as error:
+        receipt.update(reason=str(error),error_type=type(error).__name__)
+        raise
     finally:
         receipt["elapsed_seconds"]=time.monotonic()-start;d4.dump(receipt_path,receipt)
         if time.monotonic()-start>300:

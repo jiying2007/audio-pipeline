@@ -50,6 +50,8 @@ DEVELOPMENT_SCREEN_PASS_NO_PROMOTION，仍不是实质质量/听感/ASR证明。
 
 完整锁内60例原输入对象、23个依赖的blob/bytes/SHA256、
 原准入、C/header/library、生产树对象均核验。
+原admission回执逐项检查experiment、3551成员、861385743解包字节、
+promotion_allowed=false及原elapsed_scope完整口径；工程负例分别拒绝篡改和缺失字段。
 运行时仓库内导入模块必须包含在封存闭包；
 源及输出文件/目录集合、HEAD/tree、真实compiler和命令都读回核对。
 源上限16MiB，result上限256MiB；重封存不能绕过源码或候选派生一致性。

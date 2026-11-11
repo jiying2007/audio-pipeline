@@ -134,18 +134,30 @@ def source_proof(start):
         need(relative in names,"D6_UNRETAINED_IMPORTED_MODULE:"+relative)
     return {"revision":head,"tree":tree,"files":{n:descriptor(ROOT/n) for n in sorted(names)}}
 
+ADMISSION_ELAPSED_SCOPE = "through first receipt write; final write deadline checked"
+
+def verify_admission_receipt(receipt,lock):
+    need(type(receipt) is dict and
+         receipt.get("experiment")==lock["experiment"] and
+         receipt.get("status")=="INPUT_ADMITTED_NO_DSP_EXECUTION" and
+         receipt.get("freeze")==admission.FREEZE and receipt.get("artifact")==lock["artifact"] and
+         receipt.get("source_revision")==OLD and receipt.get("original_D2_readback_exact") is True and
+         receipt.get("DSP_executed") is False and receipt.get("models_executed") is False and
+         receipt.get("promotion_allowed") is False and
+         (receipt.get("case_count"),receipt.get("frames"),receipt.get("samples"))==(60,35916,5746560) and
+         receipt.get("member_count")==lock["artifact"]["members"] and
+         receipt.get("uncompressed_bytes")==lock["max_uncompressed_bytes"] and
+         receipt.get("elapsed_scope")==ADMISSION_ELAPSED_SCOPE and
+         receipt.get("budget_seconds")==300 and
+         type(receipt.get("elapsed_seconds")) in (int,float) and
+         0<=receipt["elapsed_seconds"]<=300,"D6_INPUT_NOT_ADMITTED")
+
 def original(input_root,start):
     need(input_root.is_dir() and no_symlink_path(input_root),"D6_INPUT_DIRECTORY")
     need((input_root/"admission.json").is_file() and not (input_root/"admission.json").is_symlink(),"D6_INPUT_NOT_ADMITTED")
     lock=frozen()
     receipt=d2.read_json(input_root/"admission.json")
-    need(receipt["status"]=="INPUT_ADMITTED_NO_DSP_EXECUTION" and
-         receipt["freeze"]==admission.FREEZE and receipt["artifact"]==lock["artifact"] and
-         receipt["source_revision"]==OLD and receipt["original_D2_readback_exact"] is True and
-         receipt["DSP_executed"] is False and receipt["models_executed"] is False and
-         (receipt["case_count"],receipt["frames"],receipt["samples"])==(60,35916,5746560) and
-         receipt["budget_seconds"]==300 and 0<=receipt["elapsed_seconds"]<=300,
-         "D6_INPUT_NOT_ADMITTED")
+    verify_admission_receipt(receipt,lock)
     prior,parent=input_root/"original/gain-d2",input_root/"original/result"
     need(digest(prior/"report.json")==lock["report_sha256"] and
          digest(prior/"artifact-manifest.json")==lock["manifest_sha256"],"D6_ORIGINAL_REPORT_CHANGED")

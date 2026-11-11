@@ -91,6 +91,27 @@ class Controls(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,"D6_NONFINITE_OR_CONTROL"):
             d6.observation([.1]*160,1.,1,.1,.8,1.,2)
 
+    def test_admission_receipt_identity_fields(self):
+        lock=d6.contract()["original_admission"]
+        receipt={"experiment":lock["experiment"],"status":"INPUT_ADMITTED_NO_DSP_EXECUTION",
+                 "freeze":d6.admission.FREEZE,"artifact":lock["artifact"],"source_revision":d6.OLD,
+                 "original_D2_readback_exact":True,"DSP_executed":False,"models_executed":False,
+                 "promotion_allowed":False,"case_count":60,"frames":35916,"samples":5746560,
+                 "member_count":lock["artifact"]["members"],
+                 "uncompressed_bytes":lock["max_uncompressed_bytes"],
+                 "elapsed_scope":d6.ADMISSION_ELAPSED_SCOPE,"budget_seconds":300,"elapsed_seconds":1.0}
+        d6.verify_admission_receipt(receipt,lock)
+        changed_values={"experiment":"wrong-experiment","member_count":3550,"uncompressed_bytes":1,
+                        "promotion_allowed":True,"elapsed_scope":"before final write only"}
+        for name,value in changed_values.items():
+            with self.subTest(field=name):
+                changed=copy.deepcopy(receipt);changed[name]=value
+                with self.assertRaisesRegex(ValueError,"D6_INPUT_NOT_ADMITTED"):
+                    d6.verify_admission_receipt(changed,lock)
+                del changed[name]
+                with self.assertRaisesRegex(ValueError,"D6_INPUT_NOT_ADMITTED"):
+                    d6.verify_admission_receipt(changed,lock)
+
     def test_hard_subprocess_timeout(self):
         for remaining,expected in ((75.,30.),(2.,2.)):
             with tempfile.TemporaryDirectory() as tmp:

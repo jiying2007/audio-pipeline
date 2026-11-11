@@ -27,7 +27,8 @@ T2A_PREFIX = "frontend-fe09-s3-t2a-controlled-restart-"
 ROOT_PREFIX = "frontend-fe09-t3s2b1a-immutable-root-"
 T2F0_PREFIX = "frontend-fe09-s3-t2-f0-render-feasibility-"
 T2C0_PREFIX = "frontend-fe09-s3-t2c0-owner-fallback-"
-ATTEMPT_PREFIXES = (T3S1_PREFIX, T2A_PREFIX, ROOT_PREFIX, T2F0_PREFIX, T2C0_PREFIX)
+T3S0_PREFIX = "frontend-fe09-t3s0-compiled-resource-"
+ATTEMPT_PREFIXES = (T3S0_PREFIX, T3S1_PREFIX, T2A_PREFIX, ROOT_PREFIX, T2F0_PREFIX, T2C0_PREFIX)
 REST_PREFIXES = (A1_PREFIX, *ATTEMPT_PREFIXES)
 # A1's new 100-row REST response has its own finite metadata cap. Existing
 # single-entity/run metadata stays at 64 KiB; scientific files are unaffected.
@@ -414,6 +415,9 @@ def main() -> None:
               args.run_attempt, args.run_head_sha, args.execution_source)
     elif args.artifact_name.startswith(ROOT_PREFIX):
         print("FE09_T3S2B1A_REST_LIST_RUN_ATTEMPT_SOURCE_BOUND",
+              args.run_attempt, args.run_head_sha, args.execution_source)
+    elif args.artifact_name.startswith(T3S0_PREFIX):
+        print("FE09_T3S0_REST_LIST_RUN_ATTEMPT_SOURCE_BOUND",
               args.run_attempt, args.run_head_sha, args.execution_source)
     elif args.artifact_name.startswith(T3S1_PREFIX):
         print("FE09_T3S1_REST_LIST_RUN_ATTEMPT_SOURCE_BOUND",

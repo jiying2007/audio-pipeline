@@ -20,6 +20,10 @@ on:
       - 'tests/validation/frontend_evolution/test_dualmic_window_d4*'
       - 'docs/research/frontend-evolution-v1/DUALMIC_WINDOW_D4*'
       - 'docs/research/frontend-evolution-v1/dualmic-window-d4*'
+      - 'tests/validation/frontend_evolution/dualmic_target_gate_d5*'
+      - 'tests/validation/frontend_evolution/test_dualmic_target_gate_d5*'
+      - 'docs/research/frontend-evolution-v1/DUALMIC_TARGET_GATE_D5*'
+      - 'docs/research/frontend-evolution-v1/dualmic-target-gate-d5*'
       - '.github/workflows/frontend-research.yml'
   push:
     branches: [main]
@@ -41,12 +45,16 @@ on:
       - 'tests/validation/frontend_evolution/test_dualmic_window_d4*'
       - 'docs/research/frontend-evolution-v1/DUALMIC_WINDOW_D4*'
       - 'docs/research/frontend-evolution-v1/dualmic-window-d4*'
+      - 'tests/validation/frontend_evolution/dualmic_target_gate_d5*'
+      - 'tests/validation/frontend_evolution/test_dualmic_target_gate_d5*'
+      - 'docs/research/frontend-evolution-v1/DUALMIC_TARGET_GATE_D5*'
+      - 'docs/research/frontend-evolution-v1/dualmic-target-gate-d5*'
       - '.github/workflows/frontend-research.yml'
   workflow_dispatch:
     inputs:
       experiment:
         type: choice
-        options: [dualmic-stages-d1, dualmic-zero-d3-input, dualmic-zero-d3, dualmic-window-d4]
+        options: [dualmic-stages-d1, dualmic-zero-d3-input, dualmic-zero-d3, dualmic-window-d4, dualmic-target-gate-d5]
         default: dualmic-stages-d1
         required: true
 
@@ -67,6 +75,7 @@ jobs:
       d3: ${{ steps.select.outputs.d3 }}
       d3_execute: ${{ steps.select.outputs.d3_execute }}
       d4: ${{ steps.select.outputs.d4 }}
+      d5: ${{ steps.select.outputs.d5 }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
@@ -90,18 +99,34 @@ jobs:
               d3 = os.environ['SELECTED_EXPERIMENT'] in ('dualmic-zero-d3-input', 'dualmic-zero-d3')
               d3_execute = os.environ['SELECTED_EXPERIMENT'] == 'dualmic-zero-d3'
               d4 = os.environ['SELECTED_EXPERIMENT'] == 'dualmic-window-d4'
-              if not (d1 or d3 or d4):
+              d5 = os.environ['SELECTED_EXPERIMENT'] == 'dualmic-target-gate-d5'
+              if not (d1 or d3 or d4 or d5):
                   raise SystemExit('unknown experiment')
           else:
               paths = subprocess.check_output(['git','diff','--name-only',os.environ['BASE_SHA'],'HEAD']).decode().splitlines()
               d3 = any('dualmic_zero_d3' in p or 'DUALMIC_ZERO_D3' in p or 'dualmic-zero-d3' in p for p in paths)
               d4 = any('dualmic_window_d4' in p or 'DUALMIC_WINDOW_D4' in p or 'dualmic-window-d4' in p for p in paths)
+              d5 = any('dualmic_target_gate_d5' in p or 'DUALMIC_TARGET_GATE_D5' in p or 'dualmic-target-gate-d5' in p for p in paths)
               d3_execute = d3 and Path('tests/validation/frontend_evolution/dualmic_zero_d3.c').is_file()
               d1 = any(('dualmic_stages' in p or 'dualmic_gain_d2' in p or
                         'DUALMIC_STAGES_D1' in p or 'DUALMIC_GAIN_D2' in p or
                         'dualmic-stages-d1' in p or 'dualmic-gain-d2' in p) for p in paths)
               if '.github/workflows/frontend-research.yml' in paths:
-                  if (d3 or d4) and not d1:
+                  prior_workflow = subprocess.check_output(['git','show',os.environ['BASE_SHA']+':.github/workflows/frontend-research.yml']).decode()
+                  current_workflow = Path('.github/workflows/frontend-research.yml').read_text()
+                  marker = '\n  dualmic-target-gate-d5:\n'
+                  if current_workflow.split(marker,1)[-1] != prior_workflow.split(marker,1)[-1]:
+                      d5 = True
+                  if d5 and not (d1 or d3 or d4):
+                      if current_workflow.count(marker) != 1:
+                          raise SystemExit('D5_JOB_MISSING_OR_DUPLICATE')
+                      old = subprocess.check_output(['git','show','e0f2be9bf6273baa46149062ec7ea700cd76387e:.github/workflows/frontend-research.yml']).decode()
+                      new = Path('.github/workflows/frontend-research.yml').read_text()
+                      original = old.split('  matrix:\n',1)[1]
+                      current = new.split('  matrix:\n',1)[1].split('\n  dualmic-target-gate-d5:\n',1)[0]
+                      if current != original:
+                          raise SystemExit('D5_ONLY_CHANGE_MODIFIED_HISTORICAL_JOBS')
+                  elif (d3 or d4) and not d1:
                       # D3/D4-only additions must not change the existing D1 job.
                       old = subprocess.check_output(['git','show','8310359974a84407630e0e5c502e24f3f1c76b56:.github/workflows/frontend-research.yml']).decode()
                       new = Path('.github/workflows/frontend-research.yml').read_text()
@@ -119,7 +144,7 @@ jobs:
                   else:
                       d1 = True
           with open(os.environ['GITHUB_OUTPUT'],'a') as out:
-              out.write('d1='+str(d1).lower()+'\nd3='+str(d3).lower()+'\nd3_execute='+str(d3_execute).lower()+'\nd4='+str(d4).lower()+'\n')
+              out.write('d1='+str(d1).lower()+'\nd3='+str(d3).lower()+'\nd3_execute='+str(d3_execute).lower()+'\nd4='+str(d4).lower()+'\nd5='+str(d5).lower()+'\n')
           PY
   matrix:
     needs: scope
@@ -396,6 +421,92 @@ jobs:
             /tmp/ap-dualmic-d4/*.json
             /tmp/ap-dualmic-d4/input/*.json
             /tmp/ap-dualmic-d4/result/
+          include-hidden-files: true
+          retention-days: 90
+          if-no-files-found: error
+
+  dualmic-target-gate-d5:
+    needs: scope
+    if: needs.scope.outputs.d5 == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+      EXECUTION_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Check D5 engineering controls and unchanged original reader
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir /tmp/ap-dualmic-d5
+          test "$(git rev-parse HEAD)" = "$EXECUTION_SHA"
+          test -z "$(git status --porcelain)"
+          timeout 300s python3 tests/validation/frontend_evolution/test_dualmic_target_gate_d5.py --self-test \
+            2>&1 | tee /tmp/ap-dualmic-d5/controls.log
+          timeout 300s python3 tests/validation/frontend_evolution/test_dualmic_zero_d3_source.py \
+            2>&1 | tee /tmp/ap-dualmic-d5/source-tests.log
+          timeout 300s python3 tests/validation/frontend_evolution/test_dualmic_stages_source.py \
+            2>&1 | tee /tmp/ap-dualmic-d5/archive-tests.log
+      - name: Admit original D2 with the unchanged exact archive reader
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          timeout 300s python3 tests/validation/frontend_evolution/dualmic_zero_d3_source.py \
+            --output /tmp/ap-dualmic-d5/input \
+            2>&1 | tee /tmp/ap-dualmic-d5/admission.log
+      - name: Build one isolated D5 candidate and execute engineering controls
+        shell: bash
+        run: |
+          set -euo pipefail
+          timeout 300s python3 tests/validation/frontend_evolution/dualmic_target_gate_d5.py build \
+            --input /tmp/ap-dualmic-d5/input --output /tmp/ap-dualmic-d5/result \
+            2>&1 | tee /tmp/ap-dualmic-d5/build.log
+      - name: Execute all 60 continuous original-input two-arm streams
+        shell: bash
+        run: |
+          set -euo pipefail
+          timeout 300s python3 tests/validation/frontend_evolution/dualmic_target_gate_d5.py run \
+            --input /tmp/ap-dualmic-d5/input --output /tmp/ap-dualmic-d5/result \
+            2>&1 | tee /tmp/ap-dualmic-d5/run.log
+      - name: Audit full states and outputs with all canonical levels and windows
+        shell: bash
+        run: |
+          set -euo pipefail
+          timeout 300s python3 tests/validation/frontend_evolution/dualmic_target_gate_d5.py analysis \
+            --input /tmp/ap-dualmic-d5/input --output /tmp/ap-dualmic-d5/result \
+            2>&1 | tee /tmp/ap-dualmic-d5/analysis.log
+      - name: Read back every D5 byte and fixed score without DSP
+        shell: bash
+        run: |
+          set -euo pipefail
+          timeout 300s python3 tests/validation/frontend_evolution/dualmic_target_gate_d5.py verify \
+            --input /tmp/ap-dualmic-d5/input --output /tmp/ap-dualmic-d5/result \
+            2>&1 | tee /tmp/ap-dualmic-d5/verify.log
+      - name: Reject exact-reason actual evidence corruptions after qualified baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          timeout 300s python3 tests/validation/frontend_evolution/test_dualmic_target_gate_d5.py \
+            --input /tmp/ap-dualmic-d5/input --output /tmp/ap-dualmic-d5/result \
+            --receipt /tmp/ap-dualmic-d5/integrity.json \
+            2>&1 | tee /tmp/ap-dualmic-d5/integrity.log
+      - name: Preserve D5 original admission, complete evidence and first failure
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: frontend-research-dualmic-target-gate-d5-${{ github.run_id }}-attempt-${{ github.run_attempt }}
+          path: |
+            /tmp/ap-dualmic-d5/*.log
+            /tmp/ap-dualmic-d5/*.json
+            /tmp/ap-dualmic-d5/input/*.json
+            /tmp/ap-dualmic-d5/result/
           include-hidden-files: true
           retention-days: 90
           if-no-files-found: error

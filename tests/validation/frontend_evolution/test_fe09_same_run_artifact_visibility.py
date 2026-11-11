@@ -820,8 +820,9 @@ class T2AAttemptVisibilityTests(A1RestListVisibilityTests):
                    ".github/workflows/quality.yml").read_text("utf-8")
         stage = quality.split("  frontend-s3-" + self.STAGE + ":\n", 1)[1].split(
             "\n  frontend-", 1)[0]
-        upload = "fe09_" + self.STAGE + "_upload"
-        markers = ["id: fe09_" + self.STAGE + "\n", "id: " + upload + "\n",
+        step = getattr(self, "STEP", self.STAGE)
+        upload = "fe09_" + step + "_upload"
+        markers = ["id: fe09_" + step + "\n", "id: " + upload + "\n",
                    "name: " + self.PREFIX + "${{ github.run_id }}-attempt-${{ github.run_attempt }}",
                    "Witness exact " + self.STAGE + " upload",
                    "ARTIFACT_ID: ${{ steps." + upload + ".outputs.artifact-id }}",
@@ -840,9 +841,19 @@ class T2AAttemptVisibilityTests(A1RestListVisibilityTests):
         for required in ("timeout-minutes: " + str(self.TIMEOUT), "retention-days: 30",
                          "if-no-files-found: error", "--collect --output fe09-" + self.STAGE):
             self.assertIn(required, stage)
-        self.assertEqual(stage.count("if: steps.fe09_" + self.STAGE + ".outcome == 'success'"), 3)
+        self.assertEqual(stage.count("if: steps.fe09_" + step + ".outcome == 'success'"), 3)
         self.assertNotIn("overwrite:", stage)
         self.assertNotIn("continue-on-error:", stage)
+
+
+class T2F0AttemptVisibilityTests(T2AAttemptVisibilityTests):
+    """Exercise the complete strict REST matrix for the observed T2-F0 failure."""
+    NAME = "frontend-fe09-s3-t2-f0-render-feasibility-12345-attempt-2"
+    STAGE = "t2-f0"
+    STEP = "t2_f0"
+    PREFIX = "frontend-fe09-s3-t2-f0-render-feasibility-"
+    TIMEOUT = 18
+    MARKER = "FE09_S3_T2_F0_NEGATIVE_REACHABILITY_READBACK_PASS"
 
 
 class RootAttemptVisibilityTests(T2AAttemptVisibilityTests):

@@ -6972,7 +6972,77 @@
       "termination_limit": "scheduler/kernel latency and already-issued kernel I/O can finish later; no instantaneous physical cessation guarantee",
       "process_group_limit": "reviewed known-tool launch requirement and runtime group assertions, not syscall confinement; snapshots cannot prove arbitrary code never escaped; unexpected descendants or detected escape fail stop and are reported",
       "stdout_total_bytes": 4194304,
-      "no_ptrace_mount_quota_privileges": true
+      "no_ptrace_mount_quota_privileges": true,
+      "fatal_fixtures": {
+        "count": 4,
+        "names": [
+          "startup_before_group",
+          "child_tree_timeout",
+          "exception_finally_timeout",
+          "pipe_drain_timeout"
+        ],
+        "source": "tests/validation/frontend_evolution/dualmic_broadside_output_d8_supervise.py",
+        "phase": "negative",
+        "supervisor_owned": true,
+        "production_worker_group_exception": false,
+        "maximum_active_fixture_groups": 1,
+        "request_preconditions": "negative phase active; no production command active; all fixed output byte claims reserved before request; actual root and phase deadlines remain armed",
+        "topology": {
+          "startup_before_group": {
+            "processes": 1,
+            "expected": "intentional pre-group hang; actual PID killed; never signal inherited supervisor PGID"
+          },
+          "child_tree_timeout": {
+            "processes": 2,
+            "expected": "one leader plus one descendant in registered group; actual leader SIGKILL exit and both PIDs absent"
+          },
+          "exception_finally_timeout": {
+            "processes": 1,
+            "expected": "actual SIGKILL exit; bounded except-marker and finally-marker both absent"
+          },
+          "pipe_drain_timeout": {
+            "processes": 1,
+            "expected": "exact65536-byte stdout and stderr emitted then hang; actual SIGKILL exit; nonblocking complete bounded drain"
+          }
+        },
+        "registration": "register actual PID and intended PGID immediately after fork; verify PID=PGID before releasing leader start barrier except intentionally pre-group fixture; register descendant PID before releasing its body barrier; keep actual PID fallback until reaped/observed gone",
+        "maximum_seconds_per_fixture": 2,
+        "intentional_seconds": {
+          "startup_before_group": 0.25,
+          "child_tree_timeout": 0.25,
+          "exception_finally_timeout": 0.25,
+          "pipe_drain_timeout": 0.5
+        },
+        "deadline_scope": "setup, intentional trigger, signal, bounded drain, receipt and disappearance checks all inside min(start+2,existing phase deadline,root deadline); no grace or reset",
+        "intentional_expiry": "only the registered expected fixture group/PIDs are killed; success does not claim a real root/production deadline was exercised",
+        "real_expiry_or_unexpected_failure": "kill production worker actual PID/group and every registered fixture actual PID/group; stop without after-expiry writes or cleanup",
+        "limits": {
+          "address_space_bytes": 67108864,
+          "single_file_bytes": 4096,
+          "open_files": 16,
+          "uid_processes_and_threads": 128,
+          "core_bytes": 0
+        },
+        "limits_semantics": "lower only, inherited stricter limits preserved; close unrelated FDs including production IPC before limit installation; no permissions/prctl/subreaper/ptrace/mount/networking",
+        "paths": "negatives/supervisor-fatal/{fixed_name}/{pending.json,stdout.bin,stderr.bin,receipt.json}; exception_finally_timeout alone also registers except-marker and finally-marker as forbidden outputs",
+        "file_caps": {
+          "stdout_bin": 65536,
+          "stderr_bin": 65536,
+          "pending_json": 4096,
+          "receipt_json": 8192,
+          "except_marker": 4096,
+          "finally_marker": 4096
+        },
+        "file_bound_bytes": 581632,
+        "joint_reserved_bytes": 1048576,
+        "category": "all_reports_receipts_logs_negatives_seals_completion",
+        "outside_existing_categories": false,
+        "marker_absence_is_success": true,
+        "pid1_caveat": "orphan descendant disappearance may depend on runner PID1; any live process or remaining zombie at the2s bound fails, never extends time or claims reaping",
+        "group_limit": "reviewed fixed fixture body and registered PID/group checks, not syscall confinement",
+        "pure_protocol_tests_retained": true,
+        "no_DSP_models_network": true
+      }
     }
   },
   "workflow": {
@@ -7309,7 +7379,7 @@
     "qualification": "untouched guard first passes; isolated persisted corruption must reject exact implementation-review-frozen intended reason, never I/O/timeout/unrelated exception",
     "independent_audit": "separately authored read-only original-byte/identity/waveform/state/window audit; no DSP/model rerun; scope and actual result reported distinctly"
   },
-  "contract_revision": 2,
+  "contract_revision": 3,
   "contract_history": [
     {
       "revision": 1,
@@ -7323,8 +7393,20 @@
     },
     {
       "revision": 2,
-      "status": "PRE_EXECUTION_RESOURCE_TIMEOUT_AMENDMENT_PENDING_REVIEW",
+      "status": "PRE_EXECUTION_RESOURCE_TIMEOUT_DESIGN_ACCEPTED_FOR_IMPLEMENTATION_ONLY",
       "reason": "Per-file and open-FD limits do not prove aggregate prewrite limits for opaque compiler/CMake temporary outputs; caught timeout exceptions permit admission finally writes. No DSP or source-candidate outcome was observed before this amendment.",
+      "science_or_input_changes": false,
+      "commit": "1c0c56c8baf1e32bd14a8b1a6f74f20951b38c74",
+      "tree": "e77f1a484227ae3fd4b2c9358d4f0c82e16293b4",
+      "plan_sha256": "f99bbc15e6b80a9b11bf72bd4e59ce5ef879ff1b20e2876520e0505b0b1b9091",
+      "lock_sha256": "15ce094466460f9db28fcd7b660da368e65eba02c9d66860581fe018cefe5848",
+      "execution": "NOT_RUN",
+      "preserved": true
+    },
+    {
+      "revision": 3,
+      "status": "PRE_EXECUTION_SUPERVISOR_FIXTURE_CLARIFICATION_PENDING_REVIEW",
+      "reason": "Make actual fatal-path engineering fixtures explicit without permitting production-worker descendants to escape its group; no science, input, screen or budget increase.",
       "science_or_input_changes": false
     }
   ]

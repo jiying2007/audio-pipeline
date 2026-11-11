@@ -1,6 +1,6 @@
 # D8 双麦 broadside 输出：执行前冻结合同
 
-状态：PREREGISTRATION / NOT_RUN；合同revision2（执行前资源/超时修订，待独立复核）。实验 FE-DUALMIC-BROADSIDE-OUTPUT-D8，科学候选数1。
+状态：PREREGISTRATION / NOT_RUN；合同revision3（执行前fatal fixture明确化，待独立复核）。实验 FE-DUALMIC-BROADSIDE-OUTPUT-D8，科学候选数1。
 基线 main 1b5b01e0f2580ec9e05dfacff2ee1d292c438172，
 tree db25581db2ad683499ec2c7b2e22686787d39db2，生产版本2.3.64。
 追踪 [#947](https://github.com/jiying2007/audio-pipeline/issues/947)，前驱#944，总研究#657保持开放。
@@ -23,6 +23,11 @@ tree db25581db2ad683499ec2c7b2e22686787d39db2，生产版本2.3.64。
 不再声称编译器每次写入都受到总字节配额。任何需要额外权限、ptrace、mount、quota、
 sudo、安全设置改动或未登记资源的步骤必须停止报告，不能用其它资源绕过。
 本修订须再次独立审核；实现源码及精确head还须另外独立审核，均不等于执行授权。
+
+revision2的1c0c56c8baf1e32bd14a8b1a6f74f20951b38c74也完整保留为父历史，
+独立结论PRE_EXECUTION_RESOURCE_TIMEOUT_DESIGN_ACCEPTED_FOR_IMPLEMENTATION_ONLY。
+revision3仅明确7.2的四个supervisor-owned无DSP fatal-path工程fixture，
+不减少真实fatal测试、不让生产worker私建逃逸group，不增加时间/存储/权限，也未执行候选。
 
 ## 1. 独立假设、唯一干预与不变边界
 
@@ -290,6 +295,47 @@ root输出总量<=4MiB，包含中间文本和完整紧凑投影，不把输出�
 不是保证精确timestamp物理零写入。group连续性是经审核的已知launch/tool要求与运行时断言，
 不是syscall confinement；snapshot不能证明任意外部软件从未逃逸。
 发现未知descendant或group逃逸即无效停止并报告，不能为处理它申请额外权限或转用不受控资源。
+
+
+### 7.2 四个登记的无DSP fatal-path fixture
+
+只在negative phase、无active生产command时，由外部supervisor创建工程fixture；
+生产worker仅请求并等待，不创建、更改或拥有逃逸test group。
+固定source为同一dualmic_broadside_output_d8_supervise.py，无新增helper/外部程序。
+固定四项，严格此顺序，一次只一个fixture group：
+1. startup_before_group：一个child故意在建立group前挂起，证明actual PID fallback；
+   从不向其继承的supervisor group发信号。
+2. child_tree_timeout：一个leader加一个同group descendant；预期leader实际SIGKILL退出，
+   两个PID都消失，不用mock替代descendant证明。
+3. exception_finally_timeout：一个child进入try/except Exception/finally后挂起，
+   实际SIGKILL后except-marker与finally-marker都必须不存在。
+4. pipe_drain_timeout：一个child分别向stdout/stderr各写准确65536 bytes再挂起；
+   supervisor非阻塞完整drain，实际SIGKILL退出，不截断或伪称全部输出。
+
+supervisor从fork返回立刻登记actual PID与intended PGID；除故意pre-group项，
+先验证leader PID=PGID才释放start barrier。descendant PID也先登记再释放其body barrier。
+在实际reap/观察消失前保留actual-PID fallback。生产worker的private IPC不可泄漏给fixture。
+
+每项绝对hard lease=min(start+2秒,原phase deadline,root deadline)，涵盖startup、signal、
+drain、receipt及无残留检查，不能在终止时追加grace。固定intentional trigger：
+前三项0.25秒，pipe项0.5秒（建立group的项从barrier释放起算，但2秒绝对lease不重置）。
+只有预定fixture trigger允许杀该fixture并保留预期退出结果；
+不声称因此实际触发了全局root/生产command deadline。
+任何真实root/phase/command/fixture2秒lease到期或任何非预期失败，
+都杀生产worker及全部登记fixture group/actual PIDs，无到期后写盘/清理。
+
+fixture在关闭其它FD之后只降低rlimits：AS64MiB、FSIZE4096、NOFILE16、NPROC128、CORE0；
+不提高已有更低值，无network、模型、DSP、外部工具、prctl/subreaper、ptrace、mount或新权限。
+对被SIGKILL的真实descendant，孤儿zombie的消失可能依赖runner PID1；
+2秒内仍有任何live process/zombie则该fixture失败，不延长、不声称已经reap。
+
+固定输出前缀negatives/supervisor-fatal/{四个固定name}/，
+每项仅pending.json<=4096、stdout.bin<=65536、stderr.bin<=65536、receipt.json<=8192；
+仅exception_finally_timeout另登记两个各<=4096的禁止marker路径。
+完整逻辑文件上界4*(4096+65536+65536+8192)+2*4096=581632 bytes。
+请求前在既有64MiB报告/日志类别联合预留1MiB，包含成功、失败和临时prefix，
+不新开文件类别、工具工作区或额外预算。所有自己的写入仍先检查额度。
+保留纯协议边界测试，并分别报告这些实际OS fixture与纯状态机测试的范围。
 
 工程控制覆盖normal/soft/hard、两strong-channel、正负零tracked/fallback lag及不同lag、
 separate/left/right/both alias、reset与连续history、FULL实际mode、全部逆变换、

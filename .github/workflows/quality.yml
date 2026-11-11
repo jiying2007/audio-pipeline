@@ -1890,18 +1890,36 @@ jobs:
           python3 tests/validation/frontend_evolution/fe09_b2s3_t2c0_quiescent_fallback_qualification.py \
             --verify --output fe09-t2c0 --execution-source "$GITHUB_SHA"
       - name: Retain exact-run T2-C0 logical owner ACK positives and negatives
+        id: fe09_t2c0_upload
         if: always() && (steps.fe09_t2c0.outcome == 'success' || steps.fe09_t2c0.outcome == 'failure')
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: frontend-fe09-s3-t2c0-owner-fallback-${{ github.run_id }}
+          name: frontend-fe09-s3-t2c0-owner-fallback-${{ github.run_id }}-attempt-${{ github.run_attempt }}
           path: fe09-t2c0/
           retention-days: 30
           if-no-files-found: error
+      - name: Witness exact t2c0 upload in the pinned downloader REST list
+        if: steps.fe09_t2c0.outcome == 'success'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ARTIFACT_ID: ${{ steps.fe09_t2c0_upload.outputs.artifact-id }}
+          RUN_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          python3 tests/validation/frontend_evolution/fe09_same_run_artifact_visibility.py \
+            --artifact-id "$ARTIFACT_ID" --run-id "$GITHUB_RUN_ID" \
+            --artifact-name "frontend-fe09-s3-t2c0-owner-fallback-$GITHUB_RUN_ID-attempt-$GITHUB_RUN_ATTEMPT" \
+            --run-attempt "$GITHUB_RUN_ATTEMPT" --run-head-sha "$RUN_HEAD_SHA" \
+            --execution-source "$GITHUB_SHA"
       - name: Download exact current-run T2-C0 four-member Artifact
         if: steps.fe09_t2c0.outcome == 'success'
         uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
-          name: frontend-fe09-s3-t2c0-owner-fallback-${{ github.run_id }}
+          artifact-ids: ${{ steps.fe09_t2c0_upload.outputs.artifact-id }}
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ github.run_id }}
           path: fe09-t2c0-readback
       - name: Independently rehash T2-C0 four members and enforce no-physical-source boundary
         if: steps.fe09_t2c0.outcome == 'success'

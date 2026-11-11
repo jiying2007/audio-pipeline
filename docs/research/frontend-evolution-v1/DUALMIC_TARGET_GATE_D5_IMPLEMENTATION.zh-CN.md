@@ -9,6 +9,8 @@
 研究构建从已准入原 D2 archive 内取原 C/header，链接封存原静态库作 baseline。
 候选仅删除合同指定的一条 target cap 语句并重命名三个导出函数；不加入 D3 零输入 guard。
 当前编译器固定 C11/O2/ffp-contract=off/Wall/Wextra/Werror、AGC 构建定义、原头及库、libm；
+系统 cc selector 允许正常 alternatives 符号链接：保存 lookup path、直接链接目标、解析后的真实普通文件及其 hash；
+实际 argv 使用真实文件路径，读回重建并核验关系/字节。此例外只用于解析编译器，证据文件仍拒绝 symlink。
 路径、hash、版本日志、完整 argv、HEAD/tree 均保存。当前宿主 compiler/libc/libm 不声称等于旧环境。
 
 runner 保存实际 baseline/candidate before/after 的四份完整 12-byte state，以及原 allow/reset/数字零标志。

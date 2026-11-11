@@ -7,6 +7,7 @@ import hashlib
 import io
 import json
 import math
+import os
 from pathlib import Path
 import shutil
 import statistics
@@ -197,6 +198,20 @@ def command(argv,log,start):
     need(receipt["status"]=="PASS" and receipt["elapsed_seconds"]<=30,"D5_COMMAND_FAILED")
     remaining(start,300)
 
+def compiler_identity():
+    """Resolve the system compiler selector, without permitting evidence symlinks."""
+    lookup=shutil.which("cc")
+    need(lookup is not None,"D5_COMPILER_MISSING")
+    path=Path(lookup).absolute()
+    resolved=path.resolve(strict=True)
+    return {"lookup_path":str(path),"lookup_symlink_target":os.readlink(path) if path.is_symlink() else None,
+            "resolved_path":str(resolved),"file":descriptor(resolved)}
+
+def verify_compiler(expected):
+    actual=compiler_identity()
+    need(actual==expected,"D5_COMPILER_IDENTITY")
+    return actual["resolved_path"]
+
 def compile_argv(compiler):
     return [compiler,"-std=c11","-O2","-ffp-contract=off","-Wall","-Wextra","-Werror",
             "-DAP_BUILD_STAGE_AGC=1","-I"+str(EXECUTION_ROOT/"source"),
@@ -239,8 +254,8 @@ def build(input_root,output,start):
     old_library=prior/"proof/plain"/library["path"]
     need(descriptor(old_library)=={k:library[k] for k in ("bytes","sha256")},"D5_ORIGINAL_LIBRARY_CHANGED")
     shutil.copyfile(old_library,output/"source/original-library.a")
-    compiler=shutil.which("cc")
-    need(compiler is not None,"D5_COMPILER_MISSING")
+    compiler_record=compiler_identity()
+    compiler=compiler_record["resolved_path"]
     command([compiler,"--version"],output/"compiler.log",start)
     command(compile_argv(compiler),output/"build.log",start)
     command([str(output/"replay"),"--self-test"],output/"self-test.log",start)
@@ -248,7 +263,7 @@ def build(input_root,output,start):
            for p in (output/"source").rglob("*") if p.is_file()}
     dump(output/"build.json",{"experiment":EXPERIMENT,"freeze":FREEZE,"source":proof,
          "original_source":OLD,"source_files":files,"compiler_path":compiler,
-         "compiler":descriptor(Path(compiler)),"compiler_version":descriptor(output/"compiler.log"),
+         "compiler":compiler_record,"compiler_version":descriptor(output/"compiler.log"),
          "command":compile_argv(compiler),"program":descriptor(output/"replay"),
          "intervention_remove":BEFORE,"original_D2_library_used":True,"same_old_compiler_claim":False,
          "promotion_allowed":False,"python":sys.version})
@@ -275,8 +290,8 @@ def verify_build(input_root,output,start):
     need(descriptor(output/"source/original-library.a")=={k:library[k] for k in ("bytes","sha256")},
          "D5_BASELINE_LIBRARY_NOT_ORIGINAL")
     need(b["program"]==descriptor(output/"replay"),"D5_PROGRAM_CHANGED")
-    compiler=shutil.which("cc")
-    need(compiler==b["compiler_path"] and descriptor(Path(compiler))==b["compiler"] and
+    compiler=verify_compiler(b["compiler"])
+    need(compiler==b["compiler_path"] and
          descriptor(output/"compiler.log")==b["compiler_version"],"D5_COMPILER_IDENTITY")
     argv={"build":compile_argv(compiler),"compiler":[compiler,"--version"],
           "self-test":[str(EXECUTION_ROOT/"replay"),"--self-test"]}

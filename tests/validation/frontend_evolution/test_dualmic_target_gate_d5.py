@@ -13,6 +13,33 @@ from unittest.mock import patch
 import dualmic_target_gate_d5 as d5
 
 class Controls(unittest.TestCase):
+    def test_compiler_symlink_resolves_without_relaxing_evidence(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            real=Path(tmp)/"compiler";real.write_bytes(b"compiler identity")
+            link=Path(tmp)/"cc";link.symlink_to(real)
+            with patch.object(d5.shutil,"which",return_value=str(link)):
+                identity=d5.compiler_identity()
+                self.assertEqual(identity["lookup_path"],str(link))
+                self.assertEqual(identity["lookup_symlink_target"],str(real))
+                self.assertEqual(identity["resolved_path"],str(real))
+                self.assertEqual(d5.verify_compiler(identity),str(real))
+                with self.assertRaisesRegex(ValueError,"D5_REGULAR_FILE_REQUIRED"):
+                    d5.descriptor(link)
+                other=Path(tmp)/"other";other.write_bytes(real.read_bytes())
+                link.unlink();link.symlink_to(other)
+                with self.assertRaisesRegex(ValueError,"D5_COMPILER_IDENTITY"):
+                    d5.verify_compiler(identity)
+
+    def test_compiler_bytes_change_rejected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            real=Path(tmp)/"compiler";real.write_bytes(b"first")
+            with patch.object(d5.shutil,"which",return_value=str(real)):
+                identity=d5.compiler_identity()
+                self.assertIsNone(identity["lookup_symlink_target"])
+                real.write_bytes(b"second")
+                with self.assertRaisesRegex(ValueError,"D5_COMPILER_IDENTITY"):
+                    d5.verify_compiler(identity)
+
     def test_exact_one_statement_transform(self):
         raw="void ap_agc_process_controlled(void) {\n"+d5.BEFORE+"\n}\n"
         self.assertEqual(d5.derived(raw),"void d5_agc_process_controlled(void) {\n\n}\n")

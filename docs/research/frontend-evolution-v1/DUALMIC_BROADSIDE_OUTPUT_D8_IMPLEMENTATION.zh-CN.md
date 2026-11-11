@@ -1,6 +1,6 @@
 # D8 broadside 输出：实现与证据边界
 
-状态：**FIRST_ATTEMPT_MEASUREMENT_INVALID_BEFORE_BUILD**。首次已审核的 CI 尝试完成了原始 D3 输入准入，但在 D8 合同比较处停止，未进入构建、测试或 D8 DSP。此次失败及其证据保留在第 8 节；修正仍须独立 exact-head 复核后才可发布。生产版本、默认配置、API 与生产树不变。
+状态：**SECOND_ATTEMPT_MEASUREMENT_INVALID_AT_TOOL_DISCOVERY**。两次已审核的 CI 尝试均完成原始 D3 输入准入；首次停于 D8 合同比较，第二次通过该 guard 后停于 build tool discovery，均未执行 D8 编译、测试或 DSP。两次失败及证据分别保留在第 8、9 节；修正仍须独立 exact-head 复核后才可发布。生产版本、默认配置、API 与生产树不变。
 
 ## 1. 冻结合同与单一干预
 
@@ -76,7 +76,7 @@ R3 的四个固定无 DSP fixtures 由 supervisor 创建，一个 group 同时�
 
 ## 7. 运行与结论仍待独立复核
 
-实现准备和修正均只通过 GitHub 连接器写入 detached Git objects。首次经过独立 source review 的 CI 尝试已在构建前失败，详见第 8 节；未产生 D8 科学评分或候选改善结论。所有尚未执行的工程计数、预算与 scientific checks 仍是待验证要求。独立 source review、exact-head required checks、artifact 全闭包读回及新鲜 main 资格检查是不同证据，不能互相替代。本文件不作真实阵列、时钟、校准、ASR、听感或临床结论。
+实现准备和修正均只通过 GitHub 连接器写入 detached Git objects。两次经过独立 source review 的 CI 尝试分别在合同比较和 tool discovery 处失败，详见第 8、9 节；未产生 D8 科学评分或候选改善结论。所有尚未执行的工程计数、预算与 scientific checks 仍是待验证要求。独立 source review、exact-head required checks、artifact 全闭包读回及新鲜 main 资格检查是不同证据，不能互相替代。本文件不作真实阵列、时钟、校准、ASR、听感或临床结论。
 
 ## 8. 首次尝试：完整保留的构建前失败
 
@@ -97,3 +97,31 @@ R3 的四个固定无 DSP fixtures 由 supervisor 创建，一个 group 同时�
 - 完整 decoded job log 按连接器返回文本的 UTF-8（含其 BOM）计31980 bytes，SHA256 `2627e0b1344b926ed2efc5040967fa694c816eecb803dfd895acae0528624e37`。这不是 GitHub 压缩 log archive 的 hash。
 
 上述 artifact 身份/上传成功来自实际 job log 与 artifact API；没有把 metadata 查询说成独立打开或重算了 artifact 的8个 members。首败不能被后续修正或重试覆盖；新的发布/运行须有新的 exact-head 复核，并保留本次记录。
+
+## 9. 第二次尝试：tool discovery 失败与封闭 PATH 修正
+
+[Frontend Research run43118580272](https://github.com/jiying2007/audio-pipeline/actions/runs/43118580272)，attempt1，head `a1c69806143e96c585ce65568d0a5c5d03139a0f`，D8 job `130852950835` 已完成，结论 failure。scope 成功，历史研究 jobs 全部 skipped，failure-evidence upload 成功。原 D3 admission 成功，用时37.049105113秒，`original_D2_readback_exact=true`；修正后的 original-lock guard 已通过。此后在 build 的 tool discovery 处以 `MEASUREMENT_INVALID / D8_TOOL_MISSING` 停止，未进入 compiler-version/configure/compile、四形态 replay、D8 tests 或科学 scoring。
+
+当前实际 runner 日志标识 image `ubuntu24/20261101.360`。本次泛化错误没有写出失败的 lookup 名称；上传 artifact 的内部成员未独立打开，因此不能宣称已经从实际 failure receipt 读到“cmake missing”。
+但是源码把 discovery PATH 固定为 `/usr/bin:/bin`；同一官方 image 的
+[install-cmake.sh](https://api.github.com/repos/actions/runner-images/contents/images/ubuntu/scripts/build/install-cmake.sh?ref=add4380b0d6685806e9192c33c37359ee0aa4023)
+使用 `--prefix=/usr/local`，
+[软件清单](https://api.github.com/repos/actions/runner-images/contents/images/ubuntu/Ubuntu2404-Readme.md?ref=add4380b0d6685806e9192c33c37359ee0aa4023)
+列 CMake3.31.6；该 image tag 经 Git data 解析到 immutable commit `add4380b0d6685806e9192c33c37359ee0aa4023`。遗漏 `/usr/local/bin` 是有公开来源依据的 CMake-path 原因推断，不是本次二进制/version receipt 的直接观测。旧 D7 的 lookup 使用 ambient PATH，不能据此假定新的封闭 PATH 等价。
+
+修正将封闭 allowlist 改为 **`/usr/bin:/bin:/usr/local/bin`**，仅在原两个目录之后追加官方安装目录，保持原系统工具优先级；不继承 ambient PATH、不安装工具、不更改系统设置或权限。实际 lookup path、symlink target、resolved executable、文件 hash 与版本检查继续保留。missing-tool 失败必须给出明确工具名与封闭 PATH；synthetic lookup controls 覆盖原目录优先级、local fallback、missing tool 和忽略未注册/ambient 路径。它们不冒充对 runner 文件系统实际工具位置的检查，也不代表新 compile 已通过。
+
+同一 immutable image source 的其余工具兼容性审查如下（[toolset](https://github.com/actions/runner-images/blob/add4380b0d6685806e9192c33c37359ee0aa4023/images/ubuntu/toolsets/toolset-2404.json)、[Git installer](https://github.com/actions/runner-images/blob/add4380b0d6685806e9192c33c37359ee0aa4023/images/ubuntu/scripts/build/install-git.sh)、同 commit README）：
+- 显式 `tool_identity` lookup 只有 cc/cmake；新 PATH 保留原 cc 选择优先级。Git 由 apt 安装，源码 source_identity 的 Git 命令位于失败 lookup 之前，bare Git argv 仍只使用 sealed environment。
+- Unix Makefiles 使用 make 和 /bin/sh。toolset 包含 make/gcc/g++，README 列 make4.3 与 GCC packages；标准 package 位置由原 /usr/bin:/bin 覆盖。CMake 实际生成的工具路径仍须保留核验，不预先假定。
+- GCC 私有 cc1/collect2 由实际 compiler installation prefix 查找；as/ld/ar/ranlib 来自 image 的 binutils package（README2.42）。没有增加 private/toolcache PATH。
+- ap_build_info_dump、observer self-tests 与科学 replay 全部使用明确绝对路径。workflow 的 Python 在 sealed child environment 前启动，supervisor 用 sys.executable exec 主 worker；不需扩大 Python lookup。该 recipe 不选择 Ninja、ALSA 或外部 test runner。
+这只是官方 source/package 兼容性审查，没有发现另一个已知 PATH 缺口；不是本次每个 child 可执行文件路径/版本的实测证明或运行成功保证。所有原 identity、argv、flags、baseline byte bridges、resource/deadline guards 继续强制。
+
+[失败 artifact13900090732](https://github.com/jiying2007/audio-pipeline/actions/runs/43118580272/artifacts/13900090732)：
+- name：`frontend-research-dualmic-broadside-output-d8-43118580272-attempt-1`
+- uploaded ZIP：473324911 bytes；SHA256 `d3baf9609ba2f0e9b3b2edb0b02f887694676014bb9fbac228bbf91e2f87e03a`
+- upload log 报告65 files；API读取时 unexpired，expires_at `2027-02-09T23:16:45Z`。
+- 完整 decoded job log 的 UTF-8（含 BOM）31995 bytes，SHA256 `5bae5b7ee07c855965203f40ebe152bd125e72bd105a1c83d5235b1a0e33dd2b`；不是压缩 log archive 的 hash。
+
+第一次 run43115604725/artifact13897369988 的失败记录不变。本次仍是 engineering MEASUREMENT_INVALID，不是有效实验的 NO_ADVANCE，也没有候选质量、实际 compiler/CMake 版本或独立 artifact-content audit 结论。

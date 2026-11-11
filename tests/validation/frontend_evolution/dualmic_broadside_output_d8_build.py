@@ -51,6 +51,7 @@ PINS = {PLAN: "71a0dea3a65029c23aced80238c791b98d6ec5fc",
 INPUT = Path("/tmp/ap-dualmic-d8/input")
 OUTPUT = Path("/tmp/ap-dualmic-d8/result")
 TOOL = Path("/tmp/ap-dualmic-d8/toolchain")
+SEALED_PATH = "/usr/bin:/bin:/usr/local/bin"
 SUPERVISOR_PATH = PREFIX + "dualmic_broadside_output_d8_supervise.py"
 SOURCE_LIMIT = 16 * 1024 * 1024
 OUTPUT_LIMIT = 512 * 1024 * 1024
@@ -256,7 +257,7 @@ def contract():
 def environment(d1=None, d8=None, frames=None):
     """Full allowlist; no ambient credentials, LD_*, XDG, cache or user config."""
     home, temporary = TOOL / "home", TOOL / "tmp"
-    env = {"PATH": "/usr/bin:/bin", "HOME": str(home), "TMPDIR": str(temporary),
+    env = {"PATH": SEALED_PATH, "HOME": str(home), "TMPDIR": str(temporary),
            "TMP": str(temporary), "TEMP": str(temporary), "LC_ALL": "C", "LANG": "C",
            "TZ": "UTC", "PYTHONDONTWRITEBYTECODE": "1",
            "XDG_CONFIG_HOME": str(home / "config"), "XDG_CACHE_HOME": str(home / "cache"),
@@ -786,9 +787,20 @@ class Phase:
             self.report["first_failure"] = {
                 "stage": stage, "type": type(error).__name__,
                 "reason": str(error) if isinstance(error, (ValueError, TimeoutError)) else "phase failed"}
-            for field in ("build_flags", "generated"):
+            for field in ("build_flags", "generated", "tool_lookup"):
                 if hasattr(error, "d8_" + field):
                     self.report["first_failure"][field] = getattr(error, "d8_" + field)
+            if "tool_lookup" in self.report["first_failure"]:
+                diagnostic = json.dumps({"reason": "D8_TOOL_MISSING",
+                    "tool_lookup": self.report["first_failure"]["tool_lookup"]},
+                    sort_keys=True, separators=(",", ":"), ensure_ascii=True) + "\n"
+                need(len(diagnostic.encode("ascii")) <= 1024, "D8_TOOL_DIAGNOSTIC_BOUND")
+                self.remaining()
+                try:
+                    sys.stderr.write(diagnostic)
+                    sys.stderr.flush()
+                except OSError:
+                    pass  # preserve the first error; existing supervisor owns the pipe/deadline
         error.d8_first_failure = dict(self.report["first_failure"])
         error.d8_phase = self.name
         error.d8_target = str(self.path)
@@ -1107,9 +1119,24 @@ def archive_members(path, identity, destination=None):
     need(seen_files == names and seen_dirs == directories(names), "D8_SOURCE_CLOSURE")
 
 
+def select_tool_lookup(name, executable_paths):
+    """Pure ordered selection from explicit candidates, never from ambient PATH."""
+    need(type(name) is str and re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.+-]{0,63}", name) is not None,
+         "D8_TOOL_NAME")
+    candidates = [directory + "/" + name for directory in SEALED_PATH.split(":")]
+    available = set(executable_paths)
+    for path in candidates:
+        if path in available:
+            return path
+    error = ValueError("D8_TOOL_MISSING")
+    error.d8_tool_lookup = {"tool": name, "path": SEALED_PATH, "candidates": candidates}
+    raise error
+
 def tool_identity(name):
-    lookup = shutil.which(name, path=environment()["PATH"])
-    need(lookup is not None, "D8_TOOL_MISSING")
+    # Actual executability comes from shutil.which. The shared selector then
+    # preserves the original /usr/bin, /bin precedence before local fallback.
+    executable_paths = [shutil.which(name, path=directory) for directory in SEALED_PATH.split(":")]
+    lookup = select_tool_lookup(name, executable_paths)
     path = Path(lookup).absolute()
     real = path.resolve(strict=True)
     need(real.is_file() and not (real.stat().st_mode & (stat.S_ISUID | stat.S_ISGID)), "D8_TOOL_PRIVILEGE")

@@ -1160,10 +1160,96 @@ def engineering_original_locks(phase):
     phase.remaining()
     return result
 
+
+def engineering_tool_lookup(phase):
+    """Synthetic sealed-path selection; no executable probe or tool invocation."""
+    root = b.OUTPUT / "negatives" / "engineering-tool-lookup"
+    root.mkdir()
+    sealed = "/usr/bin:/bin:/usr/local/bin"
+    b.need(b.SEALED_PATH == sealed and b.environment()["PATH"] == sealed,
+           "D8_ENGINEERING_SEALED_PATH")
+    vectors = [
+        {"label": "usr-bin-precedence", "tool": "cmake",
+         "executable_paths": ["/usr/local/bin/cmake", "/bin/cmake", "/usr/bin/cmake"],
+         "ambient_PATH": "/usr/local/bin:/bin:/usr/bin", "expected": "/usr/bin/cmake"},
+        {"label": "bin-precedence", "tool": "cmake",
+         "executable_paths": ["/usr/local/bin/cmake", "/bin/cmake"],
+         "ambient_PATH": "/usr/local/bin:/bin", "expected": "/bin/cmake"},
+        {"label": "local-fallback", "tool": "cmake",
+         "executable_paths": [None, None, "/usr/local/bin/cmake"],
+         "ambient_PATH": "/opt/unregistered", "expected": "/usr/local/bin/cmake"},
+        {"label": "compiler-precedence", "tool": "cc",
+         "executable_paths": ["/usr/local/bin/cc", "/bin/cc", "/usr/bin/cc"],
+         "ambient_PATH": "/bin:/usr/local/bin:/usr/bin", "expected": "/usr/bin/cc"},
+        {"label": "ambient-order-ignored", "tool": "cmake",
+         "executable_paths": ["/opt/unregistered/cmake", "/usr/local/bin/cmake", "/usr/bin/cmake"],
+         "ambient_PATH": "/opt/unregistered:/usr/local/bin:/usr/bin", "expected": "/usr/bin/cmake"},
+        {"label": "missing-tool", "tool": "cmake", "executable_paths": [None, None, None],
+         "ambient_PATH": "", "expected": None},
+        {"label": "ambient-only-ignored", "tool": "cmake",
+         "executable_paths": ["/opt/unregistered/cmake", "/home/runner/bin/cmake"],
+         "ambient_PATH": "/opt/unregistered:/home/runner/bin", "expected": None},
+        {"label": "unregistered-neighbors-ignored", "tool": "cc",
+         "executable_paths": ["/usr/local/sbin/cc", "/usr/bin-extra/cc"],
+         "ambient_PATH": "/usr/local/sbin:/usr/bin-extra", "expected": None},
+        {"label": "bounded-long-name-diagnostic", "tool": "d8-" + "x" * 61,
+         "executable_paths": [], "ambient_PATH": "/opt/unregistered", "expected": None},
+    ]
+    records = []
+    for vector in vectors:
+        phase.remaining()
+        path = root / (vector["label"] + ".json")
+        identity = _store(path, encode(vector))
+        saved = _json(path.read_bytes())
+        # ambient_PATH is deliberately only fixture metadata. The shared
+        # production selector has no ambient-path argument and sees the exact
+        # executable inventory, including paths it must ignore.
+        available = list(saved["executable_paths"])
+        observed = {}
+
+        def action():
+            try:
+                selected = b.select_tool_lookup(saved["tool"], available)
+            except ValueError as error:
+                detail = getattr(error, "d8_tool_lookup", None)
+                expected = {"tool": saved["tool"], "path": sealed,
+                            "candidates": [directory + "/" + saved["tool"]
+                                           for directory in sealed.split(":")]}
+                b.need(str(error) == "D8_TOOL_MISSING" and detail == expected and
+                       len(encode({"reason": "D8_TOOL_MISSING", "tool_lookup": detail})) <= 1024,
+                       "D8_ENGINEERING_TOOL_DIAGNOSTIC")
+                observed["diagnostic"] = copy.deepcopy(detail)
+                raise
+            b.need(type(selected) is str and selected == saved["expected"],
+                   "D8_ENGINEERING_TOOL_SELECTION")
+            observed["selected"] = selected
+
+        if saved["expected"] is None:
+            outcome = _expect_reason(saved["label"], action, phase, "D8_TOOL_MISSING")
+        else:
+            action()
+            outcome = {"accepted": True}
+        b.need(available == saved["executable_paths"] and b.desc(path) == identity,
+               "D8_ENGINEERING_TOOL_LOOKUP_MUTATION")
+        records.append({"label": saved["label"], "scope": "synthetic executable-path inventory",
+                        "fixture": {"path": path.relative_to(b.OUTPUT).as_posix(), **identity},
+                        **observed, **outcome})
+    result = {"status": "PASS", "guard": "dualmic_broadside_output_d8_build.select_tool_lookup",
+              "scope": "pure sealed-PATH selection and bounded missing-tool diagnostics",
+              "sealed_path": sealed, "diagnostic_line_cap_bytes": 1024,
+              "count": len(records), "records": records,
+              "ambient_PATH_values_are_synthetic_metadata": True,
+              "production_globals_monkeypatched": False, "executable_probes_run": False,
+              "tools_invoked": False, "frozen_scientific_negative_category_added": False}
+    _store(root / "receipt.json", encode(result))
+    phase.remaining()
+    return result
+
 def engineering_controls(phase):
     # No mutation of D7 globals, no compiler flags, and no subprocess launch.
     return {
         "original_locks": engineering_original_locks(phase),
+        "tool_lookup": engineering_tool_lookup(phase),
         "observer_receipts": engineering_observer_receipts(phase),
         "strict_flags": engineering_flags(phase),
         "generated_unity": engineering_unity(phase),

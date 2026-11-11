@@ -32,6 +32,10 @@ on:
       - 'tests/validation/frontend_evolution/test_dualmic_upstream_d7*'
       - 'docs/research/frontend-evolution-v1/DUALMIC_UPSTREAM_D7*'
       - 'docs/research/frontend-evolution-v1/dualmic-upstream-d7*'
+      - 'tests/validation/frontend_evolution/dualmic_broadside_output_d8*'
+      - 'tests/validation/frontend_evolution/test_dualmic_broadside_output_d8*'
+      - 'docs/research/frontend-evolution-v1/DUALMIC_BROADSIDE_OUTPUT_D8*'
+      - 'docs/research/frontend-evolution-v1/dualmic-broadside-output-d8*'
       - '.github/workflows/frontend-research.yml'
   push:
     branches: [main]
@@ -65,12 +69,16 @@ on:
       - 'tests/validation/frontend_evolution/test_dualmic_upstream_d7*'
       - 'docs/research/frontend-evolution-v1/DUALMIC_UPSTREAM_D7*'
       - 'docs/research/frontend-evolution-v1/dualmic-upstream-d7*'
+      - 'tests/validation/frontend_evolution/dualmic_broadside_output_d8*'
+      - 'tests/validation/frontend_evolution/test_dualmic_broadside_output_d8*'
+      - 'docs/research/frontend-evolution-v1/DUALMIC_BROADSIDE_OUTPUT_D8*'
+      - 'docs/research/frontend-evolution-v1/dualmic-broadside-output-d8*'
       - '.github/workflows/frontend-research.yml'
   workflow_dispatch:
     inputs:
       experiment:
         type: choice
-        options: [dualmic-stages-d1, dualmic-zero-d3-input, dualmic-zero-d3, dualmic-window-d4, dualmic-target-gate-d5, dualmic-gain-ramp-d6, dualmic-upstream-d7]
+        options: [dualmic-stages-d1, dualmic-zero-d3-input, dualmic-zero-d3, dualmic-window-d4, dualmic-target-gate-d5, dualmic-gain-ramp-d6, dualmic-upstream-d7, dualmic-broadside-output-d8]
         default: dualmic-stages-d1
         required: true
 
@@ -94,6 +102,7 @@ jobs:
       d5: ${{ steps.select.outputs.d5 }}
       d6: ${{ steps.select.outputs.d6 }}
       d7: ${{ steps.select.outputs.d7 }}
+      d8: ${{ steps.select.outputs.d8 }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
@@ -112,6 +121,40 @@ jobs:
           import os, subprocess
           from pathlib import Path
           event = os.environ['EVENT_NAME']
+          # D8-only selection exits before historical selectors see the appended lane.
+          import time
+          d8_scope_start = time.monotonic()
+          def d8_git(*args):
+              remaining = 300 - (time.monotonic() - d8_scope_start)
+              if remaining <= 0:
+                  raise SystemExit('D8_SCOPE_TIMEOUT')
+              env = dict(os.environ, GIT_OPTIONAL_LOCKS='0')
+              return subprocess.check_output(['git', '-c', 'core.fsmonitor=false',
+                  '-c', 'core.untrackedCache=false', *args], env=env, timeout=min(30, remaining)).decode()
+          d8_tokens = ('dualmic_broadside_output_d8', 'DUALMIC_BROADSIDE_OUTPUT_D8',
+                       'dualmic-broadside-output-d8')
+          d8 = event == 'workflow_dispatch' and os.environ['SELECTED_EXPERIMENT'] == 'dualmic-broadside-output-d8'
+          d8_marker = '\n  dualmic-broadside-output-d8:\n'
+          if event != 'workflow_dispatch':
+              d8_paths = d8_git('diff', '--name-only', os.environ['BASE_SHA'], 'HEAD').splitlines()
+              d8 = any(any(token in p for token in d8_tokens) for p in d8_paths)
+              if '.github/workflows/frontend-research.yml' in d8_paths:
+                  d8_prior = d8_git('show', os.environ['BASE_SHA'] + ':.github/workflows/frontend-research.yml')
+                  d8_current = Path('.github/workflows/frontend-research.yml').read_text()
+                  if d8_marker in d8_current and (d8_marker not in d8_prior or
+                          d8_current.split(d8_marker, 1)[-1] != d8_prior.split(d8_marker, 1)[-1]):
+                      d8 = True
+              if d8 and any(not (any(token in p for token in d8_tokens) or p == '.github/workflows/frontend-research.yml')
+                            for p in d8_paths):
+                  raise SystemExit('D8_REQUIRES_SEPARATE_RESEARCH_CHANGE')
+          if d8:
+              d8_frozen = d8_git('show', '1b5b01e0f2580ec9e05dfacff2ee1d292c438172:.github/workflows/frontend-research.yml')
+              d8_current = Path('.github/workflows/frontend-research.yml').read_text()
+              if d8_current.count(d8_marker) != 1 or d8_current.split('  matrix:\n', 1)[1].split(d8_marker, 1)[0] != d8_frozen.split('  matrix:\n', 1)[1]:
+                  raise SystemExit('D8_HISTORICAL_JOBS_CHANGED')
+              with open(os.environ['GITHUB_OUTPUT'], 'a') as out:
+                  out.write('d1=false\nd3=false\nd3_execute=false\nd4=false\nd5=false\nd6=false\nd7=false\nd8=true\n')
+              raise SystemExit(0)
           # D7-only selection exits before historical selectors inspect appended jobs.
           # Historical jobs below matrix remain byte-identical to e348843.
           import time
@@ -692,6 +735,41 @@ jobs:
             /tmp/ap-dualmic-d7/input/original.zip
             /tmp/ap-dualmic-d7/input/*.json
             /tmp/ap-dualmic-d7/result/
+          include-hidden-files: true
+          retention-days: 90
+          if-no-files-found: error
+
+  dualmic-broadside-output-d8:
+    needs: scope
+    if: needs.scope.outputs.d8 == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      EXECUTION_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Admit originals and supervise the frozen D8 four-form experiment
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python3 -B tests/validation/frontend_evolution/dualmic_broadside_output_d8_supervise.py \
+            --expected-head "$EXECUTION_SHA"
+      - name: Preserve original ZIP, measured evidence and the first failure prefix
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: frontend-research-dualmic-broadside-output-d8-${{ github.run_id }}-attempt-${{ github.run_attempt }}
+          path: |
+            /tmp/ap-dualmic-d8/input/original.zip
+            /tmp/ap-dualmic-d8/input/*.json
+            /tmp/ap-dualmic-d8/result/
           include-hidden-files: true
           retention-days: 90
           if-no-files-found: error

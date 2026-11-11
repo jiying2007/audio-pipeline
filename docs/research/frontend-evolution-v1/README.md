@@ -7,7 +7,10 @@ near-only固定指标小幅变化，双讲变化接近数值尺度；无质量�
 [D4 执行前合同](DUALMIC_WINDOW_D4_PLAN.zh-CN.md)与 [#935](https://github.com/jiying2007/audio-pipeline/issues/935)
 只读关联原 D1/D2 的全部60视图/362固定窗口、数字非零输入与原增益控制，不改波形或评分器。
 控制保持原frame坐标、frame0单列历史、null保留；数字非零不当语音标签，负delta不当听感结论。
-合同冻结在实际结果之前，执行状态以该issue的实际Actions身份为准，NOT_RUN不是结果。
+[D4首次实际结果](DUALMIC_WINDOW_D4_RESULT.zh-CN.md)保留362窗完整关联和16负例。
+各profile nominal双讲19/20可评分窗、weak17/20为原pre→state负差值，负窗输入数字零帧为0；
+同时保留正窗、null和此前状态历史，不把局部符号/中位数替代整段分数，不推导听感或因果结论。
+合同冻结在实际结果之前，精确head/main工程资格仍以该issue的实际Actions身份为准。
 
 ## 2026-11-07 双麦真人输入阶段诊断 D1
 

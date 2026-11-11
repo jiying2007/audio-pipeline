@@ -374,5 +374,9 @@ real-robot qualification or the frozen NS research program.
 状态为UPSTREAM_OBSERVATION_VALID_NO_PROMOTION。原51负例/预算属于程序验证路径，独立二进制原件审计仍未完成。
 [全部首次stdout聚合](dualmic-upstream-d7-first-stdout.json)保留18组完整精度、正负值和null。
 首次stdout不含lag/route窗口状态，不据分数臆造echo-following或near-onset因果；
-后继只序列化自身已验证的固定报告，按新run身份另读，不冒充首次ZIP独立审计。
+后继224fd79/run43060600294完整844块导出已核验：60 whole/common及362固定窗显示
+实际lag/soft-fallback与stage分数的有限关联；双讲窗口存在左右声道和场景符号差异。
+[完整精确投影](dualmic-upstream-d7-43060600294-summary.json)保留全部案例/窗、null、51负例及7phase回执。
+独立文本/描述符审查完成，但二进制tap/state重算仍待审计；不冒充首次fee ZIP独立审计，
+不据此推广HPF/BF改动。原冻结/生产/科学代码均未改。
 这是候选数0的中性诊断，不重开S003或D3/D5/D6等闭合拒绝线，不声明听感/识别或真机质量改善。

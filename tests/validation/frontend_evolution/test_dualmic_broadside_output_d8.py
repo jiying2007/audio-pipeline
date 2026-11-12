@@ -1393,6 +1393,43 @@ def engineering_inventory(phase):
 
 
 
+
+def _typed_fixture_difference_paths(pristine, mutant, path=()):
+    """Compare values and exact types, so int/bool/float equality cannot hide drift."""
+    if type(pristine) is not type(mutant):
+        return [path]
+    if type(pristine) is dict:
+        b.need(all(type(key) is str for key in pristine) and
+               all(type(key) is str for key in mutant), "D8_ENGINEERING_IDENTITY_MUTATION")
+        differences = []
+        for key in sorted(set(pristine) | set(mutant)):
+            target = path + (key,)
+            if key not in pristine or key not in mutant:
+                differences.append(target)
+            else:
+                differences.extend(_typed_fixture_difference_paths(pristine[key], mutant[key], target))
+        return differences
+    if type(pristine) in (list, tuple):
+        if len(pristine) != len(mutant):
+            return [path]
+        differences = []
+        for index, (left, right) in enumerate(zip(pristine, mutant)):
+            differences.extend(_typed_fixture_difference_paths(left, right, path + (index,)))
+        return differences
+    return [] if pristine == mutant else [path]
+
+
+def _check_identity_fixture_mutation(pristine, mutant, expected_paths):
+    """Harness guard only, not a replacement for the production identity predicate."""
+    reason = "D8_ENGINEERING_IDENTITY_MUTATION"
+    b.need(type(expected_paths) is list and expected_paths and
+           all(type(path) is list and path and all(type(key) is str for key in path)
+               for path in expected_paths), reason)
+    expected = [tuple(path) for path in expected_paths]
+    b.need(len(expected) == len(set(expected)) and
+           sorted(_typed_fixture_difference_paths(pristine, mutant)) == sorted(expected), reason)
+    return True
+
 def engineering_inventory_validators(phase):
     """Persisted synthetic stat/depth drift, never malformed filesystem objects."""
     root = b.OUTPUT / "negatives" / "engineering-inventory-validators"
@@ -1436,20 +1473,41 @@ def engineering_inventory_validators(phase):
                 "mtime_ns": info.st_mtime_ns, "ctime_ns": info.st_ctime_ns}
     b.need(actual == expected and all(type(value) is int for value in actual.values()),
            "D8_ENGINEERING_INVENTORY_STAT")
-    pristine = {"before": actual, "opened": actual, "after": actual, "named": actual,
-                "bytes_read": actual["size"]}
-    mutations = []
+    positions = ("before", "opened", "after", "named")
+    # deepcopy preserves aliasing: every pristine row must start independent.
+    pristine = {position: dict(actual) for position in positions}
+    pristine["bytes_read"] = actual["size"]
+    b.need(len({id(pristine[position]) for position in positions}) == 4,
+           "D8_ENGINEERING_IDENTITY_MUTATION")
+    pristine_raw = encode(pristine)
+    mutations, expected_targets = [], {}
+
+    def add_mutation(label, value, targets, *, intentional_multi_field=False):
+        b.need(label not in expected_targets and type(intentional_multi_field) is bool,
+               "D8_ENGINEERING_IDENTITY_MUTATION")
+        if intentional_multi_field:
+            b.need(label == "all-negative-size" and
+                   targets == [[position, "size"] for position in positions] + [["bytes_read"]],
+                   "D8_ENGINEERING_IDENTITY_MUTATION")
+        else:
+            b.need(label != "all-negative-size" and len(targets) == 1,
+                   "D8_ENGINEERING_IDENTITY_MUTATION")
+        _check_identity_fixture_mutation(pristine, value, targets)
+        b.need(encode(pristine) == pristine_raw, "D8_ENGINEERING_IDENTITY_MUTATION")
+        expected_targets[label] = copy.deepcopy(targets)
+        mutations.append({"label": label, "value": value, "targets": copy.deepcopy(targets),
+                          "intentional_multi_field": intentional_multi_field})
     for position in ("before", "opened", "after", "named"):
         for field in ("dev", "ino", "mode", "nlink", "size", "mtime_ns", "ctime_ns"):
             value = copy.deepcopy(pristine)
             value[position][field] += 1
-            mutations.append({"label": position + "-" + field, "value": value})
+            add_mutation(position + "-" + field, value, [[position, field]])
     for label, replacement in (("short-read", actual["size"] - 1),
                                 ("over-read", actual["size"] + 1),
                                 ("boolean-read", True), ("float-read", float(actual["size"]))):
         value = copy.deepcopy(pristine)
         value["bytes_read"] = replacement
-        mutations.append({"label": label, "value": value})
+        add_mutation(label, value, [["bytes_read"]])
     for label, position, operation in (("missing-field", "before", "missing"),
                                        ("extra-field", "opened", "extra"),
                                        ("boolean-field", "after", "boolean"),
@@ -1463,17 +1521,37 @@ def engineering_inventory_validators(phase):
             value[position]["ino"] = True
         else:
             value[position]["ino"] = float(value[position]["ino"])
-        mutations.append({"label": label, "value": value})
+        add_mutation(label, value, [[position, "unexpected" if operation == "extra" else "ino"]])
     value = copy.deepcopy(pristine)
     for position in ("before", "opened", "after", "named"):
         value[position]["size"] = -1
     value["bytes_read"] = None
-    mutations.append({"label": "all-negative-size", "value": value})
+    # Deliberately different from isolated mutations: four sizes and the read
+    # count change together to exercise the production nonnegative-size guard.
+    add_mutation("all-negative-size", value,
+                 [[position, "size"] for position in positions] + [["bytes_read"]],
+                 intentional_multi_field=True)
+    b.need(len(mutations) == len(expected_targets) == 37 and
+           sum(not vector["intentional_multi_field"] for vector in mutations) == 36,
+           "D8_ENGINEERING_IDENTITY_MUTATION")
+    for vector in mutations:
+        _check_identity_fixture_mutation(pristine, vector["value"], expected_targets[vector["label"]])
     matrix = {"scope": "synthetic metadata policies, not live filesystem races or links",
               "kind": kinds, "depth": depths, "pristine": pristine, "identity_mutants": mutations}
     path = root / "matrix.json"
     identity = _store(path, encode(matrix))
     saved = _json(path.read_bytes())
+    b.need(encode(saved["pristine"]) == pristine_raw and
+           len(saved["identity_mutants"]) == len(expected_targets) and
+           {vector["label"] for vector in saved["identity_mutants"]} == set(expected_targets),
+           "D8_ENGINEERING_IDENTITY_MUTATION")
+    for vector in saved["identity_mutants"]:
+        b.need(vector["targets"] == expected_targets[vector["label"]] and
+               type(vector["intentional_multi_field"]) is bool and
+               vector["intentional_multi_field"] is (vector["label"] == "all-negative-size"),
+               "D8_ENGINEERING_IDENTITY_MUTATION")
+        _check_identity_fixture_mutation(saved["pristine"], vector["value"],
+                                         expected_targets[vector["label"]])
     records = []
     for vector in saved["kind"]:
         action = lambda vector=vector: b.check_inventory_kind(
@@ -1507,7 +1585,43 @@ def engineering_inventory_validators(phase):
     metadata_only = copy.deepcopy(saved["pristine"])
     metadata_only["bytes_read"] = None
     check(metadata_only)
+    # Reproduce the former bug in a bounded synthetic fixture. The production
+    # equality guard correctly accepts four consistently changed rows; the
+    # harness must reject that shape as an intended single-target mutation.
+    shared = dict(actual)
+    aliased = {position: shared for position in positions}
+    aliased["bytes_read"] = actual["size"]
+    former_alias_mutant = copy.deepcopy(aliased)
+    former_alias_mutant["before"]["dev"] += 1
+    valid_single_target = copy.deepcopy(pristine)
+    valid_single_target["before"]["dev"] += 1
+    alias_targets = [["before", "dev"]]
+    _check_identity_fixture_mutation(pristine, valid_single_target, alias_targets)
+    _expect_reason("former-alias-shape-before-write",
+        lambda: _check_identity_fixture_mutation(pristine, former_alias_mutant, alias_targets),
+        phase, "D8_ENGINEERING_IDENTITY_MUTATION")
+    alias_path = root / "former-alias-shape.json"
+    alias_identity = _store(alias_path, encode({
+        "scope": "synthetic harness regression; production consistent-row acceptance is expected",
+        "pristine": pristine, "valid_single_target": valid_single_target,
+        "former_alias_mutant": former_alias_mutant, "targets": alias_targets}))
+    alias_saved = _json(alias_path.read_bytes())
+    b.need(alias_saved["targets"] == alias_targets and encode(alias_saved["pristine"]) == pristine_raw,
+           "D8_ENGINEERING_IDENTITY_MUTATION")
+    _check_identity_fixture_mutation(alias_saved["pristine"], alias_saved["valid_single_target"],
+                                     alias_targets)
+    alias_outcome = _expect_reason("former-alias-shape-readback",
+        lambda: _check_identity_fixture_mutation(alias_saved["pristine"],
+                                                 alias_saved["former_alias_mutant"], alias_targets),
+        phase, "D8_ENGINEERING_IDENTITY_MUTATION")
+    b.need(check(alias_saved["former_alias_mutant"]) is True, "D8_ENGINEERING_IDENTITY_MUTATION")
+    records.append({"label": "former-alias-shape", "scope": "harness-only synthetic regression",
+                    "fixture": {"path": alias_path.relative_to(b.OUTPUT).as_posix(), **alias_identity},
+                    "valid_single_target_accepted": True, "rejected_before_write_and_after_readback": True,
+                    "production_consistent_row_acceptance_expected": True, **alias_outcome})
     for vector in saved["identity_mutants"]:
+        _check_identity_fixture_mutation(saved["pristine"], vector["value"],
+                                         expected_targets[vector["label"]])
         check(saved["pristine"])
         outcome = _expect_reason(vector["label"], lambda vector=vector: check(vector["value"]),
                                  phase, "D8_INVENTORY_CHANGED")
@@ -1516,17 +1630,21 @@ def engineering_inventory_validators(phase):
     directory = b.inventory_stat((b.OUTPUT / "negatives/engineering-inventory/tree").stat())
     dir_path = root / "directory-identity.json"
     directory_mutant = dict(directory, ino=directory["ino"] + 1)
+    _check_identity_fixture_mutation(directory, directory_mutant, [["ino"]])
     _store(dir_path, encode({"pristine": directory, "mutant": directory_mutant}))
     ds = _json(dir_path.read_bytes())
-    b.check_inventory_identity(*([ds["pristine"]] * 4))
+    _check_identity_fixture_mutation(ds["pristine"], ds["mutant"], [["ino"]])
+    b.check_inventory_identity(*(dict(ds["pristine"]) for _ in range(4)))
     outcome = _expect_reason("directory-binding",
-        lambda: b.check_inventory_identity(ds["pristine"], ds["pristine"],
-                                           ds["pristine"], ds["mutant"]),
+        lambda: b.check_inventory_identity(dict(ds["pristine"]), dict(ds["pristine"]),
+                                           dict(ds["pristine"]), ds["mutant"]),
         phase, "D8_INVENTORY_CHANGED")
     records.append({"label": "directory-binding", **outcome})
     result = {"status": "PASS", "scope": matrix["scope"], "controls": len(records),
               "fixture": {"path": path.relative_to(b.OUTPUT).as_posix(), **identity},
               "actual_stat_adapter_checked": True, "pristine_identity_passed": True,
+              "isolated_mutants_type_checked_before_write_and_after_readback": True,
+              "intentional_multi_field_identity_case": "all-negative-size",
               "generic_hardlink_acceptance_preserved": True, "records": records,
               "actual_symlink_hardlink_or_special_created": False}
     _store(root / "receipt.json", encode(result))

@@ -1,6 +1,6 @@
 # D8 broadside 输出：实现与证据边界
 
-状态：**THIRD_ATTEMPT_MEASUREMENT_INVALID_RUN_PHASE_TIMEOUT**。前两次工程失败保留在第 8、9 节。第三次通过准入及两臂构建，随后在 300 秒 run phase 预算耗尽时被 fail-stop；没有完成 60 案例、analysis、readback、negatives 或最终科学结果。第三次原工件及只读诊断证据保留在第 10 节。性能修正只减少重复工程开销并补充有界计时，不改变科学干预、阈值、300 秒阶段预算或准入要求；仍须独立 exact-head 复核后才可发布。生产版本、默认配置、API 与生产树不变。
+状态：**FOURTH_ATTEMPT_MEASUREMENT_INVALID_ENGINEERING_FIXTURE**。前三次失败及原工件保留在第 8–10 节。性能修正后的第四次执行完成 run、analysis 和 verify 阶段；run 阶段约 146.56 秒，未触及 300 秒上限。但在 negative 阶段因合成 identity fixture 的共享字典别名导致 `D8_NEGATIVE_ACCEPTED:before-dev`，最终仍为 MEASUREMENT_INVALID。第 12 节保留实际日志与工件身份。修正只涉及测试夹具及证据文档，不改生产 guard、科学干预、阈值、预算或 deadline；通过独立 exact-head 复核前不得发布。不能将中间阶段完成当作有效科学结果或质量提升。生产版本、默认配置、API 与生产树不变。
 
 ## 1. 冻结合同与单一干预
 
@@ -182,3 +182,31 @@ R3 的四个固定无 DSP fixtures 由 supervisor 创建，一个 group 同时�
 - 新回归控制与固定76项科学negative类别分开标识。真实小型普通文件/目录变化验证新鲜哈希、大小、名称、类型和顺序；共享pure kind/identity/depth守卫验证合成的symlink/special/hardlink政策。generic inventory原有普通hardlink语义与budget nlink=1语义分开保留。不得为本次修正新增真实symlink/hardlink/FIFO的创建与失败清理例外。
 
 这些是拟合并实现的边界，仍须完成精确源码审核及原门禁。其动机是减少已确认重复工作，不是把部分结果变成有效科学实验；第10节的失败与全部原工件继续保留。
+
+## 12. 第四次执行：工程夹具别名错误，科学结果仍无效
+
+第四次 [Research run43133029682](https://github.com/jiying2007/audio-pipeline/actions/runs/43133029682)，attempt1，head `a462a4edafbeda710184930413448ac80c173be4`，D8 job130901613906，实际最终结论failure。scope成功、历史研究jobs全部skipped、失败证据上传成功；没有在此把独立Verify workflow的状态混为科学通过。
+
+新日志直接包含lease-live阶段标记，不必再按工件大小猜测进度。以下差值来自标记中保留六位小数的monotonic elapsed字段，属于受监督阶段的复合墙钟时间，不是单独DSP、哈希或compiler耗时，也不是完整命令receipt子计时的独立读取：
+- admission：PHASE_BEGIN0.156314，PHASE_END34.833745，差值约34.677431秒。原D3 admission输出仍为 `INPUT_ADMITTED_NO_DSP_EXECUTION`、`original_D2_readback_exact=true`，其自身计时32.309167257秒，口径不同。
+- baseline-build：34.842380至58.175624，约23.333244秒。
+- candidate-build：58.184334至68.184192，约9.999858秒。
+- run：68.192746至214.757478，约146.564732秒；PHASE_END时仍余153.435264秒。
+- analysis：214.766298至279.232821，约64.466523秒。
+- verify：279.241060至350.525433，约71.284373秒。
+- negative从350.534125开始，没有成功的PHASE_END/FINISH。2026-11-12T01:21:35.2818692Z输出 `MEASUREMENT_INVALID`、reason `D8_NEGATIVE_ACCEPTED:before-dev`、type `ValueError`；随后退出125。
+
+这些直接标记和实际控制流支持run、analysis、verify已结束，工程性能修正使本次run阶段在原300秒内完成；不保证其他机器/运行具有同样速度，也不代表整套验证完成。negative尚未通过，最终结果仍无效，不能发布NO_ADVANCE或提升结论。没有独立读取或重算本次artifact内的PCM、state、完整quality报告或命令子计时。
+
+根因是测试夹具对象图，而不是实际identity guard放松：`engineering_inventory_validators`把pristine的before/opened/after/named四个字段都指向同一个 `actual` 字典。Python `copy.deepcopy`保留同一对象的别名关系，因此原拟定的 `before-dev` 单目标变化实际上同时改变四个row的dev，四者仍相等。production `check_inventory_identity`正确接受这组相等描述符；测试期望拒绝，遂报告 `D8_NEGATIVE_ACCEPTED`。这是源码语义与实际错误标签相符的诊断，不冒充已打开保存的mutant成员。
+
+窄修正要求每个pristine row有独立字典，并对每个隔离mutant在持久化前及读回后核对精确、类型敏感的目标差异；对明确设计的all-negative-size多字段例外单独声明。旧共享别名形状作为有界回归夹具，必须被fixture隔离检查拒绝。审查其余新增工程controls及相似别名用法，不允许靠修改production guard、少测类别、隐藏mutation、放宽预算或改变science使测试通过。源码侧兼容性审查覆盖六组新增工程控制：真实目录/文件freshness及byte/path accounting、kind/depth/identity政策、1320个合法与480个非法category路径、timing前缀/finite/order/实际receipt绑定、marker期限/rounding/共享cap，以及AST重复/陈旧/写入边界控制。除已确认的identity别名外，未发现另一个具体的guard API、预期reason或fixture closure不一致；这不等于执行通过或保证negative阶段能在300秒内完成。此次修正仍须独立源码复核，所有新增或修正控制在再次运行前均为NOT_RUN。
+
+原[artifact13906123706](https://github.com/jiying2007/audio-pipeline/actions/runs/43133029682/artifacts/13906123706)保留：
+- 名称 `frontend-research-dualmic-broadside-output-d8-43133029682-attempt-1`。
+- ZIP628448675 bytes，SHA256 `0fc87634747e586f49063c207f590bf6016fe6144cd49e25bcccffcda246c5db`。
+- 上传日志报告3418文件，API读取时unexpired，到期2027-02-10T01:13:44Z。
+- 完整decoded job log的UTF-8（含BOM）36211 bytes，SHA256 `16596e753c38ecb227a04f114c8df9c17b936385544d9b80463444334e361923`；不是压缩log archive的hash。
+- artifact身份、大小、上传成功及文件数来自实际API/日志；本次没有独立member读取或原始二进制审计。
+
+前三次失败、只读诊断以及本次无效结果不能被后续修正覆盖。原两臂四形态recipe、全部60例/窗口/原件桥接、科学screen、76个固定negative类别、R3合同、512MiB结果闭包、300/30/1200秒上限均保持不变。

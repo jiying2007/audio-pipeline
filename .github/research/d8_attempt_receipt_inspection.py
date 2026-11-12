@@ -60,6 +60,8 @@ INVENTORY = re.compile(r"build/tool-inventories/([0-9a-f]{64})\.json\Z")
 OWN_WRITTEN = 0
 SELECTED_READ = 0
 ROOT_OWNED = False
+CONSOLE_WRITTEN = 0
+CONSOLE_STARTED = False
 REPORT = {"schema_version": 1, "status": "DIAGNOSTIC_INVALID", "inspection_complete": False,
           "DSP_executed": False, "builds_executed": False, "models_executed": False,
           "promotion_allowed": False, "source_artifact_modified": False,
@@ -89,7 +91,12 @@ def integer(value, minimum=0, maximum=None):
     return type(value) is int and value >= minimum and (maximum is None or value <= maximum)
 
 def finite(value):
-    return type(value) in (int, float) and math.isfinite(value)
+    if type(value) not in (int, float):
+        return False
+    try:
+        return math.isfinite(value)
+    except OverflowError:
+        return False
 
 def encode(value):
     return (json.dumps(value, ensure_ascii=True, sort_keys=True,
@@ -285,6 +292,7 @@ def local_record(file, item, central_offset):
         raise Invalid("ZIP_LOCAL_NAME") from None
     need(name == item.orig_filename, "ZIP_LOCAL_NAME")
     extra = at(file, item.header_offset + 30 + namelen, extralen)
+    size32, compressed32 = size, compressed
     zip64 = size == 0xffffffff or compressed == 0xffffffff
     pos, extended = 0, None
     while pos < len(extra):
@@ -296,16 +304,18 @@ def local_record(file, item, central_offset):
             need(extended is None, "ZIP_LOCAL_EXTRA")
             extended = extra[pos:pos + length]
         pos += length
+    # Descriptor width is an entry-local decision, never the archive EOCD's.
+    # Bit3 streaming ZIP64 may use zero32-bit placeholders plus a local ZIP64
+    # extra and version45; it need not put ffffffff in the local size fields.
+    zip64 = zip64 or (extended is not None and _version >= 45)
     if zip64:
-        need(extended is not None, "ZIP_LOCAL_ZIP64")
-        position = 0
-        if size == 0xffffffff:
-            need(position + 8 <= len(extended), "ZIP_LOCAL_ZIP64")
-            size = struct.unpack("<Q", extended[position:position + 8])[0]
-            position += 8
-        if compressed == 0xffffffff:
-            need(position + 8 <= len(extended), "ZIP_LOCAL_ZIP64")
-            compressed = struct.unpack("<Q", extended[position:position + 8])[0]
+        need(_version >= 45 and extended is not None and len(extended) >= 16, "ZIP_LOCAL_ZIP64")
+        size, compressed = struct.unpack("<QQ", extended[:16])
+        allowed_size = (0, 0xffffffff, item.file_size) if flags & 8 else (0xffffffff, item.file_size)
+        allowed_compressed = (0, 0xffffffff, item.compress_size) if flags & 8 else (0xffffffff, item.compress_size)
+        need(size32 in allowed_size and compressed32 in allowed_compressed, "ZIP_LOCAL_ZIP64")
+    elif extended is not None:
+        raise Invalid("ZIP_LOCAL_ZIP64_VERSION")
     start = item.header_offset + 30 + namelen + extralen
     end = start + item.compress_size
     need(end <= central_offset, "ZIP_LOCAL_RANGE")
@@ -771,12 +781,23 @@ def report_write():
     write_console(console)
 
 def write_console(raw):
-    need(len(raw) <= CONSOLE_LIMIT, "CONSOLE_CAP")
+    global CONSOLE_STARTED, CONSOLE_WRITTEN
+    need(not CONSOLE_STARTED and CONSOLE_WRITTEN + len(raw) <= CONSOLE_LIMIT, "CONSOLE_CAP")
     view = memoryview(raw)
     while view:
         check()
-        count = os.write(1, view[:65536])
-        need(count > 0, "CONSOLE_WRITE")
+        # Mark the attempt first: an uncertain/partial write must never be
+        # followed by a second diagnostic record or an uncaught traceback.
+        CONSOLE_STARTED = True
+        try:
+            count = os.write(1, view[:65536])
+        except BaseException:
+            os._exit(1)
+        if not 0 < count <= min(65536, len(view)):
+            os._exit(1)
+        CONSOLE_WRITTEN += count
+        if CONSOLE_WRITTEN > CONSOLE_LIMIT:
+            os._exit(1)
         view = view[count:]
 
 def main():
@@ -817,6 +838,8 @@ if __name__ == "__main__":
         code = main()
     except Invalid as error:
         check()
+        if CONSOLE_STARTED:
+            os._exit(1)
         failure = {"status": "DIAGNOSTIC_INVALID", "inspection_complete": False,
                    "reason": error.args[0], "DSP_executed": False, "builds_executed": False,
                    "promotion_allowed": False, "failure_prefix_preserved": ROOT_OWNED,
@@ -825,12 +848,16 @@ if __name__ == "__main__":
         code = 1
     except (urllib.error.URLError, TimeoutError, OSError):
         check()
+        if CONSOLE_STARTED:
+            os._exit(1)
         write_console(encode({"status": "DIAGNOSTIC_INVALID", "reason": "NETWORK_OR_IO_ERROR",
                              "DSP_executed": False, "builds_executed": False,
                              "promotion_allowed": False, "report_upload_allowed": False}))
         code = 1
     except (Exception, KeyboardInterrupt):
         check()
+        if CONSOLE_STARTED:
+            os._exit(1)
         write_console(encode({"status": "DIAGNOSTIC_INVALID", "reason": "PARSER_OR_RESOURCE_ERROR",
                              "DSP_executed": False, "builds_executed": False,
                              "promotion_allowed": False, "report_upload_allowed": False}))

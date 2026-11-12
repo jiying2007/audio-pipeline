@@ -232,6 +232,18 @@ def download(location):
     response.close()
     check()
     need(total == ARCHIVE_BYTES and digest.hexdigest() == ARCHIVE_SHA, "ARCHIVE_IDENTITY")
+    written_hash, written_bytes = hashlib.sha256(), 0
+    with ARCHIVE.open("rb") as file:
+        while True:
+            check()
+            block = file.read(1048576)
+            if not block:
+                break
+            written_bytes += len(block)
+            need(written_bytes <= ARCHIVE_BYTES, "ARCHIVE_READBACK")
+            written_hash.update(block)
+    check()
+    need(written_bytes == ARCHIVE_BYTES and written_hash.hexdigest() == ARCHIVE_SHA, "ARCHIVE_READBACK")
     REPORT["archive_verified_before_zip"] = True
 
 
@@ -327,6 +339,9 @@ def validate_zip(file, archive, central):
         need(not item.flag_bits & (1 | 64) and
              item.compress_type in (zipfile.ZIP_STORED, zipfile.ZIP_DEFLATED),
              "ZIP_ENCRYPTION_OR_COMPRESSION")
+        need(not item.external_attr & 0x10 or directory, "ZIP_CONTRADICTORY_DIRECTORY")
+        need(item.compress_type != zipfile.ZIP_STORED or item.file_size == item.compress_size,
+             "ZIP_STORED_SIZE")
         need((directory and kind in (0, stat.S_IFDIR) and item.file_size == 0) or
              (not directory and kind in (0, stat.S_IFREG)), "ZIP_MEMBER_TYPE")
         need(integer(item.file_size, 0, UNCOMPRESSED_LIMIT) and
@@ -389,7 +404,7 @@ KEYS = {
  "first_failure": {"experiment","status","phase","target","first_failure","promotion_allowed","type","reason"},
  "run_index": {"experiment","source","completed","cases","forms","status"}
 }
-SECRET_KEY = re.compile(r"(?i)(^|_)(authorization|password|passwd|token|secret|cookie|signed_url|download_url)($|_)")
+SECRET_KEY = re.compile(r"(?i)(^|_)(authorization|password|passwd|token|secret|secrets|cookie|credentials|credential|api_key|access_key|private_key|signed_url|download_url)($|_)")
 SECRET_TEXT = re.compile(r"(?i)(https?://|github_pat_|gh[pousr]_[A-Za-z0-9]|bearer\s|password=|token=)")
 
 def safe_values(value):
@@ -412,9 +427,55 @@ def safe_values(value):
         else:
             schema(item is None or type(item) in (int, bool), "SCHEMA_VALUE_TYPE")
 
+def known_nested_fields(value):
+    resources = {"AS","NOFILE","NPROC","FSIZE","CORE"}
+    for field in ("worker_limits","supervisor_limits","effective_limits"):
+        if field in value:
+            rows = value[field]
+            schema(type(rows) is dict and set(rows) <= resources, "SCHEMA_LIMITS")
+            for row in rows.values():
+                schema(type(row) is dict and set(row) == {
+                    "inherited_soft","inherited_hard","requested","soft","hard"} and
+                    all(type(number) is int for number in row.values()), "SCHEMA_LIMITS")
+    if "requested_limits" in value:
+        rows = value["requested_limits"]
+        schema(type(rows) is dict and set(rows) <= resources and
+               all(type(number) is int for number in rows.values()), "SCHEMA_LIMITS")
+    for field in ("tool_inventory_before","tool_inventory_after"):
+        if field in value:
+            ref = value[field]
+            schema(type(ref) is dict and set(ref) == {"path","bytes","sha256"} and
+                   type(ref["path"]) is str and INVENTORY.fullmatch(ref["path"]) is not None and
+                   integer(ref["bytes"]) and type(ref["sha256"]) is str and
+                   HEX64.fullmatch(ref["sha256"]) is not None, "SCHEMA_INVENTORY_REFERENCE")
+    for field in ("stdout","stderr"):
+        if field in value and value[field] is not None:
+            ref = value[field]
+            schema(type(ref) is dict and set(ref) == {"bytes","sha256"} and
+                   integer(ref["bytes"]) and type(ref["sha256"]) is str and
+                   HEX64.fullmatch(ref["sha256"]) is not None, "SCHEMA_LOG_IDENTITY")
+    failure = value.get("first_failure")
+    if failure is not None:
+        schema(type(failure) is dict and set(failure) <= {
+            "stage","type","reason","build_flags","generated","tool_lookup"}, "SCHEMA_FAILURE")
+    if "free_space" in value:
+        free = value["free_space"]
+        schema(type(free) is dict and set(free) == {"minimum","observed","reservation"} and
+               integer(free["minimum"]) and integer(free["observed"]) and free["reservation"] is False,
+               "SCHEMA_FREE_SPACE")
+    if "scientific" in value and value["scientific"] is not None:
+        item = value["scientific"]
+        schema(type(item) is dict and set(item) == {"frames","form","files"} and
+               integer(item["frames"],529,629) and item["form"] in (
+               "baseline-plain","baseline-observed","candidate-plain","candidate-observed") and
+               type(item["files"]) is list and all(type(path) is str and
+               path.startswith("/tmp/ap-dualmic-d8/result/scratch/current/") for path in item["files"]),
+               "SCHEMA_SCIENTIFIC")
+
 def receipt_schema(value, kind, name):
     schema(type(value) is dict and set(value) <= KEYS[kind], "SCHEMA_TOP_LEVEL")
     safe_values(value)
+    known_nested_fields(value)
     schema(type(value.get("status")) is str, "SCHEMA_STATUS")
     if kind == "phase":
         expected = name[len("result/"):-len("-phase.json")]

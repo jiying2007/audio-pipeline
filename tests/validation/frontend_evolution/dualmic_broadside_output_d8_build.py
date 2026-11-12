@@ -198,18 +198,154 @@ def directories(names):
             p = p.parent
     return result
 
-def inventory(root):
+INVENTORY_DEPTH_LIMIT = 48
+INVENTORY_STAT_FIELDS = ("dev", "ino", "mode", "nlink", "size", "mtime_ns", "ctime_ns")
+
+def check_inventory_depth(depth):
+    need(type(depth) is int and 1 <= depth <= INVENTORY_DEPTH_LIMIT, "D8_INVENTORY_DEPTH")
+    return True
+
+def check_inventory_kind(mode, nlink, *, single_link=False):
+    need(type(mode) is int and type(nlink) is int and nlink >= 0 and
+         type(single_link) is bool, "D8_REGULAR_FILE")
+    need(not stat.S_ISLNK(mode), "D8_OUTPUT_SYMLINK")
+    if stat.S_ISDIR(mode):
+        return "directory"
+    need(stat.S_ISREG(mode) and (not single_link or nlink == 1), "D8_REGULAR_FILE")
+    return "file"
+
+def inventory_stat(value):
+    return {key: getattr(value, "st_" + key) for key in INVENTORY_STAT_FIELDS}
+
+def check_inventory_identity(before, opened, after, named, bytes_read=None):
+    records = (before, opened, after, named)
+    need(all(type(row) is dict and set(row) == set(INVENTORY_STAT_FIELDS) and
+             all(type(row[key]) is int for key in INVENTORY_STAT_FIELDS) for row in records) and
+         before == opened == after == named and before["size"] >= 0,
+         "D8_INVENTORY_CHANGED")
+    if bytes_read is not None:
+        need(type(bytes_read) is int and bytes_read == before["size"], "D8_INVENTORY_CHANGED")
+    return True
+
+def _inventory_binding(value):
+    # An ancestor may have unrelated siblings changed by the hosted runner.
+    return value.st_dev, value.st_ino, stat.S_IFMT(value.st_mode)
+
+@contextlib.contextmanager
+def _inventory_root(root):
+    root = Path(root).absolute()
+    need(root == root.resolve(strict=True), "D8_OUTPUT_SYMLINK")
+    check_inventory_depth(len(root.parts))  # includes the '/' directory fd
+    flags = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW | os.O_CLOEXEC
+    fds, bindings = [], []
+    try:
+        parent = os.open("/", flags)
+        fds.append(parent)
+        for depth, name in enumerate(root.parts[1:], 2):
+            job_remaining()
+            check_inventory_depth(depth)  # before opening another descriptor
+            before = os.stat(name, dir_fd=parent, follow_symlinks=False)
+            need(check_inventory_kind(before.st_mode, before.st_nlink) == "directory",
+                 "D8_REGULAR_FILE")
+            child = os.open(name, flags, dir_fd=parent)
+            fds.append(child)
+            opened = os.fstat(child)
+            need(_inventory_binding(before) == _inventory_binding(opened), "D8_INVENTORY_CHANGED")
+            bindings.append((parent, name, _inventory_binding(opened)))
+            parent = child
+        yield root, parent, len(root.parts)
+        for parent, name, expected in reversed(bindings):
+            job_remaining()
+            need(_inventory_binding(os.stat(name, dir_fd=parent, follow_symlinks=False)) == expected,
+                 "D8_INVENTORY_CHANGED")
+    finally:
+        for fd in reversed(fds):
+            os.close(fd)
+
+def walk_inventory(root, *, hash_files=True, single_link=False):
+    """Fresh measurements, not a cache or an adversarial atomic snapshot.
+
+    Hash mode opens each regular file and validates the named/opened/after
+    identity and actual read count. Metadata mode preserves the budget's one
+    no-follow stat per regular file; it does not open or hash regular files.
+    Both modes use validated directory fds and reject changed directory bindings.
+    """
+    need(type(hash_files) is bool and type(single_link) is bool, "D8_INVENTORY_MODE")
     files, dirs = {}, []
-    need(root.is_dir() and not root.is_symlink(), "D8_OUTPUT_SYMLINK")
-    for p in sorted(root.rglob("*")):
-        need(not p.is_symlink(), "D8_OUTPUT_SYMLINK")
-        name = p.relative_to(root).as_posix()
-        if p.is_dir():
-            dirs.append(name)
-        else:
-            need(p.is_file(), "D8_REGULAR_FILE")
-            files[name] = desc(p)
-    return {"files": files, "directories": dirs}
+    directory_flags = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW | os.O_CLOEXEC
+
+    def visit(fd, prefix, depth):
+        job_remaining()
+        check_inventory_depth(depth)
+        initial = inventory_stat(os.fstat(fd))
+        need(check_inventory_kind(initial["mode"], initial["nlink"]) == "directory",
+             "D8_REGULAR_FILE")
+        # scandir(fd) owns a temporary duplicate. Close it before descending.
+        with os.scandir(fd) as entries:
+            names = sorted(entry.name for entry in entries)
+        need(len(names) == len(set(names)), "D8_INVENTORY_CHANGED")
+        for name in names:
+            job_remaining()
+            need(name not in ("", ".", "..") and "/" not in name, "D8_INVENTORY_CHANGED")
+            relative = name if not prefix else prefix + "/" + name
+            observed = os.stat(name, dir_fd=fd, follow_symlinks=False)
+            before = inventory_stat(observed)
+            kind = check_inventory_kind(observed.st_mode, observed.st_nlink, single_link=single_link)
+            if kind == "directory":
+                check_inventory_depth(depth + 1)
+                child = os.open(name, directory_flags, dir_fd=fd)
+                try:
+                    opened = inventory_stat(os.fstat(child))
+                    check_inventory_identity(before, opened, opened, before)
+                    dirs.append(relative)
+                    visit(child, relative, depth + 1)
+                    check_inventory_identity(before, opened, inventory_stat(os.fstat(child)),
+                        inventory_stat(os.stat(name, dir_fd=fd, follow_symlinks=False)))
+                finally:
+                    os.close(child)
+            elif hash_files:
+                # O_NONBLOCK makes a raced FIFO replacement fail type checking
+                # rather than blocking in open(). It has no effect on a regular file.
+                handle = os.open(name, os.O_RDONLY | os.O_NOFOLLOW | os.O_CLOEXEC | os.O_NONBLOCK,
+                                 dir_fd=fd)
+                try:
+                    opened = inventory_stat(os.fstat(handle))
+                    check_inventory_kind(opened["mode"], opened["nlink"], single_link=single_link)
+                    check_inventory_identity(before, opened, opened, before)
+                    digest_value, count = hashlib.sha256(), 0
+                    while True:
+                        job_remaining()
+                        data = os.read(handle, 1024 * 1024)
+                        if not data:
+                            break
+                        count += len(data)
+                        need(count <= before["size"], "D8_INVENTORY_CHANGED")
+                        digest_value.update(data)
+                    check_inventory_identity(before, opened, inventory_stat(os.fstat(handle)),
+                        inventory_stat(os.stat(name, dir_fd=fd, follow_symlinks=False)), count)
+                    files[relative] = {"bytes": count, "sha256": digest_value.hexdigest()}
+                finally:
+                    os.close(handle)
+            else:
+                files[relative] = {"bytes": before["size"]}
+        # Directory mutation changes its membership metadata. This cannot make
+        # concurrent adversarial writes into an atomic filesystem snapshot.
+        final = inventory_stat(os.fstat(fd))
+        check_inventory_identity(initial, initial, final, final)
+
+    try:
+        with _inventory_root(root) as (absolute, fd, depth):
+            visit(fd, "", depth)
+        order = lambda name: PurePosixPath(name).parts
+        return {"files": {name: files[name] for name in sorted(files, key=order)},
+                "directories": sorted(dirs, key=order)}
+    except OSError as error:
+        if error.errno in (errno.ENOENT, errno.ENOTDIR, errno.ELOOP, errno.ESTALE):
+            raise ValueError("D8_INVENTORY_CHANGED") from None
+        raise
+
+def inventory(root):
+    return walk_inventory(root)
 
 def check_closure_record(actual, files, reason, limit=SOURCE_LIMIT):
     need(set(actual) == {"files", "directories"} and set(actual["files"]) == set(files) and
@@ -312,7 +448,71 @@ def check_inventory_reference(value):
          "D8_TOOL_POSTHOC_BYTES")
     return actual
 
+# Offsets share the Phase.run-entry origin. Samples occur after, in order:
+# argument/environment checks + environment mkdir + fresh pre-tool inventory;
+# free-space/scientific/argv checks; COMMAND_BEGIN ACK; pending receipt write;
+# log reservation/open + pipe setup (immediately before Popen); Popen/rlimits +
+# child wait/pipe drain; log close + reservation-exit accounting; quiescent ACK;
+# fresh post-tool inventory; inventory reference + scientific/budget/log checks.
+# The final receipt/phase writes, stdout-return read and END ACK stay under the
+# existing deadline but cannot be self-measured by this terminal payload.
+SUBTIMING_STAGES = ("preparation_inventory", "prelease_validation", "begin_ack",
+    "pending_receipt", "child_setup", "child_and_pipe_drain", "child_accounting",
+    "quiescent_ack", "after_inventory", "postchild_accounting")
+SUBTIMING_SCOPE = ("cumulative wall seconds from Phase.run entry; final capture excludes "
+    "terminal/phase receipt writes, stdout-return read and COMMAND_END ACK; "
+    "stages are composite, not pure DSP")
+SUBTIMING_LIMIT = 2048
+
+def _finite_number(value):
+    if type(value) not in (int, float):
+        return False
+    try:
+        return math.isfinite(value)
+    except OverflowError:
+        return False
+
+def new_subtimings(now):
+    need(_finite_number(now) and now >= 0, "D8_COMMAND_TIMINGS")
+    return {"version": 1, "clock": "monotonic", "scope": SUBTIMING_SCOPE,
+            "origin": now, "offsets": dict.fromkeys(SUBTIMING_STAGES)}
+
+def mark_subtiming(value, stage, now):
+    need(type(value) is dict and type(value.get("offsets")) is dict and
+         set(value["offsets"]) == set(SUBTIMING_STAGES) and
+         _finite_number(value.get("origin")) and _finite_number(now), "D8_COMMAND_TIMINGS")
+    offsets = value["offsets"]
+    unfilled = [name for name in SUBTIMING_STAGES if offsets[name] is None]
+    need(unfilled and stage == unfilled[0], "D8_COMMAND_TIMINGS")
+    elapsed = now - value["origin"]
+    previous = [offsets[name] for name in SUBTIMING_STAGES if offsets[name] is not None]
+    need(0 <= elapsed <= 300 and (not previous or elapsed >= previous[-1]), "D8_COMMAND_TIMINGS")
+    offsets[stage] = elapsed
+    return value
+
+def check_subtimings(value, *, lifecycle="TERMINAL", status="PASS"):
+    reason = "D8_COMMAND_TIMINGS"
+    need(type(value) is dict and set(value) == {"version", "clock", "scope", "origin", "offsets"} and
+         type(value["version"]) is int and value["version"] == 1 and value["clock"] == "monotonic" and
+         value["scope"] == SUBTIMING_SCOPE and _finite_number(value["origin"]) and value["origin"] >= 0 and
+         type(value["offsets"]) is dict and set(value["offsets"]) == set(SUBTIMING_STAGES), reason)
+    need((lifecycle, status) in (("PENDING", "FAIL"), ("TERMINAL", "FAIL"), ("TERMINAL", "PASS")), reason)
+    count, previous, empty = 0, 0.0, False
+    for name in SUBTIMING_STAGES:
+        item = value["offsets"][name]
+        if item is None:
+            empty = True
+        else:
+            need(not empty and _finite_number(item) and previous <= item <= 300, reason)
+            count += 1
+            previous = item
+    need((count == 3 if lifecycle == "PENDING" else count == 10 if status == "PASS" else count >= 3), reason)
+    raw = json.dumps(value, sort_keys=True, separators=(",", ":"), allow_nan=False).encode()
+    need(len(raw) <= SUBTIMING_LIMIT, reason)
+    return value
+
 def command_dump(path, receipt, *, replace=False):
+    check_subtimings(receipt["subtimings"], lifecycle=receipt["lifecycle"], status=receipt["status"])
     raw = (json.dumps(receipt, sort_keys=True, indent=2, allow_nan=False)+"\n").encode()
     if receipt.get("scientific") is not None:
         need(len(raw) <= 65536, "D8_SCIENTIFIC_RECEIPT_BOUND")
@@ -331,43 +531,47 @@ def category(path):
         need(not parent.is_symlink(), "D8_OUTPUT_SYMLINK")
     return _category_name(name)
 
+# Static contract names only. No measured sizes, identities or hashes are cached.
+CASE_PREFIXES = frozenset("cases/" + key + "/" for key in CASE_KEYS)
+need(len(CASE_PREFIXES) == len(CASE_KEYS) == 60 and
+     all(len(key.split("/")) == 2 and key.split("/")[0] in ("A", "C") and
+         all(part not in ("", ".", "..") for part in key.split("/")) for key in CASE_KEYS),
+     "D8_CASE_PATH")
+CASE_TAIL_CATEGORIES = {
+    **{"shared/" + lane + ".f32le": "shared_hpf" for lane in
+       ("hpf_input_l", "hpf_input_r", "hpf_output_l", "hpf_output_r")},
+    **{"candidate/" + lane + ".f32le": "candidate_unique_signals" for lane in
+       ("bf_output", "reference", "echo", "aec_residual", "ns_output", "agc_output")},
+    **{arm + "/state.bin": "paired_hpf_bf_state" for arm in ("baseline", "candidate")},
+    **{arm + "/agc-state.bin": "paired_agc_state" for arm in ("baseline", "candidate")},
+    "candidate/out.pcm": "candidate_s16",
+    "candidate/metrics.jsonl": "candidate_metrics_including_newlines",
+    "candidate/control.csv": "candidate_control_including_headers_newlines",
+    "retention.json": "all_reports_receipts_logs_negatives_seals_completion",
+    **{"receipts/" + arm + "-" + observer + "-observer.json":
+       "all_reports_receipts_logs_negatives_seals_completion"
+       for arm in ("baseline", "candidate") for observer in ("d1", "upstream")},
+}
+REPORT_NAMES = frozenset({"input-binding.json", "run-index.json", "report.json", "seal.json",
+    "readback.json", "negative-tests.json", "summary.json", "completion.json",
+    "first-failure.json"} | {phase + "-phase.json" for phase in PHASES})
+REPORT_ROOTS = frozenset({phase + "-logs" for phase in PHASES} | {"negatives"})
+
 def _category_name(name):
-    """Pure classifier, only after a target or complete no-follow walk is checked."""
+    """Pure exact-name classifier after target or no-follow walk validation."""
     parts = PurePosixPath(name).parts
+    need(bool(parts), "D8_UNREGISTERED_FILE")
     if parts[0] == "build":
         return "all_source_archive_derived_build_provenance"
     if len(parts) >= 3 and parts[:2] == ("scratch", "current"):
         return "all_current_case_transient_and_failure_prefix"
     if len(parts) >= 4 and parts[0] == "cases":
-        matches = [key for key in CASE_KEYS if name.startswith("cases/" + key + "/")]
-        need(len(matches) == 1, "D8_CASE_PATH")
-        tail = name[len("cases/" + matches[0] + "/"):]
-        if tail in {"shared/" + s + ".f32le" for s in
-                    ("hpf_input_l", "hpf_input_r", "hpf_output_l", "hpf_output_r")}:
-            return "shared_hpf"
-        if tail in {"candidate/" + s + ".f32le" for s in
-                    ("bf_output", "reference", "echo", "aec_residual", "ns_output", "agc_output")}:
-            return "candidate_unique_signals"
-        if tail in ("baseline/state.bin", "candidate/state.bin"):
-            return "paired_hpf_bf_state"
-        if tail in ("baseline/agc-state.bin", "candidate/agc-state.bin"):
-            return "paired_agc_state"
-        if tail == "candidate/out.pcm":
-            return "candidate_s16"
-        if tail == "candidate/metrics.jsonl":
-            return "candidate_metrics_including_newlines"
-        if tail == "candidate/control.csv":
-            return "candidate_control_including_headers_newlines"
-        if tail == "retention.json" or tail in {
-                "receipts/" + arm + "-" + observer + "-observer.json"
-                for arm in ("baseline", "candidate") for observer in ("d1", "upstream")}:
-            return "all_reports_receipts_logs_negatives_seals_completion"
-        raise ValueError("D8_UNREGISTERED_FILE")
-    reports = {"input-binding.json", "run-index.json", "report.json", "seal.json",
-               "readback.json", "negative-tests.json", "summary.json", "completion.json",
-               "first-failure.json"}
-    if name in reports or name in {p + "-phase.json" for p in PHASES} or \
-            parts[0] in {p + "-logs" for p in PHASES} or parts[0] == "negatives":
+        prefix = "/".join(parts[:3]) + "/"
+        need(prefix in CASE_PREFIXES and name.startswith(prefix), "D8_CASE_PATH")
+        tail = name[len(prefix):]
+        need(tail in CASE_TAIL_CATEGORIES, "D8_UNREGISTERED_FILE")
+        return CASE_TAIL_CATEGORIES[tail]
+    if name in REPORT_NAMES or parts[0] in REPORT_ROOTS:
         return "all_reports_receipts_logs_negatives_seals_completion"
     raise ValueError("D8_UNREGISTERED_FILE")
 
@@ -382,6 +586,7 @@ class ByteBudget:
     def __init__(self, root):
         need(Path(root) == OUTPUT, "D8_BUDGET_ROOT")
         self.root = Path(root)
+        self.prefix = str(self.root) + "/"
         self.reservations = {}
         self.next_token = 0
         self.case_state = None
@@ -391,30 +596,22 @@ class ByteBudget:
     def measured(self):
         totals = dict.fromkeys(CAPS, 0)
         files = {}
-        if self.root.exists():
-            need(self.root.resolve(strict=True) == self.root and
-                 self.root.is_dir() and not self.root.is_symlink(), "D8_OUTPUT_SYMLINK")
-            pending = [self.root]
-            while pending:
-                job_remaining()
-                directory = pending.pop()
-                # Resolve the root/ancestor chain once, then classify every
-                # descendant by its own lstat without following symlinks.
-                with os.scandir(directory) as entries:
-                    for entry in entries:
-                        info = entry.stat(follow_symlinks=False)
-                        need(not stat.S_ISLNK(info.st_mode), "D8_OUTPUT_SYMLINK")
-                        path = Path(entry.path)
-                        if stat.S_ISDIR(info.st_mode):
-                            pending.append(path)
-                            continue
-                        need(stat.S_ISREG(info.st_mode) and info.st_nlink == 1, "D8_REGULAR_FILE")
-                        size = info.st_size
-                        files[str(path)] = size
-                        totals[_category_name(path.relative_to(self.root).as_posix())] += size
-                        if path == self.root / "build/exact-source.tar":
-                            need(size <= SOURCE_LIMIT, "D8_SOURCE_ARCHIVE_BOUND")
+        if self.root.exists() or self.root.is_symlink():
+            actual = walk_inventory(self.root, hash_files=False, single_link=True)
+            for name, descriptor in actual["files"].items():
+                size = descriptor["bytes"]
+                files[self.prefix + name] = size
+                totals[_category_name(name)] += size
+                if name == "build/exact-source.tar":
+                    need(size <= SOURCE_LIMIT, "D8_SOURCE_ARCHIVE_BOUND")
         return totals, files
+
+    def _relative_name(self, path):
+        # All callers supply a fresh measured path or an already validated
+        # retirement destination. Still reject a lookalike root boundary.
+        need(type(path) is str and path.startswith(self.prefix) and len(path) > len(self.prefix),
+             "D8_WRITE_ESCAPE")
+        return path[len(self.prefix):]
 
     def check(self):
         job_remaining()
@@ -437,7 +634,7 @@ class ByteBudget:
             state = self.case_state
             ancillary = sum(max(0, size - state["initial"].get(path, 0)) for path, size in files.items()
                             if path not in state["scientific"] and
-                            _category_name(Path(path).relative_to(self.root).as_posix()) in (
+                            _category_name(self._relative_name(path)) in (
                             "all_current_case_transient_and_failure_prefix",
                             "all_reports_receipts_logs_negatives_seals_completion"))
             for path, maximum in planned.items():
@@ -879,6 +1076,8 @@ class Phase:
 
     def run(self, label, argv, *, cwd=ROOT, env=None, scientific=None,
             stdout_limit=1048576, stderr_limit=1048576):
+        timings = new_subtimings(time.monotonic())
+        mark = lambda stage: mark_subtiming(timings, stage, time.monotonic())
         need(ACTIVE_PHASE is self and not FINISHED, "D8_COMMAND_STATE")
         need(budget().retiring is None, "D8_RETIREMENT_WRITE")
         need(isinstance(argv, list) and all(type(x) is str for x in argv), "D8_ARGV_SCHEMA")
@@ -891,9 +1090,9 @@ class Phase:
                                    int(effective_env["AP_D8_EXPECTED_FRAMES"]) if
                                    "AP_D8_EXPECTED_FRAMES" in effective_env else None)
         need(effective_env == expected_env, "D8_EXECUTION_ENVIRONMENT")
-        prepare_tool_environment()
+        before_tool = prepare_tool_environment()
+        mark("preparation_inventory")
         free = free_space()
-        before_tool = tool_inventory()
         expected_files = None
         limits = dict(supervision.TOOL_LIMITS)
         if scientific is not None:
@@ -917,8 +1116,10 @@ class Phase:
         prefix = self.logs / label
         stdout, stderr = Path(str(prefix) + ".stdout"), Path(str(prefix) + ".stderr")
         receipt_path = Path(str(prefix) + ".command.json")
+        mark("prelease_validation")
         lease = CLIENT.ask("COMMAND_BEGIN", label=label)
         begin = time.monotonic()
+        mark_subtiming(timings, "begin_ack", begin)
         receipt = {"argv": argv, "cwd": str(cwd), "timeout_seconds": lease["command_deadline"] - begin,
                    "deadline": lease["command_deadline"], "phase_deadline": lease["phase_deadline"],
                    "root_deadline": lease["root_deadline"], "status": "FAIL", "returncode": None,
@@ -927,9 +1128,10 @@ class Phase:
                    "requested_limits": limits, "scientific": None if scientific is None else {
                        **scientific, "files": sorted(map(str, expected_files))},
                    "free_space": free, "worker_pgid": os.getpgrp(),
-                   "tool_inventory_before": inventory_reference(before_tool)}
+                   "tool_inventory_before": inventory_reference(before_tool), "subtimings": timings}
         self.report["commands"].append(receipt_path.relative_to(self.root).as_posix())
         command_dump(receipt_path, receipt)
+        mark("pending_receipt")
         process = None
         limit_read = limit_write = None
         try:
@@ -944,6 +1146,7 @@ class Phase:
                         need(len(raw) <= 4096 and os.write(limit_write, raw) == len(raw), "D8_RLIMIT_PIPE")
                         os.close(limit_write)
                     self.remaining()
+                    mark("child_setup")
                     process = subprocess.Popen(argv, cwd=cwd, env=effective_env,
                         stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=True,
                         pass_fds=(limit_write,), preexec_fn=child_limits)
@@ -975,9 +1178,13 @@ class Phase:
                                 need(state["file"].write(block) == len(block), "D8_SHORT_WRITE")
                                 state["written"] += len(block)
                         receipt["returncode"] = process.wait()
+                        mark("child_and_pipe_drain")
+            mark("child_accounting")
             need(receipt["returncode"] == 0, "D8_COMMAND_EXIT")
             CLIENT.ask("COMMAND_QUIESCENT", label=label)
+            mark("quiescent_ack")
             after_tool = tool_inventory()
+            mark("after_inventory")
             receipt["tool_inventory_after"] = inventory_reference(after_tool)
             if expected_files is not None:
                 scratch = OUTPUT / "scratch/current"
@@ -987,8 +1194,9 @@ class Phase:
                      "D8_SCIENTIFIC_FILE_SET")
                 need(before_tool == after_tool, "D8_SCIENTIFIC_TOOL_WRITE")
             budget().check()
-            receipt.update(status="PASS", lifecycle="TERMINAL", elapsed_seconds=time.monotonic()-begin,
-                           stdout=desc(stdout), stderr=desc(stderr))
+            receipt.update(stdout=desc(stdout), stderr=desc(stderr))
+            mark("postchild_accounting")
+            receipt.update(status="PASS", lifecycle="TERMINAL", elapsed_seconds=time.monotonic()-begin)
             command_dump(receipt_path, receipt, replace=True)
             dump(self.path, self.report, replace=True)
             self.remaining()
@@ -1231,6 +1439,12 @@ def check_command_record(receipt, argv=None):
          receipt["returncode"] == 0 and receipt["timed_out"] is False
          and 0 < receipt["timeout_seconds"] <= 30 and 0 <= receipt["elapsed_seconds"] <= 30,
          "D8_FAILED_COMMAND")
+    timing = check_subtimings(receipt["subtimings"])
+    offsets = timing["offsets"]
+    need(abs(timing["origin"] + offsets["begin_ack"] -
+             (receipt["deadline"] - receipt["timeout_seconds"])) <= 0.000001 and
+         offsets["postchild_accounting"] - offsets["begin_ack"] <= receipt["elapsed_seconds"] + 0.000001,
+         "D8_COMMAND_TIMINGS")
     if argv is not None:
         need(receipt["argv"] == argv, "D8_ARGV")
     expected = environment(receipt["environment"].get("AP_D1_STAGE_DIR"),

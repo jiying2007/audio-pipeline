@@ -27,14 +27,20 @@ cloned filesystem tree was traversed. Missing-finalization uses a current-
 inventory-backed pre-finalization template, never a claim of completed work.
 Synthetic threshold/projection controls and actual binary evidence are counted
 separately. No actual adverse-window result is invented if none exists.
+Additional performance engineering controls use only tiny owned regular files
+and directories. Dangerous file kinds, identity races, depth bounds and live
+marker clocks are explicitly synthetic vectors against production predicates.
+No malformed filesystem primitives or extra processes are created.
 """
 from __future__ import annotations
 
+import ast
 import copy
 import hashlib
 import json
 import math
 from pathlib import Path
+import stat
 import struct
 import time
 
@@ -1245,9 +1251,746 @@ def engineering_tool_lookup(phase):
     phase.remaining()
     return result
 
+
+def _replace_engineering_fixture(path, raw):
+    """Bounded in-place regular-file mutation; old bytes have a retained witness."""
+    global _written
+    relative = path.relative_to(b.OUTPUT).as_posix()
+    b.need(relative.startswith("negatives/engineering-inventory/") and
+           relative in _fixture_files, "D8_TEST_FIXTURE_PATH")
+    previous = _fixture_files[relative]
+    b.need(b.desc(path) == previous and isinstance(raw, bytes) and
+           previous["bytes"] <= len(raw) <= FIXTURE_BYTES, "D8_TEST_FIXTURE_BYTES")
+    growth = len(raw) - previous["bytes"]
+    b.need(_written + growth <= FIXTURE_TOTAL_BYTES, "D8_TEST_FIXTURE_TOTAL")
+    _written += growth  # Include any attempted growth if the bounded write fails.
+    b.bounded_write(path, raw, replace=True)
+    _fixture_files[relative] = b.desc(path)
+    return _fixture_files[relative]
+
+
+def _move_engineering_fixture(source, destination, phase):
+    """No-copy owned regular-file rename, with exact retained-map reconciliation."""
+    old, new = (p.relative_to(b.OUTPUT).as_posix() for p in (source, destination))
+    prefix = "negatives/engineering-inventory/"
+    b.need(old.startswith(prefix) and new.startswith(prefix) and
+           old in _fixture_files and new not in _fixture_files and
+           not destination.exists(), "D8_TEST_FIXTURE_PATH")
+    identity = _fixture_files[old]
+    b.need(b.desc(source) == identity, "D8_TEST_FIXTURE_READBACK")
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    b.budget().transfer(source, destination, identity["bytes"])
+    phase.remaining()
+    source.rename(destination)  # Same owned tree; no copy fallback.
+    del _fixture_files[old]
+    _fixture_files[new] = identity
+    b.need(b.desc(destination) == identity and not source.exists(),
+           "D8_TEST_FIXTURE_READBACK")
+    b.budget().check()
+
+
+def engineering_inventory(phase):
+    """Actual tiny valid trees; dangerous kinds/races are separate pure controls."""
+    root = b.OUTPUT / "negatives" / "engineering-inventory"
+    root.mkdir()
+    tree = root / "tree"
+    pristine_bytes = {"z.bin": b"ABCD", "a-early/leaf.bin": b"order-dir",
+                      "a/nested.bin": b"nested", "m.bin": b"middle",
+                      "a-early.bin": b"order-file", "a/child/deep.bin": b"deep"}
+    for name, raw in pristine_bytes.items():  # Deliberately not lexical order.
+        _store(tree / name, raw)
+        _store(root / "original-bytes" / name, raw)
+    records = []
+
+    def snapshot(label):
+        phase.remaining()
+        actual = b.inventory(tree)
+        metadata = b.walk_inventory(tree, hash_files=False, single_link=True)
+        expected = {name: value for name, value in _fixture_files.items()
+                    if name.startswith(tree.relative_to(b.OUTPUT).as_posix() + "/")}
+        expected = {name.removeprefix(tree.relative_to(b.OUTPUT).as_posix() + "/"): value
+                    for name, value in expected.items()}
+        order = sorted(expected, key=lambda name: Path(name).parts)
+        dirs = sorted(b.directories(expected), key=lambda name: Path(name).parts)
+        b.need(set(actual) == {"files", "directories"} and actual["files"] == expected and
+               list(actual["files"]) == order and actual["directories"] == dirs and
+               metadata == {"files": {name: {"bytes": expected[name]["bytes"]} for name in order},
+                            "directories": dirs}, "D8_ENGINEERING_INVENTORY")
+        path = root / "snapshots" / (label + ".json")
+        identity = _store(path, encode(actual))
+        b.need(_json(path.read_bytes()) == actual, "D8_TEST_FIXTURE_READBACK")
+        return actual, {"path": path.relative_to(b.OUTPUT).as_posix(), **identity}
+
+    before, initial = snapshot("initial")
+    b.need(before["files"] == {name: {"bytes": len(raw),
+           "sha256": hashlib.sha256(raw).hexdigest()} for name, raw in pristine_bytes.items()},
+           "D8_ENGINEERING_INVENTORY")
+    source = tree / "z.bin"
+    original_inode = (source.stat().st_dev, source.stat().st_ino)
+    _store(root / "mutation-bytes/same-size.bin", b"WXYZ")
+    _replace_engineering_fixture(source, b"WXYZ")
+    after, witness = snapshot("same-size-byte-change")
+    b.need(after["files"]["z.bin"]["bytes"] == before["files"]["z.bin"]["bytes"] and
+           after["files"]["z.bin"]["sha256"] != before["files"]["z.bin"]["sha256"] and
+           (source.stat().st_dev, source.stat().st_ino) == original_inode,
+           "D8_ENGINEERING_INVENTORY_FRESH")
+    records.append({"label": "same-inode-same-size-bytes", "before": initial, "after": witness,
+                    "fresh_difference_detected": True})
+    previous, previous_witness = after, witness
+    _replace_engineering_fixture(source, b"WXYZ+")
+    after, witness = snapshot("size-change")
+    b.need(after["files"]["z.bin"]["bytes"] == previous["files"]["z.bin"]["bytes"] + 1 and
+           after["files"]["z.bin"]["sha256"] != previous["files"]["z.bin"]["sha256"],
+           "D8_ENGINEERING_INVENTORY_FRESH")
+    records.append({"label": "size-and-hash", "before": previous_witness, "after": witness,
+                    "fresh_difference_detected": True})
+
+    def stale_closure(label, expected, pristine_witness):
+        outcome = _expect_reason(label,
+            lambda: b.exact_closure(tree, expected["files"], "D8_OUTPUT_CLOSURE"),
+            phase, "D8_OUTPUT_CLOSURE")
+        changed, changed_witness = snapshot(label)
+        records.append({"label": label, "before": pristine_witness, "after": changed_witness,
+                        "pristine_closure_passed": True, **outcome})
+        return changed, changed_witness
+
+    b.exact_closure(tree, after["files"], "D8_OUTPUT_CLOSURE")
+    _move_engineering_fixture(tree / "a/nested.bin", tree / "a/renamed.bin", phase)
+    after, witness = stale_closure("renamed-file", after, witness)
+    b.exact_closure(tree, after["files"], "D8_OUTPUT_CLOSURE")
+    _move_engineering_fixture(tree / "m.bin", root / "archive/m.bin", phase)
+    _store(tree / "m.bin/child.bin", b"child")
+    after, witness = stale_closure("file-to-directory", after, witness)
+    b.exact_closure(tree, after["files"], "D8_OUTPUT_CLOSURE")
+    empty = tree / "new-directory"
+    phase.remaining()
+    empty.mkdir()
+    outcome = _expect_reason("new-empty-directory",
+        lambda: b.exact_closure(tree, after["files"], "D8_OUTPUT_CLOSURE"),
+        phase, "D8_OUTPUT_CLOSURE")
+    empty_snapshot = b.inventory(tree)
+    b.need(empty_snapshot["files"] == after["files"] and
+           set(empty_snapshot["directories"]) == set(after["directories"]) | {"new-directory"},
+           "D8_ENGINEERING_INVENTORY_FRESH")
+    empty_path = root / "snapshots/new-empty-directory.json"
+    empty_identity = _store(empty_path, encode(empty_snapshot))
+    # Keep the directory and add a retained leaf after its exact rejection.
+    # No invalid primitive is created, removed, or hidden from final closure.
+    _store(empty / "retained.bin", b"retained")
+    final, final_witness = snapshot("final")
+    records.append({"label": "new-empty-directory", "before": witness,
+                    "mutant": {"path": empty_path.relative_to(b.OUTPUT).as_posix(), **empty_identity},
+                    "final": final_witness, "pristine_closure_passed": True, **outcome})
+    b.exact_closure(tree, final["files"], "D8_OUTPUT_CLOSURE")
+    result = {"status": "PASS", "scope": "actual fresh bounded regular-file and directory inventories",
+              "controls": len(records), "records": records,
+              "hashed_and_metadata_only_schema_checked": True,
+              "actual_symlink_hardlink_or_special_created": False,
+              "concurrent_race_or_OS_containment_claimed": False,
+              "changed_regular_files_are_valid_inputs_not_rejection_claims": True}
+    _store(root / "receipt.json", encode(result))
+    return result
+
+
+
+def engineering_inventory_validators(phase):
+    """Persisted synthetic stat/depth drift, never malformed filesystem objects."""
+    root = b.OUTPUT / "negatives" / "engineering-inventory-validators"
+    root.mkdir()
+    kinds = [
+        {"label": "regular", "mode": stat.S_IFREG | 0o600, "nlink": 1,
+         "single_link": False, "expected": "file"},
+        {"label": "regular-budget", "mode": stat.S_IFREG | 0o600, "nlink": 1,
+         "single_link": True, "expected": "file"},
+        {"label": "generic-hardlink-preserved", "mode": stat.S_IFREG | 0o600, "nlink": 2,
+         "single_link": False, "expected": "file"},
+        {"label": "budget-hardlink-rejected", "mode": stat.S_IFREG | 0o600, "nlink": 2,
+         "single_link": True, "reason": "D8_REGULAR_FILE"},
+        {"label": "directory", "mode": stat.S_IFDIR | 0o700, "nlink": 2,
+         "single_link": False, "expected": "directory"},
+        {"label": "directory-budget-links", "mode": stat.S_IFDIR | 0o700, "nlink": 2,
+         "single_link": True, "expected": "directory"},
+    ]
+    for label, mode, reason in (
+            ("symlink", stat.S_IFLNK | 0o777, "D8_OUTPUT_SYMLINK"),
+            ("fifo", stat.S_IFIFO | 0o600, "D8_REGULAR_FILE"),
+            ("socket", stat.S_IFSOCK | 0o600, "D8_REGULAR_FILE"),
+            ("character-device", stat.S_IFCHR | 0o600, "D8_REGULAR_FILE"),
+            ("block-device", stat.S_IFBLK | 0o600, "D8_REGULAR_FILE"),
+            ("no-file-kind", 0o600, "D8_REGULAR_FILE"),
+            ("boolean-mode", True, "D8_REGULAR_FILE"),
+            ("string-mode", "regular", "D8_REGULAR_FILE")):
+        kinds.append({"label": label, "mode": mode, "nlink": 1,
+                      "single_link": False, "reason": reason})
+    for label, links in (("boolean-links", True), ("float-links", 1.0), ("string-links", "1")):
+        kinds.append({"label": label, "mode": stat.S_IFREG | 0o600, "nlink": links,
+                      "single_link": False, "reason": "D8_REGULAR_FILE"})
+    depths = [{"depth": value, "accepted": accepted} for value, accepted in
+              ((1, True), (47, True), (48, True), (0, False), (-1, False),
+               (49, False), (True, False), (48.0, False), ("48", False), (None, False))]
+    stat_path = b.OUTPUT / "negatives/engineering-inventory/tree/z.bin"
+    info = stat_path.stat()
+    actual = b.inventory_stat(info)
+    expected = {"dev": info.st_dev, "ino": info.st_ino, "mode": info.st_mode,
+                "nlink": info.st_nlink, "size": info.st_size,
+                "mtime_ns": info.st_mtime_ns, "ctime_ns": info.st_ctime_ns}
+    b.need(actual == expected and all(type(value) is int for value in actual.values()),
+           "D8_ENGINEERING_INVENTORY_STAT")
+    pristine = {"before": actual, "opened": actual, "after": actual, "named": actual,
+                "bytes_read": actual["size"]}
+    mutations = []
+    for position in ("before", "opened", "after", "named"):
+        for field in ("dev", "ino", "mode", "nlink", "size", "mtime_ns", "ctime_ns"):
+            value = copy.deepcopy(pristine)
+            value[position][field] += 1
+            mutations.append({"label": position + "-" + field, "value": value})
+    for label, replacement in (("short-read", actual["size"] - 1),
+                                ("over-read", actual["size"] + 1),
+                                ("boolean-read", True), ("float-read", float(actual["size"]))):
+        value = copy.deepcopy(pristine)
+        value["bytes_read"] = replacement
+        mutations.append({"label": label, "value": value})
+    for label, position, operation in (("missing-field", "before", "missing"),
+                                       ("extra-field", "opened", "extra"),
+                                       ("boolean-field", "after", "boolean"),
+                                       ("float-field", "named", "float")):
+        value = copy.deepcopy(pristine)
+        if operation == "missing":
+            del value[position]["ino"]
+        elif operation == "extra":
+            value[position]["unexpected"] = 0
+        elif operation == "boolean":
+            value[position]["ino"] = True
+        else:
+            value[position]["ino"] = float(value[position]["ino"])
+        mutations.append({"label": label, "value": value})
+    value = copy.deepcopy(pristine)
+    for position in ("before", "opened", "after", "named"):
+        value[position]["size"] = -1
+    value["bytes_read"] = None
+    mutations.append({"label": "all-negative-size", "value": value})
+    matrix = {"scope": "synthetic metadata policies, not live filesystem races or links",
+              "kind": kinds, "depth": depths, "pristine": pristine, "identity_mutants": mutations}
+    path = root / "matrix.json"
+    identity = _store(path, encode(matrix))
+    saved = _json(path.read_bytes())
+    records = []
+    for vector in saved["kind"]:
+        action = lambda vector=vector: b.check_inventory_kind(
+            vector["mode"], vector["nlink"], single_link=vector["single_link"])
+        if "reason" in vector:
+            # Each policy rejects after the corresponding valid ordinary file passes.
+            b.need(b.check_inventory_kind(stat.S_IFREG | 0o600, 1,
+                   single_link=vector["single_link"]) == "file", "D8_ENGINEERING_INVENTORY_KIND")
+            outcome = _expect_reason(vector["label"], action, phase, vector["reason"])
+        else:
+            b.need(action() == vector["expected"], "D8_ENGINEERING_INVENTORY_KIND")
+            outcome = {"accepted": True}
+        records.append({"label": "kind-" + vector["label"], **outcome})
+    b.need(b.INVENTORY_DEPTH_LIMIT == 48, "D8_ENGINEERING_INVENTORY_DEPTH")
+    for vector in saved["depth"]:
+        action = lambda vector=vector: b.check_inventory_depth(vector["depth"])
+        b.check_inventory_depth(48)
+        if vector["accepted"]:
+            action()
+            outcome = {"accepted": True}
+        else:
+            outcome = _expect_reason("depth-" + str(vector["depth"]), action, phase,
+                                     "D8_INVENTORY_DEPTH")
+        records.append({"label": "depth-" + repr(vector["depth"]), **outcome})
+
+    def check(value):
+        return b.check_inventory_identity(value["before"], value["opened"], value["after"],
+                                          value["named"], value["bytes_read"])
+
+    check(saved["pristine"])
+    metadata_only = copy.deepcopy(saved["pristine"])
+    metadata_only["bytes_read"] = None
+    check(metadata_only)
+    for vector in saved["identity_mutants"]:
+        check(saved["pristine"])
+        outcome = _expect_reason(vector["label"], lambda vector=vector: check(vector["value"]),
+                                 phase, "D8_INVENTORY_CHANGED")
+        records.append({"label": "identity-" + vector["label"], **outcome})
+    # Directory inode replacement uses the same actual-call-site identity predicate.
+    directory = b.inventory_stat((b.OUTPUT / "negatives/engineering-inventory/tree").stat())
+    dir_path = root / "directory-identity.json"
+    directory_mutant = dict(directory, ino=directory["ino"] + 1)
+    _store(dir_path, encode({"pristine": directory, "mutant": directory_mutant}))
+    ds = _json(dir_path.read_bytes())
+    b.check_inventory_identity(*([ds["pristine"]] * 4))
+    outcome = _expect_reason("directory-binding",
+        lambda: b.check_inventory_identity(ds["pristine"], ds["pristine"],
+                                           ds["pristine"], ds["mutant"]),
+        phase, "D8_INVENTORY_CHANGED")
+    records.append({"label": "directory-binding", **outcome})
+    result = {"status": "PASS", "scope": matrix["scope"], "controls": len(records),
+              "fixture": {"path": path.relative_to(b.OUTPUT).as_posix(), **identity},
+              "actual_stat_adapter_checked": True, "pristine_identity_passed": True,
+              "generic_hardlink_acceptance_preserved": True, "records": records,
+              "actual_symlink_hardlink_or_special_created": False}
+    _store(root / "receipt.json", encode(result))
+    return result
+
+
+
+def engineering_category_parity(phase):
+    """Independent explicit categories for every frozen slash key and invalid tail."""
+    root = b.OUTPUT / "negatives" / "engineering-category-parity"
+    root.mkdir()
+    report_category = "all_reports_receipts_logs_negatives_seals_completion"
+    tails = {}
+    for name in ("hpf_input_l", "hpf_input_r", "hpf_output_l", "hpf_output_r"):
+        tails["shared/" + name + ".f32le"] = "shared_hpf"
+    for name in ("bf_output", "reference", "echo", "aec_residual", "ns_output", "agc_output"):
+        tails["candidate/" + name + ".f32le"] = "candidate_unique_signals"
+    for arm in ("baseline", "candidate"):
+        tails[arm + "/state.bin"] = "paired_hpf_bf_state"
+        tails[arm + "/agc-state.bin"] = "paired_agc_state"
+        for observer in ("d1", "upstream"):
+            tails["receipts/" + arm + "-" + observer + "-observer.json"] = report_category
+    tails.update({"candidate/out.pcm": "candidate_s16",
+                  "candidate/metrics.jsonl": "candidate_metrics_including_newlines",
+                  "candidate/control.csv": "candidate_control_including_headers_newlines",
+                  "retention.json": report_category})
+    frozen = b.contract()
+    keys = [entry["catalog"]["key"] for entry in frozen["original_d2_case_input_lock"]["cases"]]
+    b.need(len(keys) == 60 and len(set(keys)) == 60 and
+           all(len(key.split("/")) == 2 for key in keys), "D8_ENGINEERING_CATEGORY_KEYS")
+    retained = {name.removeprefix("cases/{key}/") for name in frozen["retention"]["files"]
+                if name.startswith("cases/{key}/")}
+    b.need(set(tails) == retained and len(tails) == 22, "D8_ENGINEERING_CATEGORY_TAILS")
+    valid, invalid = [], []
+    for key in keys:
+        for tail, category_name in sorted(tails.items()):
+            valid.append({"path": "cases/" + key + "/" + tail, "category": category_name})
+        group, stem = key.split("/")
+        for name, reason in (
+                ("cases/" + key + "-lookalike/candidate/out.pcm", "D8_CASE_PATH"),
+                ("cases/unknown/" + stem + "/candidate/out.pcm", "D8_CASE_PATH"),
+                ("cases/" + group + "/./" + stem + "/candidate/out.pcm", "D8_CASE_PATH"),
+                ("cases/" + key + "//candidate/out.pcm", "D8_UNREGISTERED_FILE"),
+                ("cases/" + key + "/candidate/out.pcm/", "D8_UNREGISTERED_FILE"),
+                ("cases/" + key + "/candidate/../out.pcm", "D8_UNREGISTERED_FILE"),
+                ("cases/" + key + "/candidate/unregistered.bin", "D8_UNREGISTERED_FILE"),
+                ("cases/" + key + "/baseline/out.pcm", "D8_UNREGISTERED_FILE")):
+            invalid.append({"path": name, "reason": reason,
+                            "pristine": "cases/" + key + "/candidate/out.pcm"})
+    path = root / "matrix.json"
+    identity = _store(path, encode({"valid": valid, "isolated_path_mutants": invalid}))
+    saved = _json(path.read_bytes())
+    for vector in saved["valid"]:
+        phase.remaining()
+        b.need(b._category_name(vector["path"]) == vector["category"],
+               "D8_ENGINEERING_CATEGORY_PARITY")
+    rejected = {}
+    for vector in saved["isolated_path_mutants"]:
+        b.need(b._category_name(vector["pristine"]) == "candidate_s16",
+               "D8_ENGINEERING_CATEGORY_PARITY")
+        _expect_reason(vector["path"], lambda vector=vector: b._category_name(vector["path"]),
+                       phase, vector["reason"])
+        rejected[vector["reason"]] = rejected.get(vector["reason"], 0) + 1
+    # The optimized reservation key extractor is tested without walking or
+    # creating any outside path. Strings here are synthetic lexical inputs.
+    target = b.OUTPUT / "negatives/engineering-category-parity/virtual.bin"
+    b.need(b.budget()._relative_name(str(target)) ==
+           "negatives/engineering-category-parity/virtual.bin",
+           "D8_ENGINEERING_RELATIVE_NAME")
+    lexical = [
+        str(b.OUTPUT), str(b.OUTPUT) + "-lookalike/negatives/virtual.bin",
+        str(b.OUTPUT.parent / "outside/virtual.bin"),
+    ]
+    prefix_path = root / "prefix-inputs.json"
+    _store(prefix_path, encode(lexical))
+    for candidate in _json(prefix_path.read_bytes()):
+        _expect_reason("root-prefix", lambda candidate=candidate: b.budget()._relative_name(candidate),
+                       phase, "D8_WRITE_ESCAPE")
+    result = {"status": "PASS", "scope": "synthetic exact path classifier parity, no outside filesystem access",
+              "frozen_keys": len(keys), "tails_per_key": len(tails),
+              "accepted_paths": len(valid), "rejected_paths": len(invalid),
+              "reasons": rejected, "root_prefix_rejections": len(lexical),
+              "fixture": {"path": path.relative_to(b.OUTPUT).as_posix(), **identity},
+              "scientific_negative_categories_added": False}
+    _store(root / "receipt.json", encode(result))
+    return result
+
+
+
+def _engineering_numbers(value):
+    """JSON-safe descriptions of nonfinite synthetic numbers, not evidence data."""
+    if isinstance(value, dict):
+        if set(value) == {"engineering_nonfinite"}:
+            return {"nan": float("nan"), "positive": float("inf"),
+                    "negative": -float("inf")}[value["engineering_nonfinite"]]
+        return {key: _engineering_numbers(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [_engineering_numbers(item) for item in value]
+    return value
+
+
+def engineering_subtimings(phase):
+    """Supplied-clock pure cumulative-offset checks, not measured performance."""
+    root = b.OUTPUT / "negatives" / "engineering-subtimings"
+    root.mkdir()
+    stages = ("preparation_inventory", "prelease_validation", "begin_ack", "pending_receipt",
+              "child_setup", "child_and_pipe_drain", "child_accounting", "quiescent_ack",
+              "after_inventory", "postchild_accounting")
+    b.need(tuple(b.SUBTIMING_STAGES) == stages and b.SUBTIMING_LIMIT == 2048,
+           "D8_ENGINEERING_TIMING_SCHEMA")
+    terminal = b.new_subtimings(1000.0)
+    b.need(terminal == {"version": 1, "clock": "monotonic", "scope": b.SUBTIMING_SCOPE,
+           "origin": 1000.0, "offsets": dict.fromkeys(stages)}, "D8_ENGINEERING_TIMING_SCHEMA")
+    for index, stage in enumerate(stages):
+        b.mark_subtiming(terminal, stage, 1001.0 + index)
+    b.need(terminal["offsets"] == {stage: float(index + 1) for index, stage in enumerate(stages)},
+           "D8_ENGINEERING_TIMING_SCHEMA")
+    pending = copy.deepcopy(terminal)
+    for stage in stages[3:]:
+        pending["offsets"][stage] = None
+    vectors = []
+    def add(label, value, lifecycle="TERMINAL", status="PASS", reason=None):
+        vectors.append({"label": label, "value": value, "lifecycle": lifecycle,
+                        "status": status, "reason": reason})
+    add("terminal-ten", terminal)
+    add("pending-first-three", pending, "PENDING", "FAIL")
+    add("failed-terminal-first-three", pending, status="FAIL")
+    add("failed-terminal-all-ten", terminal, status="FAIL")
+    equal = copy.deepcopy(terminal)
+    equal["offsets"] = dict.fromkeys(stages, 0.0)
+    add("equal-zero-offsets", equal)
+    edge = copy.deepcopy(terminal)
+    edge["offsets"][stages[-1]] = 300.0
+    add("inclusive-300", edge)
+    mutations = [
+        ("wrong-version", ["version"], 2), ("boolean-version", ["version"], True),
+        ("wrong-clock", ["clock"], "wall"), ("wrong-scope", ["scope"], "DSP time"),
+        ("negative-origin", ["origin"], -1), ("boolean-origin", ["origin"], True),
+        ("string-origin", ["origin"], "1000"),
+        ("nan-origin", ["origin"], {"engineering_nonfinite": "nan"}),
+        ("infinite-origin", ["origin"], {"engineering_nonfinite": "positive"}),
+        ("negative-offset", ["offsets", stages[0]], -0.01),
+        ("boolean-offset", ["offsets", stages[0]], True),
+        ("string-offset", ["offsets", stages[0]], "1"),
+        ("nan-offset", ["offsets", stages[0]], {"engineering_nonfinite": "nan"}),
+        ("infinite-offset", ["offsets", stages[0]], {"engineering_nonfinite": "positive"}),
+        ("reverse-order", ["offsets", stages[1]], 0.5),
+        ("interior-hole", ["offsets", stages[3]], None),
+        ("above-300", ["offsets", stages[-1]], 300.000001),
+    ]
+    for label, path, replacement in mutations:
+        value = copy.deepcopy(terminal)
+        _set(value, path, replacement)
+        add(label, value, reason="D8_COMMAND_TIMINGS")
+    for label, path in (("missing-origin", []), ("missing-stage", ["offsets"])):
+        value = copy.deepcopy(terminal)
+        del _at(value, path)["origin" if not path else stages[-1]]
+        add(label, value, reason="D8_COMMAND_TIMINGS")
+    value = copy.deepcopy(terminal)
+    value["unexpected"] = 0
+    add("extra-top-key", value, reason="D8_COMMAND_TIMINGS")
+    value = copy.deepcopy(terminal)
+    value["offsets"]["unexpected"] = 10
+    add("extra-stage", value, reason="D8_COMMAND_TIMINGS")
+    value = copy.deepcopy(pending)
+    value["offsets"][stages[2]] = None
+    add("pending-only-two", value, "PENDING", "FAIL", "D8_COMMAND_TIMINGS")
+    add("failed-terminal-only-two", value, status="FAIL", reason="D8_COMMAND_TIMINGS")
+    value = copy.deepcopy(pending)
+    value["offsets"][stages[3]] = 4.0
+    add("pending-four", value, "PENDING", "FAIL", "D8_COMMAND_TIMINGS")
+    add("failed-terminal-four", value, status="FAIL")
+    add("pending-cannot-pass", pending, "PENDING", "PASS", "D8_COMMAND_TIMINGS")
+    add("pass-cannot-be-partial", pending, reason="D8_COMMAND_TIMINGS")
+    add("unknown-lifecycle", terminal, "UNKNOWN", "PASS", "D8_COMMAND_TIMINGS")
+    add("unknown-status", terminal, "TERMINAL", "UNKNOWN", "D8_COMMAND_TIMINGS")
+    path = root / "matrix.json"
+    identity = _store(path, encode({"pristine": terminal, "vectors": vectors}))
+    saved = _json(path.read_bytes())
+    records = []
+    for vector in saved["vectors"]:
+        b.check_subtimings(saved["pristine"])
+        action = lambda vector=vector: b.check_subtimings(
+            _engineering_numbers(vector["value"]), lifecycle=vector["lifecycle"], status=vector["status"])
+        if vector["reason"]:
+            outcome = _expect_reason(vector["label"], action, phase, vector["reason"])
+        else:
+            action()
+            outcome = {"accepted": True}
+        records.append({"label": vector["label"], **outcome})
+    mark_vectors = [
+        {"label": "skip-first", "events": [[stages[1], 1001.0]]},
+        {"label": "repeat-stage", "events": [[stages[0], 1001.0], [stages[0], 1002.0]]},
+        {"label": "clock-before-origin", "events": [[stages[0], 999.0]]},
+        {"label": "clock-reversal", "events": [[stages[0], 1002.0], [stages[1], 1001.0]]},
+        {"label": "unknown-stage", "events": [["unknown", 1001.0]]},
+    ]
+    marks_path = root / "mark-mutations.json"
+    _store(marks_path, encode(mark_vectors))
+    for vector in _json(marks_path.read_bytes()):
+        def action(vector=vector):
+            value = b.new_subtimings(1000.0)
+            for stage, now in vector["events"]:
+                b.mark_subtiming(value, stage, now)
+        _expect_reason(vector["label"], action, phase, "D8_COMMAND_TIMINGS")
+    # One actual qualified command receipt binds these diagnostic offsets to
+    # the already recorded command start. This does not rerun the command.
+    actual_path = b.OUTPUT / "baseline-build-logs/compiler-version.command.json"
+    b.check_command(actual_path)
+    command_pristine = root / "actual-command-pristine.json"
+    command_identity = _store(command_pristine, actual_path.read_bytes())
+    command_value = _json(command_pristine.read_bytes())
+    b.check_command_record(command_value)
+    command_mutant = copy.deepcopy(command_value)
+    command_mutant["subtimings"]["origin"] += 1.0
+    # The standalone shape/order predicate still accepts. Only the normal
+    # receipt-to-command binding must reject this isolated shifted origin.
+    b.check_subtimings(command_mutant["subtimings"])
+    mutant_path = root / "actual-command-shifted-origin.json"
+    mutant_identity = _store(mutant_path, encode(command_mutant))
+    b.check_command_record(_json(command_pristine.read_bytes()))
+    command_outcome = _expect_reason("actual-command-shifted-origin",
+        lambda: b.check_command_record(_json(mutant_path.read_bytes())),
+        phase, "D8_COMMAND_TIMINGS")
+    result = {"status": "PASS", "scope": "synthetic clocks plus one actual receipt binding, no new command execution",
+              "controls": len(records) + len(mark_vectors) + 1, "records": records,
+              "actual_command_binding": {"origin": actual_path.relative_to(b.OUTPUT).as_posix(),
+                  "pristine": {"path": command_pristine.relative_to(b.OUTPUT).as_posix(), **command_identity},
+                  "mutant": {"path": mutant_path.relative_to(b.OUTPUT).as_posix(), **mutant_identity},
+                  **command_outcome},
+              "sequential_mark_rejections": len(mark_vectors),
+              "fixture": {"path": path.relative_to(b.OUTPUT).as_posix(), **identity},
+              "timing_limit": 2048, "real_clock_or_production_globals_patched": False}
+    _store(root / "receipt.json", encode(result))
+    return result
+
+
+
+def engineering_live_markers(phase):
+    """Pure formatting/deadline/budget predicates; never writes a live marker."""
+    root = b.OUTPUT / "negatives" / "engineering-live-markers"
+    root.mkdir()
+    base = {"event": "PHASE_BEGIN", "phase": "run", "command": None,
+            "started": 1000.0, "now": 1010.0, "root_deadline": 2200.0,
+            "phase_deadline": 1300.0, "command_deadline": None,
+            "transport_deadline": 1015.0, "fixture_deadline": None}
+    vectors = []
+    events = ("PHASE_BEGIN", "PHASE_END", "FINISH",
+              "PHASE_DEADLINE_APPROACHING", "ROOT_DEADLINE_APPROACHING")
+    for event in events:
+        vectors.append({"label": event, "value": dict(base, event=event,
+                        phase="negative" if event == "FINISH" else "run"), "reason": None})
+    vectors.append({"label": "rounded-supplied-clock",
+                    "value": dict(base, now=1010.123456789), "reason": None})
+    for name in ("root_deadline", "phase_deadline", "command_deadline",
+                 "transport_deadline", "fixture_deadline"):
+        for label, now in (("equal", 1010.0), ("past", 1009.0)):
+            value = dict(base, **{name: now})
+            if name == "root_deadline":
+                for other in ("phase_deadline", "command_deadline", "transport_deadline", "fixture_deadline"):
+                    value[other] = None
+            vectors.append({"label": name + "-" + label, "value": value,
+                            "reason": "D8_SUPERVISOR_TIMEOUT"})
+    for label, name, replacement in (
+            ("unknown-event", "event", "COMMAND_BEGIN"),
+            ("unknown-phase", "phase", "unknown"),
+            ("missing-phase", "phase", None),
+            ("overlong-command", "command", "x" * 129),
+            ("invalid-command", "command", "../not-a-label"),
+            ("negative-start", "started", -1),
+            ("boolean-start", "started", True),
+            ("nan-start", "started", {"engineering_nonfinite": "nan"}),
+            ("infinite-now", "now", {"engineering_nonfinite": "positive"}),
+            ("before-start", "now", 999.0),
+            ("nonfinite-transport", "transport_deadline", {"engineering_nonfinite": "nan"}),
+            ("string-root-deadline", "root_deadline", "2200"),
+            ("boolean-phase-deadline", "phase_deadline", True)):
+        vectors.append({"label": label, "value": dict(base, **{name: replacement}),
+                        "reason": "D8_LIVE_MARKER"})
+    vectors.append({"label": "finish-wrong-phase", "value": dict(base, event="FINISH"),
+                    "reason": "D8_LIVE_MARKER"})
+    b.need(b.supervision.LIVE_MARKER_LINE_LIMIT == 512 and
+           b.supervision.LIVE_MARKER_LIMIT == 16384, "D8_ENGINEERING_LIVE_MARKER")
+    budgets = [
+        {"label": "zero", "marker_bytes": 0, "total_output": 0, "reason": None},
+        {"label": "marker-cap", "marker_bytes": 16384, "total_output": 16384, "reason": None},
+        {"label": "shared-cap", "marker_bytes": 16384, "total_output": 4194304, "reason": None},
+        {"label": "marker-over", "marker_bytes": 16385, "total_output": 16385,
+         "reason": "D8_LIVE_MARKER_BOUND"},
+        {"label": "negative-marker", "marker_bytes": -1, "total_output": 0,
+         "reason": "D8_LIVE_MARKER_BOUND"},
+        {"label": "boolean-marker", "marker_bytes": True, "total_output": 1,
+         "reason": "D8_LIVE_MARKER_BOUND"},
+        {"label": "negative-total", "marker_bytes": 0, "total_output": -1,
+         "reason": "D8_STDOUT_BOUND"},
+        {"label": "marker-exceeds-total", "marker_bytes": 1, "total_output": 0,
+         "reason": "D8_STDOUT_BOUND"},
+        {"label": "shared-over", "marker_bytes": 16384, "total_output": 4194305,
+         "reason": "D8_STDOUT_BOUND"},
+    ]
+    path = root / "matrix.json"
+    identity = _store(path, encode({"pristine": base, "vectors": vectors, "budgets": budgets}))
+    saved = _json(path.read_bytes())
+    records = []
+
+    def format_marker(value):
+        value = _engineering_numbers(value)
+        event = value.pop("event")
+        raw = b.supervision.live_marker(event, **value)
+        b.need(isinstance(raw, bytes) and raw.endswith(b"\n") and len(raw) <= 512,
+               "D8_ENGINEERING_LIVE_MARKER")
+        decoded = _json(raw)
+        b.need(set(decoded) == {"d8_live"} and decoded["d8_live"] == {
+            "event": event, "phase": value["phase"], "command": value["command"],
+            "elapsed_seconds": round(value["now"] - value["started"], 6),
+            "remaining_seconds": {name: (None if value[name + "_deadline"] is None else
+                                         round(value[name + "_deadline"] - value["now"], 6))
+                                  for name in ("root", "phase", "command", "transport", "fixture")}},
+            "D8_ENGINEERING_LIVE_MARKER")
+        return raw
+
+    for vector in saved["vectors"]:
+        format_marker(saved["pristine"])
+        action = lambda vector=vector: format_marker(vector["value"])
+        if vector["reason"]:
+            outcome = _expect_reason(vector["label"], action, phase, vector["reason"])
+        else:
+            raw = action()
+            outcome = {"accepted": True, "line_bytes": len(raw)}
+        records.append({"label": vector["label"], **outcome})
+    for vector in saved["budgets"]:
+        b.supervision.check_live_marker_budget(0, 0)
+        action = lambda vector=vector: b.supervision.check_live_marker_budget(
+            vector["marker_bytes"], vector["total_output"])
+        if vector["reason"]:
+            outcome = _expect_reason(vector["label"], action, phase, vector["reason"])
+        else:
+            action()
+            outcome = {"accepted": True}
+        records.append({"label": "budget-" + vector["label"], **outcome})
+    result = {"status": "PASS", "scope": "pure supplied-clock marker formatting and shared byte limits",
+              "controls": len(records), "records": records,
+              "fixture": {"path": path.relative_to(b.OUTPUT).as_posix(), **identity},
+              "transport_and_fixture_deadlines_included": True,
+              "marker_stderr_written_by_this_test": False,
+              "nonblocking_IO_ACK_latency_and_fatal_path_not_executed": True}
+    _store(root / "receipt.json", encode(result))
+    return result
+
+
+
+def engineering_inventory_sequence(phase):
+    """Narrow AST regression only: not a runtime call trace or race proof."""
+    root = b.OUTPUT / "negatives" / "engineering-inventory-sequence"
+    root.mkdir()
+    source_path = b.ROOT / "tests/validation/frontend_evolution/dualmic_broadside_output_d8_build.py"
+    raw = source_path.read_text()
+    module = ast.parse(raw)
+    top = {node.name: node for node in module.body if isinstance(node, (ast.FunctionDef, ast.ClassDef))}
+    phase_class = top["Phase"]
+    run = next(node for node in phase_class.body if isinstance(node, ast.FunctionDef) and node.name == "run")
+    prepare = top["prepare_tool_environment"]
+    snippet = ast.get_source_segment(raw, prepare) + "\n\n" + ast.get_source_segment(raw, run) + "\n"
+    pristine = root / "pristine.py"
+    identity = _store(pristine, snippet.encode("utf-8"))
+
+    def calls(node, name):
+        return [part for part in ast.walk(node) if isinstance(part, ast.Call) and
+                ((isinstance(part.func, ast.Name) and part.func.id == name) or
+                 (isinstance(part.func, ast.Attribute) and part.func.attr == name))]
+
+    def guard(path):
+        parsed = ast.parse(path.read_text())
+        functions = {node.name: node for node in parsed.body if isinstance(node, ast.FunctionDef)}
+        setup, command = functions["prepare_tool_environment"], functions["run"]
+        reason = "D8_ENGINEERING_INVENTORY_SEQUENCE"
+        p = calls(command, "prepare_tool_environment")
+        inv = calls(command, "tool_inventory")
+        child = calls(command, "Popen")
+        b.need(len(p) == len(inv) == len(child) == 1 and
+               p[0].lineno < child[0].lineno < inv[0].lineno, reason)
+        assignments = [node for node in ast.walk(command) if isinstance(node, ast.Assign)]
+        capture = [node for node in assignments if node.value is p[0] and
+                   any(isinstance(target, ast.Name) and target.id == "before_tool" for target in node.targets)]
+        after = [node for node in assignments if node.value is inv[0] and
+                 any(isinstance(target, ast.Name) and target.id == "after_tool" for target in node.targets)]
+        free = calls(command, "free_space")
+        b.need(len(capture) == len(after) == len(free) == 1 and
+               p[0].lineno < free[0].lineno < child[0].lineno, reason)
+        # The removed duplicate was immediately after preparation/free-space.
+        # Only these pure timing and free-space calls may intervene there.
+        for call in (part for part in ast.walk(command) if isinstance(part, ast.Call)):
+            if p[0].lineno < call.lineno <= free[0].lineno:
+                name = call.func.id if isinstance(call.func, ast.Name) else (
+                    call.func.attr if isinstance(call.func, ast.Attribute) else None)
+                b.need(name in {"free_space", "mark", "mark_subtiming", "monotonic"}, reason)
+        marks = [node for node in assignments if any(isinstance(target, ast.Name) and
+                 target.id == "mark" for target in node.targets)]
+        b.need(len(marks) == 1 and isinstance(marks[0].value, ast.Lambda) and
+               isinstance(marks[0].value.body, ast.Call) and
+               isinstance(marks[0].value.body.func, ast.Name) and
+               marks[0].value.body.func.id == "mark_subtiming" and
+               len(calls(marks[0], "mark_subtiming")) == len(calls(marks[0], "monotonic")) == 1 and
+               len([node for node in ast.walk(marks[0]) if isinstance(node, ast.Call)]) == 2, reason)
+        returns = [node for node in ast.walk(setup) if isinstance(node, ast.Return)]
+        b.need(len(returns) == 1 and isinstance(returns[0].value, ast.Call) and
+               isinstance(returns[0].value.func, ast.Name) and
+               returns[0].value.func.id == "tool_inventory" and
+               len(calls(setup, "tool_inventory")) == 1, reason)
+        return True
+
+    b.need(guard(pristine), "D8_ENGINEERING_INVENTORY_SEQUENCE")
+    anchor = "before_tool = prepare_tool_environment()"
+    after_anchor = "after_tool = tool_inventory()"
+    b.need(snippet.count(anchor) == snippet.count(after_anchor) == 1,
+           "D8_ENGINEERING_INVENTORY_SEQUENCE")
+    mutations = [
+        ("duplicate-prechild-scan", snippet.replace(anchor, anchor + "\n        tool_inventory()")),
+        ("writer-at-removed-boundary", snippet.replace(anchor,
+             anchor + '\n        bounded_write(Path("synthetic-not-executed"), b"x")')),
+        ("stale-postchild-inventory", snippet.replace(after_anchor, "after_tool = before_tool")),
+    ]
+    records = []
+    for label, mutant in mutations:
+        b.need(guard(pristine), "D8_ENGINEERING_INVENTORY_SEQUENCE")
+        path = root / (label + ".py")
+        descriptor = _store(path, mutant.encode("utf-8"))
+        outcome = _expect_reason(label, lambda path=path: guard(path), phase,
+                                 "D8_ENGINEERING_INVENTORY_SEQUENCE")
+        records.append({"label": label, "fixture": {"path": path.relative_to(b.OUTPUT).as_posix(),
+                        **descriptor}, **outcome})
+    # This proves the pure validators are present in the actual walk call tree.
+    walk = top["walk_inventory"]
+    for name in ("check_inventory_kind", "check_inventory_depth", "check_inventory_identity"):
+        b.need(calls(walk, name), "D8_ENGINEERING_INVENTORY_CALL_SITE")
+    b.need(calls(top["inventory"], "walk_inventory"), "D8_ENGINEERING_INVENTORY_CALL_SITE")
+    budget_class = top["ByteBudget"]
+    measured = next(node for node in budget_class.body
+                    if isinstance(node, ast.FunctionDef) and node.name == "measured")
+    walk_calls = calls(measured, "walk_inventory")
+    b.need(len(walk_calls) == 1 and {key.arg: getattr(key.value, "value", None)
+           for key in walk_calls[0].keywords} == {"hash_files": False, "single_link": True},
+           "D8_ENGINEERING_INVENTORY_CALL_SITE")
+    result = {"status": "PASS", "scope": "static AST call-site/sequence regression, not dynamic instrumentation",
+              "controls": len(records) + 1, "records": records,
+              "source": {"path": str(source_path), **b.desc(source_path)},
+              "pristine": {"path": pristine.relative_to(b.OUTPUT).as_posix(), **identity},
+              "prepare_return_captured_once": True, "postchild_inventory_independently_fresh": True,
+              "removed_boundary_has_no_writer_call": True,
+              "production_validators_have_actual_walk_call_sites": True,
+              "fixture_python_executed": False}
+    _store(root / "receipt.json", encode(result))
+    return result
+
+
 def engineering_controls(phase):
     # No mutation of D7 globals, no compiler flags, and no subprocess launch.
     return {
+        "fresh_inventory": engineering_inventory(phase),
+        "inventory_validators": engineering_inventory_validators(phase),
+        "category_parity": engineering_category_parity(phase),
+        "command_subtimings": engineering_subtimings(phase),
+        "live_markers": engineering_live_markers(phase),
+        "inventory_sequence": engineering_inventory_sequence(phase),
         "original_locks": engineering_original_locks(phase),
         "tool_lookup": engineering_tool_lookup(phase),
         "observer_receipts": engineering_observer_receipts(phase),

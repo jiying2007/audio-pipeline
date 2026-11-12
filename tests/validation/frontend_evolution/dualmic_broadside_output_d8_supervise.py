@@ -12,6 +12,7 @@ import argparse
 import collections
 import errno
 import json
+import math
 import os
 from pathlib import Path
 import resource
@@ -28,6 +29,50 @@ STDOUT_LIMIT = 4194304
 def need(value, reason):
     if not value:
         raise ValueError(reason)
+
+LIVE_MARKER_LIMIT = 16384
+LIVE_MARKER_LINE_LIMIT = 512
+LIVE_MARKER_EVENTS = frozenset(("PHASE_BEGIN", "PHASE_END", "FINISH",
+    "PHASE_DEADLINE_APPROACHING", "ROOT_DEADLINE_APPROACHING"))
+
+def _live_number(value):
+    if type(value) not in (int, float):
+        return False
+    try:
+        return math.isfinite(value)
+    except OverflowError:
+        return False
+
+def check_live_marker_budget(marker_bytes, total_output):
+    need(type(marker_bytes) is int and type(total_output) is int and
+         0 <= marker_bytes <= LIVE_MARKER_LIMIT, "D8_LIVE_MARKER_BOUND")
+    need(marker_bytes <= total_output <= STDOUT_LIMIT, "D8_STDOUT_BOUND")
+    return True
+
+def live_marker(event, *, phase, command, started, now, root_deadline,
+                phase_deadline=None, command_deadline=None, transport_deadline=None,
+                fixture_deadline=None):
+    """Best-effort accepted-transition/warning record, never a completion claim."""
+    need(type(event) is str and event in LIVE_MARKER_EVENTS and phase in (*PHASES, None) and
+         (command is None or (type(command) is str and 0 < len(command) <= 128 and
+          all(c in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_.-" for c in command))),
+         "D8_LIVE_MARKER")
+    need((event not in ("PHASE_BEGIN", "PHASE_END", "PHASE_DEADLINE_APPROACHING") or phase in PHASES) and
+         (event != "FINISH" or phase == "negative"), "D8_LIVE_MARKER")
+    deadlines = {"root": root_deadline, "phase": phase_deadline, "command": command_deadline,
+                 "transport": transport_deadline, "fixture": fixture_deadline}
+    need(_live_number(started) and _live_number(now) and 0 <= started <= now and
+         _live_number(root_deadline) and root_deadline > started and
+         all(value is None or (_live_number(value) and value <= root_deadline)
+             for value in deadlines.values()), "D8_LIVE_MARKER")
+    need(now < min(value for value in deadlines.values() if value is not None), "D8_SUPERVISOR_TIMEOUT")
+    record = {"d8_live": {"event": event, "phase": phase, "command": command,
+        "elapsed_seconds": round(now - started, 6),
+        "remaining_seconds": {name: None if value is None else round(value - now, 6)
+                              for name, value in deadlines.items()}}}
+    raw = (json.dumps(record, sort_keys=True, separators=(",", ":"), allow_nan=False)+"\n").encode("ascii")
+    need(len(raw) <= LIVE_MARKER_LINE_LIMIT, "D8_LIVE_MARKER")
+    return raw
 
 def lower_limits(requested):
     """Lower independently after fork. Existing stricter soft/hard limits win."""
@@ -271,7 +316,7 @@ def supervise(expected_head):
                 AP_D8_CONTROL_WRITE=str(request_write), AP_D8_SUPERVISOR_PID=str(os.getppid()),
                 AP_D8_WORKER_LIMITS=json.dumps(actual, separators=(",", ":")))
             driver = str(Path(__file__).with_name("dualmic_broadside_output_d8.py"))
-            os.execve(sys.executable, [sys.executable, "-B", driver, "--expected-head", expected_head], env)
+            os.execve(sys.executable, [sys.executable, "-B", "-u", driver, "--expected-head", expected_head], env)
         except BaseException:
             os._exit(125)
     for fd in (request_write, response_read, out_write, err_write):
@@ -297,6 +342,9 @@ def supervise(expected_head):
         forwarding = {1: bytearray(), 2: bytearray()}
         pipes = {out_read: 1, err_read: 2}
         total_output = 0
+        marker_bytes = 0
+        phase_warned = set()
+        root_warned = False
         ready = False
         status = None
         seen = {}
@@ -306,9 +354,40 @@ def supervise(expected_head):
             protocol.live(now)
             if transport_deadline is not None and now >= transport_deadline:
                 protocol.fail("D8_SUPERVISOR_TIMEOUT")
+        def queue_marker(event, *, phase=None, phase_deadline=None):
+            nonlocal total_output, marker_bytes
+            now = time.monotonic()
+            supervisor_live(now)
+            raw = live_marker(event, phase=protocol.phase if phase is None else phase,
+                command=protocol.command, started=protocol.started, now=now,
+                root_deadline=protocol.root_deadline,
+                phase_deadline=protocol.phase_deadline if phase_deadline is None else phase_deadline,
+                command_deadline=protocol.command_deadline, transport_deadline=transport_deadline,
+                fixture_deadline=protocol.fixture_deadline)
+            check_live_marker_budget(marker_bytes + len(raw), total_output + len(raw))
+            supervisor_live(time.monotonic())
+            forwarding[2] += raw
+            marker_bytes += len(raw)
+            total_output += len(raw)
+
+        def transition_marker(kind, previous_phase, previous_deadline):
+            if kind == "PHASE_END":
+                queue_marker(kind, phase=previous_phase, phase_deadline=previous_deadline)
+            elif kind in ("PHASE_BEGIN", "FINISH"):
+                queue_marker(kind)
+
         while True:
             now = time.monotonic()
             supervisor_live(now)
+            # Warnings are best effort, at most once per phase and once per job.
+            # No warning is emitted from the fatal path or after any live lease.
+            if protocol.phase is not None and protocol.phase not in phase_warned and \
+                    protocol.phase_deadline - now <= 5.0:
+                queue_marker("PHASE_DEADLINE_APPROACHING")
+                phase_warned.add(protocol.phase)
+            if not root_warned and protocol.root_deadline - now <= 5.0:
+                queue_marker("ROOT_DEADLINE_APPROACHING")
+                root_warned = True
             if ready:
                 current = descendants(worker, seen)
                 need(protocol.command is not None or not current, "D8_UNEXPECTED_DESCENDANT")
@@ -333,7 +412,9 @@ def supervise(expected_head):
                     os._exit(0)  # no implicit interpreter flush outside the deadline
             if deferred is not None and not current:
                 transport_deadline = protocol.deadline()
+                previous_phase, previous_deadline = protocol.phase, protocol.phase_deadline
                 response = protocol.request(deferred, time.monotonic(), alone=True)
+                transition_marker(deferred["type"], previous_phase, previous_deadline)
                 deferred = None
                 responses += (json.dumps(response, separators=(",", ":")) + "\n").encode()
             if responses:
@@ -406,7 +487,9 @@ def supervise(expected_head):
                             deferred = value  # leave old deadline armed while descendants exit
                         else:
                             transport_deadline = protocol.deadline()
+                            previous_phase, previous_deadline = protocol.phase, protocol.phase_deadline
                             response = protocol.request(value, time.monotonic(), alone=not current)
+                            transition_marker(value["type"], previous_phase, previous_deadline)
                             if value.get("type") == "FIXTURE":
                                 fixture_result = run_fixture(value["name"], worker, protocol, registry, seen)
                                 transport_deadline = protocol.deadline()
@@ -416,6 +499,7 @@ def supervise(expected_head):
                             response["worker_limits"] = protocol.worker_limits
                             responses += (json.dumps(response, separators=(",", ":")) + "\n").encode()
             need(len(responses) <= IPC_LIMIT, "D8_IPC_BYTES")
+            need(sum(map(len, forwarding.values())) <= STDOUT_LIMIT, "D8_STDOUT_BOUND")
     except BaseException as error:
         # Earliest failure is not replaced by cleanup. Do not hash, write a
         # receipt, flush, or grant a post-deadline cleanup allowance.

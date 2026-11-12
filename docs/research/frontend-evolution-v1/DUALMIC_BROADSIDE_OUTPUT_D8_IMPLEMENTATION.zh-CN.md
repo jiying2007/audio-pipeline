@@ -1,6 +1,6 @@
 # D8 broadside 输出：实现与证据边界
 
-状态：**SECOND_ATTEMPT_MEASUREMENT_INVALID_AT_TOOL_DISCOVERY**。两次已审核的 CI 尝试均完成原始 D3 输入准入；首次停于 D8 合同比较，第二次通过该 guard 后停于 build tool discovery，均未执行 D8 编译、测试或 DSP。两次失败及证据分别保留在第 8、9 节；修正仍须独立 exact-head 复核后才可发布。生产版本、默认配置、API 与生产树不变。
+状态：**THIRD_ATTEMPT_MEASUREMENT_INVALID_RUN_PHASE_TIMEOUT**。前两次工程失败保留在第 8、9 节。第三次通过准入及两臂构建，随后在 300 秒 run phase 预算耗尽时被 fail-stop；没有完成 60 案例、analysis、readback、negatives 或最终科学结果。第三次原工件及只读诊断证据保留在第 10 节。性能修正只减少重复工程开销并补充有界计时，不改变科学干预、阈值、300 秒阶段预算或准入要求；仍须独立 exact-head 复核后才可发布。生产版本、默认配置、API 与生产树不变。
 
 ## 1. 冻结合同与单一干预
 
@@ -125,3 +125,60 @@ R3 的四个固定无 DSP fixtures 由 supervisor 创建，一个 group 同时�
 - 完整 decoded job log 的 UTF-8（含 BOM）31995 bytes，SHA256 `5bae5b7ee07c855965203f40ebe152bd125e72bd105a1c83d5235b1a0e33dd2b`；不是压缩 log archive 的 hash。
 
 第一次 run43115604725/artifact13897369988 的失败记录不变。本次仍是 engineering MEASUREMENT_INVALID，不是有效实验的 NO_ADVANCE，也没有候选质量、实际 compiler/CMake 版本或独立 artifact-content audit 结论。
+
+## 10. 第三次执行失败及固定旧工件的只读诊断
+
+第三次 [Research run43121241713](https://github.com/jiying2007/audio-pipeline/actions/runs/43121241713)，attempt1，head `4a86ad099010ae1aead149414091b88be73c7f3e`，D8 job130862020659，以退出码124结束。监督步骤从2026-11-11T23:37:45.4700590Z至23:45:35.3108263Z。这个退出码对应外部 supervisor 的 `D8_SUPERVISOR_TIMEOUT`，但原日志本身没有阶段定位；不能仅按总时长或文件数猜测发生位置。
+
+原[artifact13900578432](https://github.com/jiying2007/audio-pipeline/actions/runs/43121241713/artifacts/13900578432)完整保留：
+- 名称 `frontend-research-dualmic-broadside-output-d8-43121241713-attempt-1`。
+- ZIP 543037811 bytes，SHA256 `d2744826ec842956b55610a7f33e905c1a17483f9d0c2b52fef7987356737ca5`。
+- 上传1842文件，API读取时未过期，到期2027-02-09T23:37:28Z。
+- 完整 decoded job log 的UTF-8（含BOM）31409 bytes，SHA256 `8998ef1cd4577d052f0b6636b426710c48aeeedc74d3ed48529a24d7bef4ba62`，不是压缩日志包哈希。
+
+为了只读原失败收据而不重跑D8，独立审核的诊断提交 `f007e5192eb0c1e408701f288afa9d1b6d3e903e` 在单独的非main分支运行：[diagnostic run43126999200](https://github.com/jiying2007/audio-pipeline/actions/runs/43126999200)，job130881515035，attempt1。该诊断没有checkout、仓库代码导入、编译、测试、DSP或模型执行，只验证完整旧ZIP的下载及落盘重读哈希、ZIP元数据安全，并读取固定JSON收据。它没有修改PR #948或原工件。诊断成功不是科学尝试成功。
+
+诊断核验1842个普通条目、中央目录209071 bytes、声明解压总量625011944 bytes，没有解压原语料、打开嵌套original.zip、读取音频/状态/构建二进制。142个命令收据均解析且模式有效，无损坏收据；日志投影和完整报告均保留每个被读收据的原始长度和SHA256。
+
+实际最后持久化证据：
+- admission phase记录PASS，elapsed_seconds=60.77153061800001。
+- baseline-build记录PASS，elapsed_seconds=71.216371988；31个命令均terminal PASS。
+- candidate-build记录PASS，elapsed_seconds=37.09195158；7个命令均terminal PASS。
+- run phase的deadline=493.06856282，root_started=23.265672033，root_deadline=1223.265672033。阶段从monotonic193.06856282起计300秒。
+- run有104个命令收据：103个terminal PASS、最后1个PENDING；phase.commands只持久化到第103个命令 `025-candidate-plain`。
+- 最后的 `025-candidate-observed.command.json`（原长度4112，SHA256 `86b135cdfe6b2026f6694dfdaa72d5418be2323b2f8c57b56966a54d3b630e17`）为PENDING、returncode=null、初始status=FAIL、timed_out=false。其deadline与run phase相同，timeout_seconds=0.9795940239999936，按原deadline-timeout推得开始时刻492.088968796。
+- 前一个 `025-candidate-plain` 为terminal PASS/returncode0，elapsed_seconds=1.4262467130000118。索引25在原冻结顺序对应 `A/pair-1-path-change-assistant`。
+- analysis、verify、negative phase均不存在；run-index、report、seal、readback、negative-tests、summary、completion均不存在。first-failure不存在符合deadline fail-stop不补写终态收据的设计。
+
+这支持“run phase预算耗尽，最后处于案例25 candidate-observed的未完成生命周期”，不证明该子进程具体在哪个函数或系统调用被杀。PENDING/初始FAIL不是算法失败；terminal command PASS写在COMMAND_END ACK之前，phase PASS写在finalizer/PHASE_END前。后续阶段的出现提供顺序佐证，但收据不是独立原始PCM/state二进制重算审计。没有完整矩阵或最终科学screen，结论仍为工程性MEASUREMENT_INVALID，不是NO_ADVANCE或质量提升。
+
+逐行按原始monotonic字段复算的工程耗时：
+- 103个成功科学命令收据的elapsed合计115.34253306899987秒。
+- 78个同案例相邻命令之间，从前一收据的start+elapsed到后一start，合计98.42424527600005秒。
+- 25个跨案例间隔同样计算，合计84.43524673400009秒。
+这些区间包含不同的receipt/ACK、准备、inventory、预算检查，以及跨案例的原件/状态/算术/保留核验，不能当作纯DSP耗时或单独inventory profiling。
+
+最新被实际读取且内容寻址身份一致的tool inventory为138300 bytes，SHA256 `b35d1f27e8081cafa943e8180f12ade3ed367d3597db5b6861727096be605def`，包含799个文件、233个目录、14241102个逻辑数据字节。原Phase.run在每次调用中执行3遍完整tool inventory，其中前两遍之间只有free-space只读查询；这是一项明确的相邻重复工作，但不能由此保证单独删除一遍就能让全60案例进入300秒。
+
+诊断[artifact13903289018](https://github.com/jiying2007/audio-pipeline/actions/runs/43126999200/artifacts/13903289018)只含完成的报告：
+- artifact ZIP31316 bytes，SHA256 `49b9cc95b731280e02876bbb85cc246e67a8bac39f815c191af2354235fff8d7`，expires_at2027-02-10T00:24:07Z。
+- `report.json` 577819 bytes，SHA256 `c19429628302361b5255a5f10c0fc0a95f6a08e8eae24f0a1c75a212a21e52fb`。
+- 完整decoded诊断job log 167069 UTF-8 bytes，SHA256 `17c31c446357c562c25c7b05705f7152f7fbfa88c58ea9dfa2ab5c4a877634a5`。
+- 状态 `DIAGNOSTIC_RECEIPTS_ONLY_NO_DSP`；这不是候选算法的通过状态。
+
+所有前两次失败、第三次原失败前缀、完整诊断来源以及科学范围限制保持不变。后续只允许独立审核的工程性能修正，不得换数据、减少病例/窗口、缓存掉实际变化、放松身份/预算核验、改阈值或延长300秒。
+
+## 11. 不改科学定义的工程性能修正
+
+此次修正由第10节实际失败触发，只解决受监督测量过程的重复文件遍历、路径分类和可观测性；不变更BF数学干预、C observer、四形态pipeline、Float32重构、原件桥接、评分/窗口/null规则、screen或候选数量。所有phase仍为300秒、普通child仍为min(30,remaining)、root仍为1200秒。未获得一次完整成功运行前，不承诺全60例能够完成。
+
+- 每次inventory仍是新的实际测量，不维护跨调用的文件内容或元数据缓存。根及子目录通过dir-fd、O_DIRECTORY/O_NOFOLLOW/O_CLOEXEC逐层打开，内容模式的文件使用不阻塞的no-follow打开，再核对命名对象与opened/after fstat及实际读取字节数、SHA256。目录的成员相关元数据及命名绑定在成功返回前复核；这是封闭writer条件下的新鲜测量，不声称对任意恶意并发改写提供原子快照。根的祖先只检查绑定身份，不把无关/tmp活动引起的祖先时间变化误判为本树写入。
+- metadata-only预算遍历保持实际no-follow stat、大小、类型、nlink检查；不为普通文件新增无用的打开或哈希。内容inventory仍逐文件读实际bytes/hash。两者不混同证据范围。目录迭代器在递归前关闭；绝对根与相对树合计最多48个目录分量（包含 / 根目录），使用原NOFILE限制，不能调高较严的继承限制。
+- 返回路径顺序保持旧Path分量顺序；不是简单字符串排序。严格目标路径验证与原desc逻辑保留。实际before/after内容inventory、完整closure、原始输入、源和byte预算核验不能省略。
+- 唯一删除的完整扫描是Phase.run中紧邻的重复：prepare_tool_environment已经完成并返回实际inventory，原代码丢弃后只查询free-space又扫描一次。改为使用该返回值，独立post-child扫描不变；有child、source写入或任何其他writer隔开的扫描均保留。完整科学矩阵因此由720遍减少到480遍。以最后观察到的14241102-byte树作条件示例，少读3417864480个逻辑字节；不是实测磁盘I/O或耗时预测。
+- 静态分类只把冻结的60个两分量case key及合法tail建立精确查找，避免每个已测文件重复扫描60个字符串前缀；不缓存测量。路径前缀、未知tail、大小类别、scratch/ancillary预留和retirement语义保持一致。
+- 命令receipt新增最多2048-byte、10个固定阶段、有界且可验证的累计monotonic子阶段计时；只描述准备/inventory、lease ACK、receipt、child与pipe、quiescence及预算核验等复合区间。它们不是纯DSP计时，且明确不包括最终receipt/phase重写、返回stdout读取及COMMAND_END ACK。科学receipt原65536-byte上限和总报告预算不变。
+- 主Python worker只增加unbuffered输出，使既有准入输出及时可见；不改科学可执行文件、compiler flags、CMake recipe或任何PCM/metrics格式。supervisor只在现有最早截止仍有效时，将小型phase/临近截止标记送入已有非阻塞队列；phase转换后也包含transport_deadline。标记每行最多512 bytes、总量最多16 KiB，计入已有4 MiB合并输出上限及已有headroom。不得阻塞ACK、等待输出、延长期限或在fatal分支补写；调度不保证每个预警都能被发送。
+- 新回归控制与固定76项科学negative类别分开标识。真实小型普通文件/目录变化验证新鲜哈希、大小、名称、类型和顺序；共享pure kind/identity/depth守卫验证合成的symlink/special/hardlink政策。generic inventory原有普通hardlink语义与budget nlink=1语义分开保留。不得为本次修正新增真实symlink/hardlink/FIFO的创建与失败清理例外。
+
+这些是拟合并实现的边界，仍须完成精确源码审核及原门禁。其动机是减少已确认重复工作，不是把部分结果变成有效科学实验；第10节的失败与全部原工件继续保留。

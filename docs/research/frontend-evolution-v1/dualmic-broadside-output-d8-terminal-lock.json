@@ -1,0 +1,78 @@
+{
+  "schema_version": 1,
+  "experiment": "FE-DUALMIC-BROADSIDE-OUTPUT-D8",
+  "closure": "CLOSED_NO_ADVANCE",
+  "scientific_terminal": "NO_ADVANCE",
+  "measurement_valid": true,
+  "execution": {
+    "repository": "jiying2007/audio-pipeline",
+    "head": "0fe59e3c852f2150f717ee9dbb92ace517f2816b",
+    "tree": "82b482bbdaffd333774ac06efef77fbfeb0f8217",
+    "run_id": 43135999005,
+    "job_id": 130911420512,
+    "run_attempt": 1,
+    "event": "pull_request",
+    "run_number": 33,
+    "workflow": ".github/workflows/frontend-research.yml",
+    "run_url": "https://github.com/jiying2007/audio-pipeline/actions/runs/43135999005"
+  },
+  "artifact": {
+    "id": 13907504634,
+    "name": "frontend-research-dualmic-broadside-output-d8-43135999005-attempt-1",
+    "bytes": 629265247,
+    "sha256": "ed302fc060dba6ee29c62de6583c579c678da984497f3cfe1c10d5efb08f5057",
+    "uploaded_files": 3832,
+    "expires_at": "2027-02-10T01:39:29Z",
+    "url": "https://github.com/jiying2007/audio-pipeline/actions/runs/43135999005/artifacts/13907504634"
+  },
+  "console_export": {
+    "path": "docs/research/frontend-evolution-v1/dualmic-broadside-output-d8-result-export.json",
+    "bytes": 967201,
+    "sha256": "095a7e4b27e04d53b9316872a633f5a569477031aedf4c744fe06e5cc6bde8c2",
+    "git_blob": "e7a6c475fc952cecaa937071ffe2a67a9a651797",
+    "representation": "Exact decoded job-log JSON export line with one restored LF; contains D8_RESULT and three file descriptors."
+  },
+  "decoded_job_log": {
+    "bytes": 1003432,
+    "sha256": "9fde04b745095cd27b293b13f6dbd8b675d11265a432ae020fd6962aec5a0130",
+    "representation": "Connector-decoded UTF-8 including BOM, not compressed GitHub log archive."
+  },
+  "reported_files": {
+    "report": {
+      "bytes": 16809218,
+      "sha256": "441e56d739bd5473c0d58be6cbc4191aed6f03a40081f9809412deb25ed7d32a"
+    },
+    "negatives": {
+      "bytes": 459310,
+      "sha256": "d30286fda74c3ba36b85e2efbc65216b472018b9cc783087b8843851b83b55b9"
+    },
+    "completion": {
+      "bytes": 595883,
+      "sha256": "b27b658abb280e884b745b7cd877d25d119ca8784182392a77639849c178112b"
+    }
+  },
+  "totals": {
+    "cases": 60,
+    "frames": 35916,
+    "primary_cases": 16,
+    "reference_cases": 32,
+    "resets": 8,
+    "samples": 5746560,
+    "windows": 362
+  },
+  "source_contract": {
+    "freeze": "8e3f92af6c4b0d3205a6903e8de31e55c0225a9e",
+    "plan_path": "docs/research/frontend-evolution-v1/DUALMIC_BROADSIDE_OUTPUT_D8_PLAN.zh-CN.md",
+    "lock_path": "docs/research/frontend-evolution-v1/dualmic-broadside-output-d8-input-lock.json"
+  },
+  "evidence_scope": {
+    "console_projection_read": true,
+    "actual_artifact_members_opened_by_archive_author": false,
+    "independent_binary_recomputation": false,
+    "negative_and_completion_values_in_projection": false,
+    "completion_evidence": "Successful mandatory reviewed source gates, emitted FINISH and successful job; projection contains receipt descriptors only.",
+    "archival_validation_is_reproduction": false,
+    "promotion_allowed": false,
+    "reopening": "Requires an explicit new user request and independently reviewed source/routing change; current manual D8 selection validates this archive only."
+  }
+}

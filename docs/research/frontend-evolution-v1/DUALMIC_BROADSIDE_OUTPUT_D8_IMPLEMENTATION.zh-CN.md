@@ -1,6 +1,6 @@
 # D8 broadside 输出：实现与证据边界
 
-状态：**FOURTH_ATTEMPT_MEASUREMENT_INVALID_ENGINEERING_FIXTURE**。前三次失败及原工件保留在第 8–10 节。性能修正后的第四次执行完成 run、analysis 和 verify 阶段；run 阶段约 146.56 秒，未触及 300 秒上限。但在 negative 阶段因合成 identity fixture 的共享字典别名导致 `D8_NEGATIVE_ACCEPTED:before-dev`，最终仍为 MEASUREMENT_INVALID。第 12 节保留实际日志与工件身份。修正只涉及测试夹具及证据文档，不改生产 guard、科学干预、阈值、预算或 deadline；通过独立 exact-head 复核前不得发布。不能将中间阶段完成当作有效科学结果或质量提升。生产版本、默认配置、API 与生产树不变。
+状态：**VALID_NO_ADVANCE_CLOSED**。首个完整有效执行为run43135999005、job130911420512、attempt1，科学SHA固定为 `0fe59e3c852f2150f717ee9dbb92ace517f2816b`。全60视图完成，最终NO_ADVANCE；全部16项primary未达到+1dB，且另有不回退/能量/恢复否决项。不提升生产、不继续本候选扫描。前四次工程失败完整保留在第8–12节，不能由第五次有效结果覆盖。[结果与完整终态归档](DUALMIC_BROADSIDE_OUTPUT_D8_RESULT.zh-CN.md)说明真实证据与独立审计边界。后续归档CI只做不可变证据校验，不是科学再执行；归档/依赖错误不得回退到DSP。生产版本、默认配置、API与生产树不变。
 
 ## 1. 冻结合同与单一干预
 
@@ -210,3 +210,11 @@ R3 的四个固定无 DSP fixtures 由 supervisor 创建，一个 group 同时�
 - artifact身份、大小、上传成功及文件数来自实际API/日志；本次没有独立member读取或原始二进制审计。
 
 前三次失败、只读诊断以及本次无效结果不能被后续修正覆盖。原两臂四形态recipe、全部60例/窗口/原件桥接、科学screen、76个固定negative类别、R3合同、512MiB结果闭包、300/30/1200秒上限均保持不变。
+
+## 13. 有效终态与归档关闭
+
+第五次执行的有效NO_ADVANCE、完整原始console投影、身份清单、1,012个strict筛选比较、全部16项primary值与先前失败索引见[结果记录](DUALMIC_BROADSIDE_OUTPUT_D8_RESULT.zh-CN.md)。归档checker使用新的CI HEAD校验旧执行证据，但旧科学执行SHA始终为0fe59e3c852f2150f717ee9dbb92ace517f2816b；不能混为同一次运行。
+
+关闭后的D8路由仅运行明确命名的archived-evidence-validation。它校验固定归档hash/schema/counts/decision一致性及未变的生产/helper/合同与七个旧D8科学文件，不下载原ZIP、不build/DSP、不导入旧科学模块。原科学job保留dormant；所有自动/当前manual D8入口均不得回退到它。只有明确新用户请求和独立审核后的source/routing变更才可重开。D1–D7既有selector/jobs不变。
+
+结果记录只将实际console中的report/negative/completion hash与size称为描述符；未另行打开或重算其ZIP成员。正常强制门禁与FINISH/job success支持完成声明，但归档校验不是独立原始二进制审计或实验复现。

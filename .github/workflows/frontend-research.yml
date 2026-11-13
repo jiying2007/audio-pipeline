@@ -77,6 +77,7 @@ on:
   workflow_dispatch:
     inputs:
       experiment:
+        description: D8 validates the closed NO_ADVANCE archive only; it never runs DSP
         type: choice
         options: [dualmic-stages-d1, dualmic-zero-d3-input, dualmic-zero-d3, dualmic-window-d4, dualmic-target-gate-d5, dualmic-gain-ramp-d6, dualmic-upstream-d7, dualmic-broadside-output-d8]
         default: dualmic-stages-d1
@@ -103,6 +104,7 @@ jobs:
       d6: ${{ steps.select.outputs.d6 }}
       d7: ${{ steps.select.outputs.d7 }}
       d8: ${{ steps.select.outputs.d8 }}
+      d8_archive: ${{ steps.select.outputs.d8_archive }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
@@ -121,7 +123,9 @@ jobs:
           import os, subprocess
           from pathlib import Path
           event = os.environ['EVENT_NAME']
-          # D8-only selection exits before historical selectors see the appended lane.
+          # Closed D8 selections validate archived evidence; no fallback to science.
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as out:
+              out.write('d8=false\nd8_archive=false\n')
           import time
           d8_scope_start = time.monotonic()
           def d8_git(*args):
@@ -144,16 +148,13 @@ jobs:
                   if d8_marker in d8_current and (d8_marker not in d8_prior or
                           d8_current.split(d8_marker, 1)[-1] != d8_prior.split(d8_marker, 1)[-1]):
                       d8 = True
-              if d8 and any(not (any(token in p for token in d8_tokens) or p == '.github/workflows/frontend-research.yml')
-                            for p in d8_paths):
-                  raise SystemExit('D8_REQUIRES_SEPARATE_RESEARCH_CHANGE')
           if d8:
               d8_frozen = d8_git('show', '1b5b01e0f2580ec9e05dfacff2ee1d292c438172:.github/workflows/frontend-research.yml')
               d8_current = Path('.github/workflows/frontend-research.yml').read_text()
               if d8_current.count(d8_marker) != 1 or d8_current.split('  matrix:\n', 1)[1].split(d8_marker, 1)[0] != d8_frozen.split('  matrix:\n', 1)[1]:
                   raise SystemExit('D8_HISTORICAL_JOBS_CHANGED')
               with open(os.environ['GITHUB_OUTPUT'], 'a') as out:
-                  out.write('d1=false\nd3=false\nd3_execute=false\nd4=false\nd5=false\nd6=false\nd7=false\nd8=true\n')
+                  out.write('d1=false\nd3=false\nd3_execute=false\nd4=false\nd5=false\nd6=false\nd7=false\nd8=false\nd8_archive=true\n')
               raise SystemExit(0)
           # D7-only selection exits before historical selectors inspect appended jobs.
           # Historical jobs below matrix remain byte-identical to e348843.
@@ -773,3 +774,27 @@ jobs:
           include-hidden-files: true
           retention-days: 90
           if-no-files-found: error
+
+  dualmic-broadside-output-d8-archive:
+    name: Validate archived D8 NO_ADVANCE evidence (no DSP)
+    needs: scope
+    if: needs.scope.outputs.d8_archive == 'true'
+    permissions:
+      contents: read
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    env:
+      VALIDATION_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Validate immutable console archive and local source bindings only
+        shell: bash
+        run: |
+          exec /usr/bin/timeout --signal=KILL 120s /usr/bin/python3 -I -B \
+            tests/validation/frontend_evolution/dualmic_broadside_output_d8_archive.py \
+            --expected-head "$VALIDATION_SHA"

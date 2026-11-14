@@ -6,12 +6,14 @@ on:
     paths:
       - ci/Dockerfile
       - ci/toolchain-smoke.sh
+      - tests/test_alsa_runtime_example.c
       - .github/workflows/ci-toolchain-image.yml
   push:
     branches: [main]
     paths:
       - ci/Dockerfile
       - ci/toolchain-smoke.sh
+      - tests/test_alsa_runtime_example.c
       - .github/workflows/ci-toolchain-image.yml
   workflow_dispatch:
 

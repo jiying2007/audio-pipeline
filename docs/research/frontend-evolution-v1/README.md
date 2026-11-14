@@ -1,5 +1,12 @@
 # Frontend Evolution v1 / 双麦与四麦开放研究
 
+## 2026-11-14 受限增益回升诊断 D9
+
+[D9 合同](DUALMIC_GATED_RISE_D9_PLAN.zh-CN.md)与[真实结果](DUALMIC_GATED_RISE_D9_RESULT.zh-CN.md)：
+60例实际隔离C双臂回放完成，原D2 baseline状态/PCM精确一致。唯一候选抑制allow=0时
+低于单位gain的回升，32个有near参考common ΔSI-SDR全部0，双讲改善门槛失败，**NO_ADVANCE，候选关闭**。
+保留532个实际受限回升帧及四例远端输出变化，不能当作听感收益。生产/历史恢复语义不改。
+
 ## 2026-11-11 双麦帧内增益过渡候选 D6
 
 [D6执行前合同](DUALMIC_GAIN_RAMP_D6_PLAN.zh-CN.md)与[实施说明](DUALMIC_GAIN_RAMP_D6_IMPLEMENTATION.zh-CN.md)

@@ -1,0 +1,24 @@
+{
+  "experiment": "FE-NS-CLAMP-INLINE-V1",
+  "equivalence": {
+    "EMA": "EQUIVALENCE 872000 PASS state_bytes=1032",
+    "MCRA": "EQUIVALENCE 872000 PASS state_bytes=2060"
+  },
+  "median_pair_ratios": {
+    "EMA/17": 0.7448814940053421,
+    "EMA/33": 0.644412641295886,
+    "EMA/129": 0.8143885859025729,
+    "EMA/257": 0.8630001583152596,
+    "MCRA/17": 0.8651703805820112,
+    "MCRA/33": 0.8528656373580943,
+    "MCRA/129": 0.722915076195626,
+    "MCRA/257": 0.550336535376448
+  },
+  "geometric_mean_ratio": 0.7489864476684026,
+  "time_reduction_percent": 25.10135523315974,
+  "screen_pass": true,
+  "decision": "REVIEW_ONLY",
+  "promotion_allowed": false,
+  "scope": "synthetic noise-tracker host microbenchmark, not full NS/pipeline/SSC305; no affinity or confidence interval",
+  "observations": 72
+}

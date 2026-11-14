@@ -1,0 +1,8 @@
+harness.c: In function ‘main’:
+harness.c:20:2: error: this ‘for’ clause does not guard... [-Werror=misleading-indentation]
+   20 |  for(unsigned z=0;z<4;z++)for(unsigned r=0;r<9;r++){double b,c;if(r%2){c=bench(1,bins[z]);b=bench(0,bins[z]);}else{b=bench(0,bins[z]);c=bench(1,bins[z]);}printf("PERF %u %u %.12f %.12f %.12f\n",bins[z],r,b,c,c/b);}return 0;}
+      |  ^~~
+harness.c:20:215: note: ...this statement, but the latter is misleadingly indented as if it were guarded by the ‘for’
+   20 |  for(unsigned z=0;z<4;z++)for(unsigned r=0;r<9;r++){double b,c;if(r%2){c=bench(1,bins[z]);b=bench(0,bins[z]);}else{b=bench(0,bins[z]);c=bench(1,bins[z]);}printf("PERF %u %u %.12f %.12f %.12f\n",bins[z],r,b,c,c/b);}return 0;}
+      |                                                                                                                                                                                                                       ^~~~~~
+cc1: all warnings being treated as errors

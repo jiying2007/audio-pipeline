@@ -1,0 +1,98 @@
+{
+  "README.md": {
+    "bytes": 1525,
+    "sha256": "7a074ef5c17df49b6e3871c80b26f7b2cc37d7fd753b8438594748a7784490f1"
+  },
+  "input-admission/PLAN.json": {
+    "bytes": 1536,
+    "sha256": "5d81bbeb97a9944e011d291025b10f4658803d27e45112d92079502e76b386f9"
+  },
+  "input-admission/RESULT.md": {
+    "bytes": 3399,
+    "sha256": "f8e97e1bd17fba376073b5258daf6922d849986401f9f3ceb5cf8ed92bb97050"
+  },
+  "input-admission/admit.py": {
+    "bytes": 3689,
+    "sha256": "777dec722f5a658bd9f93519d7d16b87e616fafcffed7da8be9c74b92192dcf6"
+  },
+  "input-admission/command.txt": {
+    "bytes": 29,
+    "sha256": "1333399fefa0a10b8d207091e44722643b98b19780e5f6577cf829334a810185"
+  },
+  "input-admission/ended.txt": {
+    "bytes": 21,
+    "sha256": "cb942992b1cd210611a4478d781558871274ea989906d275fb5ee86b6bded6db"
+  },
+  "input-admission/execution-source.sha256": {
+    "bytes": 233,
+    "sha256": "6a0953d181181cc68aae79ac9ac98c0f47238ae4027ded23cd491114671e9265"
+  },
+  "input-admission/exit.txt": {
+    "bytes": 2,
+    "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+  },
+  "input-admission/freeze.sha256": {
+    "bytes": 117,
+    "sha256": "1a8be6f0c5cd0ba700c3ca0dc99b01bb2b849c1bf8ca7ee36982096ccea6f109"
+  },
+  "input-admission/original-implementation-binding.json": {
+    "bytes": 370,
+    "sha256": "33719ac92e2d3b7406ab2cc24406715a98cffd309da379da3c9996aa9e6abd26"
+  },
+  "input-admission/result.json": {
+    "bytes": 2898,
+    "sha256": "bdb6a683b80e2900f0a84a2b35e33bbbda947650267396d9609e4eb5af9bddbb"
+  },
+  "input-admission/started.txt": {
+    "bytes": 21,
+    "sha256": "9fd66359fe695db58a56c86413e844a290002ca06befce0e2450977cf45c23a7"
+  },
+  "input-admission/stderr.txt": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "stage-diagnostic/PLAN.json": {
+    "bytes": 2311,
+    "sha256": "5e1a56a2a29aff8d284ab5226c71935db436725d0640d0d6ab8abf40fa50441e"
+  },
+  "stage-diagnostic/RESULT.md": {
+    "bytes": 3860,
+    "sha256": "c31768c01bc6f204cb59081f465d216dbbb02dcf7dca2e09f2e59d2dc9d098fe"
+  },
+  "stage-diagnostic/command.txt": {
+    "bytes": 31,
+    "sha256": "58ca1b9474a6aaf83a5e29d819e67b48400681c4efd0295a18d6865289e854eb"
+  },
+  "stage-diagnostic/ended.txt": {
+    "bytes": 21,
+    "sha256": "31dc0a56b824aead6ff7b4e1c71a3c9d6954498b455b80e4101893fa90abedf4"
+  },
+  "stage-diagnostic/execution-source.sha256": {
+    "bytes": 239,
+    "sha256": "c0fc8e0207feeefe95eb757a885f8f8a46f0a8233964522158477c1e78c5049c"
+  },
+  "stage-diagnostic/exit.txt": {
+    "bytes": 2,
+    "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+  },
+  "stage-diagnostic/freeze.sha256": {
+    "bytes": 119,
+    "sha256": "978920bc07abcac784421456c27713c1c460567317efba66bef6472c47944376"
+  },
+  "stage-diagnostic/measure.py": {
+    "bytes": 5313,
+    "sha256": "f76d30827520adf68e5d1f301f664ec24b78c6318c5b9baed88e72a051e50b80"
+  },
+  "stage-diagnostic/result.json": {
+    "bytes": 125629,
+    "sha256": "3f45b39a1e3d7ac7c3941f47715f06e0635073fc64f8a4f76977ea4d0f45eb82"
+  },
+  "stage-diagnostic/started.txt": {
+    "bytes": 21,
+    "sha256": "eb1868c1ff58d18edcebc1eee2535023f6fe90a58754f617526ce13f04cf9f38"
+  },
+  "stage-diagnostic/stderr.txt": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  }
+}

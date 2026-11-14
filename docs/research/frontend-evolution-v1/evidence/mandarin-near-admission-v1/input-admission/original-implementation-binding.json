@@ -1,0 +1,7 @@
+{
+  "member": "tests/validation/mandarin_downstream.py",
+  "container": "build/exact-source.tar",
+  "zip_sha256": "a3ab7823fdcd7586c3b72eb214b5536dcfb7531fdf0b1611d49e1575a29b2c3d",
+  "sha256": "2bba610f9154e0eb3d115a361104191a7fd2f5ac0fdb4d9972dd4633599bef9c",
+  "role": "actual historical preparation implementation retained unchanged; not current admission script"
+}

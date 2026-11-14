@@ -1,0 +1,3 @@
+==17==LeakSanitizer has encountered a fatal error.
+==17==HINT: For debugging, try setting environment variable LSAN_OPTIONS=verbosity=1:log_threads=1
+==17==HINT: LeakSanitizer does not work under ptrace (strace, gdb, etc)

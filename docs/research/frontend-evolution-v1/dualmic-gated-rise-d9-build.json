@@ -1,0 +1,52 @@
+{
+  "argv": [
+    "cc",
+    "-std=c11",
+    "-O2",
+    "-ffp-contract=off",
+    "-DAP_BUILD_STAGE_AGC=1",
+    "-I/tmp/audio-d9/second",
+    "/tmp/audio-d9/second/baseline.c",
+    "/tmp/audio-d9/second/candidate.c",
+    "/tmp/audio-d9/second/driver.c",
+    "-lm",
+    "-o",
+    "/tmp/audio-d9/second/replay"
+  ],
+  "baseline_source": {
+    "bytes": 1718,
+    "sha256": "9499f4576b574125506a4ef63fd3eec18c1fc912674c772c34bf887457045066"
+  },
+  "candidate_source": {
+    "bytes": 1808,
+    "sha256": "9d19dda7418e85cf8955f94f386df1f50d7651bd5f5c63751f04bf95e49b3a6a"
+  },
+  "compile_log": "",
+  "compiler": "cc (Debian 14.2.0-19) 14.2.0\nCopyright (C) 2024 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n\n",
+  "driver": {
+    "bytes": 4993,
+    "sha256": "ee30686460f7c211f369dadba6b0a3cbecc0ad96a397bcc34151d61942447d9d"
+  },
+  "header": {
+    "bytes": 3416,
+    "sha256": "22e3760204b05c04fbbda3f4fa1df79ccd127dad276c4b10ba3e9ebe1ee55cdf"
+  },
+  "plan": {
+    "bytes": 4083,
+    "sha256": "4a6ac4cb69c2ed9246700d40a8206cb06795d027760d14af5fe16e51a583df56"
+  },
+  "replay": {
+    "bytes": 21376,
+    "sha256": "c3ce3401efdbb3d8e6cc51a5e0b86a3046c1e55ebab5ebda04650b8847e864eb"
+  },
+  "selftest": {
+    "blocked_rise_cases": 14,
+    "nonfinite_rejected": 3,
+    "selftest_cases": 120
+  },
+  "source_archive": {
+    "bytes": 161587200,
+    "sha256": "73a312125f1a69151e3c0b0de4166880b21b2f7ccd70e722ba04e10365ff713e"
+  },
+  "source_revision": "3752d475d28990dde9c38138d231bb3f49af7778"
+}

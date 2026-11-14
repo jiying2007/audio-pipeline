@@ -1,0 +1,16 @@
+# All commands from this directory. Exact-base source copies under src/ and tests/.
+python3 prepare.py
+# One scientific run only, after initial formatting-only compile correction.
+timeout 180 ./run.sh
+python3 summarize.py
+# For each mode EMA/MCRA:
+# gcc -std=c11 -O1 -g -ffp-contract=off -fsanitize=address,undefined -Wall -Wextra -Werror -DAP_BUILD_NS_$mode=1 -Isrc baseline.c candidate.c src/dsp/ap_fft.c harness.c -lm -o compare-san-$mode
+# ASAN_OPTIONS=detect_leaks=0 timeout 60 ./compare-san-$mode equivalence-only > sanitized-$mode.txt 2>sanitized-$mode.stderr
+# gcc -std=c11 -O2 -ffp-contract=off -DAP_BUILD_NS_$mode=1 -Isrc -c baseline.c -o baseline-$mode.o
+# gcc -std=c11 -O2 -ffp-contract=off -DAP_BUILD_NS_$mode=1 -Isrc -c candidate.c -o candidate-$mode.o
+# size -A baseline-$mode.o candidate-$mode.o > size-$mode.txt
+# Original unit: gcc -std=c11 -O2 -ffp-contract=off -Wall -Wextra -Werror -DAP_BUILD_NS_$mode=1 -Isrc src/enhance/ap_noise_tracker.c src/enhance/ap_window.c src/dsp/ap_fft.c tests/test_noise_tracker.c -lm -o original-test-$mode
+# Candidate unit: replace src/enhance/ap_noise_tracker.c above with candidate-production.c (same candidate, original exported names).
+# Negative control: replace candidate.c clamp expression `x > hi ? hi : x` with `x > hi ? 0.0f : x`.
+# gcc -std=c11 -O2 -ffp-contract=off -Wall -Wextra -Werror -DAP_BUILD_NS_$mode=1 -Isrc baseline.c negative-candidate.c src/dsp/ap_fft.c harness.c -lm -o negative-$mode
+# timeout 30 ./negative-$mode equivalence-only

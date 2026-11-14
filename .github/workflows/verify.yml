@@ -137,6 +137,7 @@ jobs:
           python3 scripts/public_surface_contract.py
           python3 -m py_compile scripts/*.py tools/*.py tools/codex_assets/*.py validation/tools/*.py tests/validation/frontend_evolution/*.py
           python3 scripts/ci_failure.py --self-test
+          timeout 60s python3 -B tests/validation/frontend_evolution/test_dualmic_gated_rise_d9.py
           python3 scripts/flaky_guard.py --self-test
           python3 scripts/test_history.py --self-test
           python3 scripts/validation_reproducer.py --self-test

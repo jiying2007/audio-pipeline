@@ -1,0 +1,12 @@
+{
+  "EMA": {
+    "full_disassembly_equal": true,
+    "output_bytes": 34603200,
+    "output_sha256": "34ce8c8c44f030f05d701bf9554eaf83563f871f357ad728cd0f1373a2ec4552"
+  },
+  "MCRA": {
+    "full_disassembly_equal": true,
+    "output_bytes": 38304000,
+    "output_sha256": "096033318503de18d7d51bd4c6a36a15513bef0896d13ff15e33f87cf064be86"
+  }
+}

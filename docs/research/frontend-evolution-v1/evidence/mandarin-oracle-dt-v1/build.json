@@ -1,0 +1,33 @@
+{
+  "library_original": {
+    "bytes": 120078,
+    "path": "observer-build/libaudio_pipeline.a",
+    "sha256": "234a075084edef1eeb6a711e64683e655e1f16e9c0487fcb7e732f58a94409c7"
+  },
+  "wrapper_original_sha256": "d4bc211488170bd052fd8b70f31a07189169105106282105cc97365422d15b5a",
+  "candidate_wrapper_sha256": "cc2d0e41b37819293f98b3a1d3eee3a15d1cbb3adcc5dd808158f77dab06796e",
+  "oracle_mask_sha256": "fb7c260d7e1049cbb6b340711c8f8e3d92367db14f844802a4de3ad9ca5e0b48",
+  "oracle_support_frames": 429,
+  "source_locks": {
+    "build/exact-source.tar": {
+      "bytes": 161587200,
+      "sha256": "73a312125f1a69151e3c0b0de4166880b21b2f7ccd70e722ba04e10365ff713e"
+    },
+    "build/observer-source/tests/validation/frontend_evolution/dualmic_stages_d1.c": {
+      "bytes": 15659,
+      "sha256": "d4bc211488170bd052fd8b70f31a07189169105106282105cc97365422d15b5a"
+    },
+    "build/observer-build/libaudio_pipeline.a": {
+      "bytes": 120078,
+      "sha256": "234a075084edef1eeb6a711e64683e655e1f16e9c0487fcb7e732f58a94409c7"
+    },
+    "build/observer-build/generated/audio_pipeline/audio_pipeline_build.h": {
+      "bytes": 1582,
+      "sha256": "538226a745b0197a486888280d1c2a6f189b7b9142f7b950ff0a01584d1febda"
+    },
+    "build/build-manifest.json": {
+      "bytes": 794509,
+      "sha256": "cfd34f219737484eb89387983da1f0c8bc28dad19de2fceaa2113e4611c49ad9"
+    }
+  }
+}

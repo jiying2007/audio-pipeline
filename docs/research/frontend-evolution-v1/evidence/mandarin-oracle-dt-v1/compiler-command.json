@@ -1,0 +1,11 @@
+{
+  "name": "compiler",
+  "argv": [
+    "gcc",
+    "--version"
+  ],
+  "cwd": "/tmp/audio-fe-mandarin-oracle-dt-v1",
+  "started_epoch": 1794662603.3690398,
+  "terminal": false,
+  "timeout": false
+}

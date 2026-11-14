@@ -1,0 +1,5 @@
+Traceback (most recent call last):
+  File "/tmp/audio-fe-mandarin-oracle-dt-v1/run.py", line 56, in <module>
+    assert (taps/name).read_bytes()==rd('cases/C/'+profile+'_duplex/taps/'+name),('baseline mismatch',profile,name)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('baseline mismatch', 'call', 'control.csv')

@@ -1,0 +1,71 @@
+{
+  "status": "BASELINE_IDENTITY_FAILED",
+  "dsp_executions": 1,
+  "candidate_executions": 0,
+  "differing_fields": {
+    "noise_rms_dbfs": 8
+  },
+  "first_differences": [
+    [
+      14,
+      "noise_rms_dbfs",
+      "-78.2526398",
+      "-78.2526474"
+    ],
+    [
+      181,
+      "noise_rms_dbfs",
+      "-73.7555313",
+      "-73.7555237"
+    ],
+    [
+      246,
+      "noise_rms_dbfs",
+      "-79.8970718",
+      "-79.8970642"
+    ],
+    [
+      327,
+      "noise_rms_dbfs",
+      "-79.2577286",
+      "-79.2577209"
+    ],
+    [
+      395,
+      "noise_rms_dbfs",
+      "-74.4682236",
+      "-74.4682159"
+    ],
+    [
+      403,
+      "noise_rms_dbfs",
+      "-74.958725",
+      "-74.9587326"
+    ],
+    [
+      452,
+      "noise_rms_dbfs",
+      "-80.7013092",
+      "-80.7013245"
+    ],
+    [
+      494,
+      "noise_rms_dbfs",
+      "-92.3979187",
+      "-92.3979111"
+    ]
+  ],
+  "other_files": {
+    "out.pcm": {
+      "byte_equal": true,
+      "original_sha": "f0345b98bbb0536271ace5d9089ee639de44bb9aae3491fcf19fb7b513cb245a",
+      "local_sha": "f0345b98bbb0536271ace5d9089ee639de44bb9aae3491fcf19fb7b513cb245a"
+    },
+    "metrics.jsonl": {
+      "byte_equal": false,
+      "original_sha": "30542ef269771846c0120ee8f5fef50d41151a3c8a6120f61d9ad500016f23d6",
+      "local_sha": "4409bf63a78f36649c9feffbef753e18e29bf590edc888ec1ebfcb458b66a20e"
+    }
+  },
+  "scope": "read-only diagnosis of first failed baseline; no tolerance relaxation, no rerun"
+}

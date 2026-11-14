@@ -1,0 +1,42 @@
+{
+  "original_lines": 629,
+  "local_lines": 629,
+  "differences": [
+    {
+      "line": 197,
+      "field": "vad_probability",
+      "original": 0.2578684,
+      "local": 0.2578683
+    },
+    {
+      "line": 263,
+      "field": "vad_probability",
+      "original": 0.4482842,
+      "local": 0.4482841
+    },
+    {
+      "line": 299,
+      "field": "erle_db",
+      "original": 0.9828667,
+      "local": 0.9828666
+    },
+    {
+      "line": 340,
+      "field": "vad_probability",
+      "original": 0.6405651,
+      "local": 0.6405652
+    },
+    {
+      "line": 379,
+      "field": "vad_probability",
+      "original": 0.299119,
+      "local": 0.2991189
+    },
+    {
+      "line": 388,
+      "field": "vad_probability",
+      "original": 0.3610952,
+      "local": 0.3610951
+    }
+  ]
+}

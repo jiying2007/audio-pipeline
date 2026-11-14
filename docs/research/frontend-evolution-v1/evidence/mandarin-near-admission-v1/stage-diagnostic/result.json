@@ -1,0 +1,3347 @@
+{
+  "experiment": "FE-MANDARIN-STAGE-DIAGNOSTIC-V1",
+  "decision": "DESCRIPTIVE_BASELINE_ONLY",
+  "cases": [
+    {
+      "profile": "call_duplex",
+      "gates": {
+        "all": {
+          "frames": 629,
+          "far_frames": 551,
+          "dt_frames": 0,
+          "gate_eligible_frames": 551,
+          "recorded_instant_ratio_far_minmax": [
+            3.8828642405273745e-13,
+            284981092.20506626
+          ],
+          "recorded_smoothed_ratio_far_minmax": [
+            1.109389781895227e-12,
+            0.6166234236190942
+          ]
+        },
+        "near_waveform_nonzero": {
+          "frames": 429,
+          "far_frames": 429,
+          "dt_frames": 0,
+          "gate_eligible_frames": 429,
+          "recorded_instant_ratio_far_minmax": [
+            0.048172342797332283,
+            284981092.20506626
+          ],
+          "recorded_smoothed_ratio_far_minmax": [
+            0.07191164479441083,
+            0.6166214135418492
+          ]
+        },
+        "near_waveform_zero": {
+          "frames": 200,
+          "far_frames": 122,
+          "dt_frames": 0,
+          "gate_eligible_frames": 122,
+          "recorded_instant_ratio_far_minmax": [
+            3.8828642405273745e-13,
+            11.392361342860283
+          ],
+          "recorded_smoothed_ratio_far_minmax": [
+            1.109389781895227e-12,
+            0.6166234236190942
+          ]
+        }
+      },
+      "measurements": [
+        {
+          "window": "common",
+          "physical_range": [
+            0,
+            100480
+          ],
+          "lanes": {
+            "raw_mic0": {
+              "output_range": [
+                0,
+                100480
+              ],
+              "samples": 100480,
+              "output_energy": 102.83402718883008,
+              "near_energy": 13.025231879204512,
+              "error_energy": 89.84422417264432,
+              "rms": 0.03199105841262792,
+              "peak": 0.1522216796875,
+              "gain_sensitive_error_db": 8.387046993113893,
+              "projection_gain": 0.9986399910824115,
+              "noncanonical_projection_si_sdr_db": -8.39886675602198,
+              "projection_residual_energy": 89.8442000808595
+            },
+            "final_s16": {
+              "output_range": [
+                160,
+                100640
+              ],
+              "samples": 100480,
+              "output_energy": 3.716335757635534,
+              "near_energy": 13.025231879204512,
+              "error_energy": 4.341698716394603,
+              "rms": 0.006081597291288775,
+              "peak": 0.059356689453125,
+              "gain_sensitive_error_db": -4.7712578032862645,
+              "projection_gain": 0.4759941717522321,
+              "noncanonical_projection_si_sdr_db": 5.862120189497908,
+              "projection_residual_energy": 0.7652030893236975
+            },
+            "aec_input": {
+              "output_range": [
+                0,
+                100480
+              ],
+              "samples": 100480,
+              "output_energy": 95.24054481216022,
+              "near_energy": 13.025231879204512,
+              "error_energy": 84.77077905625646,
+              "rms": 0.03078726588326546,
+              "peak": 0.14948296546936035,
+              "gain_sensitive_error_db": 8.13460710922493,
+              "projection_gain": 0.9019032387676458,
+              "noncanonical_projection_si_sdr_db": -9.024981979736557,
+              "projection_residual_energy": 84.64543758118906
+            },
+            "aec_residual": {
+              "output_range": [
+                0,
+                100480
+              ],
+              "samples": 100480,
+              "output_energy": 15.229571562521537,
+              "near_energy": 13.025231879204512,
+              "error_energy": 3.5074494869908523,
+              "rms": 0.012311303274685147,
+              "peak": 0.09395574033260345,
+              "gain_sensitive_error_db": -5.697940382904112,
+              "projection_gain": 0.9499774815619861,
+              "noncanonical_projection_si_sdr_db": 5.292751395087597,
+              "projection_residual_energy": 3.474857069900337
+            },
+            "ns_input": {
+              "output_range": [
+                0,
+                100480
+              ],
+              "samples": 100480,
+              "output_energy": 15.229571562521537,
+              "near_energy": 13.025231879204512,
+              "error_energy": 3.5074494869908523,
+              "rms": 0.012311303274685147,
+              "peak": 0.09395574033260345,
+              "gain_sensitive_error_db": -5.697940382904112,
+              "projection_gain": 0.9499774815619861,
+              "noncanonical_projection_si_sdr_db": 5.292751395087597,
+              "projection_residual_energy": 3.474857069900337
+            },
+            "ns_output": {
+              "output_range": [
+                160,
+                100640
+              ],
+              "samples": 100480,
+              "output_energy": 3.7163133227622565,
+              "near_energy": 13.025231879204512,
+              "error_energy": 4.341710185473239,
+              "rms": 0.006081578934487968,
+              "peak": 0.05936089903116226,
+              "gain_sensitive_error_db": -4.771246330931063,
+              "projection_gain": 0.4759928702801267,
+              "noncanonical_projection_si_sdr_db": 5.86213217833267,
+              "projection_residual_energy": 0.7651967925118678
+            },
+            "agc_output": {
+              "output_range": [
+                160,
+                100640
+              ],
+              "samples": 100480,
+              "output_energy": 3.7163133227622565,
+              "near_energy": 13.025231879204512,
+              "error_energy": 4.341710185473239,
+              "rms": 0.006081578934487968,
+              "peak": 0.05936089903116226,
+              "gain_sensitive_error_db": -4.771246330931063,
+              "projection_gain": 0.4759928702801267,
+              "noncanonical_projection_si_sdr_db": 5.86213217833267,
+              "projection_residual_energy": 0.7651967925118678
+            }
+          }
+        },
+        {
+          "window": "second-0",
+          "physical_range": [
+            0,
+            16000
+          ],
+          "lanes": {
+            "raw_mic0": {
+              "output_range": [
+                0,
+                16000
+              ],
+              "samples": 16000,
+              "output_energy": 23.07472518645227,
+              "near_energy": 0.0,
+              "error_energy": 23.07472518645227,
+              "rms": 0.03797591768678233,
+              "peak": 0.093536376953125,
+              "gain_sensitive_error_db": null,
+              "projection_gain": null,
+              "noncanonical_projection_si_sdr_db": null,
+              "projection_residual_energy": null
+            },
+            "final_s16": {
+              "output_range": [
+                160,
+                16160
+              ],
+              "samples": 16000,
+              "output_energy": 0.015685475431382656,
+              "near_energy": 0.0,
+              "error_energy": 0.015685475431382656,
+              "rms": 0.0009901223229790428,
+              "peak": 0.009765625,
+              "gain_sensitive_error_db": null,
+              "projection_gain": null,
+              "noncanonical_projection_si_sdr_db": null,
+              "projection_residual_energy": null
+            },
+            "aec_input": {
+              "output_range": [
+                0,
+                16000
+              ],
+              "samples": 16000,
+              "output_energy": 21.437976983392765,
+              "near_energy": 0.0,
+              "error_energy": 21.437976983392765,
+              "rms": 0.03660428337588441,
+              "peak": 0.09093739092350006,
+              "gain_sensitive_error_db": null,
+              "projection_gain": null,
+              "noncanonical_projection_si_sdr_db": null,
+              "projection_residual_energy": null
+            },
+            "aec_residual": {
+              "output_range": [
+                0,
+                16000
+              ],
+              "samples": 16000,
+              "output_energy": 0.6824789981429867,
+              "near_energy": 0.0,
+              "error_energy": 0.6824789981429867,
+              "rms": 0.006531074749529106,
+              "peak": 0.05735624581575394,
+              "gain_sensitive_error_db": null,
+              "projection_gain": null,
+              "noncanonical_projection_si_sdr_db": null,
+              "projection_residual_energy": null
+            },
+            "ns_input": {
+              "output_range": [
+                0,
+                16000
+              ],
+              "samples": 16000,
+              "output_energy": 0.6824789981429867,
+              "near_energy": 0.0,
+              "error_energy": 0.6824789981429867,
+              "rms": 0.006531074749529106,
+              "peak": 0.05735624581575394,
+              "gain_sensitive_error_db": null,
+              "projection_gain": null,
+              "noncanonical_projection_si_sdr_db": null,
+              "projection_residual_energy": null
+            },
+            "ns_output": {
+              "output_range": [
+                160,
+                16160
+              ],
+              "samples": 16000,
+              "output_energy": 0.01568130383288131,
+              "near_energy": 0.0,
+              "error_energy": 0.01568130383288131,
+              "rms": 0.0009899906512463043,
+              "peak": 0.009772295132279396,
+              "gain_sensitive_error_db": null,
+              "projection_gain": null,
+              "noncanonical_projection_si_sdr_db": null,
+              "projection_residual_energy": null
+            },
+            "agc_output": {
+              "output_range": [
+                160,
+                16160
+              ],
+              "samples": 16000,
+              "output_energy": 0.01568130383288131,
+              "near_energy": 0.0,
+              "error_energy": 0.01568130383288131,
+              "rms": 0.0009899906512463043,
+              "peak": 0.009772295132279396,
+              "gain_sensitive_error_db": null,
+              "projection_gain": null,
+              "noncanonical_projection_si_sdr_db": null,
+              "projection_residual_energy": null
+            }
+          }
+        },
+        {
+          "window": "second-1",
+          "physical_range": [
+            16000,
+            32000
+          ],
+          "lanes": {
+            "raw_mic0": {
+              "output_range": [
+                16000,
+                32000
+              ],
+              "samples": 16000,
+              "output_energy": 26.913985919207335,
+              "near_energy": 5.406170718371868,
+              "error_energy": 21.77544685266912,
+              "rms": 0.041013706488812474,
+              "peak": 0.1522216796875,
+              "gain_sensitive_error_db": 6.0507731998656045,
+              "projection_gain": 0.9752475767252266,
+              "noncanonical_projection_si_sdr_db": -6.2678149465479995,
+              "projection_residual_energy": 21.772134586705164
+            },
+            "final_s16": {
+              "output_range": [
+                16160,
+                32160
+              ],
+              "samples": 16000,
+              "output_energy": 1.7050299318507314,
+              "near_energy": 5.406170718371868,
+              "error_energy": 1.5375331053510308,
+              "rms": 0.010323002021731406,
+              "peak": 0.059356689453125,
+              "gain_sensitive_error_db": -5.460652803685939,
+              "projection_gain": 0.5154912631532791,
+              "noncanonical_projection_si_sdr_db": 7.284827650719254,
+              "projection_residual_energy": 0.2684414702995911
+            },
+            "aec_input": {
+              "output_range": [
+                16000,
+                32000
+              ],
+              "samples": 16000,
+              "output_energy": 24.888948119351063,
+              "near_energy": 5.406170718371868,
+              "error_energy": 20.674363253599655,
+              "rms": 0.03944057881750015,
+              "peak": 0.14948296546936035,
+              "gain_sensitive_error_db": 5.8254238674821215,
+              "projection_gain": 0.8897939119300213,
+              "noncanonical_projection_si_sdr_db": -6.825820499043623,
+              "projection_residual_energy": 20.60870324589124
+            },
+            "aec_residual": {
+              "output_range": [
+                16000,
+                32000
+              ],
+              "samples": 16000,
+              "output_energy": 5.670422764925538,
+              "near_energy": 5.406170718371868,
+              "error_energy": 0.6988159364904347,
+              "rms": 0.018825552390510248,
+              "peak": 0.09395574033260345,
+              "gain_sensitive_error_db": -8.88526955411066,
+              "projection_gain": 0.9598085306055929,
+              "noncanonical_projection_si_sdr_db": 8.583576030420607,
+              "projection_residual_energy": 0.6900830558492808
+            },
+            "ns_input": {
+              "output_range": [
+                16000,
+                32000
+              ],
+              "samples": 16000,
+              "output_energy": 5.670422764925538,
+              "near_energy": 5.406170718371868,
+              "error_energy": 0.6988159364904347,
+              "rms": 0.018825552390510248,
+              "peak": 0.09395574033260345,
+              "gain_sensitive_error_db": -8.88526955411066,
+              "projection_gain": 0.9598085306055929,
+              "noncanonical_projection_si_sdr_db": 8.583576030420607,
+              "projection_residual_energy": 0.6900830558492808
+            },
+            "ns_output": {
+              "output_range": [
+                16160,
+                32160
+              ],
+              "samples": 16000,
+              "output_energy": 1.705051452741876,
+              "near_energy": 5.406170718371868,
+              "error_energy": 1.5375348993311144,
+              "rms": 0.010323067170001718,
+              "peak": 0.05936089903116226,
+              "gain_sensitive_error_db": -5.460647736379136,
+              "projection_gain": 0.515493087634237,
+              "noncanonical_projection_si_sdr_db": 7.284674742598732,
+              "projection_residual_energy": 0.2684528221224391
+            },
+            "agc_output": {
+              "output_range": [
+                16160,
+                32160
+              ],
+              "samples": 16000,
+              "output_energy": 1.705051452741876,
+              "near_energy": 5.406170718371868,
+              "error_energy": 1.5375348993311144,
+              "rms": 0.010323067170001718,
+              "peak": 0.05936089903116226,
+              "gain_sensitive_error_db": -5.460647736379136,
+              "projection_gain": 0.515493087634237,
+              "noncanonical_projection_si_sdr_db": 7.284674742598732,
+              "projection_residual_energy": 0.2684528221224391
+            }
+          }
+        },
+        {
+          "window": "second-2",
+          "physical_range": [
+            32000,
+            48000
+          ],
+          "lanes": {
+            "raw_mic0": {
+              "output_range": [
+                32000,
+                48000
+              ],
+              "samples": 16000,
+              "output_energy": 22.791027527302504,
+              "near_energy": 2.2474757824093103,
+              "error_energy": 20.629086991772056,
+              "rms": 0.037741743738947814,
+              "peak": 0.13409423828125,
+              "gain_sensitive_error_db": 9.627849865583348,
+              "projection_gain": 0.9809708190076317,
+              "noncanonical_projection_si_sdr_db": -9.794556757985898,
+              "projection_residual_energy": 20.628273158925012
+            },
+            "final_s16": {
+              "output_range": [
+                32160,
+                48160
+              ],
+              "samples": 16000,
+              "output_energy": 0.5482217967510223,
+              "near_energy": 2.2474757824093103,
+              "error_energy": 0.9011663123965263,
+              "rms": 0.005853534171501769,
+              "peak": 0.0545654296875,
+              "gain_sensitive_error_db": -3.9689007224622426,
+              "projection_gain": 0.4214797955982545,
+              "noncanonical_projection_si_sdr_db": 4.281541813756887,
+              "projection_residual_energy": 0.14896847121596674
+            },
+            "aec_input": {
+              "output_range": [
+                32000,
+                48000
+              ],
+              "samples": 16000,
+              "output_energy": 21.183447737841224,
+              "near_energy": 2.2474757824093103,
+              "error_energy": 19.400285258818798,
+              "rms": 0.03638633649620523,
+              "peak": 0.12536437809467316,
+              "gain_sensitive_error_db": 9.361130950699854,
+              "projection_gain": 0.8967033800717669,
+              "noncanonical_projection_si_sdr_db": -10.302783111466196,
+              "projection_residual_energy": 19.37630426140501
+            },
+            "aec_residual": {
+              "output_range": [
+                32000,
+                48000
+              ],
+              "samples": 16000,
+              "output_energy": 2.653848359307603,
+              "near_energy": 2.2474757824093103,
+              "error_energy": 0.6277057662803617,
+              "rms": 0.012878878928568479,
+              "peak": 0.09345907717943192,
+              "gain_sensitive_error_db": -5.539389024872802,
+              "projection_gain": 0.9507596052615086,
+              "noncanonical_projection_si_sdr_db": 5.1386702251926675,
+              "projection_residual_energy": 0.6222564994734104
+            },
+            "ns_input": {
+              "output_range": [
+                32000,
+                48000
+              ],
+              "samples": 16000,
+              "output_energy": 2.653848359307603,
+              "near_energy": 2.2474757824093103,
+              "error_energy": 0.6277057662803617,
+              "rms": 0.012878878928568479,
+              "peak": 0.09345907717943192,
+              "gain_sensitive_error_db": -5.539389024872802,
+              "projection_gain": 0.9507596052615086,
+              "noncanonical_projection_si_sdr_db": 5.1386702251926675,
+              "projection_residual_energy": 0.6222564994734104
+            },
+            "ns_output": {
+              "output_range": [
+                32160,
+                48160
+              ],
+              "samples": 16000,
+              "output_energy": 0.5481999194740738,
+              "near_energy": 2.2474757824093103,
+              "error_energy": 0.9011800451516002,
+              "rms": 0.005853417375100601,
+              "peak": 0.054575975984334946,
+              "gain_sensitive_error_db": -3.968834541400816,
+              "projection_gain": 0.42147187337005937,
+              "noncanonical_projection_si_sdr_db": 4.281578795651622,
+              "projection_residual_energy": 0.1489616027069808
+            },
+            "agc_output": {
+              "output_range": [
+                32160,
+                48160
+              ],
+              "samples": 16000,
+              "output_energy": 0.5481999194740738,
+              "near_energy": 2.2474757824093103,
+              "error_energy": 0.9011800451516002,
+              "rms": 0.005853417375100601,
+              "peak": 0.054575975984334946,
+              "gain_sensitive_error_db": -3.968834541400816,
+              "projection_gain": 0.42147187337005937,
+              "noncanonical_projection_si_sdr_db": 4.281578795651622,
+              "projection_residual_energy": 0.1489616027069808
+            }
+          }
+        },
+        {
+          "window": "second-3",
+          "physical_range": [
+            48000,
+            64000
+          ],
+          "lanes": {
+            "raw_mic0": {
+              "output_range": [
+                48000,
+                64000
+              ],
+              "samples": 16000,
+              "output_energy": 28.618026327341795,
+              "near_energy": 4.4673343151807785,
+              "error_energy": 23.79914632998407,
+              "rms": 0.04229215820289693,
+              "peak": 0.0994873046875,
+              "gain_sensitive_error_db": 7.265129249595846,
+              "projection_gain": 1.0393462473787034,
+              "noncanonical_projection_si_sdr_db": -6.928661965019208,
+              "projection_residual_energy": 23.792230328296146
+            },
+            "final_s16": {
+              "output_range": [
+                48160,
+                64160
+              ],
+              "samples": 16000,
+              "output_energy": 1.1817955374717712,
+              "near_energy": 4.4673343151807785,
+              "error_energy": 1.5618079993873835,
+              "rms": 0.008594313299617701,
+              "peak": 0.040557861328125,
+              "gain_sensitive_error_db": -4.564208114299179,
+              "projection_gain": 0.4574676490380109,
+              "noncanonical_projection_si_sdr_db": 5.782713970442515,
+              "projection_residual_energy": 0.24688677793432057
+            },
+            "aec_input": {
+              "output_range": [
+                48000,
+                64000
+              ],
+              "samples": 16000,
+              "output_energy": 26.42248018934484,
+              "near_energy": 4.4673343151807785,
+              "error_energy": 22.609584323282657,
+              "rms": 0.04063748284323295,
+              "peak": 0.09979530423879623,
+              "gain_sensitive_error_db": 7.042441235930173,
+              "projection_gain": 0.9267529131528505,
+              "noncanonical_projection_si_sdr_db": -7.698555749511611,
+              "projection_residual_energy": 22.585616468323305
+            },
+            "aec_residual": {
+              "output_range": [
+                48000,
+                64000
+              ],
+              "samples": 16000,
+              "output_energy": 5.2481549291568195,
+              "near_energy": 4.4673343151807785,
+              "error_energy": 1.2770117680604924,
+              "rms": 0.0181110376034147,
+              "peak": 0.08642082661390305,
+              "gain_sensitive_error_db": -5.438535548905716,
+              "projection_gain": 0.9444645151809763,
+              "noncanonical_projection_si_sdr_db": 4.989360560978188,
+              "projection_residual_energy": 1.263233659907997
+            },
+            "ns_input": {
+              "output_range": [
+                48000,
+                64000
+              ],
+              "samples": 16000,
+              "output_energy": 5.2481549291568195,
+              "near_energy": 4.4673343151807785,
+              "error_energy": 1.2770117680604924,
+              "rms": 0.0181110376034147,
+              "peak": 0.08642082661390305,
+              "gain_sensitive_error_db": -5.438535548905716,
+              "projection_gain": 0.9444645151809763,
+              "noncanonical_projection_si_sdr_db": 4.989360560978188,
+              "projection_residual_energy": 1.263233659907997
+            },
+            "ns_output": {
+              "output_range": [
+                48160,
+                64160
+              ],
+              "samples": 16000,
+              "output_energy": 1.1817809768660423,
+              "near_energy": 4.4673343151807785,
+              "error_energy": 1.561809080982567,
+              "rms": 0.00859426035526779,
+              "peak": 0.04054677113890648,
+              "gain_sensitive_error_db": -4.564205106690961,
+              "projection_gain": 0.4574658983070594,
+              "noncanonical_projection_si_sdr_db": 5.782810988338358,
+              "projection_residual_energy": 0.24687937311577626
+            },
+            "agc_output": {
+              "output_range": [
+                48160,
+                64160
+              ],
+              "samples": 16000,
+              "output_energy": 1.1817809768660423,
+              "near_energy": 4.4673343151807785,
+              "error_energy": 1.561809080982567,
+              "rms": 0.00859426035526779,
+              "peak": 0.04054677113890648,
+              "gain_sensitive_error_db": -4.564205106690961,
+              "projection_gain": 0.4574658983070594,
+              "noncanonical_projection_si_sdr_db": 5.782810988338358,
+              "projection_residual_energy": 0.24687937311577626
+            }
+          }
+        },
+        {
+          "window": "second-4",
+          "physical_range": [
+            64000,
+            80000
+          ],
+          "lanes": {
+            "raw_mic0": {
+              "output_range": [
+                64000,
+                80000
+              ],
+              "samples": 16000,
+              "output_energy": 1.4322865102440119,
+              "near_energy": 0.9002753449603915,
+              "error_energy": 0.5658188117668033,
+              "rms": 0.009461390325435831,
+              "peak": 0.067718505859375,
+              "gain_sensitive_error_db": -2.01697974329905,
+              "projection_gain": 0.9812237185698613,
+              "noncanonical_projection_si_sdr_db": 1.8547773147727489,
+              "projection_residual_energy": 0.5655014208243738
+            },
+            "final_s16": {
+              "output_range": [
+                64160,
+                80160
+              ],
+              "samples": 16000,
+              "output_energy": 0.2654446195811033,
+              "near_energy": 0.9002753449603915,
+              "error_energy": 0.32167145516723394,
+              "rms": 0.004073117813643372,
+              "peak": 0.037933349609375,
+              "gain_sensitive_error_db": -4.4696283295697175,
+              "projection_gain": 0.46877242284769866,
+              "noncanonical_projection_si_sdr_db": 4.66280262168455,
+              "projection_residual_energy": 0.06761128721092292
+            },
+            "aec_input": {
+              "output_range": [
+                64000,
+                80000
+              ],
+              "samples": 16000,
+              "output_energy": 1.3074016404520916,
+              "near_energy": 0.9002753449603915,
+              "error_energy": 0.6448597868350754,
+              "rms": 0.009039502338528141,
+              "peak": 0.07083545625209808,
+              "gain_sensitive_error_db": -1.4491006129685138,
+              "projection_gain": 0.8679662324009136,
+              "noncanonical_projection_si_sdr_db": 0.3261621045823696,
+              "projection_residual_energy": 0.6291653625618
+            },
+            "aec_residual": {
+              "output_range": [
+                64000,
+                80000
+              ],
+              "samples": 16000,
+              "output_energy": 0.9743763692103533,
+              "near_energy": 0.9002753449603915,
+              "error_energy": 0.21772756768907447,
+              "rms": 0.007803750577488179,
+              "peak": 0.07602912187576294,
+              "gain_sensitive_error_db": -6.164619357269393,
+              "projection_gain": 0.9202318800336403,
+              "noncanonical_projection_si_sdr_db": 5.558357699228454,
+              "projection_residual_energy": 0.2119991580153721
+            },
+            "ns_input": {
+              "output_range": [
+                64000,
+                80000
+              ],
+              "samples": 16000,
+              "output_energy": 0.9743763692103533,
+              "near_energy": 0.9002753449603915,
+              "error_energy": 0.21772756768907447,
+              "rms": 0.007803750577488179,
+              "peak": 0.07602912187576294,
+              "gain_sensitive_error_db": -6.164619357269393,
+              "projection_gain": 0.9202318800336403,
+              "noncanonical_projection_si_sdr_db": 5.558357699228454,
+              "projection_residual_energy": 0.2119991580153721
+            },
+            "ns_output": {
+              "output_range": [
+                64160,
+                80160
+              ],
+              "samples": 16000,
+              "output_energy": 0.2654418315286435,
+              "near_energy": 0.9002753449603915,
+              "error_energy": 0.32167109133084903,
+              "rms": 0.0040730964229367585,
+              "peak": 0.03792649880051613,
+              "gain_sensitive_error_db": -4.469633241793699,
+              "projection_gain": 0.46877107647289873,
+              "noncanonical_projection_si_sdr_db": 4.6628837679709365,
+              "projection_residual_energy": 0.06760963556247408
+            },
+            "agc_output": {
+              "output_range": [
+                64160,
+                80160
+              ],
+              "samples": 16000,
+              "output_energy": 0.2654418315286435,
+              "near_energy": 0.9002753449603915,
+              "error_energy": 0.32167109133084903,
+              "rms": 0.0040730964229367585,
+              "peak": 0.03792649880051613,
+              "gain_sensitive_error_db": -4.469633241793699,
+              "projection_gain": 0.46877107647289873,
+              "noncanonical_projection_si_sdr_db": 4.6628837679709365,
+              "projection_residual_energy": 0.06760963556247408
+            }
+          }
+        },
+        {
+          "window": "second-5",
+          "physical_range": [
+            80000,
+            96000
+          ],
+          "lanes": {
+            "raw_mic0": {
+              "output_range": [
+                80000,
+                96000
+              ],
+              "samples": 16000,
+              "output_energy": 0.003975718282163143,
+              "near_energy": 0.003975718282163143,
+              "error_energy": 0.0,
+              "rms": 0.0004984800824859469,
+              "peak": 0.002532958984375,
+              "gain_sensitive_error_db": null,
+              "projection_gain": 1.0,
+              "noncanonical_projection_si_sdr_db": null,
+              "projection_residual_energy": 0.0
+            },
+            "final_s16": {
+              "output_range": [
+                80160,
+                96160
+              ],
+              "samples": 16000,
+              "output_energy": 0.00015839654952287674,
+              "near_energy": 0.003975718282163143,
+              "error_energy": 0.003834368661046028,
+              "rms": 9.949765999851351e-05,
+              "peak": 0.000823974609375,
+              "gain_sensitive_error_db": -0.1572173644422141,
+              "projection_gain": 0.03769710897082266,
+              "noncanonical_projection_si_sdr_db": -14.319403353629127,
+              "projection_residual_energy": 0.00015274676749377545
+            },
+            "aec_input": {
+              "output_range": [
+                80000,
+                96000
+              ],
+              "samples": 16000,
+              "output_energy": 0.0002901417782363296,
+              "near_energy": 0.003975718282163143,
+              "error_energy": 0.0037094503275021474,
+              "rms": 0.0001346620256039935,
+              "peak": 0.0010044302325695753,
+              "gain_sensitive_error_db": -0.30106042972537356,
+              "projection_gain": 0.06997600099001343,
+              "noncanonical_projection_si_sdr_db": -11.431328820342305,
+              "projection_residual_energy": 0.00027067411422629145
+            },
+            "aec_residual": {
+              "output_range": [
+                80000,
+                96000
+              ],
+              "samples": 16000,
+              "output_energy": 0.0002901417782363296,
+              "near_energy": 0.003975718282163143,
+              "error_energy": 0.0037094503275021474,
+              "rms": 0.0001346620256039935,
+              "peak": 0.0010044302325695753,
+              "gain_sensitive_error_db": -0.30106042972537356,
+              "projection_gain": 0.06997600099001343,
+              "noncanonical_projection_si_sdr_db": -11.431328820342305,
+              "projection_residual_energy": 0.00027067411422629145
+            },
+            "ns_input": {
+              "output_range": [
+                80000,
+                96000
+              ],
+              "samples": 16000,
+              "output_energy": 0.0002901417782363296,
+              "near_energy": 0.003975718282163143,
+              "error_energy": 0.0037094503275021474,
+              "rms": 0.0001346620256039935,
+              "peak": 0.0010044302325695753,
+              "gain_sensitive_error_db": -0.30106042972537356,
+              "projection_gain": 0.06997600099001343,
+              "noncanonical_projection_si_sdr_db": -11.431328820342305,
+              "projection_residual_energy": 0.00027067411422629145
+            },
+            "ns_output": {
+              "output_range": [
+                80160,
+                96160
+              ],
+              "samples": 16000,
+              "output_energy": 0.00015783831873940568,
+              "near_energy": 0.003975718282163143,
+              "error_energy": 0.0038337648442272588,
+              "rms": 9.932217738860166e-05,
+              "peak": 0.0008215320995077491,
+              "gain_sensitive_error_db": -0.1579013230948213,
+              "projection_gain": 0.037702842027350164,
+              "noncanonical_projection_si_sdr_db": -14.302132573190143,
+              "projection_residual_energy": 0.00015218681811789055
+            },
+            "agc_output": {
+              "output_range": [
+                80160,
+                96160
+              ],
+              "samples": 16000,
+              "output_energy": 0.00015783831873940568,
+              "near_energy": 0.003975718282163143,
+              "error_energy": 0.0038337648442272588,
+              "rms": 9.932217738860166e-05,
+              "peak": 0.0008215320995077491,
+              "gain_sensitive_error_db": -0.1579013230948213,
+              "projection_gain": 0.037702842027350164,
+              "noncanonical_projection_si_sdr_db": -14.302132573190143,
+              "projection_residual_energy": 0.00015218681811789055
+            }
+          }
+        },
+        {
+          "window": "second-6",
+          "physical_range": [
+            96000,
+            100480
+          ],
+          "lanes": {
+            "raw_mic0": {
+              "output_range": [
+                96000,
+                100480
+              ],
+              "samples": 4480,
+              "output_energy": 0.0,
+              "near_energy": 0.0,
+              "error_energy": 0.0,
+              "rms": 0.0,
+              "peak": 0.0,
+              "gain_sensitive_error_db": null,
+              "projection_gain": null,
+              "noncanonical_projection_si_sdr_db": null,
+              "projection_residual_energy": null
+            },
+            "final_s16": {
+              "output_range": [
+                96160,
+                100640
+              ],
+              "samples": 4480,
+              "output_energy": 0.0,
+              "near_energy": 0.0,
+              "error_energy": 0.0,
+              "rms": 0.0,
+              "peak": 0.0,
+              "gain_sensitive_error_db": null,
+              "projection_gain": null,
+              "noncanonical_projection_si_sdr_db": null,
+              "projection_residual_energy": null
+            },
+            "aec_input": {
+              "output_range": [
+                96000,
+                100480
+              ],
+              "samples": 4480,
+              "output_energy": 2.2520564453922627e-84,
+              "near_energy": 0.0,
+              "error_energy": 2.2520564453922627e-84,
+              "rms": 2.2420775429197073e-44,
+              "peak": 2.2420775429197073e-44,
+              "gain_sensitive_error_db": null,
+              "projection_gain": null,
+              "noncanonical_projection_si_sdr_db": null,
+              "projection_residual_energy": null
+            },
+            "aec_residual": {
+              "output_range": [
+                96000,
+                100480
+              ],
+              "samples": 4480,
+              "output_energy": 2.2520564453922627e-84,
+              "near_energy": 0.0,
+              "error_energy": 2.2520564453922627e-84,
+              "rms": 2.2420775429197073e-44,
+              "peak": 2.2420775429197073e-44,
+              "gain_sensitive_error_db": null,
+              "projection_gain": null,
+              "noncanonical_projection_si_sdr_db": null,
+              "projection_residual_energy": null
+            },
+            "ns_input": {
+              "output_range": [
+                96000,
+                100480
+              ],
+              "samples": 4480,
+              "output_energy": 2.2520564453922627e-84,
+              "near_energy": 0.0,
+              "error_energy": 2.2520564453922627e-84,
+              "rms": 2.2420775429197073e-44,
+              "peak": 2.2420775429197073e-44,
+              "gain_sensitive_error_db": null,
+              "projection_gain": null,
+              "noncanonical_projection_si_sdr_db": null,
+              "projection_residual_energy": null
+            },
+            "ns_output": {
+              "output_range": [
+                96160,
+                100640
+              ],
+              "samples": 4480,
+              "output_energy": 4.398547744906763e-86,
+              "near_energy": 0.0,
+              "error_energy": 4.398547744906763e-86,
+              "rms": 3.133398622996355e-45,
+              "peak": 4.203895392974451e-45,
+              "gain_sensitive_error_db": null,
+              "projection_gain": null,
+              "noncanonical_projection_si_sdr_db": null,
+              "projection_residual_energy": null
+            },
+            "agc_output": {
+              "output_range": [
+                96160,
+                100640
+              ],
+              "samples": 4480,
+              "output_energy": 1.1798790143730613e-84,
+              "near_energy": 0.0,
+              "error_energy": 1.1798790143730613e-84,
+              "rms": 1.6228550502819355e-44,
+              "peak": 2.382207389352189e-44,
+              "gain_sensitive_error_db": null,
+              "projection_gain": null,
+              "noncanonical_projection_si_sdr_db": null,
+              "projection_residual_energy": null
+            }
+          }
+        },
+        {
+          "window": "construction-0",
+          "physical_range": [
+            0,
+            16000
+          ],
+          "lanes": {
+            "raw_mic0": {
+              "output_range": [
+                0,
+                16000
+              ],
+              "samples": 16000,
+              "output_energy": 23.07472518645227,
+              "near_energy": 0.0,
+              "error_energy": 23.07472518645227,
+              "rms": 0.03797591768678233,
+              "peak": 0.093536376953125,
+              "gain_sensitive_error_db": null,
+              "projection_gain": null,
+              "noncanonical_projection_si_sdr_db": null,
+              "projection_residual_energy": null
+            },
+            "final_s16": {
+              "output_range": [
+                160,
+                16160
+              ],
+              "samples": 16000,
+              "output_energy": 0.015685475431382656,
+              "near_energy": 0.0,
+              "error_energy": 0.015685475431382656,
+              "rms": 0.0009901223229790428,
+              "peak": 0.009765625,
+              "gain_sensitive_error_db": null,
+              "projection_gain": null,
+              "noncanonical_projection_si_sdr_db": null,
+              "projection_residual_energy": null
+            },
+            "aec_input": {
+              "output_range": [
+                0,
+                16000
+              ],
+              "samples": 16000,
+              "output_energy": 21.437976983392765,
+              "near_energy": 0.0,
+              "error_energy": 21.437976983392765,
+              "rms": 0.03660428337588441,
+              "peak": 0.09093739092350006,
+              "gain_sensitive_error_db": null,
+              "projection_gain": null,
+              "noncanonical_projection_si_sdr_db": null,
+              "projection_residual_energy": null
+            },
+            "aec_residual": {
+              "output_range": [
+                0,
+                16000
+              ],
+              "samples": 16000,
+              "output_energy": 0.6824789981429867,
+              "near_energy": 0.0,
+              "error_energy": 0.6824789981429867,
+              "rms": 0.006531074749529106,
+              "peak": 0.05735624581575394,
+              "gain_sensitive_error_db": null,
+              "projection_gain": null,
+              "noncanonical_projection_si_sdr_db": null,
+              "projection_residual_energy": null
+            },
+            "ns_input": {
+              "output_range": [
+                0,
+                16000
+              ],
+              "samples": 16000,
+              "output_energy": 0.6824789981429867,
+              "near_energy": 0.0,
+              "error_energy": 0.6824789981429867,
+              "rms": 0.006531074749529106,
+              "peak": 0.05735624581575394,
+              "gain_sensitive_error_db": null,
+              "projection_gain": null,
+              "noncanonical_projection_si_sdr_db": null,
+              "projection_residual_energy": null
+            },
+            "ns_output": {
+              "output_range": [
+                160,
+                16160
+              ],
+              "samples": 16000,
+              "output_energy": 0.01568130383288131,
+              "near_energy": 0.0,
+              "error_energy": 0.01568130383288131,
+              "rms": 0.0009899906512463043,
+              "peak": 0.009772295132279396,
+              "gain_sensitive_error_db": null,
+              "projection_gain": null,
+              "noncanonical_projection_si_sdr_db": null,
+              "projection_residual_energy": null
+            },
+            "agc_output": {
+              "output_range": [
+                160,
+                16160
+              ],
+              "samples": 16000,
+              "output_energy": 0.01568130383288131,
+              "near_energy": 0.0,
+              "error_energy": 0.01568130383288131,
+              "rms": 0.0009899906512463043,
+              "peak": 0.009772295132279396,
+              "gain_sensitive_error_db": null,
+              "projection_gain": null,
+              "noncanonical_projection_si_sdr_db": null,
+              "projection_residual_energy": null
+            }
+          }
+        },
+        {
+          "window": "construction-1",
+          "physical_range": [
+            16000,
+            64000
+          ],
+          "lanes": {
+            "raw_mic0": {
+              "output_range": [
+                16000,
+                64000
+              ],
+              "samples": 48000,
+              "output_energy": 78.32303977385163,
+              "near_energy": 12.120980815961957,
+              "error_energy": 66.20368017442524,
+              "rms": 0.04039467780894626,
+              "peak": 0.1522216796875,
+              "gain_sensitive_error_db": 7.373443680956687,
+              "projection_gain": 0.9999331235417256,
+              "noncanonical_projection_si_sdr_db": -7.374024578360956,
+              "projection_residual_energy": 66.20368012021463
+            },
+            "final_s16": {
+              "output_range": [
+                16160,
+                64160
+              ],
+              "samples": 48000,
+              "output_energy": 3.435047266073525,
+              "near_energy": 12.120980815961957,
+              "error_energy": 4.000507417134941,
+              "rms": 0.008459520359326829,
+              "peak": 0.059356689453125,
+              "gain_sensitive_error_db": -4.814226839176587,
+              "projection_gain": 0.47667432365222584,
+              "noncanonical_projection_si_sdr_db": 6.068741783540535,
+              "projection_residual_energy": 0.6809372673781325
+            },
+            "aec_input": {
+              "output_range": [
+                16000,
+                64000
+              ],
+              "samples": 48000,
+              "output_energy": 72.49487604653713,
+              "near_energy": 12.120980815961957,
+              "error_energy": 62.68423283570111,
+              "rms": 0.038862705999919644,
+              "peak": 0.14948296546936035,
+              "gain_sensitive_error_db": 7.136205512288324,
+              "projection_gain": 0.9046967551469314,
+              "noncanonical_projection_si_sdr_db": -7.998510707637542,
+              "projection_residual_energy": 62.574141500463824
+            },
+            "aec_residual": {
+              "output_range": [
+                16000,
+                64000
+              ],
+              "samples": 48000,
+              "output_energy": 13.572426053389961,
+              "near_energy": 12.120980815961957,
+              "error_energy": 2.6035334708312887,
+              "rms": 0.016815435650386547,
+              "peak": 0.09395574033260345,
+              "gain_sensitive_error_db": -6.679745985620832,
+              "projection_gain": 0.952475453476252,
+              "noncanonical_projection_si_sdr_db": 6.302729815887767,
+              "projection_residual_energy": 2.5761572354073703
+            },
+            "ns_input": {
+              "output_range": [
+                16000,
+                64000
+              ],
+              "samples": 48000,
+              "output_energy": 13.572426053389961,
+              "near_energy": 12.120980815961957,
+              "error_energy": 2.6035334708312887,
+              "rms": 0.016815435650386547,
+              "peak": 0.09395574033260345,
+              "gain_sensitive_error_db": -6.679745985620832,
+              "projection_gain": 0.952475453476252,
+              "noncanonical_projection_si_sdr_db": 6.302729815887767,
+              "projection_residual_energy": 2.5761572354073703
+            },
+            "ns_output": {
+              "output_range": [
+                16160,
+                64160
+              ],
+              "samples": 48000,
+              "output_energy": 3.4350323490819923,
+              "near_energy": 12.120980815961957,
+              "error_energy": 4.000524025465282,
+              "rms": 0.008459501991205404,
+              "peak": 0.05936089903116226,
+              "gain_sensitive_error_db": -4.81420880923564,
+              "projection_gain": 0.4766730232078826,
+              "noncanonical_projection_si_sdr_db": 6.0687173835240475,
+              "projection_residual_energy": 0.6809373776775834
+            },
+            "agc_output": {
+              "output_range": [
+                16160,
+                64160
+              ],
+              "samples": 48000,
+              "output_energy": 3.4350323490819923,
+              "near_energy": 12.120980815961957,
+              "error_energy": 4.000524025465282,
+              "rms": 0.008459501991205404,
+              "peak": 0.05936089903116226,
+              "gain_sensitive_error_db": -4.81420880923564,
+              "projection_gain": 0.4766730232078826,
+              "noncanonical_projection_si_sdr_db": 6.0687173835240475,
+              "projection_residual_energy": 0.6809373776775834
+            }
+          }
+        },
+        {
+          "window": "construction-2",
+          "physical_range": [
+            64000,
+            65280
+          ],
+          "lanes": {
+            "raw_mic0": {
+              "output_range": [
+                64000,
+                65280
+              ],
+              "samples": 1280,
+              "output_energy": 1.0566508760675788,
+              "near_energy": 0.5246397107839584,
+              "error_energy": 0.5658188117668033,
+              "rms": 0.02873166366446252,
+              "peak": 0.067718505859375,
+              "gain_sensitive_error_db": 0.32816222427454056,
+              "projection_gain": 0.9677801300699629,
+              "noncanonical_projection_si_sdr_db": -0.608445808692571,
+              "projection_residual_energy": 0.5652741727806389
+            },
+            "final_s16": {
+              "output_range": [
+                64160,
+                65440
+              ],
+              "samples": 1280,
+              "output_energy": 0.12475053779780865,
+              "near_energy": 0.5246397107839584,
+              "error_energy": 0.19706624560058117,
+              "rms": 0.009872251903924352,
+              "peak": 0.037933349609375,
+              "gain_sensitive_error_db": -4.252489171906742,
+              "projection_gain": 0.43108060034693846,
+              "noncanonical_projection_si_sdr_db": 5.535082468766617,
+              "projection_residual_energy": 0.02725648641957865
+            },
+            "aec_input": {
+              "output_range": [
+                64000,
+                65280
+              ],
+              "samples": 1280,
+              "output_energy": 0.974010052920299,
+              "near_energy": 0.5246397107839584,
+              "error_energy": 0.5922041602725353,
+              "rms": 0.027585237969681965,
+              "peak": 0.07083545625209808,
+              "gain_sensitive_error_db": 0.5261029409725811,
+              "projection_gain": 0.8638743739748931,
+              "noncanonical_projection_si_sdr_db": -1.725205312640822,
+              "projection_residual_energy": 0.5824824888168625
+            },
+            "aec_residual": {
+              "output_range": [
+                64000,
+                65280
+              ],
+              "samples": 1280,
+              "output_energy": 0.6235639314145374,
+              "near_energy": 0.5246397107839584,
+              "error_energy": 0.15218569884947894,
+              "rms": 0.02207168596681294,
+              "peak": 0.07602912187576294,
+              "gain_sensitive_error_db": -5.374873169571485,
+              "projection_gain": 0.9492399477926361,
+              "noncanonical_projection_si_sdr_db": 4.961141521558908,
+              "projection_residual_energy": 0.1508339211419626
+            },
+            "ns_input": {
+              "output_range": [
+                64000,
+                65280
+              ],
+              "samples": 1280,
+              "output_energy": 0.6235639314145374,
+              "near_energy": 0.5246397107839584,
+              "error_energy": 0.15218569884947894,
+              "rms": 0.02207168596681294,
+              "peak": 0.07602912187576294,
+              "gain_sensitive_error_db": -5.374873169571485,
+              "projection_gain": 0.9492399477926361,
+              "noncanonical_projection_si_sdr_db": 4.961141521558908,
+              "projection_residual_energy": 0.1508339211419626
+            },
+            "ns_output": {
+              "output_range": [
+                64160,
+                65440
+              ],
+              "samples": 1280,
+              "output_energy": 0.12475052877262183,
+              "near_energy": 0.5246397107839584,
+              "error_energy": 0.19706977508406576,
+              "rms": 0.009872251546815996,
+              "peak": 0.03792649880051613,
+              "gain_sensitive_error_db": -4.252411389865978,
+              "projection_gain": 0.4310772280243724,
+              "noncanonical_projection_si_sdr_db": 5.534772916285389,
+              "projection_residual_energy": 0.027258002770867734
+            },
+            "agc_output": {
+              "output_range": [
+                64160,
+                65440
+              ],
+              "samples": 1280,
+              "output_energy": 0.12475052877262183,
+              "near_energy": 0.5246397107839584,
+              "error_energy": 0.19706977508406576,
+              "rms": 0.009872251546815996,
+              "peak": 0.03792649880051613,
+              "gain_sensitive_error_db": -4.252411389865978,
+              "projection_gain": 0.4310772280243724,
+              "noncanonical_projection_si_sdr_db": 5.534772916285389,
+              "projection_residual_energy": 0.027258002770867734
+            }
+          }
+        },
+        {
+          "window": "construction-3",
+          "physical_range": [
+            65280,
+            84496
+          ],
+          "lanes": {
+            "raw_mic0": {
+              "output_range": [
+                65280,
+                84496
+              ],
+              "samples": 19216,
+              "output_energy": 0.37961135245859623,
+              "near_energy": 0.37961135245859623,
+              "error_energy": 0.0,
+              "rms": 0.004444655457824552,
+              "peak": 0.04608154296875,
+              "gain_sensitive_error_db": null,
+              "projection_gain": 1.0,
+              "noncanonical_projection_si_sdr_db": null,
+              "projection_residual_energy": 0.0
+            },
+            "final_s16": {
+              "output_range": [
+                65440,
+                84656
+              ],
+              "samples": 19216,
+              "output_energy": 0.1408459171652794,
+              "near_energy": 0.37961135245859623,
+              "error_energy": 0.12843301706016064,
+              "rms": 0.0027073265112147744,
+              "peak": 0.0364990234375,
+              "gain_sensitive_error_db": -4.706625069118628,
+              "projection_gain": 0.516349484841174,
+              "noncanonical_projection_si_sdr_db": 4.071461079133022,
+              "projection_residual_energy": 0.03963515673701913
+            },
+            "aec_input": {
+              "output_range": [
+                65280,
+                84496
+              ],
+              "samples": 19216,
+              "output_energy": 0.33366614713327536,
+              "near_energy": 0.37961135245859623,
+              "error_energy": 0.05634949471328859,
+              "rms": 0.004167010341224453,
+              "peak": 0.047314032912254333,
+              "gain_sensitive_error_db": -8.28449165658272,
+              "projection_gain": 0.8652639082365606,
+              "noncanonical_projection_si_sdr_db": 7.593989352645033,
+              "projection_residual_energy": 0.04945810066763079
+            },
+            "aec_residual": {
+              "output_range": [
+                65280,
+                84496
+              ],
+              "samples": 19216,
+              "output_energy": 0.3510869973972988,
+              "near_energy": 0.37961135245859623,
+              "error_energy": 0.06923573699034413,
+              "rms": 0.004274407052609732,
+              "peak": 0.04211382195353508,
+              "gain_sensitive_error_db": -7.390088722548807,
+              "projection_gain": 0.8712366063099968,
+              "noncanonical_projection_si_sdr_db": 6.606724253926823,
+              "projection_residual_energy": 0.06294177638033589
+            },
+            "ns_input": {
+              "output_range": [
+                65280,
+                84496
+              ],
+              "samples": 19216,
+              "output_energy": 0.3510869973972988,
+              "near_energy": 0.37961135245859623,
+              "error_energy": 0.06923573699034413,
+              "rms": 0.004274407052609732,
+              "peak": 0.04211382195353508,
+              "gain_sensitive_error_db": -7.390088722548807,
+              "projection_gain": 0.8712366063099968,
+              "noncanonical_projection_si_sdr_db": 6.606724253926823,
+              "projection_residual_energy": 0.06294177638033589
+            },
+            "ns_output": {
+              "output_range": [
+                65440,
+                84656
+              ],
+              "samples": 19216,
+              "output_energy": 0.1408426599917051,
+              "near_energy": 0.37961135245859623,
+              "error_energy": 0.12842860000795459,
+              "rms": 0.002707295206497075,
+              "peak": 0.03650938719511032,
+              "gain_sensitive_error_db": -4.706774433700341,
+              "projection_gain": 0.5163510125597528,
+              "noncanonical_projection_si_sdr_db": 4.07190932063391,
+              "projection_residual_energy": 0.03963130065982487
+            },
+            "agc_output": {
+              "output_range": [
+                65440,
+                84656
+              ],
+              "samples": 19216,
+              "output_energy": 0.1408426599917051,
+              "near_energy": 0.37961135245859623,
+              "error_energy": 0.12842860000795459,
+              "rms": 0.002707295206497075,
+              "peak": 0.03650938719511032,
+              "gain_sensitive_error_db": -4.706774433700341,
+              "projection_gain": 0.5163510125597528,
+              "noncanonical_projection_si_sdr_db": 4.07190932063391,
+              "projection_residual_energy": 0.03963130065982487
+            }
+          }
+        },
+        {
+          "window": "construction-4",
+          "physical_range": [
+            84496,
+            100480
+          ],
+          "lanes": {
+            "raw_mic0": {
+              "output_range": [
+                84496,
+                100480
+              ],
+              "samples": 15984,
+              "output_energy": 0.0,
+              "near_energy": 0.0,
+              "error_energy": 0.0,
+              "rms": 0.0,
+              "peak": 0.0,
+              "gain_sensitive_error_db": null,
+              "projection_gain": null,
+              "noncanonical_projection_si_sdr_db": null,
+              "projection_residual_energy": null
+            },
+            "final_s16": {
+              "output_range": [
+                84656,
+                100640
+              ],
+              "samples": 15984,
+              "output_energy": 6.561167538166046e-06,
+              "near_energy": 0.0,
+              "error_energy": 6.561167538166046e-06,
+              "rms": 2.026039127435519e-05,
+              "peak": 0.000640869140625,
+              "gain_sensitive_error_db": null,
+              "projection_gain": null,
+              "noncanonical_projection_si_sdr_db": null,
+              "projection_residual_energy": null
+            },
+            "aec_input": {
+              "output_range": [
+                84496,
+                100480
+              ],
+              "samples": 15984,
+              "output_energy": 1.5582176753535742e-05,
+              "near_energy": 0.0,
+              "error_energy": 1.5582176753535742e-05,
+              "rms": 3.122276265809911e-05,
+              "peak": 0.0009741323883645236,
+              "gain_sensitive_error_db": null,
+              "projection_gain": null,
+              "noncanonical_projection_si_sdr_db": null,
+              "projection_residual_energy": null
+            },
+            "aec_residual": {
+              "output_range": [
+                84496,
+                100480
+              ],
+              "samples": 15984,
+              "output_energy": 1.5582176753535742e-05,
+              "near_energy": 0.0,
+              "error_energy": 1.5582176753535742e-05,
+              "rms": 3.122276265809911e-05,
+              "peak": 0.0009741323883645236,
+              "gain_sensitive_error_db": null,
+              "projection_gain": null,
+              "noncanonical_projection_si_sdr_db": null,
+              "projection_residual_energy": null
+            },
+            "ns_input": {
+              "output_range": [
+                84496,
+                100480
+              ],
+              "samples": 15984,
+              "output_energy": 1.5582176753535742e-05,
+              "near_energy": 0.0,
+              "error_energy": 1.5582176753535742e-05,
+              "rms": 3.122276265809911e-05,
+              "peak": 0.0009741323883645236,
+              "gain_sensitive_error_db": null,
+              "projection_gain": null,
+              "noncanonical_projection_si_sdr_db": null,
+              "projection_residual_energy": null
+            },
+            "ns_output": {
+              "output_range": [
+                84656,
+                100640
+              ],
+              "samples": 15984,
+              "output_energy": 6.481083055961906e-06,
+              "near_energy": 0.0,
+              "error_energy": 6.481083055961906e-06,
+              "rms": 2.0136364224004813e-05,
+              "peak": 0.0006271087913773954,
+              "gain_sensitive_error_db": null,
+              "projection_gain": null,
+              "noncanonical_projection_si_sdr_db": null,
+              "projection_residual_energy": null
+            },
+            "agc_output": {
+              "output_range": [
+                84656,
+                100640
+              ],
+              "samples": 15984,
+              "output_energy": 6.481083055961906e-06,
+              "near_energy": 0.0,
+              "error_energy": 6.481083055961906e-06,
+              "rms": 2.0136364224004813e-05,
+              "peak": 0.0006271087913773954,
+              "gain_sensitive_error_db": null,
+              "projection_gain": null,
+              "noncanonical_projection_si_sdr_db": null,
+              "projection_residual_energy": null
+            }
+          }
+        }
+      ]
+    },
+    {
+      "profile": "assistant_duplex",
+      "gates": {
+        "all": {
+          "frames": 629,
+          "far_frames": 551,
+          "dt_frames": 0,
+          "gate_eligible_frames": 551,
+          "recorded_instant_ratio_far_minmax": [
+            3.8828642405273745e-13,
+            284981092.20506626
+          ],
+          "recorded_smoothed_ratio_far_minmax": [
+            1.109389781895227e-12,
+            0.6166234236190942
+          ]
+        },
+        "near_waveform_nonzero": {
+          "frames": 429,
+          "far_frames": 429,
+          "dt_frames": 0,
+          "gate_eligible_frames": 429,
+          "recorded_instant_ratio_far_minmax": [
+            0.048172342797332283,
+            284981092.20506626
+          ],
+          "recorded_smoothed_ratio_far_minmax": [
+            0.07191164479441083,
+            0.6166214135418492
+          ]
+        },
+        "near_waveform_zero": {
+          "frames": 200,
+          "far_frames": 122,
+          "dt_frames": 0,
+          "gate_eligible_frames": 122,
+          "recorded_instant_ratio_far_minmax": [
+            3.8828642405273745e-13,
+            11.392361342860283
+          ],
+          "recorded_smoothed_ratio_far_minmax": [
+            1.109389781895227e-12,
+            0.6166234236190942
+          ]
+        }
+      },
+      "measurements": [
+        {
+          "window": "common",
+          "physical_range": [
+            0,
+            100480
+          ],
+          "lanes": {
+            "raw_mic0": {
+              "output_range": [
+                0,
+                100480
+              ],
+              "samples": 100480,
+              "output_energy": 102.83402718883008,
+              "near_energy": 13.025231879204512,
+              "error_energy": 89.84422417264432,
+              "rms": 0.03199105841262792,
+              "peak": 0.1522216796875,
+              "gain_sensitive_error_db": 8.387046993113893,
+              "projection_gain": 0.9986399910824115,
+              "noncanonical_projection_si_sdr_db": -8.39886675602198,
+              "projection_residual_energy": 89.8442000808595
+            },
+            "final_s16": {
+              "output_range": [
+                160,
+                100640
+              ],
+              "samples": 100480,
+              "output_energy": 3.6923661520704627,
+              "near_energy": 13.025231879204512,
+              "error_energy": 4.398087785579264,
+              "rms": 0.006061953035335402,
+              "peak": 0.06048583984375,
+              "gain_sensitive_error_db": -4.715215698808392,
+              "projection_gain": 0.4729094406896692,
+              "noncanonical_projection_si_sdr_db": 5.726034293569628,
+              "projection_residual_energy": 0.7793598021391587
+            },
+            "aec_input": {
+              "output_range": [
+                0,
+                100480
+              ],
+              "samples": 100480,
+              "output_energy": 95.24054481216022,
+              "near_energy": 13.025231879204512,
+              "error_energy": 84.77077905625646,
+              "rms": 0.03078726588326546,
+              "peak": 0.14948296546936035,
+              "gain_sensitive_error_db": 8.13460710922493,
+              "projection_gain": 0.9019032387676458,
+              "noncanonical_projection_si_sdr_db": -9.024981979736557,
+              "projection_residual_energy": 84.64543758118906
+            },
+            "aec_residual": {
+              "output_range": [
+                0,
+                100480
+              ],
+              "samples": 100480,
+              "output_energy": 15.279777486996661,
+              "near_energy": 13.025231879204512,
+              "error_energy": 3.824708402010973,
+              "rms": 0.012331579347100524,
+              "peak": 0.09582976996898651,
+              "gain_sensitive_error_db": -5.321871335966701,
+              "projection_gain": 0.9397261097237865,
+              "noncanonical_projection_si_sdr_db": 4.835963978636749,
+              "projection_residual_energy": 3.777388492023704
+            },
+            "ns_input": {
+              "output_range": [
+                0,
+                100480
+              ],
+              "samples": 100480,
+              "output_energy": 15.279777486996661,
+              "near_energy": 13.025231879204512,
+              "error_energy": 3.824708402010973,
+              "rms": 0.012331579347100524,
+              "peak": 0.09582976996898651,
+              "gain_sensitive_error_db": -5.321871335966701,
+              "projection_gain": 0.9397261097237865,
+              "noncanonical_projection_si_sdr_db": 4.835963978636749,
+              "projection_residual_energy": 3.777388492023704
+            },
+            "ns_output": {
+              "output_range": [
+                160,
+                100640
+              ],
+              "samples": 100480,
+              "output_energy": 3.692387171936581,
+              "near_energy": 13.025231879204512,
+              "error_energy": 4.398063511443019,
+              "rms": 0.006061970290024485,
+              "peak": 0.060478001832962036,
+              "gain_sensitive_error_db": -4.71523966866309,
+              "projection_gain": 0.4729111793920119,
+              "noncanonical_projection_si_sdr_db": 5.726068457848108,
+              "projection_residual_energy": 0.7793594020045765
+            },
+            "agc_output": {
+              "output_range": [
+                160,
+                100640
+              ],
+              "samples": 100480,
+              "output_energy": 3.692387171936581,
+              "near_energy": 13.025231879204512,
+              "error_energy": 4.398063511443019,
+              "rms": 0.006061970290024485,
+              "peak": 0.060478001832962036,
+              "gain_sensitive_error_db": -4.71523966866309,
+              "projection_gain": 0.4729111793920119,
+              "noncanonical_projection_si_sdr_db": 5.726068457848108,
+              "projection_residual_energy": 0.7793594020045765
+            }
+          }
+        },
+        {
+          "window": "second-0",
+          "physical_range": [
+            0,
+            16000
+          ],
+          "lanes": {
+            "raw_mic0": {
+              "output_range": [
+                0,
+                16000
+              ],
+              "samples": 16000,
+              "output_energy": 23.07472518645227,
+              "near_energy": 0.0,
+              "error_energy": 23.07472518645227,
+              "rms": 0.03797591768678233,
+              "peak": 0.093536376953125,
+              "gain_sensitive_error_db": null,
+              "projection_gain": null,
+              "noncanonical_projection_si_sdr_db": null,
+              "projection_residual_energy": null
+            },
+            "final_s16": {
+              "output_range": [
+                160,
+                16160
+              ],
+              "samples": 16000,
+              "output_energy": 0.026205613277852535,
+              "near_energy": 0.0,
+              "error_energy": 0.026205613277852535,
+              "rms": 0.0012797854624372724,
+              "peak": 0.00958251953125,
+              "gain_sensitive_error_db": null,
+              "projection_gain": null,
+              "noncanonical_projection_si_sdr_db": null,
+              "projection_residual_energy": null
+            },
+            "aec_input": {
+              "output_range": [
+                0,
+                16000
+              ],
+              "samples": 16000,
+              "output_energy": 21.437976983392765,
+              "near_energy": 0.0,
+              "error_energy": 21.437976983392765,
+              "rms": 0.03660428337588441,
+              "peak": 0.09093739092350006,
+              "gain_sensitive_error_db": null,
+              "projection_gain": null,
+              "noncanonical_projection_si_sdr_db": null,
+              "projection_residual_energy": null
+            },
+            "aec_residual": {
+              "output_range": [
+                0,
+                16000
+              ],
+              "samples": 16000,
+              "output_energy": 0.8362932103559152,
+              "near_energy": 0.0,
+              "error_energy": 0.8362932103559152,
+              "rms": 0.007229683647798478,
+              "peak": 0.057518329471349716,
+              "gain_sensitive_error_db": null,
+              "projection_gain": null,
+              "noncanonical_projection_si_sdr_db": null,
+              "projection_residual_energy": null
+            },
+            "ns_input": {
+              "output_range": [
+                0,
+                16000
+              ],
+              "samples": 16000,
+              "output_energy": 0.8362932103559152,
+              "near_energy": 0.0,
+              "error_energy": 0.8362932103559152,
+              "rms": 0.007229683647798478,
+              "peak": 0.057518329471349716,
+              "gain_sensitive_error_db": null,
+              "projection_gain": null,
+              "noncanonical_projection_si_sdr_db": null,
+              "projection_residual_energy": null
+            },
+            "ns_output": {
+              "output_range": [
+                160,
+                16160
+              ],
+              "samples": 16000,
+              "output_energy": 0.026207725261142935,
+              "near_energy": 0.0,
+              "error_energy": 0.026207725261142935,
+              "rms": 0.0012798370321339485,
+              "peak": 0.009591794572770596,
+              "gain_sensitive_error_db": null,
+              "projection_gain": null,
+              "noncanonical_projection_si_sdr_db": null,
+              "projection_residual_energy": null
+            },
+            "agc_output": {
+              "output_range": [
+                160,
+                16160
+              ],
+              "samples": 16000,
+              "output_energy": 0.026207725261142935,
+              "near_energy": 0.0,
+              "error_energy": 0.026207725261142935,
+              "rms": 0.0012798370321339485,
+              "peak": 0.009591794572770596,
+              "gain_sensitive_error_db": null,
+              "projection_gain": null,
+              "noncanonical_projection_si_sdr_db": null,
+              "projection_residual_energy": null
+            }
+          }
+        },
+        {
+          "window": "second-1",
+          "physical_range": [
+            16000,
+            32000
+          ],
+          "lanes": {
+            "raw_mic0": {
+              "output_range": [
+                16000,
+                32000
+              ],
+              "samples": 16000,
+              "output_energy": 26.913985919207335,
+              "near_energy": 5.406170718371868,
+              "error_energy": 21.77544685266912,
+              "rms": 0.041013706488812474,
+              "peak": 0.1522216796875,
+              "gain_sensitive_error_db": 6.0507731998656045,
+              "projection_gain": 0.9752475767252266,
+              "noncanonical_projection_si_sdr_db": -6.2678149465479995,
+              "projection_residual_energy": 21.772134586705164
+            },
+            "final_s16": {
+              "output_range": [
+                16160,
+                32160
+              ],
+              "samples": 16000,
+              "output_energy": 1.668689045123756,
+              "near_energy": 5.406170718371868,
+              "error_energy": 1.559276339598,
+              "rms": 0.010212397628384568,
+              "peak": 0.06048583984375,
+              "gain_sensitive_error_db": -5.399666669445493,
+              "projection_gain": 0.5101192425494386,
+              "noncanonical_projection_si_sdr_db": 7.3012017954453405,
+              "projection_residual_energy": 0.26188642591530825
+            },
+            "aec_input": {
+              "output_range": [
+                16000,
+                32000
+              ],
+              "samples": 16000,
+              "output_energy": 24.888948119351063,
+              "near_energy": 5.406170718371868,
+              "error_energy": 20.674363253599655,
+              "rms": 0.03944057881750015,
+              "peak": 0.14948296546936035,
+              "gain_sensitive_error_db": 5.8254238674821215,
+              "projection_gain": 0.8897939119300213,
+              "noncanonical_projection_si_sdr_db": -6.825820499043623,
+              "projection_residual_energy": 20.60870324589124
+            },
+            "aec_residual": {
+              "output_range": [
+                16000,
+                32000
+              ],
+              "samples": 16000,
+              "output_energy": 5.51568531928483,
+              "near_energy": 5.406170718371868,
+              "error_energy": 0.667761669998028,
+              "rms": 0.01856691499563947,
+              "peak": 0.09582976996898651,
+              "gain_sensitive_error_db": -9.082682692992286,
+              "projection_gain": 0.9483694561117014,
+              "noncanonical_projection_si_sdr_db": 8.716987311128651,
+              "projection_residual_energy": 0.6533503700975727
+            },
+            "ns_input": {
+              "output_range": [
+                16000,
+                32000
+              ],
+              "samples": 16000,
+              "output_energy": 5.51568531928483,
+              "near_energy": 5.406170718371868,
+              "error_energy": 0.667761669998028,
+              "rms": 0.01856691499563947,
+              "peak": 0.09582976996898651,
+              "gain_sensitive_error_db": -9.082682692992286,
+              "projection_gain": 0.9483694561117014,
+              "noncanonical_projection_si_sdr_db": 8.716987311128651,
+              "projection_residual_energy": 0.6533503700975727
+            },
+            "ns_output": {
+              "output_range": [
+                16160,
+                32160
+              ],
+              "samples": 16000,
+              "output_energy": 1.6686795840859356,
+              "near_energy": 5.406170718371868,
+              "error_energy": 1.5592773332780248,
+              "rms": 0.0102123686775092,
+              "peak": 0.060478001832962036,
+              "gain_sensitive_error_db": -5.399663901817954,
+              "projection_gain": 0.510118275624938,
+              "noncanonical_projection_si_sdr_db": 7.301253786074407,
+              "projection_residual_energy": 0.26188229802518154
+            },
+            "agc_output": {
+              "output_range": [
+                16160,
+                32160
+              ],
+              "samples": 16000,
+              "output_energy": 1.6686795840859356,
+              "near_energy": 5.406170718371868,
+              "error_energy": 1.5592773332780248,
+              "rms": 0.0102123686775092,
+              "peak": 0.060478001832962036,
+              "gain_sensitive_error_db": -5.399663901817954,
+              "projection_gain": 0.510118275624938,
+              "noncanonical_projection_si_sdr_db": 7.301253786074407,
+              "projection_residual_energy": 0.26188229802518154
+            }
+          }
+        },
+        {
+          "window": "second-2",
+          "physical_range": [
+            32000,
+            48000
+          ],
+          "lanes": {
+            "raw_mic0": {
+              "output_range": [
+                32000,
+                48000
+              ],
+              "samples": 16000,
+              "output_energy": 22.791027527302504,
+              "near_energy": 2.2474757824093103,
+              "error_energy": 20.629086991772056,
+              "rms": 0.037741743738947814,
+              "peak": 0.13409423828125,
+              "gain_sensitive_error_db": 9.627849865583348,
+              "projection_gain": 0.9809708190076317,
+              "noncanonical_projection_si_sdr_db": -9.794556757985898,
+              "projection_residual_energy": 20.628273158925012
+            },
+            "final_s16": {
+              "output_range": [
+                32160,
+                48160
+              ],
+              "samples": 16000,
+              "output_energy": 0.5470499712973833,
+              "near_energy": 2.2474757824093103,
+              "error_energy": 0.9025179874151945,
+              "rms": 0.0058472748529624,
+              "peak": 0.0543212890625,
+              "gain_sensitive_error_db": -3.9623915444216555,
+              "projection_gain": 0.42091838788653224,
+              "noncanonical_projection_si_sdr_db": 4.273141394066885,
+              "projection_residual_energy": 0.148859541869275
+            },
+            "aec_input": {
+              "output_range": [
+                32000,
+                48000
+              ],
+              "samples": 16000,
+              "output_energy": 21.183447737841224,
+              "near_energy": 2.2474757824093103,
+              "error_energy": 19.400285258818798,
+              "rms": 0.03638633649620523,
+              "peak": 0.12536437809467316,
+              "gain_sensitive_error_db": 9.361130950699854,
+              "projection_gain": 0.8967033800717669,
+              "noncanonical_projection_si_sdr_db": -10.302783111466196,
+              "projection_residual_energy": 19.37630426140501
+            },
+            "aec_residual": {
+              "output_range": [
+                32000,
+                48000
+              ],
+              "samples": 16000,
+              "output_energy": 2.639124582111668,
+              "near_energy": 2.2474757824093103,
+              "error_energy": 0.6355747662640691,
+              "rms": 0.012843102677389886,
+              "peak": 0.09230095148086548,
+              "gain_sensitive_error_db": -5.4852837428869,
+              "projection_gain": 0.9457333492821397,
+              "noncanonical_projection_si_sdr_db": 5.046119955453285,
+              "projection_residual_energy": 0.6289562436498587
+            },
+            "ns_input": {
+              "output_range": [
+                32000,
+                48000
+              ],
+              "samples": 16000,
+              "output_energy": 2.639124582111668,
+              "near_energy": 2.2474757824093103,
+              "error_energy": 0.6355747662640691,
+              "rms": 0.012843102677389886,
+              "peak": 0.09230095148086548,
+              "gain_sensitive_error_db": -5.4852837428869,
+              "projection_gain": 0.9457333492821397,
+              "noncanonical_projection_si_sdr_db": 5.046119955453285,
+              "projection_residual_energy": 0.6289562436498587
+            },
+            "ns_output": {
+              "output_range": [
+                32160,
+                48160
+              ],
+              "samples": 16000,
+              "output_energy": 0.5470651012296619,
+              "near_energy": 2.2474757824093103,
+              "error_energy": 0.9025060405339211,
+              "rms": 0.005847355712358696,
+              "peak": 0.054336532950401306,
+              "gain_sensitive_error_db": -3.9624490335689764,
+              "projection_gain": 0.420924411714189,
+              "noncanonical_projection_si_sdr_db": 4.27315679828809,
+              "projection_residual_energy": 0.14886327459129117
+            },
+            "agc_output": {
+              "output_range": [
+                32160,
+                48160
+              ],
+              "samples": 16000,
+              "output_energy": 0.5470651012296619,
+              "near_energy": 2.2474757824093103,
+              "error_energy": 0.9025060405339211,
+              "rms": 0.005847355712358696,
+              "peak": 0.054336532950401306,
+              "gain_sensitive_error_db": -3.9624490335689764,
+              "projection_gain": 0.420924411714189,
+              "noncanonical_projection_si_sdr_db": 4.27315679828809,
+              "projection_residual_energy": 0.14886327459129117
+            }
+          }
+        },
+        {
+          "window": "second-3",
+          "physical_range": [
+            48000,
+            64000
+          ],
+          "lanes": {
+            "raw_mic0": {
+              "output_range": [
+                48000,
+                64000
+              ],
+              "samples": 16000,
+              "output_energy": 28.618026327341795,
+              "near_energy": 4.4673343151807785,
+              "error_energy": 23.79914632998407,
+              "rms": 0.04229215820289693,
+              "peak": 0.0994873046875,
+              "gain_sensitive_error_db": 7.265129249595846,
+              "projection_gain": 1.0393462473787034,
+              "noncanonical_projection_si_sdr_db": -6.928661965019208,
+              "projection_residual_energy": 23.792230328296146
+            },
+            "final_s16": {
+              "output_range": [
+                48160,
+                64160
+              ],
+              "samples": 16000,
+              "output_energy": 1.1783598801121116,
+              "near_energy": 4.4673343151807785,
+              "error_energy": 1.5904517220333219,
+              "rms": 0.008581811726378468,
+              "peak": 0.039276123046875,
+              "gain_sensitive_error_db": -4.485279636433049,
+              "projection_gain": 0.4538772103398608,
+              "noncanonical_projection_si_sdr_db": 5.521896895812166,
+              "projection_residual_energy": 0.25806880960472645
+            },
+            "aec_input": {
+              "output_range": [
+                48000,
+                64000
+              ],
+              "samples": 16000,
+              "output_energy": 26.42248018934484,
+              "near_energy": 4.4673343151807785,
+              "error_energy": 22.609584323282657,
+              "rms": 0.04063748284323295,
+              "peak": 0.09979530423879623,
+              "gain_sensitive_error_db": 7.042441235930173,
+              "projection_gain": 0.9267529131528505,
+              "noncanonical_projection_si_sdr_db": -7.698555749511611,
+              "projection_residual_energy": 22.585616468323305
+            },
+            "aec_residual": {
+              "output_range": [
+                48000,
+                64000
+              ],
+              "samples": 16000,
+              "output_energy": 5.323628252349527,
+              "near_energy": 4.4673343151807785,
+              "error_energy": 1.4566189310119415,
+              "rms": 0.01824079948280353,
+              "peak": 0.08642082661390305,
+              "gain_sensitive_error_db": -4.867025043488622,
+              "projection_gain": 0.9328094841924877,
+              "noncanonical_projection_si_sdr_db": 4.323435873804037,
+              "projection_residual_energy": 1.4364508580177087
+            },
+            "ns_input": {
+              "output_range": [
+                48000,
+                64000
+              ],
+              "samples": 16000,
+              "output_energy": 5.323628252349527,
+              "near_energy": 4.4673343151807785,
+              "error_energy": 1.4566189310119415,
+              "rms": 0.01824079948280353,
+              "peak": 0.08642082661390305,
+              "gain_sensitive_error_db": -4.867025043488622,
+              "projection_gain": 0.9328094841924877,
+              "noncanonical_projection_si_sdr_db": 4.323435873804037,
+              "projection_residual_energy": 1.4364508580177087
+            },
+            "ns_output": {
+              "output_range": [
+                48160,
+                64160
+              ],
+              "samples": 16000,
+              "output_energy": 1.1783763964556075,
+              "near_energy": 4.4673343151807785,
+              "error_energy": 1.590447690789392,
+              "rms": 0.008581871869148099,
+              "peak": 0.03928031399846077,
+              "gain_sensitive_error_db": -4.485290644307028,
+              "projection_gain": 0.4538795100991777,
+              "noncanonical_projection_si_sdr_db": 5.52181990622344,
+              "projection_residual_energy": 0.25807599984293517
+            },
+            "agc_output": {
+              "output_range": [
+                48160,
+                64160
+              ],
+              "samples": 16000,
+              "output_energy": 1.1783763964556075,
+              "near_energy": 4.4673343151807785,
+              "error_energy": 1.590447690789392,
+              "rms": 0.008581871869148099,
+              "peak": 0.03928031399846077,
+              "gain_sensitive_error_db": -4.485290644307028,
+              "projection_gain": 0.4538795100991777,
+              "noncanonical_projection_si_sdr_db": 5.52181990622344,
+              "projection_residual_energy": 0.25807599984293517
+            }
+          }
+        },
+        {
+          "window": "second-4",
+          "physical_range": [
+            64000,
+            80000
+          ],
+          "lanes": {
+            "raw_mic0": {
+              "output_range": [
+                64000,
+                80000
+              ],
+              "samples": 16000,
+              "output_energy": 1.4322865102440119,
+              "near_energy": 0.9002753449603915,
+              "error_energy": 0.5658188117668033,
+              "rms": 0.009461390325435831,
+              "peak": 0.067718505859375,
+              "gain_sensitive_error_db": -2.01697974329905,
+              "projection_gain": 0.9812237185698613,
+              "noncanonical_projection_si_sdr_db": 1.8547773147727489,
+              "projection_residual_energy": 0.5655014208243738
+            },
+            "final_s16": {
+              "output_range": [
+                64160,
+                80160
+              ],
+              "samples": 16000,
+              "output_energy": 0.27190040331333876,
+              "near_energy": 0.9002753449603915,
+              "error_energy": 0.3158110585063696,
+              "rms": 0.004122350689483328,
+              "peak": 0.038482666015625,
+              "gain_sensitive_error_db": -4.549480233855801,
+              "projection_gain": 0.4756126525963217,
+              "noncanonical_projection_si_sdr_db": 4.747701939900363,
+              "projection_residual_energy": 0.06825146246829851
+            },
+            "aec_input": {
+              "output_range": [
+                64000,
+                80000
+              ],
+              "samples": 16000,
+              "output_energy": 1.3074016404520916,
+              "near_energy": 0.9002753449603915,
+              "error_energy": 0.6448597868350754,
+              "rms": 0.009039502338528141,
+              "peak": 0.07083545625209808,
+              "gain_sensitive_error_db": -1.4491006129685138,
+              "projection_gain": 0.8679662324009136,
+              "noncanonical_projection_si_sdr_db": 0.3261621045823696,
+              "projection_residual_energy": 0.6291653625618
+            },
+            "aec_residual": {
+              "output_range": [
+                64000,
+                80000
+              ],
+              "samples": 16000,
+              "output_energy": 0.9647559811164851,
+              "near_energy": 0.9002753449603915,
+              "error_energy": 0.22475037405351717,
+              "rms": 0.0077651303156985275,
+              "peak": 0.0770113617181778,
+              "gain_sensitive_error_db": -6.026749334659137,
+              "projection_gain": 0.9109884888025702,
+              "noncanonical_projection_si_sdr_db": 5.3570742168817755,
+              "projection_residual_energy": 0.21761744826878435
+            },
+            "ns_input": {
+              "output_range": [
+                64000,
+                80000
+              ],
+              "samples": 16000,
+              "output_energy": 0.9647559811164851,
+              "near_energy": 0.9002753449603915,
+              "error_energy": 0.22475037405351717,
+              "rms": 0.0077651303156985275,
+              "peak": 0.0770113617181778,
+              "gain_sensitive_error_db": -6.026749334659137,
+              "projection_gain": 0.9109884888025702,
+              "noncanonical_projection_si_sdr_db": 5.3570742168817755,
+              "projection_residual_energy": 0.21761744826878435
+            },
+            "ns_output": {
+              "output_range": [
+                64160,
+                80160
+              ],
+              "samples": 16000,
+              "output_energy": 0.27189763625356295,
+              "near_energy": 0.9002753449603915,
+              "error_energy": 0.31579974727294047,
+              "rms": 0.004122329713383888,
+              "peak": 0.038488611578941345,
+              "gain_sensitive_error_db": -4.549635785541027,
+              "projection_gain": 0.47561739790768737,
+              "noncanonical_projection_si_sdr_db": 4.748223276661504,
+              "projection_residual_energy": 0.06824463167115481
+            },
+            "agc_output": {
+              "output_range": [
+                64160,
+                80160
+              ],
+              "samples": 16000,
+              "output_energy": 0.27189763625356295,
+              "near_energy": 0.9002753449603915,
+              "error_energy": 0.31579974727294047,
+              "rms": 0.004122329713383888,
+              "peak": 0.038488611578941345,
+              "gain_sensitive_error_db": -4.549635785541027,
+              "projection_gain": 0.47561739790768737,
+              "noncanonical_projection_si_sdr_db": 4.748223276661504,
+              "projection_residual_energy": 0.06824463167115481
+            }
+          }
+        },
+        {
+          "window": "second-5",
+          "physical_range": [
+            80000,
+            96000
+          ],
+          "lanes": {
+            "raw_mic0": {
+              "output_range": [
+                80000,
+                96000
+              ],
+              "samples": 16000,
+              "output_energy": 0.003975718282163143,
+              "near_energy": 0.003975718282163143,
+              "error_energy": 0.0,
+              "rms": 0.0004984800824859469,
+              "peak": 0.002532958984375,
+              "gain_sensitive_error_db": null,
+              "projection_gain": 1.0,
+              "noncanonical_projection_si_sdr_db": null,
+              "projection_residual_energy": 0.0
+            },
+            "final_s16": {
+              "output_range": [
+                80160,
+                96160
+              ],
+              "samples": 16000,
+              "output_energy": 0.00016123894602060318,
+              "near_energy": 0.003975718282163143,
+              "error_energy": 0.0038250647485256195,
+              "rms": 0.00010038642401384611,
+              "peak": 0.000823974609375,
+              "gain_sensitive_error_db": -0.16776811836610345,
+              "projection_gain": 0.03922467055291826,
+              "noncanonical_projection_si_sdr_db": -14.041392005181246,
+              "projection_residual_energy": 0.0001551220061393418
+            },
+            "aec_input": {
+              "output_range": [
+                80000,
+                96000
+              ],
+              "samples": 16000,
+              "output_energy": 0.0002901417782363296,
+              "near_energy": 0.003975718282163143,
+              "error_energy": 0.0037094503275021474,
+              "rms": 0.0001346620256039935,
+              "peak": 0.0010044302325695753,
+              "gain_sensitive_error_db": -0.30106042972537356,
+              "projection_gain": 0.06997600099001343,
+              "noncanonical_projection_si_sdr_db": -11.431328820342305,
+              "projection_residual_energy": 0.00027067411422629145
+            },
+            "aec_residual": {
+              "output_range": [
+                80000,
+                96000
+              ],
+              "samples": 16000,
+              "output_energy": 0.0002901417782363296,
+              "near_energy": 0.003975718282163143,
+              "error_energy": 0.0037094503275021474,
+              "rms": 0.0001346620256039935,
+              "peak": 0.0010044302325695753,
+              "gain_sensitive_error_db": -0.30106042972537356,
+              "projection_gain": 0.06997600099001343,
+              "noncanonical_projection_si_sdr_db": -11.431328820342305,
+              "projection_residual_energy": 0.00027067411422629145
+            },
+            "ns_input": {
+              "output_range": [
+                80000,
+                96000
+              ],
+              "samples": 16000,
+              "output_energy": 0.0002901417782363296,
+              "near_energy": 0.003975718282163143,
+              "error_energy": 0.0037094503275021474,
+              "rms": 0.0001346620256039935,
+              "peak": 0.0010044302325695753,
+              "gain_sensitive_error_db": -0.30106042972537356,
+              "projection_gain": 0.06997600099001343,
+              "noncanonical_projection_si_sdr_db": -11.431328820342305,
+              "projection_residual_energy": 0.00027067411422629145
+            },
+            "ns_output": {
+              "output_range": [
+                80160,
+                96160
+              ],
+              "samples": 16000,
+              "output_energy": 0.00016072865067029318,
+              "near_energy": 0.003975718282163143,
+              "error_energy": 0.003824974307597986,
+              "rms": 0.00010022744467905646,
+              "peak": 0.0008219274459406734,
+              "gain_sensitive_error_db": -0.1678708054125962,
+              "projection_gain": 0.03917186821722962,
+              "noncanonical_projection_si_sdr_db": -14.039244390635016,
+              "projection_residual_energy": 0.00015462816835579436
+            },
+            "agc_output": {
+              "output_range": [
+                80160,
+                96160
+              ],
+              "samples": 16000,
+              "output_energy": 0.00016072865067029318,
+              "near_energy": 0.003975718282163143,
+              "error_energy": 0.003824974307597986,
+              "rms": 0.00010022744467905646,
+              "peak": 0.0008219274459406734,
+              "gain_sensitive_error_db": -0.1678708054125962,
+              "projection_gain": 0.03917186821722962,
+              "noncanonical_projection_si_sdr_db": -14.039244390635016,
+              "projection_residual_energy": 0.00015462816835579436
+            }
+          }
+        },
+        {
+          "window": "second-6",
+          "physical_range": [
+            96000,
+            100480
+          ],
+          "lanes": {
+            "raw_mic0": {
+              "output_range": [
+                96000,
+                100480
+              ],
+              "samples": 4480,
+              "output_energy": 0.0,
+              "near_energy": 0.0,
+              "error_energy": 0.0,
+              "rms": 0.0,
+              "peak": 0.0,
+              "gain_sensitive_error_db": null,
+              "projection_gain": null,
+              "noncanonical_projection_si_sdr_db": null,
+              "projection_residual_energy": null
+            },
+            "final_s16": {
+              "output_range": [
+                96160,
+                100640
+              ],
+              "samples": 4480,
+              "output_energy": 0.0,
+              "near_energy": 0.0,
+              "error_energy": 0.0,
+              "rms": 0.0,
+              "peak": 0.0,
+              "gain_sensitive_error_db": null,
+              "projection_gain": null,
+              "noncanonical_projection_si_sdr_db": null,
+              "projection_residual_energy": null
+            },
+            "aec_input": {
+              "output_range": [
+                96000,
+                100480
+              ],
+              "samples": 4480,
+              "output_energy": 2.2520564453922627e-84,
+              "near_energy": 0.0,
+              "error_energy": 2.2520564453922627e-84,
+              "rms": 2.2420775429197073e-44,
+              "peak": 2.2420775429197073e-44,
+              "gain_sensitive_error_db": null,
+              "projection_gain": null,
+              "noncanonical_projection_si_sdr_db": null,
+              "projection_residual_energy": null
+            },
+            "aec_residual": {
+              "output_range": [
+                96000,
+                100480
+              ],
+              "samples": 4480,
+              "output_energy": 2.2520564453922627e-84,
+              "near_energy": 0.0,
+              "error_energy": 2.2520564453922627e-84,
+              "rms": 2.2420775429197073e-44,
+              "peak": 2.2420775429197073e-44,
+              "gain_sensitive_error_db": null,
+              "projection_gain": null,
+              "noncanonical_projection_si_sdr_db": null,
+              "projection_residual_energy": null
+            },
+            "ns_input": {
+              "output_range": [
+                96000,
+                100480
+              ],
+              "samples": 4480,
+              "output_energy": 2.2520564453922627e-84,
+              "near_energy": 0.0,
+              "error_energy": 2.2520564453922627e-84,
+              "rms": 2.2420775429197073e-44,
+              "peak": 2.2420775429197073e-44,
+              "gain_sensitive_error_db": null,
+              "projection_gain": null,
+              "noncanonical_projection_si_sdr_db": null,
+              "projection_residual_energy": null
+            },
+            "ns_output": {
+              "output_range": [
+                96160,
+                100640
+              ],
+              "samples": 4480,
+              "output_energy": 7.647974891456634e-86,
+              "near_energy": 0.0,
+              "error_energy": 7.647974891456634e-86,
+              "rms": 4.131751750235346e-45,
+              "peak": 5.605193857299268e-45,
+              "gain_sensitive_error_db": null,
+              "projection_gain": null,
+              "noncanonical_projection_si_sdr_db": null,
+              "projection_residual_energy": null
+            },
+            "agc_output": {
+              "output_range": [
+                96160,
+                100640
+              ],
+              "samples": 4480,
+              "output_energy": 2.0596356906516807e-84,
+              "near_energy": 0.0,
+              "error_energy": 2.0596356906516807e-84,
+              "rms": 2.144155100547683e-44,
+              "peak": 3.2229864679470793e-44,
+              "gain_sensitive_error_db": null,
+              "projection_gain": null,
+              "noncanonical_projection_si_sdr_db": null,
+              "projection_residual_energy": null
+            }
+          }
+        },
+        {
+          "window": "construction-0",
+          "physical_range": [
+            0,
+            16000
+          ],
+          "lanes": {
+            "raw_mic0": {
+              "output_range": [
+                0,
+                16000
+              ],
+              "samples": 16000,
+              "output_energy": 23.07472518645227,
+              "near_energy": 0.0,
+              "error_energy": 23.07472518645227,
+              "rms": 0.03797591768678233,
+              "peak": 0.093536376953125,
+              "gain_sensitive_error_db": null,
+              "projection_gain": null,
+              "noncanonical_projection_si_sdr_db": null,
+              "projection_residual_energy": null
+            },
+            "final_s16": {
+              "output_range": [
+                160,
+                16160
+              ],
+              "samples": 16000,
+              "output_energy": 0.026205613277852535,
+              "near_energy": 0.0,
+              "error_energy": 0.026205613277852535,
+              "rms": 0.0012797854624372724,
+              "peak": 0.00958251953125,
+              "gain_sensitive_error_db": null,
+              "projection_gain": null,
+              "noncanonical_projection_si_sdr_db": null,
+              "projection_residual_energy": null
+            },
+            "aec_input": {
+              "output_range": [
+                0,
+                16000
+              ],
+              "samples": 16000,
+              "output_energy": 21.437976983392765,
+              "near_energy": 0.0,
+              "error_energy": 21.437976983392765,
+              "rms": 0.03660428337588441,
+              "peak": 0.09093739092350006,
+              "gain_sensitive_error_db": null,
+              "projection_gain": null,
+              "noncanonical_projection_si_sdr_db": null,
+              "projection_residual_energy": null
+            },
+            "aec_residual": {
+              "output_range": [
+                0,
+                16000
+              ],
+              "samples": 16000,
+              "output_energy": 0.8362932103559152,
+              "near_energy": 0.0,
+              "error_energy": 0.8362932103559152,
+              "rms": 0.007229683647798478,
+              "peak": 0.057518329471349716,
+              "gain_sensitive_error_db": null,
+              "projection_gain": null,
+              "noncanonical_projection_si_sdr_db": null,
+              "projection_residual_energy": null
+            },
+            "ns_input": {
+              "output_range": [
+                0,
+                16000
+              ],
+              "samples": 16000,
+              "output_energy": 0.8362932103559152,
+              "near_energy": 0.0,
+              "error_energy": 0.8362932103559152,
+              "rms": 0.007229683647798478,
+              "peak": 0.057518329471349716,
+              "gain_sensitive_error_db": null,
+              "projection_gain": null,
+              "noncanonical_projection_si_sdr_db": null,
+              "projection_residual_energy": null
+            },
+            "ns_output": {
+              "output_range": [
+                160,
+                16160
+              ],
+              "samples": 16000,
+              "output_energy": 0.026207725261142935,
+              "near_energy": 0.0,
+              "error_energy": 0.026207725261142935,
+              "rms": 0.0012798370321339485,
+              "peak": 0.009591794572770596,
+              "gain_sensitive_error_db": null,
+              "projection_gain": null,
+              "noncanonical_projection_si_sdr_db": null,
+              "projection_residual_energy": null
+            },
+            "agc_output": {
+              "output_range": [
+                160,
+                16160
+              ],
+              "samples": 16000,
+              "output_energy": 0.026207725261142935,
+              "near_energy": 0.0,
+              "error_energy": 0.026207725261142935,
+              "rms": 0.0012798370321339485,
+              "peak": 0.009591794572770596,
+              "gain_sensitive_error_db": null,
+              "projection_gain": null,
+              "noncanonical_projection_si_sdr_db": null,
+              "projection_residual_energy": null
+            }
+          }
+        },
+        {
+          "window": "construction-1",
+          "physical_range": [
+            16000,
+            64000
+          ],
+          "lanes": {
+            "raw_mic0": {
+              "output_range": [
+                16000,
+                64000
+              ],
+              "samples": 48000,
+              "output_energy": 78.32303977385163,
+              "near_energy": 12.120980815961957,
+              "error_energy": 66.20368017442524,
+              "rms": 0.04039467780894626,
+              "peak": 0.1522216796875,
+              "gain_sensitive_error_db": 7.373443680956687,
+              "projection_gain": 0.9999331235417256,
+              "noncanonical_projection_si_sdr_db": -7.374024578360956,
+              "projection_residual_energy": 66.20368012021463
+            },
+            "final_s16": {
+              "output_range": [
+                16160,
+                64160
+              ],
+              "samples": 48000,
+              "output_energy": 3.394098896533251,
+              "near_energy": 12.120980815961957,
+              "error_energy": 4.052246049046516,
+              "rms": 0.008408947239564299,
+              "peak": 0.06048583984375,
+              "gain_sensitive_error_db": -4.758419563744867,
+              "projection_gain": 0.47285091188138173,
+              "noncanonical_projection_si_sdr_db": 5.979344280029942,
+              "projection_residual_energy": 0.6839932212800942
+            },
+            "aec_input": {
+              "output_range": [
+                16000,
+                64000
+              ],
+              "samples": 48000,
+              "output_energy": 72.49487604653713,
+              "near_energy": 12.120980815961957,
+              "error_energy": 62.68423283570111,
+              "rms": 0.038862705999919644,
+              "peak": 0.14948296546936035,
+              "gain_sensitive_error_db": 7.136205512288324,
+              "projection_gain": 0.9046967551469314,
+              "noncanonical_projection_si_sdr_db": -7.998510707637542,
+              "projection_residual_energy": 62.574141500463824
+            },
+            "aec_residual": {
+              "output_range": [
+                16000,
+                64000
+              ],
+              "samples": 48000,
+              "output_energy": 13.478438153746024,
+              "near_energy": 12.120980815961957,
+              "error_energy": 2.7599553672740385,
+              "rms": 0.016757111769923505,
+              "peak": 0.09582976996898651,
+              "gain_sensitive_error_db": -6.426357049551754,
+              "projection_gain": 0.9421458522711694,
+              "noncanonical_projection_si_sdr_db": 5.973033147747269,
+              "projection_residual_energy": 2.7193852031802854
+            },
+            "ns_input": {
+              "output_range": [
+                16000,
+                64000
+              ],
+              "samples": 48000,
+              "output_energy": 13.478438153746024,
+              "near_energy": 12.120980815961957,
+              "error_energy": 2.7599553672740385,
+              "rms": 0.016757111769923505,
+              "peak": 0.09582976996898651,
+              "gain_sensitive_error_db": -6.426357049551754,
+              "projection_gain": 0.9421458522711694,
+              "noncanonical_projection_si_sdr_db": 5.973033147747269,
+              "projection_residual_energy": 2.7193852031802854
+            },
+            "ns_output": {
+              "output_range": [
+                16160,
+                64160
+              ],
+              "samples": 48000,
+              "output_energy": 3.394121081771205,
+              "near_energy": 12.120980815961957,
+              "error_energy": 4.0522310646013375,
+              "rms": 0.008408974721702607,
+              "peak": 0.060478001832962036,
+              "gain_sensitive_error_db": -4.758435623169218,
+              "projection_gain": 0.47285244516007,
+              "noncanonical_projection_si_sdr_db": 5.979343177685211,
+              "projection_residual_energy": 0.683997830770989
+            },
+            "agc_output": {
+              "output_range": [
+                16160,
+                64160
+              ],
+              "samples": 48000,
+              "output_energy": 3.394121081771205,
+              "near_energy": 12.120980815961957,
+              "error_energy": 4.0522310646013375,
+              "rms": 0.008408974721702607,
+              "peak": 0.060478001832962036,
+              "gain_sensitive_error_db": -4.758435623169218,
+              "projection_gain": 0.47285244516007,
+              "noncanonical_projection_si_sdr_db": 5.979343177685211,
+              "projection_residual_energy": 0.683997830770989
+            }
+          }
+        },
+        {
+          "window": "construction-2",
+          "physical_range": [
+            64000,
+            65280
+          ],
+          "lanes": {
+            "raw_mic0": {
+              "output_range": [
+                64000,
+                65280
+              ],
+              "samples": 1280,
+              "output_energy": 1.0566508760675788,
+              "near_energy": 0.5246397107839584,
+              "error_energy": 0.5658188117668033,
+              "rms": 0.02873166366446252,
+              "peak": 0.067718505859375,
+              "gain_sensitive_error_db": 0.32816222427454056,
+              "projection_gain": 0.9677801300699629,
+              "noncanonical_projection_si_sdr_db": -0.608445808692571,
+              "projection_residual_energy": 0.5652741727806389
+            },
+            "final_s16": {
+              "output_range": [
+                64160,
+                65440
+              ],
+              "samples": 1280,
+              "output_energy": 0.1282107550650835,
+              "near_energy": 0.5246397107839584,
+              "error_energy": 0.19384232349693775,
+              "rms": 0.010008229233715447,
+              "peak": 0.038482666015625,
+              "gain_sensitive_error_db": -4.324125530688326,
+              "projection_gain": 0.4374508190260871,
+              "noncanonical_projection_si_sdr_db": 5.574560033208192,
+              "projection_residual_energy": 0.02781401115929812
+            },
+            "aec_input": {
+              "output_range": [
+                64000,
+                65280
+              ],
+              "samples": 1280,
+              "output_energy": 0.974010052920299,
+              "near_energy": 0.5246397107839584,
+              "error_energy": 0.5922041602725353,
+              "rms": 0.027585237969681965,
+              "peak": 0.07083545625209808,
+              "gain_sensitive_error_db": 0.5261029409725811,
+              "projection_gain": 0.8638743739748931,
+              "noncanonical_projection_si_sdr_db": -1.725205312640822,
+              "projection_residual_energy": 0.5824824888168625
+            },
+            "aec_residual": {
+              "output_range": [
+                64000,
+                65280
+              ],
+              "samples": 1280,
+              "output_energy": 0.6210877874003974,
+              "near_energy": 0.5246397107839584,
+              "error_energy": 0.15997702040706133,
+              "rms": 0.022027819544988118,
+              "peak": 0.0770113617181778,
+              "gain_sensitive_error_db": -5.158035561773181,
+              "projection_gain": 0.9394546938739232,
+              "noncanonical_projection_si_sdr_db": 4.668078149923303,
+              "projection_residual_energy": 0.15805383073222654
+            },
+            "ns_input": {
+              "output_range": [
+                64000,
+                65280
+              ],
+              "samples": 1280,
+              "output_energy": 0.6210877874003974,
+              "near_energy": 0.5246397107839584,
+              "error_energy": 0.15997702040706133,
+              "rms": 0.022027819544988118,
+              "peak": 0.0770113617181778,
+              "gain_sensitive_error_db": -5.158035561773181,
+              "projection_gain": 0.9394546938739232,
+              "noncanonical_projection_si_sdr_db": 4.668078149923303,
+              "projection_residual_energy": 0.15805383073222654
+            },
+            "ns_output": {
+              "output_range": [
+                64160,
+                65440
+              ],
+              "samples": 1280,
+              "output_energy": 0.1282132497741539,
+              "near_energy": 0.5246397107839584,
+              "error_energy": 0.19383479288450742,
+              "rms": 0.010008326602687271,
+              "peak": 0.038488611578941345,
+              "gain_sensitive_error_db": -4.324294253746049,
+              "projection_gain": 0.4374603735082343,
+              "noncanonical_projection_si_sdr_db": 5.57504500533636,
+              "projection_residual_energy": 0.027812120235373643
+            },
+            "agc_output": {
+              "output_range": [
+                64160,
+                65440
+              ],
+              "samples": 1280,
+              "output_energy": 0.1282132497741539,
+              "near_energy": 0.5246397107839584,
+              "error_energy": 0.19383479288450742,
+              "rms": 0.010008326602687271,
+              "peak": 0.038488611578941345,
+              "gain_sensitive_error_db": -4.324294253746049,
+              "projection_gain": 0.4374603735082343,
+              "noncanonical_projection_si_sdr_db": 5.57504500533636,
+              "projection_residual_energy": 0.027812120235373643
+            }
+          }
+        },
+        {
+          "window": "construction-3",
+          "physical_range": [
+            65280,
+            84496
+          ],
+          "lanes": {
+            "raw_mic0": {
+              "output_range": [
+                65280,
+                84496
+              ],
+              "samples": 19216,
+              "output_energy": 0.37961135245859623,
+              "near_energy": 0.37961135245859623,
+              "error_energy": 0.0,
+              "rms": 0.004444655457824552,
+              "peak": 0.04608154296875,
+              "gain_sensitive_error_db": null,
+              "projection_gain": 1.0,
+              "noncanonical_projection_si_sdr_db": null,
+              "projection_residual_energy": 0.0
+            },
+            "final_s16": {
+              "output_range": [
+                65440,
+                84656
+              ],
+              "samples": 19216,
+              "output_energy": 0.14384402614086866,
+              "near_energy": 0.37961135245859623,
+              "error_energy": 0.12578693870455027,
+              "rms": 0.0027359894607915203,
+              "peak": 0.0369873046875,
+              "gain_sensitive_error_db": -4.797036439707353,
+              "projection_gain": 0.5237836504616756,
+              "noncanonical_projection_si_sdr_db": 4.1887539691546385,
+              "projection_residual_energy": 0.03969791258008975
+            },
+            "aec_input": {
+              "output_range": [
+                65280,
+                84496
+              ],
+              "samples": 19216,
+              "output_energy": 0.33366614713327536,
+              "near_energy": 0.37961135245859623,
+              "error_energy": 0.05634949471328859,
+              "rms": 0.004167010341224453,
+              "peak": 0.047314032912254333,
+              "gain_sensitive_error_db": -8.28449165658272,
+              "projection_gain": 0.8652639082365606,
+              "noncanonical_projection_si_sdr_db": 7.593989352645033,
+              "projection_residual_energy": 0.04945810066763079
+            },
+            "aec_residual": {
+              "output_range": [
+                65280,
+                84496
+              ],
+              "samples": 19216,
+              "output_energy": 0.34394275331757046,
+              "near_energy": 0.37961135245859623,
+              "error_energy": 0.06846722179720446,
+              "rms": 0.004230693728862199,
+              "peak": 0.04104718565940857,
+              "gain_sensitive_error_db": -7.438564859283616,
+              "projection_gain": 0.8628389005442241,
+              "noncanonical_projection_si_sdr_db": 6.635573153638741,
+              "projection_residual_energy": 0.061325529950895734
+            },
+            "ns_input": {
+              "output_range": [
+                65280,
+                84496
+              ],
+              "samples": 19216,
+              "output_energy": 0.34394275331757046,
+              "near_energy": 0.37961135245859623,
+              "error_energy": 0.06846722179720446,
+              "rms": 0.004230693728862199,
+              "peak": 0.04104718565940857,
+              "gain_sensitive_error_db": -7.438564859283616,
+              "projection_gain": 0.8628389005442241,
+              "noncanonical_projection_si_sdr_db": 6.635573153638741,
+              "projection_residual_energy": 0.061325529950895734
+            },
+            "ns_output": {
+              "output_range": [
+                65440,
+                84656
+              ],
+              "samples": 19216,
+              "output_energy": 0.14383825164763445,
+              "near_energy": 0.37961135245859623,
+              "error_energy": 0.1257830652135861,
+              "rms": 0.002735934543282549,
+              "peak": 0.03699793666601181,
+              "gain_sensitive_error_db": -4.797170178684605,
+              "projection_gain": 0.5237811465820396,
+              "noncanonical_projection_si_sdr_db": 4.189235276656688,
+              "projection_residual_energy": 0.03969313379838414
+            },
+            "agc_output": {
+              "output_range": [
+                65440,
+                84656
+              ],
+              "samples": 19216,
+              "output_energy": 0.14383825164763445,
+              "near_energy": 0.37961135245859623,
+              "error_energy": 0.1257830652135861,
+              "rms": 0.002735934543282549,
+              "peak": 0.03699793666601181,
+              "gain_sensitive_error_db": -4.797170178684605,
+              "projection_gain": 0.5237811465820396,
+              "noncanonical_projection_si_sdr_db": 4.189235276656688,
+              "projection_residual_energy": 0.03969313379838414
+            }
+          }
+        },
+        {
+          "window": "construction-4",
+          "physical_range": [
+            84496,
+            100480
+          ],
+          "lanes": {
+            "raw_mic0": {
+              "output_range": [
+                84496,
+                100480
+              ],
+              "samples": 15984,
+              "output_energy": 0.0,
+              "near_energy": 0.0,
+              "error_energy": 0.0,
+              "rms": 0.0,
+              "peak": 0.0,
+              "gain_sensitive_error_db": null,
+              "projection_gain": null,
+              "noncanonical_projection_si_sdr_db": null,
+              "projection_residual_energy": null
+            },
+            "final_s16": {
+              "output_range": [
+                84656,
+                100640
+              ],
+              "samples": 15984,
+              "output_energy": 6.86105340719223e-06,
+              "near_energy": 0.0,
+              "error_energy": 6.86105340719223e-06,
+              "rms": 2.0718230692618204e-05,
+              "peak": 0.000640869140625,
+              "gain_sensitive_error_db": null,
+              "projection_gain": null,
+              "noncanonical_projection_si_sdr_db": null,
+              "projection_residual_energy": null
+            },
+            "aec_input": {
+              "output_range": [
+                84496,
+                100480
+              ],
+              "samples": 15984,
+              "output_energy": 1.5582176753535742e-05,
+              "near_energy": 0.0,
+              "error_energy": 1.5582176753535742e-05,
+              "rms": 3.122276265809911e-05,
+              "peak": 0.0009741323883645236,
+              "gain_sensitive_error_db": null,
+              "projection_gain": null,
+              "noncanonical_projection_si_sdr_db": null,
+              "projection_residual_energy": null
+            },
+            "aec_residual": {
+              "output_range": [
+                84496,
+                100480
+              ],
+              "samples": 15984,
+              "output_energy": 1.5582176753535742e-05,
+              "near_energy": 0.0,
+              "error_energy": 1.5582176753535742e-05,
+              "rms": 3.122276265809911e-05,
+              "peak": 0.0009741323883645236,
+              "gain_sensitive_error_db": null,
+              "projection_gain": null,
+              "noncanonical_projection_si_sdr_db": null,
+              "projection_residual_energy": null
+            },
+            "ns_input": {
+              "output_range": [
+                84496,
+                100480
+              ],
+              "samples": 15984,
+              "output_energy": 1.5582176753535742e-05,
+              "near_energy": 0.0,
+              "error_energy": 1.5582176753535742e-05,
+              "rms": 3.122276265809911e-05,
+              "peak": 0.0009741323883645236,
+              "gain_sensitive_error_db": null,
+              "projection_gain": null,
+              "noncanonical_projection_si_sdr_db": null,
+              "projection_residual_energy": null
+            },
+            "ns_output": {
+              "output_range": [
+                84656,
+                100640
+              ],
+              "samples": 15984,
+              "output_energy": 6.8634824449088925e-06,
+              "near_energy": 0.0,
+              "error_energy": 6.8634824449088925e-06,
+              "rms": 2.0721897834336083e-05,
+              "peak": 0.0006418161792680621,
+              "gain_sensitive_error_db": null,
+              "projection_gain": null,
+              "noncanonical_projection_si_sdr_db": null,
+              "projection_residual_energy": null
+            },
+            "agc_output": {
+              "output_range": [
+                84656,
+                100640
+              ],
+              "samples": 15984,
+              "output_energy": 6.8634824449088925e-06,
+              "near_energy": 0.0,
+              "error_energy": 6.8634824449088925e-06,
+              "rms": 2.0721897834336083e-05,
+              "peak": 0.0006418161792680621,
+              "gain_sensitive_error_db": null,
+              "projection_gain": null,
+              "noncanonical_projection_si_sdr_db": null,
+              "projection_residual_energy": null
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "source_locks": {
+    "cases/C/call_duplex/taps/observer.json": {
+      "bytes": 1467,
+      "sha256": "53f6ac4d1717265f43c0903ab3c6d9d08c1918bc29cd041c1468f924a3bdd678"
+    },
+    "cases/C/call_duplex/observed/out.pcm": {
+      "bytes": 201280,
+      "sha256": "f0345b98bbb0536271ace5d9089ee639de44bb9aae3491fcf19fb7b513cb245a"
+    },
+    "cases/C/call_duplex/plain/out.pcm": {
+      "bytes": 201280,
+      "sha256": "f0345b98bbb0536271ace5d9089ee639de44bb9aae3491fcf19fb7b513cb245a"
+    },
+    "cases/C/call_duplex/observed/metrics.jsonl": {
+      "bytes": 141002,
+      "sha256": "30542ef269771846c0120ee8f5fef50d41151a3c8a6120f61d9ad500016f23d6"
+    },
+    "cases/C/call_duplex/plain/metrics.jsonl": {
+      "bytes": 141002,
+      "sha256": "30542ef269771846c0120ee8f5fef50d41151a3c8a6120f61d9ad500016f23d6"
+    },
+    "cases/C/call_duplex/taps/aec_input.f32le": {
+      "bytes": 402560,
+      "sha256": "bf50fe5103e47ca7256c2ff01c2c88cf4cffd0e2f59e433d6ebd7af697060cbe"
+    },
+    "cases/C/call_duplex/taps/aec_residual.f32le": {
+      "bytes": 402560,
+      "sha256": "c6919ca696cd7831d2767703942b7e2d95893909ae4695eef1ccb9d58f4f9dac"
+    },
+    "cases/C/call_duplex/taps/ns_input.f32le": {
+      "bytes": 402560,
+      "sha256": "c6919ca696cd7831d2767703942b7e2d95893909ae4695eef1ccb9d58f4f9dac"
+    },
+    "cases/C/call_duplex/taps/ns_output.f32le": {
+      "bytes": 402560,
+      "sha256": "df711fe1414acdc4a10cbf19e228a47b4f2a762c5a06d4f99c7d29630d7b760f"
+    },
+    "cases/C/call_duplex/taps/agc_output.f32le": {
+      "bytes": 402560,
+      "sha256": "231582e34f13e0dbe9af24eaa5c13b8c8b8304ffde38263e22962937962b0dc7"
+    },
+    "cases/C/call_duplex/taps/control.csv": {
+      "bytes": 138189,
+      "sha256": "cbe0acd3dff05102631d3bd44b5d3e3bff8a5a074a2bed5cf2d1d00284c95e57"
+    },
+    "cases/C/assistant_duplex/taps/observer.json": {
+      "bytes": 1467,
+      "sha256": "53f6ac4d1717265f43c0903ab3c6d9d08c1918bc29cd041c1468f924a3bdd678"
+    },
+    "cases/C/assistant_duplex/observed/out.pcm": {
+      "bytes": 201280,
+      "sha256": "145742efe0e0bd9158f04973de1809861db9afb2d62374208c72517400b3f9fd"
+    },
+    "cases/C/assistant_duplex/plain/out.pcm": {
+      "bytes": 201280,
+      "sha256": "145742efe0e0bd9158f04973de1809861db9afb2d62374208c72517400b3f9fd"
+    },
+    "cases/C/assistant_duplex/observed/metrics.jsonl": {
+      "bytes": 141267,
+      "sha256": "39379ad8b423ed275e0a99047e9f7120f67ad70418a150ed480c48baa96e9d81"
+    },
+    "cases/C/assistant_duplex/plain/metrics.jsonl": {
+      "bytes": 141267,
+      "sha256": "39379ad8b423ed275e0a99047e9f7120f67ad70418a150ed480c48baa96e9d81"
+    },
+    "cases/C/assistant_duplex/taps/aec_input.f32le": {
+      "bytes": 402560,
+      "sha256": "bf50fe5103e47ca7256c2ff01c2c88cf4cffd0e2f59e433d6ebd7af697060cbe"
+    },
+    "cases/C/assistant_duplex/taps/aec_residual.f32le": {
+      "bytes": 402560,
+      "sha256": "3ef2828366fc86648810b2e2771d1641e158caf6902f599f811bcd2269d63bb0"
+    },
+    "cases/C/assistant_duplex/taps/ns_input.f32le": {
+      "bytes": 402560,
+      "sha256": "3ef2828366fc86648810b2e2771d1641e158caf6902f599f811bcd2269d63bb0"
+    },
+    "cases/C/assistant_duplex/taps/ns_output.f32le": {
+      "bytes": 402560,
+      "sha256": "529367c2108bbf8f647f705636bd7ce2f21daa25943f4bafab53e45083bbea34"
+    },
+    "cases/C/assistant_duplex/taps/agc_output.f32le": {
+      "bytes": 402560,
+      "sha256": "67235460b88345a15cc401647cebadc54a0e6525feb3e549786edba34377ff14"
+    },
+    "cases/C/assistant_duplex/taps/control.csv": {
+      "bytes": 138191,
+      "sha256": "1202f06fb522df9e7273c9cf3c07f137372039776a60dd3bad127e4ec98af371"
+    }
+  },
+  "near_sha256": "a81c2b25f9f35e4099f076c992ede1f17ed80d1fe3f3d9fd6eb0206dd0c97e2f",
+  "windows_per_profile": 13,
+  "measurement_groups": 182,
+  "elapsed_seconds": 1.9364142460003677,
+  "dsp_executions": 0,
+  "promotion_allowed": false,
+  "reference_constraints": "raw engineering near is not passed through HPF/BF; filtering/phase/spatial effects confound cross-stage error, and scalar projection is not physical source decomposition. NS stage includes joint spectral RES. Fixed160 postNS shift is algorithmic block latency, not acoustic delay. No lag fit, gain normalization of output, tail flush or metric threshold selection"
+}

@@ -1,0 +1,110 @@
+{
+  "experiment": "FE-MANDARIN-NEAR-ADMISSION-V1",
+  "decision": "ENGINEERING_NEAR_REFERENCE_ADMITTED",
+  "source_zip_sha256": "a3ab7823fdcd7586c3b72eb214b5536dcfb7531fdf0b1611d49e1575a29b2c3d",
+  "preparation_sha256": "e335de705ddd1bb74c8c8ef2b277bfab294d47098150b173f7b9315bb1b723e2",
+  "source_locks": {
+    "clean_mono.pcm": {
+      "bytes": 169280,
+      "sha256": "a48d9f5e939046e9a809626ff182a719f914fb263cc30a3b439788b4d2623a0b"
+    },
+    "clean_capture.pcm": {
+      "bytes": 338560,
+      "sha256": "221ee8f4b1acd8ce3df1e179772d1bb312d104ce99c14325fda23f4ed46b8bd0"
+    },
+    "duplex_capture.pcm": {
+      "bytes": 402560,
+      "sha256": "b84053ff38db5a018883cdf9e800214fd6386a6bf90fb7bfa573d854ebf1a7d0"
+    },
+    "duplex_mono.pcm": {
+      "bytes": 201280,
+      "sha256": "79ba900f2221e082f3bf624a912eb5e70586f1e20920131868c591bdab509ba3"
+    },
+    "duplex_render.pcm": {
+      "bytes": 201280,
+      "sha256": "9e6df9b2efbc7da168f07f1899406362e580cb80faafeaca97c3280c639c7e46"
+    }
+  },
+  "checked_recipe": {
+    "original_samples": 68496,
+    "clean_preroll_samples": 8000,
+    "clean_postroll_samples": 8000,
+    "clean_alignment_padding_samples": 144,
+    "duplex_near_gain": 0.5,
+    "duplex_preroll_samples": 16000,
+    "duplex_postroll_samples": 16000,
+    "duplex_alignment_padding_samples": 144,
+    "echo_taps_mic0": [
+      [
+        800,
+        0.25
+      ],
+      [
+        1280,
+        0.1
+      ]
+    ],
+    "echo_taps_mic1": [
+      [
+        801,
+        0.25
+      ],
+      [
+        1281,
+        0.1
+      ]
+    ]
+  },
+  "capture_checks": [
+    {
+      "channel": 0,
+      "samples": 100640,
+      "mismatches": 0,
+      "first_mismatch": null,
+      "peak": 4988
+    },
+    {
+      "channel": 1,
+      "samples": 100640,
+      "mismatches": 0,
+      "first_mismatch": null,
+      "peak": 4846
+    }
+  ],
+  "negative_controls": [
+    {
+      "alteration": "near",
+      "sample": 16000,
+      "rejected": true
+    },
+    {
+      "alteration": "echo",
+      "sample": 800,
+      "rejected": true
+    }
+  ],
+  "outputs": {
+    "known-near.pcm": {
+      "bytes": 201280,
+      "sha256": "a81c2b25f9f35e4099f076c992ede1f17ed80d1fe3f3d9fd6eb0206dd0c97e2f"
+    },
+    "known-echo-mic0.pcm": {
+      "bytes": 201280,
+      "sha256": "470af55257e80c1855352ebcbae42f229b2ee3e3b9162a39738221cf9c642bc8"
+    },
+    "known-echo-mic1.pcm": {
+      "bytes": 201280,
+      "sha256": "d882010995e0659a51c08716c1c4a38ac17b1bf699588c744fb811e903862b8a"
+    }
+  },
+  "source_original_samples": 68496,
+  "near_nonzero_samples": 68079,
+  "near_first_nonzero": 16000,
+  "near_last_nonzero": 84495,
+  "elapsed_seconds": 0.6032649399999173,
+  "algorithm_changed": false,
+  "dsp_executions": 0,
+  "asr_kws_executions": 0,
+  "promotion_allowed": false,
+  "scope": "single inspected development utterance plus first-party synthetic echo, no independent corpus or human label claim"
+}

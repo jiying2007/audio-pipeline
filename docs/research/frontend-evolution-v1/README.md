@@ -387,3 +387,7 @@ real-robot qualification or the frozen NS research program.
 独立文本/描述符审查完成，但二进制tap/state重算仍待审计；不冒充首次fee ZIP独立审计，
 不据此推广HPF/BF改动。原冻结/生产/科学代码均未改。
 这是候选数0的中性诊断，不重开S003或D3/D5/D6等闭合拒绝线，不声明听感/识别或真机质量改善。
+
+## 中文 oracle-DT V2 历史运行时对照
+
+[冻结合同与负向结果](evidence/mandarin-oracle-dt-v2/RESULT.md)保留CALL/ASSISTANT两baseline全部10文件逐字节通过后各一次候选的真实执行。DT0→429，但最终common原始near域非规范投影SI-SDR差为−6.7875/−6.8148dB；不推广，不等同CER/MOS或纯语音失真。364组固定测量独立复算一致；原#953失败不重判。[只读联动追踪](evidence/mandarin-oracle-dt-v2/POSTHOC.md)只分析现有4次输出，不增加DSP，不能把共同变化当单模块因果。

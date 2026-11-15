@@ -1,0 +1,4 @@
+	linux-vdso.so.1 (0x00007fe6ef4de000)
+	libm.so.6 => /tmp/audio-fe-runtime-closure-v1/runtime/usr/lib/x86_64-linux-gnu/libm.so.6 (0x00007fe6ef3c0000)
+	libc.so.6 => /tmp/audio-fe-runtime-closure-v1/runtime/usr/lib/x86_64-linux-gnu/libc.so.6 (0x00007fe6ef1ad000)
+	/lib64/ld-linux-x86-64.so.2 => /tmp/audio-fe-runtime-closure-v1/runtime/usr/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 (0x00007fe6ef4e0000)

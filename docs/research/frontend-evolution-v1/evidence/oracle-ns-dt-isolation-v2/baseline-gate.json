@@ -1,0 +1,8 @@
+{
+  "passed_profiles": [
+    "call",
+    "assistant"
+  ],
+  "output_and_all4_public_fields_exact": true,
+  "full_internal_state_verified": false
+}

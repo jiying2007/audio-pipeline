@@ -1,0 +1,5 @@
+# Link adapter correction only
+
+V1 stopped at the first compile with five undefined observer function names. Its original source, commands, failed logs and receipts remain untouched. No loader or DSP ran. The historical observer archive deliberately exports *_d1_real; original D1 baseline.c provided forwarding wrappers. V2 adds exactly five signature-identical, argument-preserving forwarding functions to those existing archive symbols. It does not rebuild or change the archive, NS equations, input, initialization, metric or admission rule. Other module functions are linked only because the original library uses unity objects; the harness invokes only ap_ns_init and ap_ns_process. No full pipeline entry is called.
+
+Root authorized this bounded implementation correction. New V2 root has one new compilation, one loader dependency-list and maximum4 module executions; V1 consumed zero of the module/loader allowance. No favorable retry or alternate math strategy. Initial proposal's not-yet-approved status is preserved as history; PLAN.json records subsequent user approval and the implementation amendment.

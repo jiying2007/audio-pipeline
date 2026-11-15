@@ -395,3 +395,7 @@ real-robot qualification or the frozen NS research program.
 ## 固定 oracle 上游输入的 AGC 单模块诊断
 
 [原始合同与条件效应结果](evidence/oracle-agc-isolation-v1/RESULT.md)：两profile连续629帧原始AGC输出及状态逐字节复现后，仅把allow替换为原baseline序列，固定oracle NS输入。common增益敏感误差下降，但非规范投影SI-SDR变差，不能称总体音质改善或DT总效果的可加分解。52组指标与28次真实性能观测独立复算通过，计时波动不支持稳健加速。不新增整条pipeline、oracle-DT或历史运行库执行；不改生产、不推广。
+
+## 固定 oracle 输入的 NS/RES 条件诊断归档
+
+[历史原件与负向边界](evidence/oracle-ns-dt-isolation-v2/RESULT.md)保留两profile输出及629帧四项公开字段逐字节复现后，仅替换DT序列的四次隔离模块执行。固定oracle residual/echo下，恢复原DT使增益敏感误差下降、投影SI-SDR变差；不是端到端音质改善或DT总效果的可加分解，不推广。原V1链接失败不重判，单次CPU观察不代表稳健性能变化。[公开范围与可复现边界](evidence/oracle-ns-dt-isolation-v2/ARCHIVE.md)明确原件恢复、缺失的独立V1失败包和不公开音频/运行库的限制。

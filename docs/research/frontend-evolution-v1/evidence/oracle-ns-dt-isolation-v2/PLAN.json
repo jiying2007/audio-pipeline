@@ -1,0 +1,44 @@
+{
+  "experiment": "FE-ORACLE-NS-DT-ISOLATION-V2-LINK-ADAPTER",
+  "base_main": "6ff1ab8990e0a4c8be62802f48c20a06d611a11b",
+  "profiles": [
+    "call",
+    "assistant"
+  ],
+  "authorization": "Root permits explicit link-adapter repair under user NS-module authorization; preserve failedV1, no science/gate changes; aggregate module cap remains4.",
+  "contract": "PROPOSAL.md",
+  "status": "IMPLEMENTATION_FROZEN_PENDING_REVIEW",
+  "limits": {
+    "compile": 30,
+    "loader_list": 10,
+    "module": 15,
+    "analysis": 30,
+    "outer": 150
+  },
+  "max_module_processes": 4,
+  "full_pipeline_runs": 0,
+  "additional_benchmarks": 0,
+  "promotion_allowed": false,
+  "runtime": "/tmp/audio-fe-runtime-closure-v1/runtime/usr/lib/x86_64-linux-gnu",
+  "runtime_hashes": {
+    "usr/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2": {
+      "sha256": "c20a2dc8917c755f02b94049356320fe1f62ac7d9f8994731f807d9df39302da",
+      "bytes": 236616
+    },
+    "usr/lib/x86_64-linux-gnu/libc.so.6": {
+      "sha256": "3a15d66867d83762c7f2f1e37359cb8f6c5743edb369c65285cb0b1c4f7498bf",
+      "bytes": 2129424
+    },
+    "usr/lib/x86_64-linux-gnu/libm.so.6": {
+      "sha256": "fce00b6f25f459cf4ae0b7fae4257909a1a8a86f9149e7c029a5d617baf1ccd0",
+      "bytes": 952616
+    }
+  },
+  "runtime_package_sha256": "ff5557d99b51f761c4b7c92368b9cc45565eda17df9bf9eb4b134d09825008be",
+  "prior_failure": {
+    "path": "/tmp/audio-fe-oracle-ns-dt-isolation-v1",
+    "reason": "Historical observer archive renames5 functions; missing pure-forwarding wrappers caused linker exit1, before loader/DSP",
+    "module_processes": 0,
+    "loader_lists": 0
+  }
+}

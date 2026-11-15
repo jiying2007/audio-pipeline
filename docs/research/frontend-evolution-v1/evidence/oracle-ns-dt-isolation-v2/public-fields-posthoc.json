@@ -1,0 +1,30 @@
+{
+  "call": {
+    "different_frames": {
+      "frequency_active": 429,
+      "residual_gain": 441,
+      "noise_rms_dbfs": 0,
+      "speech_probability": 0
+    },
+    "frequency_active_counts": {
+      "oracle": 122.0,
+      "restored": 551.0
+    },
+    "posthoc": true,
+    "new_dsp_runs": 0
+  },
+  "assistant": {
+    "different_frames": {
+      "frequency_active": 429,
+      "residual_gain": 441,
+      "noise_rms_dbfs": 0,
+      "speech_probability": 0
+    },
+    "frequency_active_counts": {
+      "oracle": 122.0,
+      "restored": 551.0
+    },
+    "posthoc": true,
+    "new_dsp_runs": 0
+  }
+}

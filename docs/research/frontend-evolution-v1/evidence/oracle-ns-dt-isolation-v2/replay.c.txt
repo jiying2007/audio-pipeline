@@ -1,0 +1,48 @@
+#define _POSIX_C_SOURCE 200809L
+#include "enhance/ap_enhance.h"
+#include "activity/ap_activity.h"
+#include "aec/ap_aec.h"
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <math.h>
+#include <time.h>
+
+/* Pure symbol forwarding required by the original observer archive. */
+void ap_ns_process_d1_real(ap_ns_state_t *,ap_enhance_mode_t,float,const float *,const float *,float *,uint32_t,int,int,int,ap_ns_result_t *);
+void ap_ns_process(ap_ns_state_t*s,ap_enhance_mode_t m,float g,const float*x,const float*e,float*y,uint32_t n,int enabled,int far,int dt,ap_ns_result_t*r){ap_ns_process_d1_real(s,m,g,x,e,y,n,enabled,far,dt,r);}
+void ap_activity_process_d1_real(ap_activity_state_t*,float,float,ap_activity_result_t*);
+void ap_activity_process(ap_activity_state_t*s,float m,float r,ap_activity_result_t*out){ap_activity_process_d1_real(s,m,r,out);}
+void ap_aec_backend_process_d1_real(ap_aec_state_t*,int,float,uint32_t,const float*,const float*,float*,float*,int,int,ap_aec_result_t*);
+void ap_aec_backend_process(ap_aec_state_t*s,int en,float mu,uint32_t n,const float*m,const float*r,float*y,float*e,int far,int dt,ap_aec_result_t*out){ap_aec_backend_process_d1_real(s,en,mu,n,m,r,y,e,far,dt,out);}
+float ap_res_process_d1_real(ap_res_state_t*,ap_enhance_mode_t,float*,uint32_t,float,float,int,int);
+float ap_res_process(ap_res_state_t*s,ap_enhance_mode_t m,float*x,uint32_t n,float e,float r,int far,int dt){return ap_res_process_d1_real(s,m,x,n,e,r,far,dt);}
+void ap_agc_process_controlled_d1_real(ap_agc_state_t*,float*,uint32_t,int);
+void ap_agc_process_controlled(ap_agc_state_t*s,float*x,uint32_t n,int allow){ap_agc_process_controlled_d1_real(s,x,n,allow);}
+
+#define F 629u
+#define N (F*160u)
+static int rd(const char*p,void*b,size_t n){FILE*f=fopen(p,"rb");if(!f)return 0;int ok=fread(b,1,n,f)==n&&fgetc(f)==EOF;return fclose(f)==0&&ok;}
+static int wr(const char*p,const void*b,size_t n){FILE*f=fopen(p,"wb");if(!f)return 0;int ok=fwrite(b,1,n,f)==n;return fclose(f)==0&&ok;}
+int main(int argc,char**argv){
+ if(argc!=9)return 2;
+ float *in=malloc(N*sizeof(float)),*echo=malloc(N*sizeof(float)),*out=malloc(N*sizeof(float)),*fields=malloc(F*4*sizeof(float));uint8_t far[F],dt[F];
+ if(!in||!echo||!out||!fields)return 3;
+ if(!rd(argv[1],in,N*sizeof(float))||!rd(argv[2],echo,N*sizeof(float))||!rd(argv[3],far,F)||!rd(argv[4],dt,F))return 4;
+ for(unsigned i=0;i<N;i++)if(!isfinite(in[i])||!isfinite(echo[i]))return 5;
+ for(unsigned i=0;i<F;i++)if(far[i]>1||dt[i]>1)return 5;
+ float floor;if(!strcmp(argv[5],"call"))floor=0.12f;else if(!strcmp(argv[5],"assistant"))floor=0.18f;else return 6;
+ struct timespec a,b;if(clock_gettime(CLOCK_THREAD_CPUTIME_ID,&a))return 7;
+ ap_ns_state_t s;ap_ns_init(&s,160);
+ for(unsigned f=0;f<F;f++){
+  ap_ns_result_t r;ap_ns_process(&s,AP_ENHANCE_FULL,floor,in+f*160,echo+f*160,out+f*160,160,1,far[f],dt[f],&r);
+  fields[f*4]=(float)r.frequency_res_active;fields[f*4+1]=r.residual_echo_gain;fields[f*4+2]=r.noise_rms_dbfs;fields[f*4+3]=r.speech_probability;
+ }
+ if(clock_gettime(CLOCK_THREAD_CPUTIME_ID,&b))return 7;
+ double cpu=(double)(b.tv_sec-a.tv_sec)+1e-9*(double)(b.tv_nsec-a.tv_nsec);
+ if(!wr(argv[6],out,N*sizeof(float))||!wr(argv[7],fields,F*4*sizeof(float)))return 8;
+ FILE*f=fopen(argv[8],"w");if(!f)return 9;
+ fprintf(f,"{\"thread_cpu_seconds\":%.17g,\"frames\":629,\"module_state_bytes\":%zu,\"single_observation\":true}\n",cpu,sizeof(s));if(fclose(f))return 9;
+ free(in);free(echo);free(out);free(fields);return 0;
+}

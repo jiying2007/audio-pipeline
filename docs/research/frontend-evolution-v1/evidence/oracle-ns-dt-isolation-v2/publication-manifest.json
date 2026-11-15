@@ -1,0 +1,78 @@
+{
+  "result.json": {
+    "bytes": 39989,
+    "sha256": "58256ad1a60deda0fe67a84bba5f30d31097786aa0366da36cb54a715e0cbe72"
+  },
+  "RESULT.md": {
+    "bytes": 3828,
+    "sha256": "92900cd6b67667281570a6090e9b3a88aecd4f04acdceb255c3710cb453495d2"
+  },
+  "baseline-gate.json": {
+    "bytes": 147,
+    "sha256": "d84790f9c055b70adc19cff3893f53cd00fa8f0b9a1c6837401cc1a6db868711"
+  },
+  "input-lock.json": {
+    "bytes": 11526,
+    "sha256": "613aef3f77f4e5660b75607afc72926e5c81b7c43abbc8fcd542f2645eb85651"
+  },
+  "PROPOSAL.md": {
+    "bytes": 5550,
+    "sha256": "2d35b7659b3592daab3e680728f7db83ec3576aa7edbbdf843099ee79e26d5bc"
+  },
+  "manifest.json": {
+    "bytes": 19285,
+    "sha256": "ceae85e62dafbfbc25d1520df0eed4eff3a1ca7468e569cfb30336430bc0f8e6"
+  },
+  "AMENDMENT.md": {
+    "bytes": 1117,
+    "sha256": "daec292a410a564e247346dd55a433d6a6b8d8e8c4513582b7a4d4f2054fdee5"
+  },
+  "oracle-assistant-gate.json": {
+    "bytes": 40,
+    "sha256": "d8234147b5b8ee9545c57bd0b3a31eabd25765714bef90548ac59b8e150caea3"
+  },
+  "historical-source-files.json": {
+    "bytes": 14380,
+    "sha256": "b677f8bed888fac4b1df0b1c0117a4a7afa084c0007bbe33cdf27ee54178fd05"
+  },
+  "original-measure.py.txt": {
+    "bytes": 5313,
+    "sha256": "f76d30827520adf68e5d1f301f664ec24b78c6318c5b9baed88e72a051e50b80"
+  },
+  "PLAN.json": {
+    "bytes": 1614,
+    "sha256": "73bda0f3bc41349104f75d9752e13b48487be623d403ff6af18f428f979d88ae"
+  },
+  "execution-files.json": {
+    "bytes": 18328,
+    "sha256": "42742e6828c56740889cd649e84f3e086ddedc89c2feb31568e271cb7406cb7d"
+  },
+  "ARCHIVE.md": {
+    "bytes": 2486,
+    "sha256": "bb4a67cd08cc68cae4e10e6daa1f2effc2aaa920516565750d5bcf4074988be6"
+  },
+  "replay.c.txt": {
+    "bytes": 3507,
+    "sha256": "f538cf312d3fc19db751c6c4e5e40bf9bcf7b2aaa2ff5da4356e7ccf5e913a02"
+  },
+  "freeze.sha256": {
+    "bytes": 549,
+    "sha256": "00653dd36f03209b549209e52ee85e33b563e1a5d26584f0335922e0d583be01"
+  },
+  "oracle-call-gate.json": {
+    "bytes": 40,
+    "sha256": "d8234147b5b8ee9545c57bd0b3a31eabd25765714bef90548ac59b8e150caea3"
+  },
+  "run.py.txt": {
+    "bytes": 7625,
+    "sha256": "986e665087b6c5a9ad795c58a85d0e3370010e3586e7460c784dcd90270de4a2"
+  },
+  "public-fields-posthoc.json": {
+    "bytes": 600,
+    "sha256": "d564047ae6d33eb2aff07e855ab157aea85c3ead0c79919283c16df81d4381ce"
+  },
+  "elf-identity.json": {
+    "bytes": 101,
+    "sha256": "4ab0fe5850e1ef78d18160db2127cf3d6577f76ef3b534f87430591704b42f82"
+  }
+}

@@ -1,0 +1,87 @@
+{
+  "src/ap_agc.c": {
+    "source": "/tmp/audio-fe-mandarin-oracle-dt-v2/source/src/enhance/ap_agc.c",
+    "sha256": "9499f4576b574125506a4ef63fd3eec18c1fc912674c772c34bf887457045066",
+    "bytes": 1718
+  },
+  "src/enhance/ap_enhance.h": {
+    "source": "/tmp/audio-fe-mandarin-oracle-dt-v2/source/src/enhance/ap_enhance.h",
+    "sha256": "22e3760204b05c04fbbda3f4fa1df79ccd127dad276c4b10ba3e9ebe1ee55cdf",
+    "bytes": 3416
+  },
+  "call-input.f32le": {
+    "source": "/tmp/audio-fe-mandarin-oracle-dt-v2/candidate-call/taps/ns_output.f32le",
+    "sha256": "b3968479d1ae49fed21d6d0e93255a285c46915864ff57fc2b7111cdc2bba424",
+    "bytes": 402560
+  },
+  "call-expected.f32le": {
+    "source": "/tmp/audio-fe-mandarin-oracle-dt-v2/candidate-call/taps/agc_output.f32le",
+    "sha256": "d436aed5dad86d6e2efef166e9119936d0e942b9fbbcc8c8b2fa9de855c2d274",
+    "bytes": 402560
+  },
+  "call-oracle-control.csv": {
+    "source": "/tmp/audio-fe-mandarin-oracle-dt-v2/candidate-call/taps/control.csv",
+    "sha256": "8bfd2906fb87788d45e150911aef1997386f938ae92c1b932c7b1016c6e36d5a",
+    "bytes": 133227
+  },
+  "call-restored-control.csv": {
+    "source": "/tmp/audio-fe-mandarin-oracle-dt-v2/baseline-call/taps/control.csv",
+    "sha256": "cbe0acd3dff05102631d3bd44b5d3e3bff8a5a074a2bed5cf2d1d00284c95e57",
+    "bytes": 138189
+  },
+  "assistant-input.f32le": {
+    "source": "/tmp/audio-fe-mandarin-oracle-dt-v2/candidate-assistant/taps/ns_output.f32le",
+    "sha256": "8a7e3dda2fd0fd7df8fed5c61dd9241851d89223b23847f6804e66cdf7c6798d",
+    "bytes": 402560
+  },
+  "assistant-expected.f32le": {
+    "source": "/tmp/audio-fe-mandarin-oracle-dt-v2/candidate-assistant/taps/agc_output.f32le",
+    "sha256": "25eb91d00210ca1adc6a73d12883bf4f4e6e1b15d2c9658460a7181e9d8cb758",
+    "bytes": 402560
+  },
+  "assistant-oracle-control.csv": {
+    "source": "/tmp/audio-fe-mandarin-oracle-dt-v2/candidate-assistant/taps/control.csv",
+    "sha256": "83775c5f7d3a392827c51dd573689006a4f289376743a8cc10b093ca9ae620c2",
+    "bytes": 133194
+  },
+  "assistant-restored-control.csv": {
+    "source": "/tmp/audio-fe-mandarin-oracle-dt-v2/baseline-assistant/taps/control.csv",
+    "sha256": "1202f06fb522df9e7273c9cf3c07f137372039776a60dd3bad127e4ec98af371",
+    "bytes": 138191
+  },
+  "call-oracle.allow": {
+    "derivation": "exact saved control.csv fields, binary uint8 or Float32 decimal roundtrip",
+    "sha256": "b44a0c895867c228ce97e341cf1280304399300cd316f8d7be3688e103400933",
+    "bytes": 629
+  },
+  "call-restored.allow": {
+    "derivation": "exact saved control.csv fields, binary uint8 or Float32 decimal roundtrip",
+    "sha256": "a9833297ac6c10a3302bd588efcbf0a751196358a63ab76c52c628914419f3c6",
+    "bytes": 629
+  },
+  "assistant-oracle.allow": {
+    "derivation": "exact saved control.csv fields, binary uint8 or Float32 decimal roundtrip",
+    "sha256": "b44a0c895867c228ce97e341cf1280304399300cd316f8d7be3688e103400933",
+    "bytes": 629
+  },
+  "assistant-restored.allow": {
+    "derivation": "exact saved control.csv fields, binary uint8 or Float32 decimal roundtrip",
+    "sha256": "a9833297ac6c10a3302bd588efcbf0a751196358a63ab76c52c628914419f3c6",
+    "bytes": 629
+  },
+  "call-expected.states": {
+    "derivation": "exact saved control.csv fields, binary uint8 or Float32 decimal roundtrip",
+    "sha256": "189f704298ce570607b29f05ca53009c5f40f268ab6f9ad4901e0e40071950f0",
+    "bytes": 5032
+  },
+  "assistant-expected.states": {
+    "derivation": "exact saved control.csv fields, binary uint8 or Float32 decimal roundtrip",
+    "sha256": "1c914f81514ba1d21ac13aca6e3173b4510d9652ede6d2890887f60c10d9149c",
+    "bytes": 5032
+  },
+  "known-near.pcm": {
+    "sha256": "a81c2b25f9f35e4099f076c992ede1f17ed80d1fe3f3d9fd6eb0206dd0c97e2f",
+    "bytes": 201280,
+    "source": "admitted original known-near, unchanged"
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "experiment": "FE-ORACLE-AGC-ALLOW-ISOLATION-V1",
+  "base_main": "ebe0a88dc668a7cfb1bb50c339a898a82929653f",
+  "hypothesis": "On fixed existing oracle NS outputs, restoring the original baseline AGC allow sequence determines whether AGC permission alone amplifies the observed downstream energy/error",
+  "unique_change": "AGC allow sequence only: oracle control to saved original-baseline control; same fixed oracle NS Float32 input, exact AGC source/init/profile, full sequential state recurrence",
+  "dedup": "D9 studied sub-unity recovery on original D2 input; D5 removed target cap. This is new V2 oracle-input controlled mediation, not repeating either candidate or full-pipeline oracle. Prior V2 jointly changed upstream input and AGC permission; here input is held fixed.",
+  "baseline_gate": "Both oracle-allow module replays must exactly reproduce saved oracle AGC Float32 samples and before/after gain states for all629frames before any restored-allow candidate or benchmarks. Any mismatch stops without parameter/compile search.",
+  "profiles": [
+    "call",
+    "assistant"
+  ],
+  "initialization": "unchanged ap_agc_init target -20/-18dBFS, limiter -2, gain1.0. Current native runtime only; no historical loader execution.",
+  "quality": "original frozen math.fsum statistics and13windows on AGC Float32, offset160/common[0,100480); compare fixed same-input baseline/candidate. Not finalS16/full-pipeline/ASR/MOS/source separation or production improvement",
+  "performance": "7 paired repetitions, alternating arm order,100 complete reset+sequence loops per timed invocation, CLOCK_THREAD_CPUTIME_ID. Timing includes identical memcpy, init and gain trace stores; checks/filesystem excluded. All final outputs/states checked after timings. Native host microbenchmark not target performance; no performance threshold or promotion.",
+  "counts": {
+    "module_replay_invocations": 4,
+    "benchmark_invocations": 28,
+    "whole_pipeline_runs": 0,
+    "new_oracle_dt_runs": 0,
+    "old_runtime_runs": 0
+  },
+  "budget_seconds": {
+    "outer": 180,
+    "compile": 30,
+    "each_module_or_benchmark": 10,
+    "analysis": 30
+  },
+  "one_candidate": true,
+  "no_favorable_retry": true,
+  "promotion_allowed": false
+}

@@ -391,3 +391,7 @@ real-robot qualification or the frozen NS research program.
 ## 中文 oracle-DT V2 历史运行时对照
 
 [冻结合同与负向结果](evidence/mandarin-oracle-dt-v2/RESULT.md)保留CALL/ASSISTANT两baseline全部10文件逐字节通过后各一次候选的真实执行。DT0→429，但最终common原始near域非规范投影SI-SDR差为−6.7875/−6.8148dB；不推广，不等同CER/MOS或纯语音失真。364组固定测量独立复算一致；原#953失败不重判。[只读联动追踪](evidence/mandarin-oracle-dt-v2/POSTHOC.md)只分析现有4次输出，不增加DSP，不能把共同变化当单模块因果。
+
+## 固定 oracle 上游输入的 AGC 单模块诊断
+
+[原始合同与条件效应结果](evidence/oracle-agc-isolation-v1/RESULT.md)：两profile连续629帧原始AGC输出及状态逐字节复现后，仅把allow替换为原baseline序列，固定oracle NS输入。common增益敏感误差下降，但非规范投影SI-SDR变差，不能称总体音质改善或DT总效果的可加分解。52组指标与28次真实性能观测独立复算通过，计时波动不支持稳健加速。不新增整条pipeline、oracle-DT或历史运行库执行；不改生产、不推广。

@@ -1,3 +1,9 @@
+# 2.3.65
+
+- Fail Runtime startup with `AP_ESTATE` when pthread attribute initialization fails, restore stopped state, and never silently discard a requested worker stack size.
+- Add CALL/ASSISTANT explicit/default-stack fault-injection regressions, including subsequent successful startup and cleanup. Preserve invalid-stack rejection and existing successful DSP/queue behavior.
+- This is a portable error-path repair, not a naturally observed Linux allocation failure, measured audio/resource improvement, release/tag, or physical qualification.
+
 # 2.3.64
 
 - Preserve exact input/output aliasing in the two-microphone beamformer without overwriting delayed input samples or raw next-frame history. Keep disjoint processing byte-identical and public state/API/ABI unchanged.

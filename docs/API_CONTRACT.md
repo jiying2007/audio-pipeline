@@ -183,6 +183,8 @@ ap_runtime_deinit(runtime);
 
 `ap_runtime_open()` validates caller-owned state, basic scheduling/overload policy and extensible runtime options. `ap_runtime_submit_frame()` is the only frame producer API and always accepts optional metadata. `ap_runtime_read_metrics()` returns the complete long-running runtime metric structure.
 
+If pthread attribute initialization fails, `ap_runtime_start()` returns `AP_ESTATE` without creating a worker and leaves the runtime stopped for a later retry. It must not silently fall back to default thread attributes and discard a requested `dsp_stack_bytes`. An invalid stack size still returns `AP_EINVAL`.
+
 After `ap_runtime_start()`, the worker is the sole owner of the supplied pipeline until `ap_runtime_stop()` has joined it and returned. A stop request alone does not release ownership. A concurrent single control producer may continue to queue commands while stop is in progress; tuning admission uses only its producer-side projection until the worker has joined. Commands not consumed before stop remain queued for a later start. Start and Flight Recorder attachment return `AP_ESTATE` while stop is in progress. Lifecycle calls must be serialized, and all API users must be quiescent before deinit destroys runtime resources.
 
 If `ap_runtime_options_t.lock_memory` is enabled, the runtime performs best-effort bounded `mlock()` only on the caller-owned runtime and pipeline arenas and releases those locks on stop. The SDK never invokes process-global `mlockall()`; worker-stack prefaulting and process-wide realtime memory policy remain product responsibilities.

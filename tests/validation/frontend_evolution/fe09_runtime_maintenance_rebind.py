@@ -121,6 +121,7 @@ FORWARD_MAINTENANCE = {
            'src/platform/linux/ap_runtime.c': 'b6c36e195c1ac967e450a1e32506e0b6859a581b'},
  'patch': 'fe09_maintenance_forward_2_3_64_r9.patch.b64',
  'patch_blob': 'da483fe655bdf9bca61efe25bd79364bfffaba1f'},
+    "2.3.65": {'blobs': {'CMakeLists.txt': 'e585febf1181327a0072dc1cef11890789dc1d8c', 'docs/API_CONTRACT.md': 'f45a474321af1406ed6d5b6b9df2f43317e6f3c2', 'include/audio_pipeline/audio_runtime.h': 'ad72e40b5b343aee4589ee50dfd07fe1a85e0ea9', 'src/core/ap_pipeline.c': '9bbd0fd15fcec7b9624f5bc69b550db91e789167', 'src/frontend/ap_beamformer.c': 'cb9f5c3a0f8d2c910eff62e9599f866b444de3c3', 'src/platform/linux/ap_runtime.c': 'c8e4edfd0ac398b7830ba4d849e2c756a87c61f2'}, 'patch': 'fe09_maintenance_forward_2_3_65.patch.b64', 'patch_blob': '47f55e3659d9501e50f457dabe31cff8c421849b'},
 }
 
 
@@ -161,7 +162,7 @@ DUALMIC_2_3_62_PATHS = AUDIT_2_3_59_PATHS | {"src/frontend/ap_beamformer.c", "sr
 
 
 def current_registered_paths(version: str) -> frozenset[str]:
-    if version in ("2.3.62", "2.3.63", "2.3.64", "2.3.64-r9"):
+    if version in ("2.3.62", "2.3.63", "2.3.64", "2.3.64-r9", "2.3.65"):
         return frozenset(DUALMIC_2_3_62_PATHS)
     return AUDIT_2_3_59_PATHS if version in ("2.3.59", "2.3.60", "2.3.61") else frozenset(CHANGED)
 
@@ -200,7 +201,7 @@ def check_forward_patch_scope(version: str, patch: bytes, destination: Path) -> 
     need(version in FORWARD_MAINTENANCE, "UNREGISTERED_FORWARD_MAINTENANCE_VERSION")
     expected = (AUDIT_2_3_59_PATHS if version in ("2.3.59", "2.3.60", "2.3.61") else
                 frozenset({"CMakeLists.txt", "src/platform/linux/ap_runtime.c"}))
-    if version in ("2.3.62", "2.3.63", "2.3.64", "2.3.64-r9"):
+    if version in ("2.3.62", "2.3.63", "2.3.64", "2.3.64-r9", "2.3.65"):
         expected = frozenset(DUALMIC_2_3_62_PATHS)
     inventory = subprocess.run(["git", "apply", "--numstat", "-"],
                                input=patch, cwd=destination, capture_output=True,
@@ -216,19 +217,23 @@ ARCHIVED_R8_REGISTRY_BLOB = 'f267b7feae2dd2d070438329b810c7b2a54ba30f'
 
 
 def preserved_forward_registry() -> None:
-    # Preserve all eight earlier registrations byte-for-byte as data.
-    raw = raw_file(ROOT / ARCHIVED_R8_REGISTRY)
-    need(major.git_blob(raw) == ARCHIVED_R8_REGISTRY_BLOB,
-         "R9_HISTORICAL_REGISTRY_CHANGED")
-    tree = ast.parse(raw.decode("utf-8"))
-    entries = [node for node in tree.body if isinstance(node, ast.Assign) and
-               len(node.targets) == 1 and isinstance(node.targets[0], ast.Name) and
-               node.targets[0].id == "FORWARD_MAINTENANCE"]
-    need(len(entries) == 1, "R9_HISTORICAL_REGISTRY_SURFACE")
-    old = ast.literal_eval(entries[0].value)
-    need(len(old) == 8 and set(FORWARD_MAINTENANCE) == set(old) | {"2.3.64-r9"} and
+    # Exact old nine registrations and the earlier eight-entry snapshot remain pinned.
+    raw = raw_file(ROOT / 'docs/research/frontend-evolution-v1/RUNTIME_2365_SOURCE_R10_20261116/R9_RUNTIME_MAINTENANCE_REBIND.py')
+    need(major.git_blob(raw) == '99541f5c79e82fb230dddec9f9ec07d3ba7e30b4', "R10_HISTORICAL_REGISTRY_CHANGED")
+    old8raw = raw_file(ROOT / ARCHIVED_R8_REGISTRY)
+    need(major.git_blob(old8raw) == ARCHIVED_R8_REGISTRY_BLOB, "R9_HISTORICAL_REGISTRY_CHANGED")
+    def registry_value(data):
+        entries = [n for n in ast.parse(data.decode()).body if isinstance(n, ast.Assign)
+                   and len(n.targets) == 1 and isinstance(n.targets[0], ast.Name)
+                   and n.targets[0].id == "FORWARD_MAINTENANCE"]
+        need(len(entries) == 1, "R10_HISTORICAL_REGISTRY_SURFACE")
+        return ast.literal_eval(entries[0].value)
+    old, old8 = registry_value(raw), registry_value(old8raw)
+    need(len(old8) == 8 and set(old) == set(old8) | {"2.3.64-r9"} and
+         all(old[key] == value for key, value in old8.items()), "R10_R8_REGISTRY_CHAIN_CHANGED")
+    need(len(old) == 9 and set(FORWARD_MAINTENANCE) == set(old) | {"2.3.65"} and
          all(FORWARD_MAINTENANCE[key] == value for key, value in old.items()),
-         "R9_PREVIOUS_REGISTRATIONS_CHANGED")
+         "R10_PREVIOUS_REGISTRATIONS_CHANGED")
 
 
 def registered_source_version(revision: str) -> str:
@@ -373,7 +378,7 @@ def self_test() -> None:
     item = policy(raw, patch)
     src = read_sources(ROOT, item)
     rejected = 0
-    audit_rejected = {"2.3.59": 0, "2.3.60": 0, "2.3.61": 0, "2.3.62": 0, "2.3.63": 0, "2.3.64": 0, "2.3.64-r9": 0}
+    audit_rejected = {"2.3.59": 0, "2.3.60": 0, "2.3.61": 0, "2.3.62": 0, "2.3.63": 0, "2.3.64": 0, "2.3.64-r9": 0, "2.3.65": 0}
 
     def reject(fn, reason: str | None = None, *, audit: str | None = None) -> None:
         nonlocal rejected, audit_rejected
@@ -527,8 +532,9 @@ def self_test() -> None:
     need(audit_rejected["2.3.63"] == 14, "DUALMIC_2_3_63_NEGATIVES_INCOMPLETE")
     need(audit_rejected["2.3.64"] == 14, "DUALMIC_2_3_64_NEGATIVES_INCOMPLETE")
     need(audit_rejected["2.3.64-r9"] == 14, "DUALMIC_2_3_64_R9_NEGATIVES_INCOMPLETE")
+    need(audit_rejected["2.3.65"] == 14, "RUNTIME_2_3_65_NEGATIVES_INCOMPLETE")
     print("FE09_EXACT_MAINTENANCE_REBIND_SELF_TEST_PASS negatives=16 "
-          "audit2359_negatives=12 io2360_negatives=12 pcm2361_negatives=12 dualmic2362_negatives=14 dualmic2363_negatives=14 dualmic2364_negatives=14 dualmic2364r9_negatives=14 preregistered=9")
+          "audit2359_negatives=12 io2360_negatives=12 pcm2361_negatives=12 dualmic2362_negatives=14 dualmic2363_negatives=14 dualmic2364_negatives=14 dualmic2364r9_negatives=14 runtime2365_negatives=14 preregistered=10")
 
 
 def main() -> None:

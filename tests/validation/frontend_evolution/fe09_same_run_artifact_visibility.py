@@ -28,7 +28,8 @@ ROOT_PREFIX = "frontend-fe09-t3s2b1a-immutable-root-"
 T2F0_PREFIX = "frontend-fe09-s3-t2-f0-render-feasibility-"
 T2C0_PREFIX = "frontend-fe09-s3-t2c0-owner-fallback-"
 T3S0_PREFIX = "frontend-fe09-t3s0-compiled-resource-"
-ATTEMPT_PREFIXES = (T3S0_PREFIX, T3S1_PREFIX, T2A_PREFIX, ROOT_PREFIX, T2F0_PREFIX, T2C0_PREFIX)
+T2B0_PREFIX = "frontend-fe09-s3-t2b-b0-capture-only-bf-"
+ATTEMPT_PREFIXES = (T2B0_PREFIX, T3S0_PREFIX, T3S1_PREFIX, T2A_PREFIX, ROOT_PREFIX, T2F0_PREFIX, T2C0_PREFIX)
 REST_PREFIXES = (A1_PREFIX, *ATTEMPT_PREFIXES)
 # A1's new 100-row REST response has its own finite metadata cap. Existing
 # single-entity/run metadata stays at 64 KiB; scientific files are unaffected.
@@ -140,7 +141,7 @@ def check_a1_visibility(repo, run_id, artifact_id, artifact_name, token, *,
 
     The run-attempt lookup and EVERY list page share the existing eight-request
     ceiling. A missing item can consume another request after the same 2s pause;
-    pagination never resets the budget. A1 alone may discard an inconsistent
+    pagination never resets the budget. A1 and exact-attempt T2A may discard an inconsistent
     snapshot and restart page 1 within this same ceiling. No partial snapshot
     can succeed; observed identity/schema conflicts still fail immediately.
     No scientific command is run here.
@@ -217,8 +218,10 @@ def check_a1_visibility(repo, run_id, artifact_id, artifact_name, token, *,
                      "A1_ARTIFACT_WRONG_SOURCE_OR_PREVIOUS_ATTEMPT")
             if not complete_page:
                 # Never accept rows from a partial/changing enumeration. Only
-                # A1 may restart, after all observed conflicts above refuse.
-                need(artifact_name == A1_PREFIX + str(run_id) and attempt < attempts,
+                # A1 and exact-attempt T2A may restart only after all observed conflicts refuse.
+                need((artifact_name == A1_PREFIX + str(run_id) or
+                      artifact_name == f"{T2A_PREFIX}{run_id}-attempt-{run_attempt}")
+                     and attempt < attempts,
                      "A1_ARTIFACT_LIST_INCOMPLETE_OR_CHANGED")
                 rows, total, page = [], None, 1
                 pause(delay_seconds)
@@ -483,6 +486,9 @@ def main() -> None:
           args.run_id, args.artifact_id, "attempt=" + str(attempt), digest)
     if args.artifact_name.startswith(A1_PREFIX):
         print("FE09_A1_REST_LIST_RUN_ATTEMPT_SOURCE_BOUND",
+              args.run_attempt, args.run_head_sha, args.execution_source)
+    elif args.artifact_name.startswith(T2B0_PREFIX):
+        print("FE09_T2B0_REST_LIST_RUN_ATTEMPT_SOURCE_BOUND",
               args.run_attempt, args.run_head_sha, args.execution_source)
     elif args.artifact_name.startswith(T2C0_PREFIX):
         print("FE09_T2C0_REST_LIST_RUN_ATTEMPT_SOURCE_BOUND",

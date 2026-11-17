@@ -961,12 +961,52 @@ class A1SnapshotRestartTests(unittest.TestCase):
 
     def test_other_rest_stages_remain_immediate_refusal(self):
         for name in (policy.T3S1_PREFIX + str(RUN),
-                     *(f"{prefix}{RUN}-attempt-2" for prefix in policy.ATTEMPT_PREFIXES)):
+                     *(f"{prefix}{RUN}-attempt-2" for prefix in policy.ATTEMPT_PREFIXES
+                       if prefix != policy.T2A_PREFIX)):
             self.NAME = name
             with self.assertRaisesRegex(policy.NotAdmitted, "LIST_INCOMPLETE_OR_CHANGED"):
                 self.check([self.response(self.run_record()), self.listing(total=2), self.listing()])
             self.assertEqual(len(self.opened), 2)
             self.assertEqual(self.paused, [])
+
+
+class T2ASnapshotRestartTests(A1SnapshotRestartTests):
+    NAME = T2AAttemptVisibilityTests.NAME
+
+
+class T2B0AttemptVisibilityTests(T2AAttemptVisibilityTests):
+    NAME = "frontend-fe09-s3-t2b-b0-capture-only-bf-12345-attempt-2"
+    STAGE = "t2b-b0"
+    STEP = "t2b_b0"
+    PREFIX = "frontend-fe09-s3-t2b-b0-capture-only-bf-"
+    TIMEOUT = 22
+    MARKER = "FE09_T2B_B0_CAPTURE_ONLY_BF_READBACK_PASS"
+
+    def test_observed_stage_keeps_original_readback(self):
+        quality = (Path(__file__).resolve().parents[3] /
+                   ".github/workflows/quality.yml").read_text()
+        stage = quality.split("  frontend-s3-t2b-b0:\n", 1)[1].split("\n  frontend-", 1)[0]
+        markers = ["id: fe09_t2b_b0_upload", "name: " + self.PREFIX +
+                   "${{ github.run_id }}-attempt-${{ github.run_attempt }}",
+                   "Witness exact t2b-b0 upload", "ARTIFACT_ID: ${{ steps.fe09_t2b_b0_upload.outputs.artifact-id }}",
+                   '--artifact-name "' + self.PREFIX + '$GITHUB_RUN_ID-attempt-$GITHUB_RUN_ATTEMPT"',
+                   '--run-attempt "$GITHUB_RUN_ATTEMPT" --run-head-sha "$RUN_HEAD_SHA"',
+                   '--execution-source "$GITHUB_SHA"',
+                   "uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131",
+                   "artifact-ids: ${{ steps.fe09_t2b_b0_upload.outputs.artifact-id }}",
+                   "github-token: ${{ github.token }}", "repository: ${{ github.repository }}",
+                   "run-id: ${{ github.run_id }}", self.MARKER]
+        cursor = 0
+        for marker in markers:
+            cursor = stage.index(marker, cursor) + len(marker)
+        self.assertIn("timeout-minutes: 22", stage)
+        for marker in ("--collect --output fe09-t2b-b0", "--verify --output fe09-t2b-b0",
+                       "retention-days: 30", "if-no-files-found: error",
+                       "root = Path('fe09-t2b-b0-readback')", "T2B_B0_INNER_SHA_DRIFT_"):
+            self.assertIn(marker, stage)
+        self.assertEqual(stage.count("if: steps.fe09_t2b_b0.outcome == 'success'"), 3)
+        self.assertNotIn("continue-on-error:", stage)
+        self.assertNotIn("overwrite:", stage)
 
 
 if __name__ == "__main__":

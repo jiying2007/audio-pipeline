@@ -2,6 +2,8 @@
 """Source-only selectors: preserve old R9 bodies, test full R10 dispatchers."""
 import hashlib
 import json
+import os
+import tempfile
 from pathlib import Path
 import re
 import subprocess
@@ -27,6 +29,41 @@ def region(text, name):
 
 
 class Runtime2365Routes(unittest.TestCase):
+    def test_checkout_ownership_sha_resolution(self):
+        # Git's real ownership gate, not a mocked rev-parse result. Only the
+        # current checkout may be trusted, with no persistent/global setting.
+        docs = (ROOT / '.github/scripts/verify-docs-gate.sh').read_text()
+        line = '  execution_source=$(git -c "safe.directory=$PWD" rev-parse HEAD)'
+        self.assertEqual(docs.count(line), 1)
+        self.assertIn('--check-integration --execution-source "$execution_source"', docs)
+        with tempfile.TemporaryDirectory(prefix='r10-owner-') as tmp:
+            root = Path(tmp)
+            env = dict(os.environ)
+            for name in tuple(env):
+                if name.startswith('GIT_'):
+                    del env[name]
+            env.update(GIT_CONFIG_NOSYSTEM='1', GIT_CONFIG_GLOBAL=os.devnull)
+            def git(*args, check=True):
+                return subprocess.run(['git', *args], cwd=root, env=env,
+                    capture_output=True, text=True, timeout=10, check=check)
+            git('init', '-q')
+            git('-c', 'user.name=R10 test', '-c', 'user.email=r10@example.invalid',
+                'commit', '--allow-empty', '-qm', 'ownership fixture')
+            expected = git('rev-parse', 'HEAD').stdout.strip()
+            env['GIT_TEST_ASSUME_DIFFERENT_OWNER'] = '1'
+            denied = git('rev-parse', 'HEAD', check=False)
+            self.assertNotEqual(denied.returncode, 0)
+            self.assertIn('dubious ownership', denied.stderr)
+            wrong = git('-c', 'safe.directory=' + str(root / 'other'),
+                        'rev-parse', 'HEAD', check=False)
+            self.assertNotEqual(wrong.returncode, 0)
+            actual = subprocess.run(['sh', '-eu', '-c', line +
+                '\nprintf "%s\\n" "$execution_source"'], cwd=root, env=env,
+                capture_output=True, text=True, timeout=10, check=False)
+            self.assertEqual(actual.returncode, 0, actual.stderr)
+            self.assertEqual(actual.stdout.strip(), expected)
+            self.assertNotEqual(git('rev-parse', 'HEAD', check=False).returncode, 0)
+
     def test_preserved_r9_selectors(self):
         raw = (ROOT / SNAPSHOT).read_bytes()
         self.assertEqual(hashlib.sha256(raw).hexdigest(), SNAPSHOT_SHA)

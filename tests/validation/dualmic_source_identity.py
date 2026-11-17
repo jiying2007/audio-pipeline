@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Bind dual-mic host integrations to reviewed R7/R9 public source bytes.
+"""Bind dual-mic host integrations to reviewed R7/R9/R10 public source bytes.
 
 This is an identity adapter, not a new FE09 collector or historical replay.
 It uses only current-tree objects, including in a depth-one CI checkout.
@@ -21,11 +21,14 @@ PROFILES = {
                "3486635106f865a069b4241515db7bb00ac84a38fa7f5059305d11e27db3fb87"),
     "2.3.64": (PREFIX + "DUALMIC_2364_SOURCE_R9_20261110/PREREGISTRATION.json",
                "73a177bd3d96e1a158ac8d0a89045616482761ed8a574053b49705b9095011a7"),
+    "2.3.65": (PREFIX + "RUNTIME_2365_SOURCE_R10_20261116/PREREGISTRATION.json",
+               "b3de96a5574f2834872793c61e1dafb21680a48b663d661cb20a0b1e20ccb6ec"),
 }
 BOUND_SOURCES = (
     "tests/validation/dualmic_source_identity.py",
     "tests/validation/test_dualmic_source_identity.py",
     PREFIX + "DUALMIC_NONDEVICE_2364_SOURCE_MIGRATION.zh-CN.md",
+    PREFIX + "DUALMIC_NONDEVICE_2365_SOURCE_MIGRATION.md",
     LOCK, *(path for path, _ in PROFILES.values()),
 )
 

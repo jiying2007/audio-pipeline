@@ -65,6 +65,8 @@ ap_runtime_stop(runtime);
 ap_runtime_deinit(runtime);
 ```
 
+若 pthread 属性初始化失败，`ap_runtime_start()` 返回 `AP_ESTATE`，不创建 worker，并恢复停止状态以允许稍后重试；不得静默改用默认线程属性、忽略请求的 `dsp_stack_bytes`。无效栈大小仍返回 `AP_EINVAL`。
+
 所有权：
 
 - `open/start` 前 live Pipeline 由调用方拥有；

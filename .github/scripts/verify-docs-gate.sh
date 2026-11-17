@@ -70,6 +70,7 @@ python3 tests/validation/frontend_evolution/fe09_b2s3_t3s2b1ba1_anchor_root_qual
 python3 tests/validation/frontend_evolution/fe09_b2s3_t3s2b1ba2_finite_retirement_qualification.py --self-test
 python3 tests/validation/frontend_evolution/fe09_t3s3_f0_call_resource_qualification.py --self-test
 python3 tests/validation/frontend_evolution/test_fe09_same_run_artifact_visibility.py
+python3 tests/validation/frontend_evolution/test_fe09_t2f0_archive_readiness.py
 python3 tests/validation/frontend_evolution/test_speech_download_retry.py
 python3 tests/validation/frontend_evolution/test_speech_source_stage_budget.py
 python3 tests/validation/frontend_evolution/test_speech_source_recovery.py
@@ -192,8 +193,9 @@ fi
 # The preparation tree remains 2.3.64. Exercise actual committed entry paths
 # automatically once the separately reviewed 2.3.65 source is present.
 if [ "$source_version" = 2.3.65 ]; then
+  execution_source=$(git -c "safe.directory=$PWD" rev-parse HEAD)
   python3 tests/validation/frontend_evolution/test_fe09_r10_source_entries.py \
-    --check-integration --execution-source "$(git rev-parse HEAD)"
+    --check-integration --execution-source "$execution_source"
 fi
 # F1-R2-T0 reconciles source identities only; no F1 cohort or provider request.
 python3 tests/validation/frontend_evolution/test_fe09_f1_r2_source_bridge.py

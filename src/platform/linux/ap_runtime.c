@@ -1412,6 +1412,11 @@ ap_status_t ap_runtime_start(ap_runtime_t *runtime) {
                                   memory_order_release);
             return AP_EINVAL;
         }
+    } else {
+        /* Do not silently discard a requested stack size on attribute failure. */
+        atomic_store_explicit(&runtime->worker_state, AP_RT_WORKER_STOPPED,
+                              memory_order_release);
+        return AP_ESTATE;
     }
     rc = pthread_create(&runtime->thread,
                         use_attr ? &attr : NULL,

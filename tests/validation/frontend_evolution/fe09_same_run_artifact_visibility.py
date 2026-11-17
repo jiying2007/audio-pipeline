@@ -370,6 +370,72 @@ def check_a1_archive_ready(repo, run_id, artifact_id, artifact_name, token, *,
     raise NotAdmitted("A1_ARCHIVE_NOT_READY_WITHIN_BOUNDED_RETRY")
 
 
+def check_t2f0_archive_ready(repo, run_id, artifact_id, artifact_name, token, *,
+                           run_attempt, run_head_sha, execution_source,
+                           opener=None, pause=None):
+    """Probe only the exact T2F0 REST ZIP endpoint; never follow its signed URL.
+
+    Listing visibility is not archive readiness. A 302 is only a transport
+    witness, not digest/readback success or proof of the cause of an earlier
+    404. The pinned downloader and scientific readback remain mandatory.
+    This separate ceiling is eight 10-second requests and seven 2-second
+    pauses, inside the unchanged T2F0 job deadline. No response body is read.
+    """
+    checked_args(repo, run_id, artifact_id, artifact_name, token,
+                 run_attempt=run_attempt)
+    need(type(run_attempt) is int and 0 < run_attempt < 2 ** 63 and
+         artifact_name == f"{T2F0_PREFIX}{run_id}-attempt-{run_attempt}",
+         "T2F0_ARCHIVE_STAGE_REQUIRED")
+    need(all(type(value) is str and re.fullmatch(r"[0-9a-f]{40}", value)
+             for value in (run_head_sha, execution_source)),
+         "T2F0_EXACT_ATTEMPT_AND_SOURCE_REQUIRED")
+    if opener is None:
+        opener = urllib.request.build_opener(NoRedirect()).open
+    if pause is None:
+        pause = time.sleep
+    endpoint = f"{API_URL}/repos/{repo}/actions/artifacts/{artifact_id}/zip"
+    for attempt in range(1, MAX_ATTEMPTS + 1):
+        request = urllib.request.Request(endpoint, headers={
+            "Accept": "application/vnd.github+json",
+            "Authorization": "Bearer " + token,
+            "X-GitHub-Api-Version": "2022-11-28",
+            "User-Agent": "audio-pipeline-t2f0-archive-readiness",
+        })
+        response = None
+        try:
+            try:
+                response = opener(request, timeout=10)
+            except urllib.error.HTTPError as error:
+                # urllib represents a deliberately unfollowed 302 as HTTPError.
+                response = error
+            status = response.code if isinstance(response, urllib.error.HTTPError) else response.status
+            need(response.url == endpoint, "T2F0_ARCHIVE_REDIRECT_FOLLOWED")
+            if status == 302:
+                # Inspect but never persist, print, or request the signed URL.
+                location = response.headers.get("Location", "")
+                try:
+                    target = urllib.parse.urlsplit(location)
+                    valid = (0 < len(location) <= 16384 and
+                             not any(ord(c) <= 32 or ord(c) == 127 for c in location) and
+                             target.scheme == "https" and bool(target.hostname) and
+                             target.username is None and target.password is None and
+                             target.port in (None, 443) and not target.fragment)
+                except (ValueError, TypeError):
+                    valid = False
+                need(valid, "T2F0_ARCHIVE_INVALID_REDIRECT")
+                return attempt
+            need(status in (404, 502, 503),
+                 "T2F0_ARCHIVE_HTTP_HARD_FAILURE_" + str(status))
+        except (urllib.error.URLError, TimeoutError):
+            raise NotAdmitted("T2F0_ARCHIVE_NETWORK_OR_TLS_FAILURE") from None
+        finally:
+            if response is not None:
+                response.close()
+        if attempt < MAX_ATTEMPTS:
+            pause(SLEEP_SECONDS)
+    raise NotAdmitted("T2F0_ARCHIVE_NOT_READY_WITHIN_BOUNDED_RETRY")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--artifact-id", required=True, type=int)
@@ -379,10 +445,17 @@ def main() -> None:
     parser.add_argument("--run-head-sha")
     parser.add_argument("--execution-source")
     parser.add_argument("--a1-archive-ready", action="store_true")
+    parser.add_argument("--t2f0-archive-ready", action="store_true")
     args = parser.parse_args()
     try:
         repo = os.environ.get("GITHUB_REPOSITORY", "")
         token = os.environ.get("GH_TOKEN", "")
+        need(not (args.a1_archive_ready and args.t2f0_archive_ready),
+             "ARCHIVE_READINESS_FLAGS_CONFLICT")
+        if args.t2f0_archive_ready:
+            need(type(args.run_attempt) is int and
+                 args.artifact_name == f"{T2F0_PREFIX}{args.run_id}-attempt-{args.run_attempt}",
+                 "T2F0_ARCHIVE_STAGE_REQUIRED")
         if args.a1_archive_ready:
             need(args.artifact_name == A1_PREFIX + str(args.run_id),
                  "A1_ARCHIVE_STAGE_REQUIRED")
@@ -394,6 +467,13 @@ def main() -> None:
             archive_attempt = check_a1_archive_ready(
                 repo, args.run_id, args.artifact_id, args.artifact_name, token)
             print("FE09_A1_ARCHIVE_REDIRECT_READY_BEFORE_PINNED_DOWNLOAD",
+                  args.run_id, args.artifact_id, "requests=" + str(archive_attempt))
+        if args.t2f0_archive_ready:
+            archive_attempt = check_t2f0_archive_ready(
+                repo, args.run_id, args.artifact_id, args.artifact_name, token,
+                run_attempt=args.run_attempt, run_head_sha=args.run_head_sha,
+                execution_source=args.execution_source)
+            print("FE09_T2F0_ARCHIVE_REDIRECT_READY_BEFORE_PINNED_DOWNLOAD",
                   args.run_id, args.artifact_id, "requests=" + str(archive_attempt))
     except (NotAdmitted, ValueError, OSError, json.JSONDecodeError) as error:
         raise SystemExit("FE09_ARTIFACT_VISIBILITY_NOT_ADMITTED: " +

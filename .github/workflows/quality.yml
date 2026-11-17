@@ -1358,7 +1358,7 @@ jobs:
             --artifact-id "$ARTIFACT_ID" --run-id "$GITHUB_RUN_ID" \
             --artifact-name "frontend-fe09-s3-t2-f0-render-feasibility-$GITHUB_RUN_ID-attempt-$GITHUB_RUN_ATTEMPT" \
             --run-attempt "$GITHUB_RUN_ATTEMPT" --run-head-sha "$RUN_HEAD_SHA" \
-            --execution-source "$GITHUB_SHA"
+            --execution-source "$GITHUB_SHA" --t2f0-archive-ready
       - name: Independently download exact T2 F0 four-member Artifact
         if: steps.fe09_t2_f0.outcome == 'success'
         uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0

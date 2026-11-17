@@ -141,7 +141,7 @@ def check_a1_visibility(repo, run_id, artifact_id, artifact_name, token, *,
 
     The run-attempt lookup and EVERY list page share the existing eight-request
     ceiling. A missing item can consume another request after the same 2s pause;
-    pagination never resets the budget. A1 and exact-attempt T2A may discard an inconsistent
+    pagination never resets the budget. A1 and exact-attempt T2A/T3S0 may discard an inconsistent
     snapshot and restart page 1 within this same ceiling. No partial snapshot
     can succeed; observed identity/schema conflicts still fail immediately.
     No scientific command is run here.
@@ -218,9 +218,10 @@ def check_a1_visibility(repo, run_id, artifact_id, artifact_name, token, *,
                      "A1_ARTIFACT_WRONG_SOURCE_OR_PREVIOUS_ATTEMPT")
             if not complete_page:
                 # Never accept rows from a partial/changing enumeration. Only
-                # A1 and exact-attempt T2A may restart only after all observed conflicts refuse.
+                # A1 and exact-attempt T2A/T3S0 may restart only after all observed conflicts refuse.
                 need((artifact_name == A1_PREFIX + str(run_id) or
-                      artifact_name == f"{T2A_PREFIX}{run_id}-attempt-{run_attempt}")
+                      artifact_name in (f"{T2A_PREFIX}{run_id}-attempt-{run_attempt}",
+                                        f"{T3S0_PREFIX}{run_id}-attempt-{run_attempt}"))
                      and attempt < attempts,
                      "A1_ARTIFACT_LIST_INCOMPLETE_OR_CHANGED")
                 rows, total, page = [], None, 1

@@ -962,7 +962,7 @@ class A1SnapshotRestartTests(unittest.TestCase):
     def test_other_rest_stages_remain_immediate_refusal(self):
         for name in (policy.T3S1_PREFIX + str(RUN),
                      *(f"{prefix}{RUN}-attempt-2" for prefix in policy.ATTEMPT_PREFIXES
-                       if prefix != policy.T2A_PREFIX)):
+                       if prefix not in (policy.T2A_PREFIX, policy.T3S0_PREFIX))):
             self.NAME = name
             with self.assertRaisesRegex(policy.NotAdmitted, "LIST_INCOMPLETE_OR_CHANGED"):
                 self.check([self.response(self.run_record()), self.listing(total=2), self.listing()])
@@ -972,6 +972,10 @@ class A1SnapshotRestartTests(unittest.TestCase):
 
 class T2ASnapshotRestartTests(A1SnapshotRestartTests):
     NAME = T2AAttemptVisibilityTests.NAME
+
+
+class T3S0SnapshotRestartTests(A1SnapshotRestartTests):
+    NAME = T3S0AttemptVisibilityTests.NAME
 
 
 class T2B0AttemptVisibilityTests(T2AAttemptVisibilityTests):

@@ -1,0 +1,7 @@
+# Mandarin known-near admission and fixed-stage diagnostic
+
+Two independently frozen and reviewed read-only operations over existing D2 archive SHA256 a3ab7823fdcd7586c3b72eb214b5536dcfb7531fdf0b1611d49e1575a29b2c3d. Input admission reconstructs engineering near/echo and proves exact original mixture equality; stage diagnostic describes historical D1 outputs with fixed offsets. No algorithm candidate, production mutation, DSP/ASR/KWS run or acoustic promotion. See both RESULT.md files for actual outcomes and limits.
+
+Actual scripts are preserved byte-for-byte with their execution path contract. To reproduce in a new authorized workspace, materialize the exact ZIP at /tmp/audio-d9/original.zip and each phase at its original /tmp/audio-fe-mandarin-{near-admission,stage-diagnostic}-v1 root, then run admission before stage diagnostic in empty output roots under timeout120. Do not overwrite original results or use differently hashed inputs. No fresh download, input synthesis, or program execution is performed by ordinary CI for this archive. The reconstructed audio remains in the separately retained evidence bundle; the Git archive has metadata, scripts, and numeric outputs, not duplicate voice PCM.
+
+The actual output waveform source is cc853616685b9faf7880e6d8f8f1a89d187d342a-D1-observer, not current main. Base6bc79ae identifies publication context only. Record-level reference admission cannot close independent source rights, physical acoustic truth, D49 historic artifact recovery, or hardware evidence.

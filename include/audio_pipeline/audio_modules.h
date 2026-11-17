@@ -67,6 +67,8 @@ ap_status_t ap_module_beamformer_init(void *memory, size_t memory_size,
 void ap_module_beamformer_reset(ap_beamformer_module_t *module);
 /* A nonzero track_direction requires AP_BUILD_BF_DIRECTION_TRACKING.
  * An unavailable request returns AP_ESTATE without changing state or output.
+ * Output may exactly alias either microphone input, including identical inputs.
+ * Partial input/output overlap remains unsupported.
  * Fixed direction retains the existing narrow hard-contamination observer;
  * it does not update steering or enable the tracking soft fallback. */
 ap_status_t ap_module_beamformer_process(ap_beamformer_module_t *module,

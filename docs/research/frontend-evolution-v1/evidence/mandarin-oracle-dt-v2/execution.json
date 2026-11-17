@@ -1,0 +1,364 @@
+{
+  "status": "BASELINE_EXACT_CANDIDATE_EXECUTED",
+  "commands": [
+    {
+      "name": "compiler",
+      "argv": [
+        "gcc",
+        "--version"
+      ],
+      "cwd": "/tmp/audio-fe-mandarin-oracle-dt-v2",
+      "started_epoch": 1794703789.3989704,
+      "terminal": true,
+      "timeout": false,
+      "exit_code": 0,
+      "elapsed_seconds": 0.008226560999901267
+    },
+    {
+      "name": "compile-baseline",
+      "argv": [
+        "gcc",
+        "-DAP_BUILD_ACTIVITY=1",
+        "-DAP_BUILD_AEC_MDF=1",
+        "-DAP_BUILD_BF_DIRECTION_TRACKING=1",
+        "-DAP_BUILD_NS_EMA=1",
+        "-DAP_BUILD_RESAMPLER_BANDLIMITED=1",
+        "-DAP_BUILD_STAGE_AEC=1",
+        "-DAP_BUILD_STAGE_AGC=1",
+        "-DAP_BUILD_STAGE_BF=1",
+        "-DAP_BUILD_STAGE_HPF=1",
+        "-DAP_BUILD_STAGE_NS=1",
+        "-DAP_BUILD_STAGE_RES=1",
+        "-DAP_BUILD_STAGE_SYNC=1",
+        "-DAP_BUILD_STAGE_VAD=1",
+        "-I/tmp/audio-fe-mandarin-oracle-dt-v2/generated",
+        "-I/tmp/audio-fe-mandarin-oracle-dt-v2/source/include",
+        "-I/tmp/audio-fe-mandarin-oracle-dt-v2/source/src",
+        "-O3",
+        "-DNDEBUG",
+        "-std=c11",
+        "-Wall",
+        "-Wextra",
+        "-Wpedantic",
+        "-Werror",
+        "/tmp/audio-fe-mandarin-oracle-dt-v2/source/tests/validation/frontend_evolution/baseline.c",
+        "/tmp/audio-fe-mandarin-oracle-dt-v2/libaudio_pipeline.a",
+        "-lm",
+        "-o",
+        "/tmp/audio-fe-mandarin-oracle-dt-v2/baseline"
+      ],
+      "cwd": "/tmp/audio-fe-mandarin-oracle-dt-v2",
+      "started_epoch": 1794703789.4078608,
+      "terminal": true,
+      "timeout": false,
+      "exit_code": 0,
+      "elapsed_seconds": 0.4657151480000721
+    },
+    {
+      "name": "compile-candidate",
+      "argv": [
+        "gcc",
+        "-DAP_BUILD_ACTIVITY=1",
+        "-DAP_BUILD_AEC_MDF=1",
+        "-DAP_BUILD_BF_DIRECTION_TRACKING=1",
+        "-DAP_BUILD_NS_EMA=1",
+        "-DAP_BUILD_RESAMPLER_BANDLIMITED=1",
+        "-DAP_BUILD_STAGE_AEC=1",
+        "-DAP_BUILD_STAGE_AGC=1",
+        "-DAP_BUILD_STAGE_BF=1",
+        "-DAP_BUILD_STAGE_HPF=1",
+        "-DAP_BUILD_STAGE_NS=1",
+        "-DAP_BUILD_STAGE_RES=1",
+        "-DAP_BUILD_STAGE_SYNC=1",
+        "-DAP_BUILD_STAGE_VAD=1",
+        "-I/tmp/audio-fe-mandarin-oracle-dt-v2/generated",
+        "-I/tmp/audio-fe-mandarin-oracle-dt-v2/source/include",
+        "-I/tmp/audio-fe-mandarin-oracle-dt-v2/source/src",
+        "-O3",
+        "-DNDEBUG",
+        "-std=c11",
+        "-Wall",
+        "-Wextra",
+        "-Wpedantic",
+        "-Werror",
+        "/tmp/audio-fe-mandarin-oracle-dt-v2/source/tests/validation/frontend_evolution/candidate.c",
+        "/tmp/audio-fe-mandarin-oracle-dt-v2/libaudio_pipeline.a",
+        "-lm",
+        "-o",
+        "/tmp/audio-fe-mandarin-oracle-dt-v2/candidate"
+      ],
+      "cwd": "/tmp/audio-fe-mandarin-oracle-dt-v2",
+      "started_epoch": 1794703789.873891,
+      "terminal": true,
+      "timeout": false,
+      "exit_code": 0,
+      "elapsed_seconds": 0.41646771500018076
+    },
+    {
+      "name": "bindings-baseline",
+      "argv": [
+        "/tmp/audio-fe-runtime-closure-v1/runtime/usr/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2",
+        "--inhibit-cache",
+        "--library-path",
+        "/tmp/audio-fe-runtime-closure-v1/runtime/usr/lib/x86_64-linux-gnu",
+        "--list",
+        "/tmp/audio-fe-mandarin-oracle-dt-v2/baseline"
+      ],
+      "cwd": "/tmp/audio-fe-mandarin-oracle-dt-v2",
+      "started_epoch": 1794703790.292261,
+      "terminal": true,
+      "timeout": false,
+      "exit_code": 0,
+      "elapsed_seconds": 0.0021063329995740787
+    },
+    {
+      "name": "bindings-candidate",
+      "argv": [
+        "/tmp/audio-fe-runtime-closure-v1/runtime/usr/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2",
+        "--inhibit-cache",
+        "--library-path",
+        "/tmp/audio-fe-runtime-closure-v1/runtime/usr/lib/x86_64-linux-gnu",
+        "--list",
+        "/tmp/audio-fe-mandarin-oracle-dt-v2/candidate"
+      ],
+      "cwd": "/tmp/audio-fe-mandarin-oracle-dt-v2",
+      "started_epoch": 1794703790.294888,
+      "terminal": true,
+      "timeout": false,
+      "exit_code": 0,
+      "elapsed_seconds": 0.0015650749996893865
+    },
+    {
+      "name": "baseline-call",
+      "argv": [
+        "/tmp/audio-fe-runtime-closure-v1/runtime/usr/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2",
+        "--inhibit-cache",
+        "--library-path",
+        "/tmp/audio-fe-runtime-closure-v1/runtime/usr/lib/x86_64-linux-gnu",
+        "/tmp/audio-fe-mandarin-oracle-dt-v2/baseline",
+        "--profile",
+        "call",
+        "--sample-rate",
+        "16000",
+        "--mic-channels",
+        "2",
+        "--strict-capture-frames",
+        "--metrics-jsonl",
+        "/tmp/audio-fe-mandarin-oracle-dt-v2/baseline-call/metrics.jsonl",
+        "/tmp/audio-fe-mandarin-oracle-dt-v2/duplex_capture.pcm",
+        "/tmp/audio-fe-mandarin-oracle-dt-v2/duplex_render.pcm",
+        "/tmp/audio-fe-mandarin-oracle-dt-v2/baseline-call/out.pcm"
+      ],
+      "cwd": "/tmp/audio-fe-mandarin-oracle-dt-v2",
+      "started_epoch": 1794703790.3126454,
+      "terminal": true,
+      "timeout": false,
+      "exit_code": 0,
+      "elapsed_seconds": 0.0645531199998004
+    },
+    {
+      "name": "baseline-assistant",
+      "argv": [
+        "/tmp/audio-fe-runtime-closure-v1/runtime/usr/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2",
+        "--inhibit-cache",
+        "--library-path",
+        "/tmp/audio-fe-runtime-closure-v1/runtime/usr/lib/x86_64-linux-gnu",
+        "/tmp/audio-fe-mandarin-oracle-dt-v2/baseline",
+        "--profile",
+        "assistant",
+        "--sample-rate",
+        "16000",
+        "--mic-channels",
+        "2",
+        "--strict-capture-frames",
+        "--metrics-jsonl",
+        "/tmp/audio-fe-mandarin-oracle-dt-v2/baseline-assistant/metrics.jsonl",
+        "/tmp/audio-fe-mandarin-oracle-dt-v2/duplex_capture.pcm",
+        "/tmp/audio-fe-mandarin-oracle-dt-v2/duplex_render.pcm",
+        "/tmp/audio-fe-mandarin-oracle-dt-v2/baseline-assistant/out.pcm"
+      ],
+      "cwd": "/tmp/audio-fe-mandarin-oracle-dt-v2",
+      "started_epoch": 1794703790.4198482,
+      "terminal": true,
+      "timeout": false,
+      "exit_code": 0,
+      "elapsed_seconds": 0.06550684200010437
+    },
+    {
+      "name": "candidate-call",
+      "argv": [
+        "/tmp/audio-fe-runtime-closure-v1/runtime/usr/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2",
+        "--inhibit-cache",
+        "--library-path",
+        "/tmp/audio-fe-runtime-closure-v1/runtime/usr/lib/x86_64-linux-gnu",
+        "/tmp/audio-fe-mandarin-oracle-dt-v2/candidate",
+        "--profile",
+        "call",
+        "--sample-rate",
+        "16000",
+        "--mic-channels",
+        "2",
+        "--strict-capture-frames",
+        "--metrics-jsonl",
+        "/tmp/audio-fe-mandarin-oracle-dt-v2/candidate-call/metrics.jsonl",
+        "/tmp/audio-fe-mandarin-oracle-dt-v2/duplex_capture.pcm",
+        "/tmp/audio-fe-mandarin-oracle-dt-v2/duplex_render.pcm",
+        "/tmp/audio-fe-mandarin-oracle-dt-v2/candidate-call/out.pcm"
+      ],
+      "cwd": "/tmp/audio-fe-mandarin-oracle-dt-v2",
+      "started_epoch": 1794703790.52581,
+      "terminal": true,
+      "timeout": false,
+      "exit_code": 0,
+      "elapsed_seconds": 0.06438400899969565
+    },
+    {
+      "name": "candidate-assistant",
+      "argv": [
+        "/tmp/audio-fe-runtime-closure-v1/runtime/usr/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2",
+        "--inhibit-cache",
+        "--library-path",
+        "/tmp/audio-fe-runtime-closure-v1/runtime/usr/lib/x86_64-linux-gnu",
+        "/tmp/audio-fe-mandarin-oracle-dt-v2/candidate",
+        "--profile",
+        "assistant",
+        "--sample-rate",
+        "16000",
+        "--mic-channels",
+        "2",
+        "--strict-capture-frames",
+        "--metrics-jsonl",
+        "/tmp/audio-fe-mandarin-oracle-dt-v2/candidate-assistant/metrics.jsonl",
+        "/tmp/audio-fe-mandarin-oracle-dt-v2/duplex_capture.pcm",
+        "/tmp/audio-fe-mandarin-oracle-dt-v2/duplex_render.pcm",
+        "/tmp/audio-fe-mandarin-oracle-dt-v2/candidate-assistant/out.pcm"
+      ],
+      "cwd": "/tmp/audio-fe-mandarin-oracle-dt-v2",
+      "started_epoch": 1794703790.6170921,
+      "terminal": true,
+      "timeout": false,
+      "exit_code": 0,
+      "elapsed_seconds": 0.06573467599992
+    }
+  ],
+  "elapsed_seconds": 4.034180083999672,
+  "dsp_executions": 4,
+  "source_locks": {
+    "build/exact-source.tar": {
+      "bytes": 161587200,
+      "sha256": "73a312125f1a69151e3c0b0de4166880b21b2f7ccd70e722ba04e10365ff713e"
+    },
+    "build/observer-source/tests/validation/frontend_evolution/dualmic_stages_d1.c": {
+      "bytes": 15659,
+      "sha256": "d4bc211488170bd052fd8b70f31a07189169105106282105cc97365422d15b5a"
+    },
+    "build/observer-build/libaudio_pipeline.a": {
+      "bytes": 120078,
+      "sha256": "234a075084edef1eeb6a711e64683e655e1f16e9c0487fcb7e732f58a94409c7"
+    },
+    "build/observer-build/generated/audio_pipeline/audio_pipeline_build.h": {
+      "bytes": 1582,
+      "sha256": "538226a745b0197a486888280d1c2a6f189b7b9142f7b950ff0a01584d1febda"
+    },
+    "build/build-manifest.json": {
+      "bytes": 794509,
+      "sha256": "cfd34f219737484eb89387983da1f0c8bc28dad19de2fceaa2113e4611c49ad9"
+    },
+    "cases/C/call_duplex/taps/aec_input.f32le": {
+      "bytes": 402560,
+      "sha256": "bf50fe5103e47ca7256c2ff01c2c88cf4cffd0e2f59e433d6ebd7af697060cbe"
+    },
+    "cases/C/call_duplex/taps/reference.f32le": {
+      "bytes": 402560,
+      "sha256": "6a6c7d7ad6d33f0f3fa2a1eff02b6f23b02cfcae306a9c97e2d3ce4259b812c0"
+    },
+    "cases/C/call_duplex/taps/echo.f32le": {
+      "bytes": 402560,
+      "sha256": "7f15f092f54aba86e35eb3534db1a0cc1d6efde2dc07a67c01453b6682b15d29"
+    },
+    "cases/C/call_duplex/taps/aec_residual.f32le": {
+      "bytes": 402560,
+      "sha256": "c6919ca696cd7831d2767703942b7e2d95893909ae4695eef1ccb9d58f4f9dac"
+    },
+    "cases/C/call_duplex/taps/ns_input.f32le": {
+      "bytes": 402560,
+      "sha256": "c6919ca696cd7831d2767703942b7e2d95893909ae4695eef1ccb9d58f4f9dac"
+    },
+    "cases/C/call_duplex/taps/ns_output.f32le": {
+      "bytes": 402560,
+      "sha256": "df711fe1414acdc4a10cbf19e228a47b4f2a762c5a06d4f99c7d29630d7b760f"
+    },
+    "cases/C/call_duplex/taps/agc_output.f32le": {
+      "bytes": 402560,
+      "sha256": "231582e34f13e0dbe9af24eaa5c13b8c8b8304ffde38263e22962937962b0dc7"
+    },
+    "cases/C/call_duplex/taps/control.csv": {
+      "bytes": 138189,
+      "sha256": "cbe0acd3dff05102631d3bd44b5d3e3bff8a5a074a2bed5cf2d1d00284c95e57"
+    },
+    "cases/C/call_duplex/observed/out.pcm": {
+      "bytes": 201280,
+      "sha256": "f0345b98bbb0536271ace5d9089ee639de44bb9aae3491fcf19fb7b513cb245a"
+    },
+    "cases/C/call_duplex/observed/metrics.jsonl": {
+      "bytes": 141002,
+      "sha256": "30542ef269771846c0120ee8f5fef50d41151a3c8a6120f61d9ad500016f23d6"
+    },
+    "cases/C/assistant_duplex/taps/aec_input.f32le": {
+      "bytes": 402560,
+      "sha256": "bf50fe5103e47ca7256c2ff01c2c88cf4cffd0e2f59e433d6ebd7af697060cbe"
+    },
+    "cases/C/assistant_duplex/taps/reference.f32le": {
+      "bytes": 402560,
+      "sha256": "6a6c7d7ad6d33f0f3fa2a1eff02b6f23b02cfcae306a9c97e2d3ce4259b812c0"
+    },
+    "cases/C/assistant_duplex/taps/echo.f32le": {
+      "bytes": 402560,
+      "sha256": "a8cf10eadb2ca3fbb274d722a92ce951d7a39c8ee970ed5bd71f3a9bfd7abea1"
+    },
+    "cases/C/assistant_duplex/taps/aec_residual.f32le": {
+      "bytes": 402560,
+      "sha256": "3ef2828366fc86648810b2e2771d1641e158caf6902f599f811bcd2269d63bb0"
+    },
+    "cases/C/assistant_duplex/taps/ns_input.f32le": {
+      "bytes": 402560,
+      "sha256": "3ef2828366fc86648810b2e2771d1641e158caf6902f599f811bcd2269d63bb0"
+    },
+    "cases/C/assistant_duplex/taps/ns_output.f32le": {
+      "bytes": 402560,
+      "sha256": "529367c2108bbf8f647f705636bd7ce2f21daa25943f4bafab53e45083bbea34"
+    },
+    "cases/C/assistant_duplex/taps/agc_output.f32le": {
+      "bytes": 402560,
+      "sha256": "67235460b88345a15cc401647cebadc54a0e6525feb3e549786edba34377ff14"
+    },
+    "cases/C/assistant_duplex/taps/control.csv": {
+      "bytes": 138191,
+      "sha256": "1202f06fb522df9e7273c9cf3c07f137372039776a60dd3bad127e4ec98af371"
+    },
+    "cases/C/assistant_duplex/observed/out.pcm": {
+      "bytes": 201280,
+      "sha256": "145742efe0e0bd9158f04973de1809861db9afb2d62374208c72517400b3f9fd"
+    },
+    "cases/C/assistant_duplex/observed/metrics.jsonl": {
+      "bytes": 141267,
+      "sha256": "39379ad8b423ed275e0a99047e9f7120f67ad70418a150ed480c48baa96e9d81"
+    }
+  },
+  "source_start": {
+    "PLAN.json": "4d5198133d13f73e0e31b6ed09af8dd39445a14615bf837374f3f527f0d681d1",
+    "run.py": "c014f1f638bfd630c9d013c41daa2682695654e557bb1d6c4f20637e6c2eed27",
+    "analyze.py": "d18d1a29faae3d7476bfc12f180fdd015e82043c6dc3ba8b93ebe844bc46dc19",
+    "original-measure.py": "f76d30827520adf68e5d1f301f664ec24b78c6318c5b9baed88e72a051e50b80",
+    "original-measure-plan.json": "5e1a56a2a29aff8d284ab5226c71935db436725d0640d0d6ab8abf40fa50441e"
+  },
+  "elf_hashes": {
+    "baseline": "c34371fcd8a2545448332872c3328b1022b08d5e7ae308d0987c84839befef36",
+    "candidate": "91b0320403148b87d9cd3606e512beba1292c92a011e652d8d4f24b52966c54d"
+  },
+  "input_hashes": {
+    "duplex_capture.pcm": "b84053ff38db5a018883cdf9e800214fd6386a6bf90fb7bfa573d854ebf1a7d0",
+    "duplex_render.pcm": "9e6df9b2efbc7da168f07f1899406362e580cb80faafeaca97c3280c639c7e46"
+  },
+  "promotion_allowed": false
+}

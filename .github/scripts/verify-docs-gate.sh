@@ -70,6 +70,7 @@ python3 tests/validation/frontend_evolution/fe09_b2s3_t3s2b1ba1_anchor_root_qual
 python3 tests/validation/frontend_evolution/fe09_b2s3_t3s2b1ba2_finite_retirement_qualification.py --self-test
 python3 tests/validation/frontend_evolution/fe09_t3s3_f0_call_resource_qualification.py --self-test
 python3 tests/validation/frontend_evolution/test_fe09_same_run_artifact_visibility.py
+python3 tests/validation/frontend_evolution/test_fe09_t2f0_archive_readiness.py
 python3 tests/validation/frontend_evolution/test_speech_download_retry.py
 python3 tests/validation/frontend_evolution/test_speech_source_stage_budget.py
 python3 tests/validation/frontend_evolution/test_speech_source_recovery.py
@@ -80,7 +81,7 @@ python3 tests/validation/frontend_evolution/test_fe09_b3_f0_deadline_r1.py
 python3 tests/validation/frontend_evolution/fe09_b3_f0_r2_source_admission.py --self-test
 # R6 preserves old source gates and their rejection of newer versions. Its
 # source-only registration never turns historical results into current results.
-python3 tests/validation/frontend_evolution/fe09_b3_f0_r7_source_admission.py --check-current
+python3 tests/validation/frontend_evolution/fe09_b3_f0_r10_source_admission.py --check-current
 # R2 T2 executor source audit only: both derivations retain byte-exact R1
 # scientific functions and immutable resource/error budgets; NO DSP is run.
 # Source-only T3 verifier: runs original immutable T2 on frozen R2 and
@@ -119,9 +120,49 @@ python3 tests/validation/frontend_evolution/fe09_b3_f0_r7_source_admission.py --
 python3 tests/validation/frontend_evolution/fe09_dualmic_r7_derivation_contract.py --self-test
 python3 tests/validation/frontend_evolution/fe09_b3_f0_deadline_r7_qualification.py --self-test
 python3 tests/validation/frontend_evolution/fe09_t3s3_f0_call_resource_r7_qualification.py --self-test
-python3 tests/validation/frontend_evolution/test_fe09_dualmic_r7_routes.py
+# R8 preserves prior exact gates; only the live routing test gains the new version.
+python3 tests/validation/frontend_evolution/fe09_b3_f0_r8_source_admission.py --self-test
+python3 tests/validation/frontend_evolution/fe09_dualmic_r8_derivation_contract.py --self-test
+python3 tests/validation/frontend_evolution/fe09_b3_f0_deadline_r8_qualification.py --self-test
+python3 tests/validation/frontend_evolution/fe09_t3s3_f0_call_resource_r8_qualification.py --self-test
+# R9 preserves the R8 source and derivation tests; live 2.3.64 now requires the LF correction.
+python3 tests/validation/frontend_evolution/fe09_dualmic_r8_derivation_contract.py --method-self-test
+python3 tests/validation/frontend_evolution/fe09_b3_f0_r9_source_admission.py --self-test
+python3 tests/validation/frontend_evolution/fe09_dualmic_r9_derivation_contract.py --self-test
+python3 tests/validation/frontend_evolution/fe09_dualmic_r9_derivation_contract.py --method-self-test
+python3 tests/validation/frontend_evolution/fe09_b3_f0_deadline_r9_qualification.py --self-test
+python3 tests/validation/frontend_evolution/fe09_t3s3_f0_call_resource_r9_qualification.py --self-test
+python3 tests/validation/frontend_evolution/test_fe09_dualmic_r9_routes.py
+# R9 selector bodies and original negative tests stay exact; R10 tests execute
+# the complete new dispatcher, including the previously unknown source version.
+python3 tests/validation/frontend_evolution/fe09_b3_f0_r10_source_admission.py --self-test
+python3 tests/validation/frontend_evolution/fe09_dualmic_r10_derivation_contract.py --self-test
+python3 tests/validation/frontend_evolution/fe09_dualmic_r10_derivation_contract.py --method-self-test
+python3 tests/validation/frontend_evolution/fe09_b3_f0_deadline_r10_qualification.py --self-test
+python3 tests/validation/frontend_evolution/fe09_t3s3_f0_call_resource_r10_qualification.py --self-test
+python3 tests/validation/frontend_evolution/test_fe09_runtime_2365_routes.py
+python3 tests/validation/frontend_evolution/test_fe09_r10_source_entries.py --self-test
 source_version=$(sed -n 's/^project(audio_pipeline VERSION \([^ ]*\) LANGUAGES C)$/\1/p' CMakeLists.txt)
+# R10_SELECTION_F1_A3_BEGIN
+if [ "$source_version" = 2.3.65 ]; then
+  f1_source=tests/validation/frontend_evolution/fe09_f1_r7_source_bridge.py
+  f1_build=tests/validation/frontend_evolution/fe09_f1_r7_build.py
+  a3_static=tests/validation/frontend_evolution/fe09_a3_r6_static_build.py
+  f1_output=f1-r7-t1
+  a3_output=a3-r6-t1
+elif [ "$source_version" = 2.3.56 ] || [ "$source_version" = 2.3.57 ] ||
+     [ "$source_version" = 2.3.58 ] || [ "$source_version" = 2.3.59 ] ||
+     [ "$source_version" = 2.3.60 ] || [ "$source_version" = 2.3.61 ] ||
+     [ "$source_version" = 2.3.62 ] || [ "$source_version" = 2.3.63 ] ||
+     [ "$source_version" = 2.3.64 ]; then
 case "$source_version" in
+  2.3.64)
+    f1_source=tests/validation/frontend_evolution/fe09_f1_r6_source_bridge.py
+    f1_build=tests/validation/frontend_evolution/fe09_f1_r6_build.py
+    a3_static=tests/validation/frontend_evolution/fe09_a3_r5_static_build.py
+    f1_output=f1-r6-t1
+    a3_output=a3-r5-t1
+    ;;
   2.3.63)
     f1_source=tests/validation/frontend_evolution/fe09_f1_r4_source_bridge.py
     f1_build=tests/validation/frontend_evolution/fe09_f1_r4_build.py
@@ -144,6 +185,18 @@ case "$source_version" in
     a3_output=a3-r2-t1
     ;;
 esac
+else
+  echo "UNREGISTERED_F1_A3_SOURCE_VERSION:$source_version" >&2
+  exit 2
+fi
+# R10_SELECTION_F1_A3_END
+# The preparation tree remains 2.3.64. Exercise actual committed entry paths
+# automatically once the separately reviewed 2.3.65 source is present.
+if [ "$source_version" = 2.3.65 ]; then
+  execution_source=$(git -c "safe.directory=$PWD" rev-parse HEAD)
+  python3 tests/validation/frontend_evolution/test_fe09_r10_source_entries.py \
+    --check-integration --execution-source "$execution_source"
+fi
 # F1-R2-T0 reconciles source identities only; no F1 cohort or provider request.
 python3 tests/validation/frontend_evolution/test_fe09_f1_r2_source_bridge.py
 python3 -O tests/validation/frontend_evolution/test_fe09_f1_r2_source_bridge.py

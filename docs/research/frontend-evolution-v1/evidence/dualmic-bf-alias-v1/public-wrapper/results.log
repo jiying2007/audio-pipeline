@@ -1,0 +1,9 @@
+Extra focused public-wrapper regression; minimal explicit BF header, not generated SDK configuration.
+Baseline:
+public_wrapper cases=1440 failures=960 tracking_enabled=1 state_bytes=188
+Candidate tracking OFF:
+public_wrapper cases=1440 failures=0 tracking_enabled=0 state_bytes=188
+Candidate tracking ON:
+public_wrapper cases=1440 failures=0 tracking_enabled=1 state_bytes=188
+Candidate ASan+UBSan (leak detection unavailable under ptrace):
+public_wrapper cases=1440 failures=0 tracking_enabled=1 state_bytes=188

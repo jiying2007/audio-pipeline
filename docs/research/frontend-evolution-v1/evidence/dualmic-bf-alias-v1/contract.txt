@@ -1,0 +1,4 @@
+Base: 7c82ecf101ad9660398c387caebae7932998c1ab.
+Hypothesis frozen before candidate: exact output/input alias changes delayed reads and raw history because output is written in ascending order before raw tail storage.
+Acceptance: byte-identical complete output and state versus disjoint execution across lags -8..8, both channels, 8/16k frames, fixed/tracking modes and normal/soft/hard routes; no API/ABI or state size change. Reject any remaining mismatch. Preserve baseline failure. No acoustic improvement claim, dataset, hardware, external source or threshold changes.
+Budget: focused host tests only, 120 seconds per compile/run; required existing CI must subsequently pass on exact head and fresh protected main. No repeated unbounded reruns.

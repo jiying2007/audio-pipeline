@@ -1,0 +1,10 @@
+{
+  "all_case_payloads_readback": true,
+  "elapsed_seconds": 19.027966685000138,
+  "output_bytes": 101645695,
+  "report": {
+    "bytes": 647425,
+    "sha256": "7116683c183971bd9d6df6b58f96056d9de1c36fef1a157afd36031f921fe68a"
+  },
+  "status": "COMPLETE"
+}

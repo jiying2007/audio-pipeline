@@ -1,0 +1,8 @@
+{
+  "passed_profiles": [
+    "call",
+    "assistant"
+  ],
+  "all10_outputs_exact": true,
+  "candidate_allowed": true
+}

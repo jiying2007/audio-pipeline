@@ -1,0 +1,28 @@
+{
+  "name": "candidate-assistant",
+  "argv": [
+    "/tmp/audio-fe-runtime-closure-v1/runtime/usr/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2",
+    "--inhibit-cache",
+    "--library-path",
+    "/tmp/audio-fe-runtime-closure-v1/runtime/usr/lib/x86_64-linux-gnu",
+    "/tmp/audio-fe-mandarin-oracle-dt-v2/candidate",
+    "--profile",
+    "assistant",
+    "--sample-rate",
+    "16000",
+    "--mic-channels",
+    "2",
+    "--strict-capture-frames",
+    "--metrics-jsonl",
+    "/tmp/audio-fe-mandarin-oracle-dt-v2/candidate-assistant/metrics.jsonl",
+    "/tmp/audio-fe-mandarin-oracle-dt-v2/duplex_capture.pcm",
+    "/tmp/audio-fe-mandarin-oracle-dt-v2/duplex_render.pcm",
+    "/tmp/audio-fe-mandarin-oracle-dt-v2/candidate-assistant/out.pcm"
+  ],
+  "cwd": "/tmp/audio-fe-mandarin-oracle-dt-v2",
+  "started_epoch": 1794703790.6170921,
+  "terminal": true,
+  "timeout": false,
+  "exit_code": 0,
+  "elapsed_seconds": 0.06573467599992
+}

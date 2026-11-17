@@ -1,5 +1,51 @@
 # Frontend Evolution v1 / 双麦与四麦开放研究
 
+## 2026-11-14 受限增益回升诊断 D9
+
+[D9 合同](DUALMIC_GATED_RISE_D9_PLAN.zh-CN.md)与[真实结果](DUALMIC_GATED_RISE_D9_RESULT.zh-CN.md)：
+60例实际隔离C双臂回放完成，原D2 baseline状态/PCM精确一致。唯一候选抑制allow=0时
+低于单位gain的回升，32个有near参考common ΔSI-SDR全部0，双讲改善门槛失败，**NO_ADVANCE，候选关闭**。
+保留532个实际受限回升帧及四例远端输出变化，不能当作听感收益。生产/历史恢复语义不改。
+
+## 2026-11-11 双麦帧内增益过渡候选 D6
+
+[D6执行前合同](DUALMIC_GAIN_RAMP_D6_PLAN.zh-CN.md)与[实施说明](DUALMIC_GAIN_RAMP_D6_IMPLEMENTATION.zh-CN.md)
+冻结唯一输出域160样点线性增益过渡，原12-byte AGC状态、target/alpha/gate参数及安全cap不变。
+[完整输入锁](dualmic-gain-ramp-d6-input-lock.json)绑定原D2全部60视图/362窗和23个完整依赖。
+发展屏障要求全部可评分共同跨度/固定窗SI-SDR不退化、双讲至少一例共同跨度严格正、
+全24个远端相关视图原RMS指标/peak不增及每例clamp不增；严格正值不等于实质改善。
+[首次实际结果](DUALMIC_GAIN_RAMP_D6_RESULT.zh-CN.md)绑定087bd383/run43008230556：
+原state/PCM与真实系数读回、60视图/362窗和40实际负例有效；
+全部32个可评分共同跨度ΔSI-SDR为负，16个双讲无正例，
+窗口与远端相关RMS/peak屏障也未满足，只有逐case clamp不增通过。
+结论为**measurement_valid / NO_ADVANCE，按冻结规则关闭本候选**；
+不执行第二变体、不推导所有ramp都无效，不改生产或推广默认。
+后继精确head/main工程资格独立核对，见 [#942](https://github.com/jiying2007/audio-pipeline/issues/942)。
+
+
+## 2026-11-11 双麦 target gate 单一结构诊断 D5
+
+[D5 冻结合同](DUALMIC_TARGET_GATE_D5_PLAN.zh-CN.md)与[实施说明](DUALMIC_TARGET_GATE_D5_IMPLEMENTATION.zh-CN.md)
+只删除隔离研究候选的 target unity cap，保留原 output gate、peak/clamp 及全部参数。
+原 D2 60视图/362窗、完整12-byte状态和固定评分作为权威；全量近端电平、远端/中文能量与 null 保留。
+测量为总干预效应，不是纯延迟历史。[首次实际结果](DUALMIC_TARGET_GATE_D5_RESULT.zh-CN.md)
+绑定5fae6b95/run42964359158：60视图/362窗及32实际负例通过；nominal CALL共同跨度ΔSI-SDR中位−0.438dB，
+weak CALL/ASSISTANT中位+0.288/+0.975dB，同时远端相关RMS上升、peak cap33→57、末端clamp0→3。
+完整不利值和28个null保留；不作默认、听感或识别推广，后继head/main工程资格独立核对。
+原件、审查与精确CI身份见 [#938](https://github.com/jiying2007/audio-pipeline/issues/938)。
+
+## 2026-11-11 双麦固定窗口定位 D4
+
+[D3 实际结果](DUALMIC_ZERO_D3_RESULT.zh-CN.md)已经完成精确零输入上调抑制的独立双臂诊断：
+near-only固定指标小幅变化，双讲变化接近数值尺度；无质量推广。
+[D4 执行前合同](DUALMIC_WINDOW_D4_PLAN.zh-CN.md)与 [#935](https://github.com/jiying2007/audio-pipeline/issues/935)
+只读关联原 D1/D2 的全部60视图/362固定窗口、数字非零输入与原增益控制，不改波形或评分器。
+控制保持原frame坐标、frame0单列历史、null保留；数字非零不当语音标签，负delta不当听感结论。
+[D4首次实际结果](DUALMIC_WINDOW_D4_RESULT.zh-CN.md)保留362窗完整关联和16负例。
+各profile nominal双讲19/20可评分窗、weak17/20为原pre→state负差值，负窗输入数字零帧为0；
+同时保留正窗、null和此前状态历史，不把局部符号/中位数替代整段分数，不推导听感或因果结论。
+合同冻结在实际结果之前，精确head/main工程资格仍以该issue的实际Actions身份为准。
+
 ## 2026-11-07 双麦真人输入阶段诊断 D1
 
 承接 #920 已完成集成后的负结果，[D1 执行前合同](DUALMIC_STAGES_D1_PLAN.zh-CN.md)
@@ -325,3 +371,31 @@ real-robot qualification or the frozen NS research program.
 资格 PR 只建立源码身份和派生执行器审查；2.3.59 的 B3/F0 测量必须在该资格经受保护合并、
 独立主线 Verify 和 Release 验证后，以新的 R3 身份实际执行原三目标覆盖与预算。
 源码检查通过不代表新测量通过，也不产生四麦公共 SDK、SSC305 HIL 或产品资格。
+
+## D7 双麦上游分离观测
+
+[D7冻结合同](DUALMIC_UPSTREAM_D7_PLAN.zh-CN.md)与[实现说明](DUALMIC_UPSTREAM_D7_IMPLEMENTATION.zh-CN.md)
+在[#944](https://github.com/jiying2007/audio-pipeline/issues/944)追踪。
+[首次实际结果](DUALMIC_UPSTREAM_D7_RESULT.zh-CN.md)保全fee863bf/run43055603884程序有效回执：
+60视图、35916帧、362固定窗，当前plain/observer/原A/C端点及旧D1七lane/control的严格中性路径完成，
+状态为UPSTREAM_OBSERVATION_VALID_NO_PROMOTION。原51负例/预算属于程序验证路径，独立二进制原件审计仍未完成。
+[全部首次stdout聚合](dualmic-upstream-d7-first-stdout.json)保留18组完整精度、正负值和null。
+首次stdout不含lag/route窗口状态，不据分数臆造echo-following或near-onset因果；
+后继224fd79/run43060600294完整844块导出已核验：60 whole/common及362固定窗显示
+实际lag/soft-fallback与stage分数的有限关联；双讲窗口存在左右声道和场景符号差异。
+[完整精确投影](dualmic-upstream-d7-43060600294-summary.json)保留全部案例/窗、null、51负例及7phase回执。
+独立文本/描述符审查完成，但二进制tap/state重算仍待审计；不冒充首次fee ZIP独立审计，
+不据此推广HPF/BF改动。原冻结/生产/科学代码均未改。
+这是候选数0的中性诊断，不重开S003或D3/D5/D6等闭合拒绝线，不声明听感/识别或真机质量改善。
+
+## 中文 oracle-DT V2 历史运行时对照
+
+[冻结合同与负向结果](evidence/mandarin-oracle-dt-v2/RESULT.md)保留CALL/ASSISTANT两baseline全部10文件逐字节通过后各一次候选的真实执行。DT0→429，但最终common原始near域非规范投影SI-SDR差为−6.7875/−6.8148dB；不推广，不等同CER/MOS或纯语音失真。364组固定测量独立复算一致；原#953失败不重判。[只读联动追踪](evidence/mandarin-oracle-dt-v2/POSTHOC.md)只分析现有4次输出，不增加DSP，不能把共同变化当单模块因果。
+
+## 固定 oracle 上游输入的 AGC 单模块诊断
+
+[原始合同与条件效应结果](evidence/oracle-agc-isolation-v1/RESULT.md)：两profile连续629帧原始AGC输出及状态逐字节复现后，仅把allow替换为原baseline序列，固定oracle NS输入。common增益敏感误差下降，但非规范投影SI-SDR变差，不能称总体音质改善或DT总效果的可加分解。52组指标与28次真实性能观测独立复算通过，计时波动不支持稳健加速。不新增整条pipeline、oracle-DT或历史运行库执行；不改生产、不推广。
+
+## 固定 oracle 输入的 NS/RES 条件诊断归档
+
+[历史原件与负向边界](evidence/oracle-ns-dt-isolation-v2/RESULT.md)保留两profile输出及629帧四项公开字段逐字节复现后，仅替换DT序列的四次隔离模块执行。固定oracle residual/echo下，恢复原DT使增益敏感误差下降、投影SI-SDR变差；不是端到端音质改善或DT总效果的可加分解，不推广。原V1链接失败不重判，单次CPU观察不代表稳健性能变化。[公开范围与可复现边界](evidence/oracle-ns-dt-isolation-v2/ARCHIVE.md)明确原件恢复、缺失的独立V1失败包和不公开音频/运行库的限制。

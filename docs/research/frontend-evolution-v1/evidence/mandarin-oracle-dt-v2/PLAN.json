@@ -1,0 +1,51 @@
+{
+  "experiment": "FE-MANDARIN-ORACLE-DT-V2-HISTORICAL-RUNTIME",
+  "kind": "offline-oracle-causal-ablation-not-detector",
+  "archive_base": "d268aebffa3780577bf1aebd04d78560aafc1732",
+  "historical_dsp_source": "cc853616685b9faf7880e6d8f8f1a89d187d342a-D1-observer",
+  "zip_sha256": "a3ab7823fdcd7586c3b72eb214b5536dcfb7531fdf0b1611d49e1575a29b2c3d",
+  "known_near_sha256": "a81c2b25f9f35e4099f076c992ede1f17ed80d1fe3f3d9fd6eb0206dd0c97e2f",
+  "hypothesis": "Replacing only actual Activity output dt with original far AND offline known-near frame support tests whether this gate can materially affect the fixed Mandarin processing trajectory; not a guaranteed quality upper bound",
+  "single_change": "Original Activity function/state still executes unchanged. Immediately afterward candidate replaces result.double_talk_active with far_end_active && any(known_near[frame*160:(frame+1)*160]!=0). Far output, Activity internal hangover, thresholds and all DSP code/state recurrences unchanged except natural downstream effects. No added smoothing or label search",
+  "profiles": [
+    "call",
+    "assistant"
+  ],
+  "baseline_gate": "Before either candidate execution, compile original unchanged observer wrapper against retained original hash-verified observer static library and exact original headers/parser. Both baseline profiles must exactly reproduce all7 taps, control.csv, finalPCM and metricsJSONL from D1. Any difference stops entire candidate matrix; no tolerance or substitution",
+  "candidate_runs": 2,
+  "repetitions": 0,
+  "analysis": "reuse separately reviewed stage diagnostic fixed0/160 offsets,[0,100480),13 windows,7 lanes and math.fsum formulas verbatim. Preserve mixed-output/reference-domain warnings. Compare baseline and candidate errors/energies/projection, report all windows; no numerical improvement threshold, candidate selection or production promotion",
+  "oracle_risks": "Offline signal-support mask is not human VAD, deployable detector, causal audio inference or independent truth. Includes low-level speech noise/zeros and fixed unshifted input frame boundaries; upstream HPF/BF phase may move near energy. Overriding DT affects AEC/NS/RES/AGC collectively, so cannot isolate which downstream module caused changes. Oracle intervention need not improve quality and is not a mathematical upper bound",
+  "budgets": {
+    "execution_outer_seconds": 180,
+    "compile_seconds_each": 30,
+    "replay_seconds_each": 30,
+    "analysis_outer_seconds": 30,
+    "total_execution_plus_analysis_seconds": 210
+  },
+  "preserve_failures": true,
+  "no_favorable_rerun": true,
+  "quality_scope": "one previously inspected Mandarin utterance with engineered echo, not corpus-level CER/KWS or physical audio",
+  "promotion_allowed": false,
+  "main_changed": false,
+  "third_party_model_calls": 0,
+  "authorization": "User explicitly approved both rebuilt-wrapper baselines and only after full byte identity both single oracle candidates. This new experiment preserves V1 failure and fixes runtime provenance only.",
+  "runtime": "/tmp/audio-fe-runtime-closure-v1/runtime/usr/lib/x86_64-linux-gnu",
+  "runtime_hashes": {
+    "usr/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2": {
+      "sha256": "c20a2dc8917c755f02b94049356320fe1f62ac7d9f8994731f807d9df39302da",
+      "bytes": 236616
+    },
+    "usr/lib/x86_64-linux-gnu/libc.so.6": {
+      "sha256": "3a15d66867d83762c7f2f1e37359cb8f6c5743edb369c65285cb0b1c4f7498bf",
+      "bytes": 2129424
+    },
+    "usr/lib/x86_64-linux-gnu/libm.so.6": {
+      "sha256": "fce00b6f25f459cf4ae0b7fae4257909a1a8a86f9149e7c029a5d617baf1ccd0",
+      "bytes": 952616
+    }
+  },
+  "runtime_package_sha256": "ff5557d99b51f761c4b7c92368b9cc45565eda17df9bf9eb4b134d09825008be",
+  "compiler_strategy": "Original saved observer static library with original D1 wrapper/header/parser, original compile flags/definitions; current gcc, private historical loader. Unsupported ELF/symbol mismatch stops, no strategy search.",
+  "outer_seconds": 180
+}

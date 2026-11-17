@@ -146,8 +146,18 @@ jobs:
 
   sku-memory-rom:
     if: inputs.run_extended
-    runs-on: ubuntu-latest
+    # Preserve the verified composition/size baseline; GCC 15 Unity remains a recorded compatibility issue.
+    runs-on: ubuntu-24.04
+    env:
+      CC: gcc-13
     steps:
+      - name: Record pinned composition baseline toolchain
+        run: |
+          gcc-13 --version
+          command -v cc
+          cc --version
+          cmake --version
+          uname -m
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
       - uses: ./.github/actions/setup-ccache
         with:
@@ -939,6 +949,11 @@ jobs:
           # Each registered forward version requires its separately reviewed
           # source identity and a fresh full B3 run; unknown versions fail.
           version=$(sed -nE 's/^project\(audio_pipeline VERSION ([0-9]+\.[0-9]+\.[0-9]+) LANGUAGES C\).*$/\1/p' CMakeLists.txt)
+          # R10_SELECTION_B3_BEGIN
+          if [ "$version" = 2.3.65 ]; then
+            script=tests/validation/frontend_evolution/fe09_b3_f0_deadline_r10_qualification.py
+            source_kind=forward-r10-runtime-v1
+          else
           case "$version" in
             2.3.56)
               script=tests/validation/frontend_evolution/fe09_b3_f0_deadline_r1_qualification.py
@@ -961,8 +976,13 @@ jobs:
             2.3.63)
               script=tests/validation/frontend_evolution/fe09_b3_f0_deadline_r7_qualification.py
               source_kind=forward-r7-dualmic-v1 ;;
+            2.3.64)
+              script=tests/validation/frontend_evolution/fe09_b3_f0_deadline_r9_qualification.py
+              source_kind=forward-r9-dualmic-v1 ;;
             *) echo "UNREGISTERED_B3_SCIENCE_EXECUTION_VERSION:$version" >&2; exit 2 ;;
           esac
+          fi
+          # R10_SELECTION_B3_END
           echo "source_kind=$source_kind" >> "$GITHUB_OUTPUT"
           python3 "$script" --self-test
           python3 "$script" --collect --output fe09-b3-f0 --execution-source "$GITHUB_SHA"
@@ -1022,12 +1042,41 @@ jobs:
           path: fe09-b3-f0/
           if-no-files-found: error
           retention-days: 30
+      - name: Preserve distinct FE09 B3-F0 R8 dual-mic source evidence and failures
+        if: always() && (steps.fe09_b3_f0.outcome == 'success' || steps.fe09_b3_f0.outcome == 'failure') && steps.fe09_b3_f0.outputs.source_kind == 'forward-r8-dualmic-v1'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: frontend-fe09-b3-f0-forward-r8-dualmic-v1-${{ github.run_id }}-attempt-${{ github.run_attempt }}
+          path: fe09-b3-f0/
+          if-no-files-found: error
+          retention-days: 30
+      - name: Preserve distinct FE09 B3-F0 R9 dual-mic source evidence and failures
+        if: always() && (steps.fe09_b3_f0.outcome == 'success' || steps.fe09_b3_f0.outcome == 'failure') && steps.fe09_b3_f0.outputs.source_kind == 'forward-r9-dualmic-v1'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: frontend-fe09-b3-f0-forward-r9-dualmic-v1-${{ github.run_id }}-attempt-${{ github.run_attempt }}
+          path: fe09-b3-f0/
+          if-no-files-found: error
+          retention-days: 30
+      - name: Preserve distinct FE09 B3-F0 R10 dual-mic source evidence and failures
+        if: always() && (steps.fe09_b3_f0.outcome == 'success' || steps.fe09_b3_f0.outcome == 'failure') && steps.fe09_b3_f0.outputs.source_kind == 'forward-r10-runtime-v1'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: frontend-fe09-b3-f0-forward-r10-runtime-v1-${{ github.run_id }}-attempt-${{ github.run_attempt }}
+          path: fe09-b3-f0/
+          if-no-files-found: error
+          retention-days: 30
       - name: Characterize exact-version FE09 actual CALL process resources and frame costs
         id: fe09_t3s3_f0
         shell: bash
         run: |
           set -euo pipefail
           version=$(sed -nE 's/^project\(audio_pipeline VERSION ([0-9]+\.[0-9]+\.[0-9]+) LANGUAGES C\).*$/\1/p' CMakeLists.txt)
+          # R10_SELECTION_F0_BEGIN
+          if [ "$version" = 2.3.65 ]; then
+            script=tests/validation/frontend_evolution/fe09_t3s3_f0_call_resource_r10_qualification.py
+            source_kind=forward-r10-runtime-v1
+          else
           case "$version" in
             2.3.56)
               script=tests/validation/frontend_evolution/fe09_t3s3_f0_call_resource_qualification.py
@@ -1050,8 +1099,13 @@ jobs:
             2.3.63)
               script=tests/validation/frontend_evolution/fe09_t3s3_f0_call_resource_r7_qualification.py
               source_kind=forward-r7-dualmic-v1 ;;
+            2.3.64)
+              script=tests/validation/frontend_evolution/fe09_t3s3_f0_call_resource_r9_qualification.py
+              source_kind=forward-r9-dualmic-v1 ;;
             *) echo "UNREGISTERED_F0_RESOURCE_EXECUTION_VERSION:$version" >&2; exit 2 ;;
           esac
+          fi
+          # R10_SELECTION_F0_END
           echo "source_kind=$source_kind" >> "$GITHUB_OUTPUT"
           python3 "$script" --self-test
           python3 "$script" --collect --output fe09-t3s3-f0 --execution-source "$GITHUB_SHA" \
@@ -1109,6 +1163,30 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: frontend-fe09-t3s3-f0-forward-r7-dualmic-v1-${{ github.run_id }}-attempt-${{ github.run_attempt }}
+          path: fe09-t3s3-f0/
+          if-no-files-found: error
+          retention-days: 30
+      - name: Preserve distinct FE09 F0 R8 dual-mic source resource evidence and failures
+        if: always() && (steps.fe09_t3s3_f0.outcome == 'success' || steps.fe09_t3s3_f0.outcome == 'failure') && steps.fe09_t3s3_f0.outputs.source_kind == 'forward-r8-dualmic-v1'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: frontend-fe09-t3s3-f0-forward-r8-dualmic-v1-${{ github.run_id }}-attempt-${{ github.run_attempt }}
+          path: fe09-t3s3-f0/
+          if-no-files-found: error
+          retention-days: 30
+      - name: Preserve distinct FE09 F0 R9 dual-mic source resource evidence and failures
+        if: always() && (steps.fe09_t3s3_f0.outcome == 'success' || steps.fe09_t3s3_f0.outcome == 'failure') && steps.fe09_t3s3_f0.outputs.source_kind == 'forward-r9-dualmic-v1'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: frontend-fe09-t3s3-f0-forward-r9-dualmic-v1-${{ github.run_id }}-attempt-${{ github.run_attempt }}
+          path: fe09-t3s3-f0/
+          if-no-files-found: error
+          retention-days: 30
+      - name: Preserve distinct FE09 F0 R10 dual-mic source resource evidence and failures
+        if: always() && (steps.fe09_t3s3_f0.outcome == 'success' || steps.fe09_t3s3_f0.outcome == 'failure') && steps.fe09_t3s3_f0.outputs.source_kind == 'forward-r10-runtime-v1'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: frontend-fe09-t3s3-f0-forward-r10-runtime-v1-${{ github.run_id }}-attempt-${{ github.run_attempt }}
           path: fe09-t3s3-f0/
           if-no-files-found: error
           retention-days: 30
@@ -1259,18 +1337,36 @@ jobs:
           python3 tests/validation/frontend_evolution/fe09_runtime_source_boundary.py t2f0 \
             --verify --output fe09-t2-f0 --execution-source "$GITHUB_SHA"
       - name: Retain T2 F0 exact-run negative feasibility and failure evidence
+        id: fe09_t2_f0_upload
         if: always() && (steps.fe09_t2_f0.outcome == 'success' || steps.fe09_t2_f0.outcome == 'failure')
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: frontend-fe09-s3-t2-f0-render-feasibility-${{ github.run_id }}
+          name: frontend-fe09-s3-t2-f0-render-feasibility-${{ github.run_id }}-attempt-${{ github.run_attempt }}
           path: fe09-t2-f0/
           retention-days: 30
           if-no-files-found: error
+      - name: Witness exact t2-f0 upload in the pinned downloader REST list
+        if: steps.fe09_t2_f0.outcome == 'success'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ARTIFACT_ID: ${{ steps.fe09_t2_f0_upload.outputs.artifact-id }}
+          RUN_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          python3 tests/validation/frontend_evolution/fe09_same_run_artifact_visibility.py \
+            --artifact-id "$ARTIFACT_ID" --run-id "$GITHUB_RUN_ID" \
+            --artifact-name "frontend-fe09-s3-t2-f0-render-feasibility-$GITHUB_RUN_ID-attempt-$GITHUB_RUN_ATTEMPT" \
+            --run-attempt "$GITHUB_RUN_ATTEMPT" --run-head-sha "$RUN_HEAD_SHA" \
+            --execution-source "$GITHUB_SHA" --t2f0-archive-ready
       - name: Independently download exact T2 F0 four-member Artifact
         if: steps.fe09_t2_f0.outcome == 'success'
         uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
-          name: frontend-fe09-s3-t2-f0-render-feasibility-${{ github.run_id }}
+          artifact-ids: ${{ steps.fe09_t2_f0_upload.outputs.artifact-id }}
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ github.run_id }}
           path: fe09-t2-f0-readback
       - name: Check external T2 F0 negative-only verdict and source-linked rehash
         if: steps.fe09_t2_f0.outcome == 'success'
@@ -1370,17 +1466,35 @@ jobs:
             --verify --output fe09-t2a --execution-source "$GITHUB_SHA"
       - name: Retain T2A exact-run quiescent restart and fail-closed evidence
         if: always() && (steps.fe09_t2a.outcome == 'success' || steps.fe09_t2a.outcome == 'failure')
+        id: fe09_t2a_upload
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: frontend-fe09-s3-t2a-controlled-restart-${{ github.run_id }}
+          name: frontend-fe09-s3-t2a-controlled-restart-${{ github.run_id }}-attempt-${{ github.run_attempt }}
           path: fe09-t2a/
           retention-days: 30
           if-no-files-found: error
+      - name: Witness exact t2a upload in the pinned downloader REST list
+        if: steps.fe09_t2a.outcome == 'success'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ARTIFACT_ID: ${{ steps.fe09_t2a_upload.outputs.artifact-id }}
+          RUN_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          python3 tests/validation/frontend_evolution/fe09_same_run_artifact_visibility.py \
+            --artifact-id "$ARTIFACT_ID" --run-id "$GITHUB_RUN_ID" \
+            --artifact-name "frontend-fe09-s3-t2a-controlled-restart-$GITHUB_RUN_ID-attempt-$GITHUB_RUN_ATTEMPT" \
+            --run-attempt "$GITHUB_RUN_ATTEMPT" --run-head-sha "$RUN_HEAD_SHA" \
+            --execution-source "$GITHUB_SHA"
       - name: Independently download exact T2A four-member Artifact
         if: steps.fe09_t2a.outcome == 'success'
         uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
-          name: frontend-fe09-s3-t2a-controlled-restart-${{ github.run_id }}
+          artifact-ids: ${{ steps.fe09_t2a_upload.outputs.artifact-id }}
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ github.run_id }}
           path: fe09-t2a-readback
       - name: Check external T2A control-only verdict and source-linked rehash
         if: steps.fe09_t2a.outcome == 'success'
@@ -1806,18 +1920,36 @@ jobs:
           python3 tests/validation/frontend_evolution/fe09_b2s3_t2c0_quiescent_fallback_qualification.py \
             --verify --output fe09-t2c0 --execution-source "$GITHUB_SHA"
       - name: Retain exact-run T2-C0 logical owner ACK positives and negatives
+        id: fe09_t2c0_upload
         if: always() && (steps.fe09_t2c0.outcome == 'success' || steps.fe09_t2c0.outcome == 'failure')
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: frontend-fe09-s3-t2c0-owner-fallback-${{ github.run_id }}
+          name: frontend-fe09-s3-t2c0-owner-fallback-${{ github.run_id }}-attempt-${{ github.run_attempt }}
           path: fe09-t2c0/
           retention-days: 30
           if-no-files-found: error
+      - name: Witness exact t2c0 upload in the pinned downloader REST list
+        if: steps.fe09_t2c0.outcome == 'success'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ARTIFACT_ID: ${{ steps.fe09_t2c0_upload.outputs.artifact-id }}
+          RUN_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          python3 tests/validation/frontend_evolution/fe09_same_run_artifact_visibility.py \
+            --artifact-id "$ARTIFACT_ID" --run-id "$GITHUB_RUN_ID" \
+            --artifact-name "frontend-fe09-s3-t2c0-owner-fallback-$GITHUB_RUN_ID-attempt-$GITHUB_RUN_ATTEMPT" \
+            --run-attempt "$GITHUB_RUN_ATTEMPT" --run-head-sha "$RUN_HEAD_SHA" \
+            --execution-source "$GITHUB_SHA"
       - name: Download exact current-run T2-C0 four-member Artifact
         if: steps.fe09_t2c0.outcome == 'success'
         uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
-          name: frontend-fe09-s3-t2c0-owner-fallback-${{ github.run_id }}
+          artifact-ids: ${{ steps.fe09_t2c0_upload.outputs.artifact-id }}
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ github.run_id }}
           path: fe09-t2c0-readback
       - name: Independently rehash T2-C0 four members and enforce no-physical-source boundary
         if: steps.fe09_t2c0.outcome == 'success'
@@ -1882,18 +2014,36 @@ jobs:
           python3 tests/validation/frontend_evolution/fe09_b2s3_t3s0_resource_census_qualification.py \
             --verify --output fe09-t3s0 --execution-source "$GITHUB_SHA"
       - name: Retain exact-run T3-S0 source/negative memory receipt
+        id: fe09_t3s0_upload
         if: always() && (steps.fe09_t3s0.outcome == 'success' || steps.fe09_t3s0.outcome == 'failure')
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: frontend-fe09-t3s0-compiled-resource-${{ github.run_id }}
+          name: frontend-fe09-t3s0-compiled-resource-${{ github.run_id }}-attempt-${{ github.run_attempt }}
           path: fe09-t3s0/
           retention-days: 30
           if-no-files-found: error
+      - name: Witness exact t3s0 upload in the pinned downloader REST list
+        if: steps.fe09_t3s0.outcome == 'success'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ARTIFACT_ID: ${{ steps.fe09_t3s0_upload.outputs.artifact-id }}
+          RUN_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          python3 tests/validation/frontend_evolution/fe09_same_run_artifact_visibility.py \
+            --artifact-id "$ARTIFACT_ID" --run-id "$GITHUB_RUN_ID" \
+            --artifact-name "frontend-fe09-t3s0-compiled-resource-$GITHUB_RUN_ID-attempt-$GITHUB_RUN_ATTEMPT" \
+            --run-attempt "$GITHUB_RUN_ATTEMPT" --run-head-sha "$RUN_HEAD_SHA" \
+            --execution-source "$GITHUB_SHA"
       - name: Download immutable current-run T3-S0 four-member Artifact
         if: steps.fe09_t3s0.outcome == 'success'
         uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
-          name: frontend-fe09-t3s0-compiled-resource-${{ github.run_id }}
+          artifact-ids: ${{ steps.fe09_t3s0_upload.outputs.artifact-id }}
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ github.run_id }}
           path: fe09-t3s0-readback
       - name: Independently rehash T3-S0 members and reject false full 192KiB qualification
         if: steps.fe09_t3s0.outcome == 'success'
@@ -1965,7 +2115,7 @@ jobs:
         if: always() && (steps.fe09_t3s1.outcome == 'success' || steps.fe09_t3s1.outcome == 'failure')
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: frontend-fe09-t3s1-compact-handoff-${{ github.run_id }}
+          name: frontend-fe09-t3s1-compact-handoff-${{ github.run_id }}-attempt-${{ github.run_attempt }}
           path: fe09-t3s1/
           retention-days: 30
           if-no-files-found: error
@@ -1980,7 +2130,7 @@ jobs:
           set -euo pipefail
           python3 tests/validation/frontend_evolution/fe09_same_run_artifact_visibility.py \
             --artifact-id "$ARTIFACT_ID" --run-id "$GITHUB_RUN_ID" \
-            --artifact-name "frontend-fe09-t3s1-compact-handoff-$GITHUB_RUN_ID" \
+            --artifact-name "frontend-fe09-t3s1-compact-handoff-$GITHUB_RUN_ID-attempt-$GITHUB_RUN_ATTEMPT" \
             --run-attempt "$GITHUB_RUN_ATTEMPT" --run-head-sha "$RUN_HEAD_SHA" \
             --execution-source "$GITHUB_SHA"
       - name: Download immutable current-run T3-S1 four-member Artifact
@@ -2207,17 +2357,35 @@ jobs:
             --verify --output fe09-t3s2b1a --execution-source "$GITHUB_SHA"
       - name: Retain exact-run immutable FRM1 root original source and negative evidence
         if: always() && (steps.fe09_t3s2b1a.outcome == 'success' || steps.fe09_t3s2b1a.outcome == 'failure')
+        id: fe09_t3s2b1a_upload
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: frontend-fe09-t3s2b1a-immutable-root-${{ github.run_id }}
+          name: frontend-fe09-t3s2b1a-immutable-root-${{ github.run_id }}-attempt-${{ github.run_attempt }}
           path: fe09-t3s2b1a/
           retention-days: 30
           if-no-files-found: error
+      - name: Witness exact t3s2b1a upload in the pinned downloader REST list
+        if: steps.fe09_t3s2b1a.outcome == 'success'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ARTIFACT_ID: ${{ steps.fe09_t3s2b1a_upload.outputs.artifact-id }}
+          RUN_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          python3 tests/validation/frontend_evolution/fe09_same_run_artifact_visibility.py \
+            --artifact-id "$ARTIFACT_ID" --run-id "$GITHUB_RUN_ID" \
+            --artifact-name "frontend-fe09-t3s2b1a-immutable-root-$GITHUB_RUN_ID-attempt-$GITHUB_RUN_ATTEMPT" \
+            --run-attempt "$GITHUB_RUN_ATTEMPT" --run-head-sha "$RUN_HEAD_SHA" \
+            --execution-source "$GITHUB_SHA"
       - name: Download original same-run four-member root Artifact
         if: steps.fe09_t3s2b1a.outcome == 'success'
         uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
-          name: frontend-fe09-t3s2b1a-immutable-root-${{ github.run_id }}
+          artifact-ids: ${{ steps.fe09_t3s2b1a_upload.outputs.artifact-id }}
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ github.run_id }}
           path: fe09-t3s2b1a-readback
       - name: Independently rehash root receipt, reject fake rolling or powerloss authority
         if: steps.fe09_t3s2b1a.outcome == 'success'
@@ -2433,6 +2601,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          python3 tests/validation/frontend_evolution/test_fe09_a1_archive_readiness.py
           python3 tests/validation/frontend_evolution/fe09_b2s3_t3s2b1ba1_anchor_root_qualification.py --self-test
           python3 tests/validation/frontend_evolution/fe09_b2s3_t3s2b1ba1_anchor_root_qualification.py \
             --collect --output fe09-t3s2b1ba1 --execution-source "$GITHUB_SHA"
@@ -2460,7 +2629,7 @@ jobs:
             --artifact-id "$ARTIFACT_ID" --run-id "$GITHUB_RUN_ID" \
             --artifact-name "frontend-fe09-t3s2b1ba1-anchor-$GITHUB_RUN_ID" \
             --run-attempt "$GITHUB_RUN_ATTEMPT" --run-head-sha "$RUN_HEAD_SHA" \
-            --execution-source "$GITHUB_SHA"
+            --execution-source "$GITHUB_SHA" --a1-archive-ready
       - name: Download exact same-run original A1 Artifact
         if: steps.fe09_t3s2b1ba1.outcome == 'success'
         uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0

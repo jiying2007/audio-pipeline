@@ -1,0 +1,24 @@
+# cwd: extracted experiment bundle containing frozen src/dsp/{ap_internal.h,ap_dsp.h} and tests/test_fft.c
+python3 prepare.py
+# NOTE: prepare.py expects canonical base src/dsp/ap_fft.c, included in the evidence/source subfolder in archive PR.
+gcc -std=c11 -O2 -ffp-contract=off -Wall -Wextra -Werror -Isrc -Isrc/dsp baseline.c candidate.c harness.c -lm -o compare
+timeout 120 ./compare > result.txt
+# Above measured exactly once; do not rerun to select favorable performance.
+gcc -O2 -ffp-contract=off -Isrc -Isrc/dsp -c baseline.c -o baseline.o
+gcc -O2 -ffp-contract=off -Isrc -Isrc/dsp -c candidate.c -o candidate.o
+size -A baseline.o candidate.o > size.txt
+gcc -std=c11 -O1 -g -ffp-contract=off -fsanitize=address,undefined -Wall -Wextra -Werror -Isrc -Isrc/dsp baseline.c candidate.c harness.c -lm -o compare-san
+timeout 120 ./compare-san > sanitized.txt 2>sanitized.stderr
+# exit 1: LeakSanitizer ptrace environment fatal, original retained.
+ASAN_OPTIONS=detect_leaks=0 timeout 120 ./compare-san > sanitized-no-lsan.txt 2>sanitized-no-lsan.stderr
+# exit 0: ASan/UBSan only; instrumented timing not a performance replication.
+gcc -std=c11 -O2 -ffp-contract=off -Wall -Wextra -Werror -Isrc -Isrc/dsp src/dsp/ap_fft.c tests/test_fft.c -lm -o original-fft-test
+timeout 30 ./original-fft-test
+gcc -std=c11 -O2 -ffp-contract=off -Wall -Wextra -Werror -Isrc -Isrc/dsp candidate-production.c tests/test_fft.c -lm -o candidate-fft-test
+timeout 30 ./candidate-fft-test
+# Negative control: candidate.c table prefix 0u,256u,128u,384u becomes 0u,128u,256u,384u.
+gcc -std=c11 -O2 -ffp-contract=off -Wall -Wextra -Werror -Isrc -Isrc/dsp baseline.c negative-candidate.c harness.c -lm -o negative-compare
+timeout 30 ./negative-compare > negative.txt 2>negative.stderr
+# expected actual exit 1 and MISMATCH 4 0 8.
+cmake -S . -B build-baseline -DCMAKE_BUILD_TYPE=Release -DAP_BUILD_TESTS=ON -DAP_BUILD_BENCH=ON -DAP_ENABLE_LINUX_RUNTIME=OFF -DAP_BUILD_EXAMPLES=ON
+# actual exit 127: cmake not installed. No full pipeline claim.

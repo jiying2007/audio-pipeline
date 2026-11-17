@@ -1,0 +1,17 @@
+{
+  "name": "bindings-candidate",
+  "argv": [
+    "/tmp/audio-fe-runtime-closure-v1/runtime/usr/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2",
+    "--inhibit-cache",
+    "--library-path",
+    "/tmp/audio-fe-runtime-closure-v1/runtime/usr/lib/x86_64-linux-gnu",
+    "--list",
+    "/tmp/audio-fe-mandarin-oracle-dt-v2/candidate"
+  ],
+  "cwd": "/tmp/audio-fe-mandarin-oracle-dt-v2",
+  "started_epoch": 1794703790.294888,
+  "terminal": true,
+  "timeout": false,
+  "exit_code": 0,
+  "elapsed_seconds": 0.0015650749996893865
+}

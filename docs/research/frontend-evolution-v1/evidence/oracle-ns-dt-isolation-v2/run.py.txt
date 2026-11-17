@@ -1,0 +1,79 @@
+import ast,csv,hashlib,json,math,os,pathlib,re,signal,struct,subprocess,sys,time
+P=pathlib.Path(__file__).parent;start=time.monotonic();assert sys.byteorder=='little';assert not (P/'started.json').exists()
+def dump(n,x):(P/n).write_text(json.dumps(x,indent=2,allow_nan=False)+'\n')
+dump('started.json',{'epoch':time.time()});plan=json.loads((P/'PLAN.json').read_text());locks=json.loads((P/'input-lock.json').read_text());receipts=[];module_count=0
+source={n:hashlib.sha256((P/n).read_bytes()).hexdigest() for n in ['run.py','replay.c','input-lock.json','PLAN.json','PROPOSAL.md','AMENDMENT.md','original-measure.py']}
+libdir=pathlib.Path(plan['runtime']);loader=libdir/'ld-linux-x86-64.so.2';runtime_root=libdir.parents[2]
+def check():
+ for n,v in locks.items():assert (P/n).stat().st_size==v['bytes'] and hashlib.sha256((P/n).read_bytes()).hexdigest()==v['sha256'],n
+ for n,v in source.items():assert hashlib.sha256((P/n).read_bytes()).hexdigest()==v,n
+ for n,v in plan['runtime_hashes'].items():assert hashlib.sha256((runtime_root/n).read_bytes()).hexdigest()==v['sha256'],n
+ assert hashlib.sha256(pathlib.Path('/tmp/audio-fe-runtime-closure-v1/libc6.deb').read_bytes()).hexdigest()==plan['runtime_package_sha256']
+ assert not any(k.startswith('LD_') or k=='GLIBC_TUNABLES' for k in os.environ),'runtime injection'
+def command(name,argv,limit):
+ t=time.monotonic();dump(name+'-command.json',{'argv':list(map(str,argv)),'cwd':str(P),'limit_seconds':limit})
+ with (P/(name+'.stdout')).open('wb') as o,(P/(name+'.stderr')).open('wb') as e:
+  try:r=subprocess.run(list(map(str,argv)),cwd=P,stdout=o,stderr=e,timeout=min(limit,150-(time.monotonic()-start)));status=r.returncode
+  except subprocess.TimeoutExpired:status='TIMEOUT'
+ rec={'name':name,'exit':status,'elapsed':time.monotonic()-t};receipts.append(rec);dump(name+'-receipt.json',rec);assert status==0,(name,status)
+def analyze():
+ src=(P/'original-measure.py').read_text();tree=ast.parse(src);funcs=[ast.get_source_segment(src,n)for n in tree.body if isinstance(n,ast.FunctionDef)and n.name in ['db_ratio','stats']];assert len(funcs)==2;exec('\n\n'.join(funcs),globals())
+ near=[x/32768. for x in struct.unpack('<100640h',(P/'known-near.pcm').read_bytes())];N=100480
+ windows=[('common',0,N)]+[(f'second-{i//16000}',i,min(i+16000,N))for i in range(0,N,16000)]+[(f'construction-{i}',a,b)for i,(a,b)in enumerate(zip([0,16000,64000,65280,84496],[16000,64000,65280,84496,N]))];assert len(windows)==13
+ cases=[]
+ for profile in plan['profiles']:
+  m={}
+  for arm in ['oracle','restored']:
+   y=struct.unpack('<100640f',(P/(arm+'-'+profile+'.f32le')).read_bytes());assert all(math.isfinite(x)for x in y)
+   m[arm]=[{'window':n,'physical_range':[a,b],'output_range':[a+160,b+160],**stats(y[a+160:b+160],near[a:b])}for n,a,b in windows]
+  cases.append({'profile':profile,'measurements':m})
+ return cases
+try:
+ dump('loader-environment-presence.json',{'LD_names_present':[k for k in os.environ if k.startswith('LD_')],'GLIBC_TUNABLES_present':'GLIBC_TUNABLES'in os.environ});check()
+ # Restore all frozen decimal public fields to binary32; never omit noise_rms.
+ for profile in plan['profiles']:
+  oracle=list(csv.DictReader((P/(profile+'-oracle-control.csv')).open()));restored=list(csv.DictReader((P/(profile+'-restored-control.csv')).open()));assert len(oracle)==len(restored)==629
+  for a,b in zip(oracle,restored):
+   assert all(a[k]==b[k]for k in ['frame','ns_mode','ns_floor','frequency_enabled','far'])
+   assert a['ns_mode']=='2' and a['frequency_enabled']=='1';assert struct.pack('<f',float(a['ns_floor']))==struct.pack('<f',.12 if profile=='call'else .18)
+  for arm,rows in [('oracle',oracle),('restored',restored)]:assert(P/(profile+'-'+arm+'.dt')).read_bytes()==bytes(int(x['dt'])for x in rows)
+  assert(P/(profile+'-far.bin')).read_bytes()==bytes(int(x['far'])for x in oracle)
+  expected=b''.join(struct.pack('<4f',*[float(x[k])for k in ['frequency_active','res_gain','noise_rms_dbfs','speech_probability']])for x in oracle)
+  assert expected==(P/(profile+'-expected.fields')).read_bytes()
+ command('compile',json.loads((P/'compile-argv.json').read_text()),30);elfhash=hashlib.sha256((P/'replay').read_bytes()).hexdigest();dump('elf-identity.json',{'sha256':elfhash,'bytes':(P/'replay').stat().st_size})
+ command('elf-readelf',['readelf','-l','-d',P/'replay'],10)
+ elfmeta=(P/'elf-readelf.stdout').read_text();assert'ELF'in elfmeta or 'Elf'in elfmeta
+ assert'[Requesting program interpreter: /lib64/ld-linux-x86-64.so.2]'in elfmeta
+ assert not re.search(r'\((?:RPATH|RUNPATH|AUDIT|DEPAUDIT)\)',elfmeta)
+ assert set(re.findall(r'\(NEEDED\).*?\[(.*?)\]',elfmeta))=={'libc.so.6','libm.so.6'}
+ check();assert hashlib.sha256((P/'replay').read_bytes()).hexdigest()==elfhash
+ command('bindings',[loader,'--inhibit-cache','--library-path',libdir,'--list',P/'replay'],10)
+ expected={'libm.so.6':str(libdir/'libm.so.6'),'libc.so.6':str(libdir/'libc.so.6'),'/lib64/ld-linux-x86-64.so.2':str(loader)};seen=set();vdso=False
+ for line in(P/'bindings.stdout').read_text().splitlines():
+  if not line.strip():continue
+  if'=>'not in line:
+   assert re.fullmatch(r'linux-vdso\.so\.1 \(0x[0-9a-f]+\)',line.strip())and not vdso;vdso=True
+  else:
+   match=re.fullmatch(r'([^\s]+) => ([^\s]+) \(0x[0-9a-f]+\)',line.strip());assert match
+   name,path=match.groups();assert name in expected and path==expected[name] and name not in seen;seen.add(name)
+ assert vdso and seen==set(expected);check();assert hashlib.sha256((P/'replay').read_bytes()).hexdigest()==elfhash
+ passed=[];performance=[]
+ for arm in ['oracle','restored']:
+  if arm=='restored':assert passed==plan['profiles'];dump('baseline-gate.json',{'passed_profiles':passed,'output_and_all4_public_fields_exact':True,'full_internal_state_verified':False})
+  for profile in plan['profiles']:
+   check();assert hashlib.sha256((P/'replay').read_bytes()).hexdigest()==elfhash;name=arm+'-'+profile;assert module_count<4;module_count+=1
+   command(name,[loader,'--inhibit-cache','--library-path',libdir,P/'replay',P/(profile+'-input.f32le'),P/(profile+'-echo.f32le'),P/(profile+'-far.bin'),P/(profile+'-'+arm+'.dt'),profile,P/(name+'.f32le'),P/(name+'.fields'),P/(name+'.cpu.json')],15)
+   check();assert hashlib.sha256((P/'replay').read_bytes()).hexdigest()==elfhash
+   if arm=='oracle':
+    matches={suffix:(P/(name+suffix)).read_bytes()==(P/(profile+'-expected'+suffix)).read_bytes()for suffix in ['.f32le','.fields']};dump(name+'-gate.json',matches)
+    assert all(matches.values()),('BASELINE_IDENTITY_FAILED',profile,matches)
+    passed.append(profile)
+   performance.append({'profile':profile,'arm':arm,**json.loads((P/(name+'.cpu.json')).read_text())})
+ def alarm(a,b):raise TimeoutError('analysis30s')
+ signal.signal(signal.SIGALRM,alarm);signal.alarm(30)
+ try:cases=analyze()
+ finally:signal.alarm(0)
+ check();assert hashlib.sha256((P/'replay').read_bytes()).hexdigest()==elfhash
+ dump('result.json',{'decision':'CONDITIONAL_NS_RES_DIAGNOSTIC_NO_PROMOTION','cases':cases,'performance':performance,'commands':receipts,'elapsed':time.monotonic()-start,'module_processes':module_count,'full_pipeline_runs':0,'source_hashes':source,'elf_sha256':elfhash,'promotion_allowed':False,'limits':'Fixed oracle inputs, DT affects activation and release. Not additive decomposition, finalS16, CER/MOS or isolated speech quality. Only single CPU observation per arm; no robust speedup or target claim. Full internal states not archived historically.'})
+except BaseException as e:
+ dump('failure.json',{'error':repr(e),'module_processes':module_count,'commands':receipts,'elapsed':time.monotonic()-start,'promotion_allowed':False});raise

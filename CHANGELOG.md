@@ -1,3 +1,14 @@
+# 2.3.65
+
+- Fail Runtime startup with `AP_ESTATE` when pthread attribute initialization fails, restore stopped state, and never silently discard a requested worker stack size.
+- Add CALL/ASSISTANT explicit/default-stack fault-injection regressions, including subsequent successful startup and cleanup. Preserve invalid-stack rejection and existing successful DSP/queue behavior.
+- This is a portable error-path repair, not a naturally observed Linux allocation failure, measured audio/resource improvement, release/tag, or physical qualification.
+
+# 2.3.64
+
+- Preserve exact input/output aliasing in the two-microphone beamformer without overwriting delayed input samples or raw next-frame history. Keep disjoint processing byte-identical and public state/API/ABI unchanged.
+- Add routing, direction, rate and repeated-frame alias equivalence regressions. This candidate requires its own source admission and protected verification; no acoustic promotion or physical qualification is inferred.
+
 # 2.3.63
 
 - Integrate reference drift credit over the same elapsed capture interval used for the accepted acoustic rate observation, including confidence-rejection gaps. Preserve the exact normal 100 ms arithmetic, smoothing, clamp, feedback and per-observation slip limit.

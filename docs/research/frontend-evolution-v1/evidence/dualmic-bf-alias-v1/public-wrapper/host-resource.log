@@ -1,0 +1,13 @@
+cc (Debian 14.2.0-19) 14.2.0
+x86_64
+Commands: cc -std=c11 -O2 -fstack-usage -Iaudio-bf/src -c {baseline.c,candidate ap_beamformer.c}; size object files
+audio-bf/baseline.c:29:14:ap_beamformer_roughness.part.0	8	static
+audio-bf/baseline.c:43:6:ap_beamformer_init	8	static
+audio-bf/baseline.c:339:6:ap_beamformer_process	384	static
+audio-bf/src/frontend/ap_beamformer.c:29:14:ap_beamformer_roughness.part.0	8	static
+audio-bf/src/frontend/ap_beamformer.c:43:6:ap_beamformer_init	8	static
+audio-bf/src/frontend/ap_beamformer.c:339:6:ap_beamformer_process	384	static
+   text	   data	    bss	    dec	    hex	filename
+   5391	      0	      0	   5391	   150f	/tmp/audio-stack/baseline.o
+   5551	      0	      0	   5551	   15af	/tmp/audio-stack/candidate.o
+Compiler-generated host estimate only; not target-board stack, linked image size, or runtime benchmark.

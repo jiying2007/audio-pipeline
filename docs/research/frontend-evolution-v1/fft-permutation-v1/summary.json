@@ -1,0 +1,18 @@
+{
+  "median_ratios": {
+    "32/0": 0.933067125,
+    "32/1": 0.923038478,
+    "64/0": 0.967770057,
+    "64/1": 0.966445884,
+    "256/0": 0.956140028,
+    "256/1": 0.973286734,
+    "512/0": 0.93892454,
+    "512/1": 0.945350093
+  },
+  "geometric_mean_ratio": 0.9503498490056138,
+  "equivalence_cases": 22000,
+  "rodata_delta": 1024,
+  "text_delta": 101,
+  "local_screen_pass": false,
+  "scope": "x86_64 process CPU, memcpy included; not pipeline or target hardware"
+}

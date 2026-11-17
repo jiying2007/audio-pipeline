@@ -1,0 +1,457 @@
+{
+  "kind": "POSTHOC_EXISTING_OUTPUT_TRACE",
+  "dsp_runs": 0,
+  "causal_limits": "Temporal first differences and gain-state differences under jointly changed downstream inputs locate observable divergence, not independent module effects. DT changes multiple downstream paths jointly. No inferred adaptation updates from gate eligibility.",
+  "cases": [
+    {
+      "profile": "call",
+      "fields": {
+        "frame": {
+          "differing_frames": 0,
+          "first_frame": null,
+          "last_frame": null
+        },
+        "mic_energy": {
+          "differing_frames": 0,
+          "first_frame": null,
+          "last_frame": null
+        },
+        "reference_energy": {
+          "differing_frames": 0,
+          "first_frame": null,
+          "last_frame": null
+        },
+        "smoothed_mic_before": {
+          "differing_frames": 0,
+          "first_frame": null,
+          "last_frame": null
+        },
+        "smoothed_reference_before": {
+          "differing_frames": 0,
+          "first_frame": null,
+          "last_frame": null
+        },
+        "smoothed_mic_after": {
+          "differing_frames": 0,
+          "first_frame": null,
+          "last_frame": null
+        },
+        "smoothed_reference_after": {
+          "differing_frames": 0,
+          "first_frame": null,
+          "last_frame": null
+        },
+        "far_threshold": {
+          "differing_frames": 0,
+          "first_frame": null,
+          "last_frame": null
+        },
+        "double_talk_ratio": {
+          "differing_frames": 0,
+          "first_frame": null,
+          "last_frame": null
+        },
+        "hangover_frames": {
+          "differing_frames": 0,
+          "first_frame": null,
+          "last_frame": null
+        },
+        "far_hangover_before": {
+          "differing_frames": 0,
+          "first_frame": null,
+          "last_frame": null
+        },
+        "far_hangover_after": {
+          "differing_frames": 0,
+          "first_frame": null,
+          "last_frame": null
+        },
+        "dt_hangover_before": {
+          "differing_frames": 0,
+          "first_frame": null,
+          "last_frame": null
+        },
+        "dt_hangover_after": {
+          "differing_frames": 0,
+          "first_frame": null,
+          "last_frame": null
+        },
+        "far": {
+          "differing_frames": 0,
+          "first_frame": null,
+          "last_frame": null
+        },
+        "dt": {
+          "differing_frames": 429,
+          "first_frame": 100,
+          "last_frame": 528
+        },
+        "aec_present": {
+          "differing_frames": 0,
+          "first_frame": null,
+          "last_frame": null
+        },
+        "aec_enabled": {
+          "differing_frames": 0,
+          "first_frame": null,
+          "last_frame": null
+        },
+        "aec_mu": {
+          "differing_frames": 0,
+          "first_frame": null,
+          "last_frame": null
+        },
+        "gate_eligible": {
+          "differing_frames": 429,
+          "first_frame": 100,
+          "last_frame": 528
+        },
+        "aec_identity_max_abs_error": {
+          "differing_frames": 210,
+          "first_frame": 106,
+          "last_frame": 417
+        },
+        "ns_mode": {
+          "differing_frames": 0,
+          "first_frame": null,
+          "last_frame": null
+        },
+        "ns_floor": {
+          "differing_frames": 0,
+          "first_frame": null,
+          "last_frame": null
+        },
+        "frequency_enabled": {
+          "differing_frames": 0,
+          "first_frame": null,
+          "last_frame": null
+        },
+        "frequency_active": {
+          "differing_frames": 429,
+          "first_frame": 100,
+          "last_frame": 528
+        },
+        "res_gain": {
+          "differing_frames": 441,
+          "first_frame": 100,
+          "last_frame": 540
+        },
+        "noise_rms_dbfs": {
+          "differing_frames": 529,
+          "first_frame": 100,
+          "last_frame": 628
+        },
+        "speech_probability": {
+          "differing_frames": 379,
+          "first_frame": 100,
+          "last_frame": 528
+        },
+        "agc_allow": {
+          "differing_frames": 429,
+          "first_frame": 100,
+          "last_frame": 528
+        },
+        "gain_before": {
+          "differing_frames": 528,
+          "first_frame": 101,
+          "last_frame": 628
+        },
+        "gain_after": {
+          "differing_frames": 529,
+          "first_frame": 100,
+          "last_frame": 628
+        }
+      },
+      "lanes": {
+        "aec_input": {
+          "different_samples": 0,
+          "first_output_sample": null,
+          "first_input_axis_sample": null,
+          "baseline_sha256": "bf50fe5103e47ca7256c2ff01c2c88cf4cffd0e2f59e433d6ebd7af697060cbe",
+          "candidate_sha256": "bf50fe5103e47ca7256c2ff01c2c88cf4cffd0e2f59e433d6ebd7af697060cbe"
+        },
+        "reference": {
+          "different_samples": 0,
+          "first_output_sample": null,
+          "first_input_axis_sample": null,
+          "baseline_sha256": "6a6c7d7ad6d33f0f3fa2a1eff02b6f23b02cfcae306a9c97e2d3ce4259b812c0",
+          "candidate_sha256": "6a6c7d7ad6d33f0f3fa2a1eff02b6f23b02cfcae306a9c97e2d3ce4259b812c0"
+        },
+        "echo": {
+          "different_samples": 50592,
+          "first_output_sample": 16032,
+          "first_input_axis_sample": 16032,
+          "baseline_sha256": "7f15f092f54aba86e35eb3534db1a0cc1d6efde2dc07a67c01453b6682b15d29",
+          "candidate_sha256": "b5dbbb61c336d12e1e24ba0db511ad4957364eb0651333e688728629723c4ee2"
+        },
+        "aec_residual": {
+          "different_samples": 50592,
+          "first_output_sample": 16032,
+          "first_input_axis_sample": 16032,
+          "baseline_sha256": "c6919ca696cd7831d2767703942b7e2d95893909ae4695eef1ccb9d58f4f9dac",
+          "candidate_sha256": "2a1ad9acf22908b53a35f885041d015be52aa2f4dd10ea95f9d080cc81683940"
+        },
+        "ns_input": {
+          "different_samples": 50592,
+          "first_output_sample": 16032,
+          "first_input_axis_sample": 16032,
+          "baseline_sha256": "c6919ca696cd7831d2767703942b7e2d95893909ae4695eef1ccb9d58f4f9dac",
+          "candidate_sha256": "2a1ad9acf22908b53a35f885041d015be52aa2f4dd10ea95f9d080cc81683940"
+        },
+        "ns_output": {
+          "different_samples": 71116,
+          "first_output_sample": 16000,
+          "first_input_axis_sample": 15840,
+          "baseline_sha256": "df711fe1414acdc4a10cbf19e228a47b4f2a762c5a06d4f99c7d29630d7b760f",
+          "candidate_sha256": "b3968479d1ae49fed21d6d0e93255a285c46915864ff57fc2b7111cdc2bba424"
+        },
+        "agc_output": {
+          "different_samples": 71372,
+          "first_output_sample": 16000,
+          "first_input_axis_sample": 15840,
+          "baseline_sha256": "231582e34f13e0dbe9af24eaa5c13b8c8b8304ffde38263e22962937962b0dc7",
+          "candidate_sha256": "d436aed5dad86d6e2efef166e9119936d0e942b9fbbcc8c8b2fa9de855c2d274"
+        }
+      },
+      "agc_state_descriptive": {
+        "baseline": {
+          "gain_after_min": 1.00000024,
+          "gain_after_max": 5.71240473,
+          "agc_allow_frames": 78,
+          "gain_after_last": 5.71240473
+        },
+        "candidate": {
+          "gain_after_min": 1.00000024,
+          "gain_after_max": 7.35993099,
+          "agc_allow_frames": 507,
+          "gain_after_last": 5.7135787
+        }
+      }
+    },
+    {
+      "profile": "assistant",
+      "fields": {
+        "frame": {
+          "differing_frames": 0,
+          "first_frame": null,
+          "last_frame": null
+        },
+        "mic_energy": {
+          "differing_frames": 0,
+          "first_frame": null,
+          "last_frame": null
+        },
+        "reference_energy": {
+          "differing_frames": 0,
+          "first_frame": null,
+          "last_frame": null
+        },
+        "smoothed_mic_before": {
+          "differing_frames": 0,
+          "first_frame": null,
+          "last_frame": null
+        },
+        "smoothed_reference_before": {
+          "differing_frames": 0,
+          "first_frame": null,
+          "last_frame": null
+        },
+        "smoothed_mic_after": {
+          "differing_frames": 0,
+          "first_frame": null,
+          "last_frame": null
+        },
+        "smoothed_reference_after": {
+          "differing_frames": 0,
+          "first_frame": null,
+          "last_frame": null
+        },
+        "far_threshold": {
+          "differing_frames": 0,
+          "first_frame": null,
+          "last_frame": null
+        },
+        "double_talk_ratio": {
+          "differing_frames": 0,
+          "first_frame": null,
+          "last_frame": null
+        },
+        "hangover_frames": {
+          "differing_frames": 0,
+          "first_frame": null,
+          "last_frame": null
+        },
+        "far_hangover_before": {
+          "differing_frames": 0,
+          "first_frame": null,
+          "last_frame": null
+        },
+        "far_hangover_after": {
+          "differing_frames": 0,
+          "first_frame": null,
+          "last_frame": null
+        },
+        "dt_hangover_before": {
+          "differing_frames": 0,
+          "first_frame": null,
+          "last_frame": null
+        },
+        "dt_hangover_after": {
+          "differing_frames": 0,
+          "first_frame": null,
+          "last_frame": null
+        },
+        "far": {
+          "differing_frames": 0,
+          "first_frame": null,
+          "last_frame": null
+        },
+        "dt": {
+          "differing_frames": 429,
+          "first_frame": 100,
+          "last_frame": 528
+        },
+        "aec_present": {
+          "differing_frames": 0,
+          "first_frame": null,
+          "last_frame": null
+        },
+        "aec_enabled": {
+          "differing_frames": 0,
+          "first_frame": null,
+          "last_frame": null
+        },
+        "aec_mu": {
+          "differing_frames": 0,
+          "first_frame": null,
+          "last_frame": null
+        },
+        "gate_eligible": {
+          "differing_frames": 429,
+          "first_frame": 100,
+          "last_frame": 528
+        },
+        "aec_identity_max_abs_error": {
+          "differing_frames": 199,
+          "first_frame": 103,
+          "last_frame": 415
+        },
+        "ns_mode": {
+          "differing_frames": 0,
+          "first_frame": null,
+          "last_frame": null
+        },
+        "ns_floor": {
+          "differing_frames": 0,
+          "first_frame": null,
+          "last_frame": null
+        },
+        "frequency_enabled": {
+          "differing_frames": 0,
+          "first_frame": null,
+          "last_frame": null
+        },
+        "frequency_active": {
+          "differing_frames": 429,
+          "first_frame": 100,
+          "last_frame": 528
+        },
+        "res_gain": {
+          "differing_frames": 441,
+          "first_frame": 100,
+          "last_frame": 540
+        },
+        "noise_rms_dbfs": {
+          "differing_frames": 529,
+          "first_frame": 100,
+          "last_frame": 628
+        },
+        "speech_probability": {
+          "differing_frames": 379,
+          "first_frame": 100,
+          "last_frame": 528
+        },
+        "agc_allow": {
+          "differing_frames": 429,
+          "first_frame": 100,
+          "last_frame": 528
+        },
+        "gain_before": {
+          "differing_frames": 528,
+          "first_frame": 101,
+          "last_frame": 628
+        },
+        "gain_after": {
+          "differing_frames": 529,
+          "first_frame": 100,
+          "last_frame": 628
+        }
+      },
+      "lanes": {
+        "aec_input": {
+          "different_samples": 0,
+          "first_output_sample": null,
+          "first_input_axis_sample": null,
+          "baseline_sha256": "bf50fe5103e47ca7256c2ff01c2c88cf4cffd0e2f59e433d6ebd7af697060cbe",
+          "candidate_sha256": "bf50fe5103e47ca7256c2ff01c2c88cf4cffd0e2f59e433d6ebd7af697060cbe"
+        },
+        "reference": {
+          "different_samples": 0,
+          "first_output_sample": null,
+          "first_input_axis_sample": null,
+          "baseline_sha256": "6a6c7d7ad6d33f0f3fa2a1eff02b6f23b02cfcae306a9c97e2d3ce4259b812c0",
+          "candidate_sha256": "6a6c7d7ad6d33f0f3fa2a1eff02b6f23b02cfcae306a9c97e2d3ce4259b812c0"
+        },
+        "echo": {
+          "different_samples": 50336,
+          "first_output_sample": 16032,
+          "first_input_axis_sample": 16032,
+          "baseline_sha256": "a8cf10eadb2ca3fbb274d722a92ce951d7a39c8ee970ed5bd71f3a9bfd7abea1",
+          "candidate_sha256": "4ed87d021f31a29d153030d5a1e0cd8019679c6fab0f9e2fb8ee9850f9bce8ba"
+        },
+        "aec_residual": {
+          "different_samples": 50336,
+          "first_output_sample": 16032,
+          "first_input_axis_sample": 16032,
+          "baseline_sha256": "3ef2828366fc86648810b2e2771d1641e158caf6902f599f811bcd2269d63bb0",
+          "candidate_sha256": "d3febda99cd9914299181ced93311a3fa9249213e38353e3c6d222e3ab919535"
+        },
+        "ns_input": {
+          "different_samples": 50336,
+          "first_output_sample": 16032,
+          "first_input_axis_sample": 16032,
+          "baseline_sha256": "3ef2828366fc86648810b2e2771d1641e158caf6902f599f811bcd2269d63bb0",
+          "candidate_sha256": "d3febda99cd9914299181ced93311a3fa9249213e38353e3c6d222e3ab919535"
+        },
+        "ns_output": {
+          "different_samples": 71112,
+          "first_output_sample": 16000,
+          "first_input_axis_sample": 15840,
+          "baseline_sha256": "529367c2108bbf8f647f705636bd7ce2f21daa25943f4bafab53e45083bbea34",
+          "candidate_sha256": "8a7e3dda2fd0fd7df8fed5c61dd9241851d89223b23847f6804e66cdf7c6798d"
+        },
+        "agc_output": {
+          "different_samples": 71154,
+          "first_output_sample": 16000,
+          "first_input_axis_sample": 15840,
+          "baseline_sha256": "67235460b88345a15cc401647cebadc54a0e6525feb3e549786edba34377ff14",
+          "candidate_sha256": "25eb91d00210ca1adc6a73d12883bf4f4e6e1b15d2c9658460a7181e9d8cb758"
+        }
+      },
+      "agc_state_descriptive": {
+        "baseline": {
+          "gain_after_min": 1.00000024,
+          "gain_after_max": 5.71240473,
+          "agc_allow_frames": 78,
+          "gain_after_last": 5.71240473
+        },
+        "candidate": {
+          "gain_after_min": 1.00000024,
+          "gain_after_max": 7.47020197,
+          "agc_allow_frames": 507,
+          "gain_after_last": 5.71359825
+        }
+      }
+    }
+  ]
+}

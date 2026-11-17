@@ -959,15 +959,12 @@ class A1SnapshotRestartTests(unittest.TestCase):
             self.assertEqual(len(self.opened), 2)
             self.assertEqual(self.paused, [])
 
-    def test_other_rest_stages_remain_immediate_refusal(self):
-        for name in (policy.T3S1_PREFIX + str(RUN),
-                     *(f"{prefix}{RUN}-attempt-2" for prefix in policy.ATTEMPT_PREFIXES
-                       if prefix not in (policy.T2A_PREFIX, policy.T3S0_PREFIX))):
-            self.NAME = name
-            with self.assertRaisesRegex(policy.NotAdmitted, "LIST_INCOMPLETE_OR_CHANGED"):
-                self.check([self.response(self.run_record()), self.listing(total=2), self.listing()])
-            self.assertEqual(len(self.opened), 2)
-            self.assertEqual(self.paused, [])
+    def test_legacy_non_attempt_stage_keeps_immediate_refusal(self):
+        self.NAME = policy.T3S1_PREFIX + str(RUN)
+        with self.assertRaisesRegex(policy.NotAdmitted, "LIST_INCOMPLETE_OR_CHANGED"):
+            self.check([self.response(self.run_record()), self.listing(total=2), self.listing()])
+        self.assertEqual(len(self.opened), 2)
+        self.assertEqual(self.paused, [])
 
 
 class T2ASnapshotRestartTests(A1SnapshotRestartTests):
@@ -1011,6 +1008,24 @@ class T2B0AttemptVisibilityTests(T2AAttemptVisibilityTests):
         self.assertEqual(stage.count("if: steps.fe09_t2b_b0.outcome == 'success'"), 3)
         self.assertNotIn("continue-on-error:", stage)
         self.assertNotIn("overwrite:", stage)
+
+
+# Execute the same complete snapshot/conflict/budget matrix for every newly
+# covered exact-attempt stage; existing A1/T2A/T3S0 matrices remain above.
+class T2B0SnapshotRestartTests(A1SnapshotRestartTests):
+    NAME = T2B0AttemptVisibilityTests.NAME
+
+class T3S1SnapshotRestartTests(A1SnapshotRestartTests):
+    NAME = policy.T3S1_PREFIX + str(RUN) + "-attempt-2"
+
+class RootSnapshotRestartTests(A1SnapshotRestartTests):
+    NAME = RootAttemptVisibilityTests.NAME
+
+class T2F0SnapshotRestartTests(A1SnapshotRestartTests):
+    NAME = T2F0AttemptVisibilityTests.NAME
+
+class T2C0SnapshotRestartTests(A1SnapshotRestartTests):
+    NAME = T2C0AttemptVisibilityTests.NAME
 
 
 if __name__ == "__main__":

@@ -28,7 +28,8 @@ ROOT_PREFIX = "frontend-fe09-t3s2b1a-immutable-root-"
 T2F0_PREFIX = "frontend-fe09-s3-t2-f0-render-feasibility-"
 T2C0_PREFIX = "frontend-fe09-s3-t2c0-owner-fallback-"
 T3S0_PREFIX = "frontend-fe09-t3s0-compiled-resource-"
-ATTEMPT_PREFIXES = (T3S0_PREFIX, T3S1_PREFIX, T2A_PREFIX, ROOT_PREFIX, T2F0_PREFIX, T2C0_PREFIX)
+T2B0_PREFIX = "frontend-fe09-s3-t2b-b0-capture-only-bf-"
+ATTEMPT_PREFIXES = (T2B0_PREFIX, T3S0_PREFIX, T3S1_PREFIX, T2A_PREFIX, ROOT_PREFIX, T2F0_PREFIX, T2C0_PREFIX)
 REST_PREFIXES = (A1_PREFIX, *ATTEMPT_PREFIXES)
 # A1's new 100-row REST response has its own finite metadata cap. Existing
 # single-entity/run metadata stays at 64 KiB; scientific files are unaffected.
@@ -140,7 +141,7 @@ def check_a1_visibility(repo, run_id, artifact_id, artifact_name, token, *,
 
     The run-attempt lookup and EVERY list page share the existing eight-request
     ceiling. A missing item can consume another request after the same 2s pause;
-    pagination never resets the budget. A1 alone may discard an inconsistent
+    pagination never resets the budget. A1 and exact-attempt T2A may discard an inconsistent
     snapshot and restart page 1 within this same ceiling. No partial snapshot
     can succeed; observed identity/schema conflicts still fail immediately.
     No scientific command is run here.
@@ -217,8 +218,10 @@ def check_a1_visibility(repo, run_id, artifact_id, artifact_name, token, *,
                      "A1_ARTIFACT_WRONG_SOURCE_OR_PREVIOUS_ATTEMPT")
             if not complete_page:
                 # Never accept rows from a partial/changing enumeration. Only
-                # A1 may restart, after all observed conflicts above refuse.
-                need(artifact_name == A1_PREFIX + str(run_id) and attempt < attempts,
+                # A1 and exact-attempt T2A may restart only after all observed conflicts refuse.
+                need((artifact_name == A1_PREFIX + str(run_id) or
+                      artifact_name == f"{T2A_PREFIX}{run_id}-attempt-{run_attempt}")
+                     and attempt < attempts,
                      "A1_ARTIFACT_LIST_INCOMPLETE_OR_CHANGED")
                 rows, total, page = [], None, 1
                 pause(delay_seconds)
@@ -435,6 +438,72 @@ def check_t2f0_archive_ready(repo, run_id, artifact_id, artifact_name, token, *,
             pause(SLEEP_SECONDS)
     raise NotAdmitted("T2F0_ARCHIVE_NOT_READY_WITHIN_BOUNDED_RETRY")
 
+def check_t2a_archive_ready(repo, run_id, artifact_id, artifact_name, token, *,
+                           run_attempt, run_head_sha, execution_source,
+                           opener=None, pause=None):
+    """Probe only the exact T2A REST ZIP endpoint; never follow its signed URL.
+
+    Listing visibility is not archive readiness. A 302 is only a transport
+    witness, not digest/readback success or proof of the cause of an earlier
+    404. The pinned downloader and scientific readback remain mandatory.
+    This separate ceiling is eight 10-second requests and seven 2-second
+    pauses, inside the unchanged T2A job deadline. No response body is read.
+    """
+    checked_args(repo, run_id, artifact_id, artifact_name, token,
+                 run_attempt=run_attempt)
+    need(type(run_attempt) is int and 0 < run_attempt < 2 ** 63 and
+         artifact_name == f"{T2A_PREFIX}{run_id}-attempt-{run_attempt}",
+         "T2A_ARCHIVE_STAGE_REQUIRED")
+    need(all(type(value) is str and re.fullmatch(r"[0-9a-f]{40}", value)
+             for value in (run_head_sha, execution_source)),
+         "T2A_EXACT_ATTEMPT_AND_SOURCE_REQUIRED")
+    if opener is None:
+        opener = urllib.request.build_opener(NoRedirect()).open
+    if pause is None:
+        pause = time.sleep
+    endpoint = f"{API_URL}/repos/{repo}/actions/artifacts/{artifact_id}/zip"
+    for attempt in range(1, MAX_ATTEMPTS + 1):
+        request = urllib.request.Request(endpoint, headers={
+            "Accept": "application/vnd.github+json",
+            "Authorization": "Bearer " + token,
+            "X-GitHub-Api-Version": "2022-11-28",
+            "User-Agent": "audio-pipeline-t2a-archive-readiness",
+        })
+        response = None
+        try:
+            try:
+                response = opener(request, timeout=10)
+            except urllib.error.HTTPError as error:
+                # urllib represents a deliberately unfollowed 302 as HTTPError.
+                response = error
+            status = response.code if isinstance(response, urllib.error.HTTPError) else response.status
+            need(response.url == endpoint, "T2A_ARCHIVE_REDIRECT_FOLLOWED")
+            if status == 302:
+                # Inspect but never persist, print, or request the signed URL.
+                location = response.headers.get("Location", "")
+                try:
+                    target = urllib.parse.urlsplit(location)
+                    valid = (0 < len(location) <= 16384 and
+                             not any(ord(c) <= 32 or ord(c) == 127 for c in location) and
+                             target.scheme == "https" and bool(target.hostname) and
+                             target.username is None and target.password is None and
+                             target.port in (None, 443) and not target.fragment)
+                except (ValueError, TypeError):
+                    valid = False
+                need(valid, "T2A_ARCHIVE_INVALID_REDIRECT")
+                return attempt
+            need(status in (404, 502, 503),
+                 "T2A_ARCHIVE_HTTP_HARD_FAILURE_" + str(status))
+        except (urllib.error.URLError, TimeoutError):
+            raise NotAdmitted("T2A_ARCHIVE_NETWORK_OR_TLS_FAILURE") from None
+        finally:
+            if response is not None:
+                response.close()
+        if attempt < MAX_ATTEMPTS:
+            pause(SLEEP_SECONDS)
+    raise NotAdmitted("T2A_ARCHIVE_NOT_READY_WITHIN_BOUNDED_RETRY")
+
+
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
@@ -446,16 +515,21 @@ def main() -> None:
     parser.add_argument("--execution-source")
     parser.add_argument("--a1-archive-ready", action="store_true")
     parser.add_argument("--t2f0-archive-ready", action="store_true")
+    parser.add_argument("--t2a-archive-ready", action="store_true")
     args = parser.parse_args()
     try:
         repo = os.environ.get("GITHUB_REPOSITORY", "")
         token = os.environ.get("GH_TOKEN", "")
-        need(not (args.a1_archive_ready and args.t2f0_archive_ready),
+        need(sum((args.a1_archive_ready, args.t2f0_archive_ready, args.t2a_archive_ready)) <= 1,
              "ARCHIVE_READINESS_FLAGS_CONFLICT")
         if args.t2f0_archive_ready:
             need(type(args.run_attempt) is int and
                  args.artifact_name == f"{T2F0_PREFIX}{args.run_id}-attempt-{args.run_attempt}",
                  "T2F0_ARCHIVE_STAGE_REQUIRED")
+        if args.t2a_archive_ready:
+            need(type(args.run_attempt) is int and
+                 args.artifact_name == f"{T2A_PREFIX}{args.run_id}-attempt-{args.run_attempt}",
+                 "T2A_ARCHIVE_STAGE_REQUIRED")
         if args.a1_archive_ready:
             need(args.artifact_name == A1_PREFIX + str(args.run_id),
                  "A1_ARCHIVE_STAGE_REQUIRED")
@@ -475,6 +549,13 @@ def main() -> None:
                 execution_source=args.execution_source)
             print("FE09_T2F0_ARCHIVE_REDIRECT_READY_BEFORE_PINNED_DOWNLOAD",
                   args.run_id, args.artifact_id, "requests=" + str(archive_attempt))
+        if args.t2a_archive_ready:
+            archive_attempt = check_t2a_archive_ready(
+                repo, args.run_id, args.artifact_id, args.artifact_name, token,
+                run_attempt=args.run_attempt, run_head_sha=args.run_head_sha,
+                execution_source=args.execution_source)
+            print("FE09_T2A_ARCHIVE_REDIRECT_READY_BEFORE_PINNED_DOWNLOAD",
+                  args.run_id, args.artifact_id, "requests=" + str(archive_attempt))
     except (NotAdmitted, ValueError, OSError, json.JSONDecodeError) as error:
         raise SystemExit("FE09_ARTIFACT_VISIBILITY_NOT_ADMITTED: " +
                          str(error)) from None
@@ -483,6 +564,9 @@ def main() -> None:
           args.run_id, args.artifact_id, "attempt=" + str(attempt), digest)
     if args.artifact_name.startswith(A1_PREFIX):
         print("FE09_A1_REST_LIST_RUN_ATTEMPT_SOURCE_BOUND",
+              args.run_attempt, args.run_head_sha, args.execution_source)
+    elif args.artifact_name.startswith(T2B0_PREFIX):
+        print("FE09_T2B0_REST_LIST_RUN_ATTEMPT_SOURCE_BOUND",
               args.run_attempt, args.run_head_sha, args.execution_source)
     elif args.artifact_name.startswith(T2C0_PREFIX):
         print("FE09_T2C0_REST_LIST_RUN_ATTEMPT_SOURCE_BOUND",

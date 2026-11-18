@@ -9,6 +9,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import re
 import shutil
 import wave
@@ -58,15 +59,53 @@ def classify(path: Path) -> str | None:
                  if path.name.endswith(suffix + "_mic.wav")), None)
 
 
+TEST_INVENTORY_SHA256 = "3b6df275c6f874b9980890a94d7f610f1aaea2bf404f666a319c9d9c8d04f385"
+
+
+def _load_test_inventory() -> dict:
+    # Trusted, reviewed metadata shipped with this tool, not caller-supplied.
+    path = Path(__file__).with_name("aec_test_inventory.json")
+    if sha256(path) != TEST_INVENTORY_SHA256:
+        raise ValueError("AEC trusted test inventory digest mismatch")
+    inventory = json.loads(path.read_text(encoding="utf-8"))
+    if inventory["source_revision"] != SOURCE_REVISION:
+        raise ValueError("AEC trusted test inventory revision mismatch")
+    return inventory
+
+
 def excluded_test_ids(source_root: Path) -> set[str]:
-    # Guard recording-group identity as well as relative path. Upstream may
-    # publish a recording in both train and test partitions.
-    test_roots = sorted(p for p in (source_root / "datasets").glob("*test_set*")
-                        if p.is_dir())
-    if not test_roots:
-        raise ValueError("AEC test partition inventory required to prove development isolation")
-    return {recording_id(mic) for root in test_roots
-            for mic in root.rglob("*_mic.wav")}
+    # Bind the *complete* namespace, including non-mic files, to the seven
+    # upstream trees. WAV/LFS pointer contents are intentionally not read:
+    # exclusion depends on recording names, not blind/test audio inspection.
+    inventory = _load_test_inventory()
+    datasets = source_root / "datasets"
+    expected = inventory["roots"]
+    actual = {p.name for p in datasets.glob("*test_set*")}
+    if datasets.is_symlink() or actual != set(expected):
+        raise ValueError("AEC complete test partition root inventory mismatch")
+    forbidden: set[str] = set()
+    for name, bound in expected.items():
+        root = datasets / name
+        if root.is_symlink() or not root.is_dir():
+            raise ValueError("AEC test partition must be a real directory")
+        files = []
+        def walk_error(error):
+            raise error
+        for directory, dirs, names in os.walk(root, followlinks=False, onerror=walk_error):
+            for child in dirs + names:
+                path = Path(directory) / child
+                if path.is_symlink():
+                    raise ValueError("AEC test inventory symlink forbidden")
+            for child in names:
+                path = Path(directory) / child
+                if not path.is_file():
+                    raise ValueError("AEC test inventory non-regular file forbidden")
+                files.append(path.relative_to(root).as_posix())
+        digest = hashlib.sha256(("\n".join(sorted(files)) + "\n").encode("utf-8")).hexdigest()
+        if len(files) != bound["file_count"] or digest != bound["paths_sha256"]:
+            raise ValueError("AEC complete test partition file inventory mismatch: " + name)
+        forbidden.update(recording_id(Path(path)) for path in files if path.endswith("_mic.wav"))
+    return forbidden
 
 
 def select(source_root: Path) -> dict:
@@ -105,7 +144,8 @@ def select(source_root: Path) -> dict:
         if count != CASES_PER_SCENARIO:
             raise ValueError(f"AEC training development coverage underfilled: {scenario}={count}")
     return {
-        "schema_version": 2,
+        "schema_version": 3,
+        "test_inventory_sha256": TEST_INVENTORY_SHA256,
         "source_revision": SOURCE_REVISION,
         "source_partition": TRAIN_ROOT,
         "test_recording_ids_excluded": True,
@@ -125,7 +165,8 @@ def inspect_wav(path: Path) -> tuple[int, int]:
 
 def build(selection_path: Path, source_root: Path, output: Path) -> dict:
     selection = json.loads(selection_path.read_text(encoding="utf-8"))
-    if (selection.get("schema_version") != 2 or
+    if (selection.get("schema_version") != 3 or
+        selection.get("test_inventory_sha256") != TEST_INVENTORY_SHA256 or
         selection.get("source_revision") != SOURCE_REVISION or
         selection.get("source_partition") != TRAIN_ROOT or
         selection.get("test_recording_ids_excluded") is not True or
@@ -201,6 +242,7 @@ def build(selection_path: Path, source_root: Path, output: Path) -> dict:
         "source_revision": SOURCE_REVISION,
         "source_partition": TRAIN_ROOT,
         "selection_sha256": sha256(selection_path),
+        "test_inventory_sha256": TEST_INVENTORY_SHA256,
         "files": files,
     }
     manifest_path = output / "source-manifest.json"
@@ -223,7 +265,10 @@ def build(selection_path: Path, source_root: Path, output: Path) -> dict:
 
 def self_test() -> None:
     import tempfile
-    with tempfile.TemporaryDirectory() as tmp:
+    from unittest.mock import patch
+    fixture_inventory = {"roots": {"test_set_icassp2022": {"file_count": 1,
+        "paths_sha256": hashlib.sha256(b"doubletalk/fixture00_doubletalk_mic.wav\n").hexdigest()}}}
+    with patch(__name__ + "._load_test_inventory", return_value=fixture_inventory), tempfile.TemporaryDirectory() as tmp:
         root = Path(tmp)
         train = root / TRAIN_ROOT
         test = root / "datasets/test_set_icassp2022/doubletalk"

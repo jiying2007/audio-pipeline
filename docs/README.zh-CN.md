@@ -64,3 +64,12 @@
 3. 流程图必须只表达现有机器流程，不发明新的 authority。
 4. 历史事实写入 `CHANGELOG.md` 或对应 evidence/archive；当前文档只描述当前行为。
 5. 真机、现场人声和长时间稳定性等物理证据缺失时必须如实报告 `NOT_RUN`/`BLOCKED`；不得把商业资格或固定 72 小时认证变成科研准入条件，亦不得将历史证据重标为当前 PASS。
+
+### AEC 开发集与测试身份隔离
+
+AEC 研究选择器现要求上游固定版本的完整七个 test/blind-test 目录文件名清单，
+并将仓库内受审核清单的 SHA256 绑定到选择记录（schema 3）和来源 manifest。
+空目录、部分目录、替换文件名或符号链接均拒绝；旧 schema 2 选择记录必须重新生成，
+不能直接改版本号。此检查仅核文件路径及 recording ID，不读取测试或盲测音频内容，
+也不证明说话人/房间独立或声学通过。详见
+[研究执行边界](RESEARCH_ONLY_EXECUTION.md#aec-developmenttest-inventory-identity)。

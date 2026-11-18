@@ -1,0 +1,43 @@
+{
+  "path_encoding": "sorted POSIX relative file paths, LF separated, terminal LF, UTF-8",
+  "roots": {
+    "blind_test_set": {
+      "file_count": 2000,
+      "paths_sha256": "ae1a5ab8dfd3fd5cec23f0eca746b4062f738335296244510ec2e955d4c01362",
+      "tree_sha": "34c3421d651e138aff26c2a738883fbd89b7092e"
+    },
+    "blind_test_set_icassp2022": {
+      "file_count": 1601,
+      "paths_sha256": "e8701b8c8b9d8cfe668838ed144baa5895bdc9b6b1d2c5e747cabe14ef7be96b",
+      "tree_sha": "8dd8bb22f47be6384cb4b481811e1e24df455d35"
+    },
+    "blind_test_set_icassp2023": {
+      "file_count": 2401,
+      "paths_sha256": "2da23d490e3d2b40fbb294550961c9cb92023bb6c81c225b7d0b203053acfd8c",
+      "tree_sha": "62bc62bf505163ae959e1f604661ebe78b405822"
+    },
+    "blind_test_set_interspeech2021": {
+      "file_count": 1600,
+      "paths_sha256": "c77162aa50ebd4d9707f873167cbe300bf5a8e17c2abc8a58259a7ce37074154",
+      "tree_sha": "188614458d296e0411bdb6d64e89355388e3be29"
+    },
+    "test_set": {
+      "file_count": 1585,
+      "paths_sha256": "bcd9975bb08457b92c4994e14f8b9691d96a362821ffc44ec0e90e41a6bb05c0",
+      "tree_sha": "56db34599702bde0beba3e53e59e0a51cb93c5b0"
+    },
+    "test_set_icassp2022": {
+      "file_count": 1600,
+      "paths_sha256": "0cd493735eb3dba39f1a7de5a92f4e64aab8009803f8adde7c1ee0db1ba1ae4c",
+      "tree_sha": "2287137522abebd19bd1ac0b209a733b16570f2d"
+    },
+    "test_set_interspeech2021": {
+      "file_count": 1600,
+      "paths_sha256": "fe8b13c73a346eafae218957e01baca6223d015f54a3720a80886a27b6f72465",
+      "tree_sha": "b850f0089fd6429bbed1de809f7eb9e567223bd2"
+    }
+  },
+  "schema_version": 1,
+  "source_repository": "microsoft/AEC-Challenge",
+  "source_revision": "6c633d0a9d2a143a0e364899b91b06f127315b18"
+}

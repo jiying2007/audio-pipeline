@@ -163,3 +163,18 @@ The automatic `ci-dechorate-governance-evidence.yml` workflow-run observer and i
 All eleven removed paths remain byte-exact in Git commit `e504368662f41d0a731f7ca777f4d62af7f92754`, tree `e720700b4f4f83f242eeab8d137b61276371f937`, with per-file hashes in `tests/fixtures/archived-governance.json`. Required CI runs `scripts/run_archived_governance_tests.py`: it makes a disposable local checkout of that fixed tree, validates every retained member, and runs the same eight historical test/mode invocations with explicit fake HTTP fixtures. It cannot select a new revision or live operation, does not fetch Git objects, strips credentials/Actions context, blocks the GitHub CLI and bounds total test time. This is offline regression, not a general network sandbox or a new observation.
 
 New negative tests reject restored active legacy paths, modified archive members, substituted history, credential inheritance and omitted test entries. Existing source/measurement failures and real attempt budgets remain unchanged. No old receipt is relabeled as a new scientific or hardware PASS.
+
+## AEC development/test inventory identity
+
+`build_aec_research_corpus.py` selection schema 3 binds the reviewed
+`validation/tools/aec_test_inventory.json` SHA256. The lock records all seven
+test/blind-test root trees at upstream revision
+`6c633d0a9d2a143a0e364899b91b06f127315b18`, with complete sorted relative
+file-path counts and hashes (12,387 files). Both selection and build reject
+missing/extra roots, missing/extra/renamed files and symlinks before emitting
+isolation claims or build output. Use a complete pinned checkout with LFS
+smudging disabled; partial test directories are not sufficient. No test/blind
+audio content needs to be downloaded, decoded or scored for this namespace
+check. This is recording-ID exclusion, not speaker/room independence or
+acoustic qualification. Selection schema 2 must be regenerated, not relabeled.
+The offline negative suite is `python3 validation/tools/test_aec_research_inventory.py`.

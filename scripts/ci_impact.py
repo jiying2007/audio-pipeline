@@ -152,6 +152,10 @@ RELEASE_NEUTRAL_VALIDATION_FILES = {
     "validation/tools/extended_dataset_lock.py",
     "validation/tools/prepare_extended_validation.py",
     "validation/tools/build_extended_real_corpus.py",
+    # This exact builder only selects/offline-runs non-shipping AEC research
+    # data. It cannot change installed DSP or SDK ABI; retain conservative
+    # full Verify and the dedicated DSP Data Research workflow.
+    "validation/tools/build_aec_research_corpus.py",
     "validation/research-authority.json",
     "validation/tools/authority.py",
     "validation/failure-replay/schema-v1.json",
@@ -942,6 +946,10 @@ def self_test() -> None:
                  "validation/tools/prepare_extended_validation.py",
                  "validation/tools/build_extended_real_corpus.py"):
         assert is_release_neutral(path), path
+    assert is_release_neutral("validation/tools/build_aec_research_corpus.py")
+    assert not is_release_neutral("validation/tools/build_aec_research_corpus_unreviewed.py")
+    aec_research = analyze(["validation/tools/build_aec_research_corpus.py"])
+    assert aec_research["full"] and aec_research["run_audio"] and aec_research["run_extended"]
     assert not is_release_neutral("validation/tools/unregistered_source_adapter.py")
     assert is_release_neutral("scripts/program.py")
     assert is_release_neutral("scripts/test_history.py")

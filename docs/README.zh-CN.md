@@ -64,3 +64,12 @@
 3. 流程图必须只表达现有机器流程，不发明新的 authority。
 4. 历史事实写入 `CHANGELOG.md` 或对应 evidence/archive；当前文档只描述当前行为。
 5. 真机、现场人声和长时间稳定性等物理证据缺失时必须如实报告 `NOT_RUN`/`BLOCKED`；不得把商业资格或固定 72 小时认证变成科研准入条件，亦不得将历史证据重标为当前 PASS。
+
+### 已知 AEC 来源的开发入口隔离
+
+当前 Microsoft AEC Challenge 研究语料仍取自已有测试集目录，`research-validation`
+或 `development` 标签不构成训练来源证明。共享准入检查拒绝已知 AEC/hosted-real
+来源进入优化器 development 角色，覆盖顶层/逐例/组合来源及两个旧生成器标识；
+改名、改 seed/hash 或自报 train 不予豁免。现有 validation/shadow 回放和原声学门不变。
+这不是对全部删除或伪造元数据的鉴真，也不代表完整反馈隔离、新开发语料已准入或
+已关闭 #962 的音质失败已解决。详见[研究执行边界](RESEARCH_ONLY_EXECUTION.md#known-aec-source-development-quarantine)。

@@ -11,7 +11,7 @@ import hashlib
 import json
 import shutil
 import wave
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 SOURCE_REVISION = "6c633d0a9d2a143a0e364899b91b06f127315b18"
 ROOTS = {
@@ -40,14 +40,49 @@ def classify(directory: str, path: Path) -> str:
     return "aec-doubletalk-moving" if moving else "aec-doubletalk-static"
 
 
+def _safe_component(value: object) -> str:
+    if (not isinstance(value, str) or not value or value in {".", ".."} or
+        any(c in value for c in ("/", "\\")) or
+        any(ord(c) < 32 or ord(c) == 127 for c in value)):
+        raise ValueError("AEC case identity is not a safe filename component")
+    return value
+
+
+def _source_path(source_root: Path, relative: object, *, directory: bool = False) -> Path:
+    if not isinstance(relative, str) or "\\" in relative:
+        raise ValueError("AEC source path must be canonical relative POSIX")
+    path = PurePosixPath(relative)
+    if (path.is_absolute() or path.as_posix() != relative or
+        any(part in {".", ".."} for part in path.parts) or
+        any(ord(c) < 32 or ord(c) == 127 for c in relative)):
+        raise ValueError("AEC source path must be canonical relative POSIX")
+    allowed = relative in ROOTS.values() if directory else str(path.parent) in ROOTS.values()
+    if not allowed:
+        raise ValueError("AEC source path is outside the existing source directories")
+    root = source_root.resolve()
+    current = root
+    for part in path.parts:
+        current = current / part
+        if current.is_symlink():
+            raise ValueError("AEC source path must not traverse symbolic links")
+    try:
+        current.resolve().relative_to(root)
+    except ValueError as error:
+        raise ValueError("AEC source path escapes the source tree") from error
+    return current
+
+
 def select(source_root: Path) -> dict:
+    source_root = source_root.resolve()
     groups = {name: [] for name in SCENARIOS}
     for directory in ROOTS.values():
-        root = source_root / directory
+        root = _source_path(source_root, directory, directory=True)
         if not root.is_dir(): raise FileNotFoundError(root)
         for mic in sorted(root.glob("*_mic.wav")):
             render = mic.with_name(mic.name[:-8] + "_lpb.wav")
             if not render.exists(): continue
+            _source_path(source_root, mic.relative_to(source_root).as_posix())
+            _source_path(source_root, render.relative_to(source_root).as_posix())
             scenario = classify(directory, mic)
             groups[scenario].append((mic, render))
     cases = []
@@ -80,14 +115,19 @@ def build(selection_path: Path, source_root: Path, output: Path) -> dict:
     selection = json.loads(selection_path.read_text(encoding="utf-8"))
     if selection.get("source_revision") != SOURCE_REVISION or len(selection.get("cases", [])) != 8:
         raise ValueError("AEC research selection authority mismatch")
+    # Validate all selected paths before opening audio or creating outputs.
+    sources = []
+    for item in selection["cases"]:
+        _safe_component(item["id"])
+        sources.append((_source_path(source_root, item["mic"]),
+                        _source_path(source_root, item["render"])))
     counts = {name: 0 for name in SCENARIOS}
     output.mkdir(parents=True, exist_ok=True); (output / "cases").mkdir(exist_ok=True)
     cases = []; files = []
-    for item in selection["cases"]:
+    for item, (mic_src, render_src) in zip(selection["cases"], sources):
         scenario = item["scenario"]
         if scenario not in counts: raise ValueError("unexpected AEC research scenario")
         counts[scenario] += 1
-        mic_src, render_src = source_root / item["mic"], source_root / item["render"]
         mic_rate, mic_frames = inspect_wav(mic_src); render_rate, render_frames = inspect_wav(render_src)
         if mic_rate != render_rate: raise ValueError("AEC research mic/render rate mismatch")
         directory = output / "cases" / item["id"]; directory.mkdir(exist_ok=True)

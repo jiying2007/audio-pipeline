@@ -152,6 +152,8 @@ RELEASE_NEUTRAL_VALIDATION_FILES = {
     "validation/tools/extended_dataset_lock.py",
     "validation/tools/prepare_extended_validation.py",
     "validation/tools/build_extended_real_corpus.py",
+    # Exact offline research corpus builder, never installed DSP/SDK.
+    "validation/tools/build_aec_research_corpus.py",
     "validation/research-authority.json",
     "validation/tools/authority.py",
     "validation/failure-replay/schema-v1.json",
@@ -712,7 +714,8 @@ def analyze(paths: list[str], force_full: bool = False, cmake_version_only_chang
     # eligibility/scoring even when they do not affect SDK or SemVer.
     # Keep FULL verification; unknown validation tools are not exempt.
     if any(p in ("validation/research-authority.json", "validation/tools/authority.py",
-                 "validation/tools/downstream_metrics.py")
+                 "validation/tools/downstream_metrics.py",
+                 "validation/tools/build_aec_research_corpus.py")
            for p in effective_paths):
         return _full("canonical research validation authority requires full checks",
                      paths, run_tuning=requires_tuning_search(paths))
@@ -942,6 +945,21 @@ def self_test() -> None:
                  "validation/tools/prepare_extended_validation.py",
                  "validation/tools/build_extended_real_corpus.py"):
         assert is_release_neutral(path), path
+    builder = "validation/tools/build_aec_research_corpus.py"
+    assert is_release_neutral(builder)
+    selection = analyze([builder])
+    assert selection["full"] and selection["run_audio"] and selection["run_extended"]
+    assert not is_release_neutral("validation/tools/build_aec_research_corpus_unreviewed.py")
+    assert not is_release_neutral("validation/tools/subdir/build_aec_research_corpus.py")
+    from unittest.mock import patch
+    with patch(__name__ + ".project_version", return_value="2.3.65"):
+        enforce_release_version("base", "head", [builder])
+        try:
+            enforce_release_version("base", "head", [builder, "src/aec/ap_aec_mdf.c"])
+        except ValueError as error:
+            assert "must advance SemVer" in str(error)
+        else:
+            raise AssertionError("research builder exempted production version changes")
     assert not is_release_neutral("validation/tools/unregistered_source_adapter.py")
     assert is_release_neutral("scripts/program.py")
     assert is_release_neutral("scripts/test_history.py")

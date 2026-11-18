@@ -9,6 +9,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import re
 import shutil
 import wave
 from pathlib import Path
@@ -39,12 +40,17 @@ def sha256(path: Path) -> str:
 
 
 def recording_id(path: Path) -> str:
-    # The official training WAV names are GUID_scenario_mic|lpb.wav.
-    # An ID is a recording group, not proof of a unique human speaker.
-    value = path.name.split("_", 1)[0]
-    if not value or value in {".", ".."} or "/" in value or "\\" in value:
-        raise ValueError(f"invalid AEC recording ID: {path}")
-    return value
+    # Audio IDs may themselves contain underscores; parse the *terminal*
+    # scenario label rather than splitting on the first underscore.
+    # A recording ID is not proof of a unique speaker or room.
+    match = re.fullmatch(
+        r"(.+?)_(?:(?:farend|nearend)[_-]singletalk|doubletalk|sweep)"
+        r"(?:[_-]with[_-]movement)?_mic\.wav",
+        path.name,
+    )
+    if match is None:
+        raise ValueError(f"unrecognized AEC mic filename; cannot prove isolation: {path}")
+    return match.group(1)
 
 
 def classify(path: Path) -> str | None:
@@ -231,6 +237,7 @@ def self_test() -> None:
                 (train / (name + "_lpb.wav")).touch()
         # The first candidate's GUID is also present in the test partition.
         (test / ("fixture00_doubletalk_mic.wav")).touch()
+        assert recording_id(Path("sample_with_underscore_doubletalk_mic.wav")) == "sample_with_underscore"
         selected = select(root)
         assert len(selected["cases"]) == 8
         assert selected["source_partition"] == TRAIN_ROOT

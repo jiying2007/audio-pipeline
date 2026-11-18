@@ -144,7 +144,7 @@ jobs:
           }
           for name, scenarios in groups.items():
               subset = dict(corpus)
-              subset['corpus_id'] = f'aec-real-research-{name}-v1'
+              subset['corpus_id'] = f'aec-real-research-{name}-v2'
               subset['cases'] = [case for case in corpus['cases'] if case['scenario'] in scenarios]
               assert len(subset['cases']) == 4
               assert {case['scenario'] for case in subset['cases']} == scenarios

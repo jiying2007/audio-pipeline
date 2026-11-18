@@ -15,6 +15,40 @@ import tuning_iteration_engine as engine
 import tuning_replay as replay
 
 
+sys.path.insert(0, str(ROOT / "scripts"))
+import docs_consistency
+
+
+class EngineAuthorityBoundary(unittest.TestCase):
+    def test_shared_admission_only(self):
+        good = ('from authority import enforce_corpus_source_role\n'
+                'def enforce_partition_independence(dev, validation, shadow):\n'
+                '    enforce_corpus_source_role(dev, "development")\n')
+        check = docs_consistency.private_engine_authority_ok
+        self.assertTrue(check(good, True))
+        self.assertFalse(check(good, False))
+        self.assertTrue(check('value = 1', False))
+        for bad in (
+                good.replace('enforce_corpus_source_role\n', 'tier_spec\n'),
+                good.replace('enforce_corpus_source_role\n', 'enforce_corpus_source_role, tier_spec\n'),
+                good.replace('from authority import enforce_corpus_source_role', 'import authority'),
+                good.replace('from authority import enforce_corpus_source_role', 'from authority import enforce_corpus_source_role as guard'),
+                good.replace('from authority import', 'from .authority import'),
+                good.replace('"development"', '"validation"'),
+                good.replace('    enforce_corpus_source_role(dev, "development")', '    pass'),
+                good + 'enforce_corpus_source_role = lambda *a: None\n',
+                good + 'def enforce_corpus_source_role(*args): pass\n',
+                good + 'from authority import *\n',
+                good + 'from authority.policy import tier_spec\n',
+                good.replace('from authority import', 'from authority.policy import'),
+                good.replace('(dev, validation, shadow)', '(dev, validation, enforce_corpus_source_role)'),
+                good + 'import other as enforce_corpus_source_role\n',
+                good + 'from other import thing as enforce_corpus_source_role\n'):
+            with self.subTest(source=bad):
+                self.assertFalse(check(bad, True))
+        self.assertTrue(check((ROOT / 'validation/tools/tuning_iteration_engine.py').read_text(), True))
+
+
 class SourceRoles(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()

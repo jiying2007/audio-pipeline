@@ -8,12 +8,62 @@ rewritten just because current research policy changes.
 from __future__ import annotations
 
 import argparse
+import ast
 import json
 import re
 import subprocess
 import sys
 import tempfile
 from pathlib import Path
+
+def private_engine_authority_ok(source: str, allow_source_guard: bool = False) -> bool:
+    """Permit only shared source-role admission, never a private tier policy.
+
+    The tuner must invoke the imported guard as its first partition-admission
+    statement. The evaluator still has no authority dependency. This checks
+    Python syntax rather than permitting an import-spelling workaround.
+    """
+    try:
+        tree = ast.parse(source)
+    except SyntaxError:
+        return False
+    imports = []
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            if any(alias.name == "authority" or alias.name.startswith("authority.")
+                   for alias in node.names):
+                return False
+        if isinstance(node, ast.ImportFrom) and node.module and (
+                node.module == "authority" or node.module.startswith("authority.")):
+            imports.append(node)
+    if not allow_source_guard:
+        return not imports
+    if len(imports) != 1:
+        return False
+    imp = imports[0]
+    if (imp not in tree.body or imp.module != "authority" or imp.level != 0 or len(imp.names) != 1 or
+            imp.names[0].name != "enforce_corpus_source_role" or imp.names[0].asname):
+        return False
+    # No local policy implementation or rebinding of the admitted shared guard.
+    for node in ast.walk(tree):
+        if isinstance(node, ast.arg) and node.arg == "enforce_corpus_source_role":
+            return False
+        if isinstance(node, (ast.Import, ast.ImportFrom)) and node is not imp:
+            if any((alias.asname or alias.name.split(".")[0]) ==
+                   "enforce_corpus_source_role" for alias in node.names):
+                return False
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+            if node.name == "enforce_corpus_source_role":
+                return False
+        if isinstance(node, ast.Name) and isinstance(node.ctx, ast.Store):
+            if node.id == "enforce_corpus_source_role":
+                return False
+    entries = [n for n in tree.body if isinstance(n, ast.FunctionDef)
+               and n.name == "enforce_partition_independence"]
+    expected = ast.parse('enforce_corpus_source_role(dev, "development")').body[0]
+    return (len(entries) == 1 and bool(entries[0].body) and
+            ast.dump(entries[0].body[0]) == ast.dump(expected))
+
 
 # Historical Product Assurance/certification pages remain in Git for provenance,
 # but are not *current* research-documentation prerequisites. Keep research
@@ -258,7 +308,8 @@ def validate_validation_framework(root: Path, errors: list[str]) -> None:
     for token in ("optimizer_role_allowed", "objective_metric_missing", "unknown objective metrics"):
         if token not in tuner:
             errors.append(f"canonical tuner is not fail-closed/authority guarded: missing {token}")
-    if "from authority import" in evaluator_engine or "from authority import" in tuner_engine:
+    if (not private_engine_authority_ok(evaluator_engine) or
+            not private_engine_authority_ok(tuner_engine, allow_source_guard=True)):
         errors.append("private validation engines must not own duplicated authority policy")
 
     workflow_text = "\n".join(

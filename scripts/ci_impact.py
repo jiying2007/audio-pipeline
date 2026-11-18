@@ -156,6 +156,10 @@ RELEASE_NEUTRAL_VALIDATION_FILES = {
     "validation/tools/build_aec_research_corpus.py",
     "validation/research-authority.json",
     "validation/tools/authority.py",
+    # Exact host-side optimizer admission; no installed DSP/SDK change.
+    "validation/tools/tuning_iteration.py",
+    "validation/tools/tuning_iteration_engine.py",
+    "validation/tools/tuning_replay.py",
     "validation/failure-replay/schema-v1.json",
     "validation/policies/validation-aec-transition-development.json",
     "validation/policies/validation-s003-dechorate-artifact-exclusion.json",
@@ -715,7 +719,10 @@ def analyze(paths: list[str], force_full: bool = False, cmake_version_only_chang
     # Keep FULL verification; unknown validation tools are not exempt.
     if any(p in ("validation/research-authority.json", "validation/tools/authority.py",
                  "validation/tools/downstream_metrics.py",
-                 "validation/tools/build_aec_research_corpus.py")
+                 "validation/tools/build_aec_research_corpus.py",
+                 "validation/tools/tuning_iteration.py",
+                 "validation/tools/tuning_iteration_engine.py",
+                 "validation/tools/tuning_replay.py")
            for p in effective_paths):
         return _full("canonical research validation authority requires full checks",
                      paths, run_tuning=requires_tuning_search(paths))
@@ -960,6 +967,20 @@ def self_test() -> None:
             assert "must advance SemVer" in str(error)
         else:
             raise AssertionError("research builder exempted production version changes")
+    for admission in ("validation/tools/tuning_iteration.py",
+                      "validation/tools/tuning_iteration_engine.py",
+                      "validation/tools/tuning_replay.py"):
+        assert is_release_neutral(admission)
+        classified = analyze([admission])
+        assert classified["full"] and classified["run_audio"] and classified["run_extended"]
+        assert not is_release_neutral(admission.replace(".py", "_unreviewed.py"))
+        with patch(__name__ + ".project_version", return_value="2.3.65"):
+            try:
+                enforce_release_version("base", "head", [admission, "src/aec/ap_aec_mdf.c"])
+            except ValueError as error:
+                assert "must advance SemVer" in str(error)
+            else:
+                raise AssertionError("optimizer admission exempted production changes")
     assert not is_release_neutral("validation/tools/unregistered_source_adapter.py")
     assert is_release_neutral("scripts/program.py")
     assert is_release_neutral("scripts/test_history.py")

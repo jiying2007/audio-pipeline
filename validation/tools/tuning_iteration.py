@@ -14,7 +14,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-from authority import load_authority, optimizer_role_allowed
+from authority import enforce_corpus_source_role, load_authority, optimizer_role_allowed
 import tuning_iteration_engine as engine
 
 KNOWN_OBJECTIVE_METRICS = {
@@ -45,6 +45,7 @@ def enforce_optimizer_authority(development: Path, validation: Path, shadow: Pat
         ("validation", validation),
         ("shadow", shadow),
     ):
+        enforce_corpus_source_role(path, role)
         tier = corpus_tier(path)
         if not optimizer_role_allowed(authority, tier, role):
             raise ValueError(f"authority rejects {tier!r} corpus for optimizer role {role!r}")
@@ -52,6 +53,7 @@ def enforce_optimizer_authority(development: Path, validation: Path, shadow: Pat
 
 def strict_partition_independence(development: Path, validation: Path,
                                   shadow: Path) -> dict[str, Any]:
+    enforce_corpus_source_role(development, "development")
     identities = {
         "development": engine.load_corpus_identity(development),
         "validation": engine.load_corpus_identity(validation),

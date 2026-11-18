@@ -106,6 +106,49 @@ def optimizer_role_allowed(authority: dict[str, Any], tier: str, role: str) -> b
     return role in tier_spec(authority, tier).get("optimizer_roles", [])
 
 
+def enforce_corpus_source_role(corpus_path: Path, role: str) -> None:
+    """Quarantine known AEC sources from development, not authenticate provenance.
+
+    No independently admitted training provenance exists for these sources on
+    main. A renamed corpus or a self-claimed training flag cannot grant it.
+    Validation/shadow replay remains subject to its existing authority gates.
+    """
+    if role != "development":
+        return
+    corpus = json.loads(corpus_path.read_text(encoding="utf-8"))
+    known = {"microsoft-aec-challenge", "microsoft-aec-challenge-hosted-real"}
+    sources = corpus.get("sources", [])
+    if not isinstance(sources, list) or any(not isinstance(s, str) for s in sources):
+        raise ValueError("invalid corpus source declarations")
+    declarations = list(sources)
+    cases = corpus.get("cases", [])
+    if not isinstance(cases, list):
+        raise ValueError("invalid corpus cases")
+    for case in cases:
+        if not isinstance(case, dict):
+            raise ValueError("invalid corpus case")
+        source = case.get("source")
+        if source is None:
+            source = {}
+        if not isinstance(source, dict):
+            raise ValueError("invalid case source declaration")
+        identity = source.get("dataset_id")
+        if identity is not None:
+            if not isinstance(identity, str):
+                raise ValueError("invalid case dataset identity")
+            declarations.append(identity)
+    generator = corpus.get("generator")
+    if generator is None:
+        generator = {}
+    if not isinstance(generator, dict):
+        raise ValueError("invalid corpus generator")
+    legacy = generator.get("name") in {
+        "build_aec_research_corpus.py", "build_hosted_aec_corpus.py",
+    }
+    if legacy or any(known.intersection(identity.split("+")) for identity in declarations):
+        raise ValueError("known AEC source lacks admitted development provenance")
+
+
 def _schema_enum(path: Path, kind: str) -> set[str]:
     schema = json.loads(path.read_text(encoding="utf-8"))
     if kind in {"corpus", "report"}:
@@ -160,6 +203,8 @@ def corpus_identity(path: Path) -> dict[str, Any]:
 def validate_optimizer_partitions(authority: dict[str, Any], development: Path,
                                   validation: Path, shadow: Path) -> dict[str, Any]:
     paths = {"development": development, "validation": validation, "shadow": shadow}
+    for role, path in paths.items():
+        enforce_corpus_source_role(path, role)
     identities = {role: corpus_identity(path) for role, path in paths.items()}
     for role, identity in identities.items():
         tier = identity["tier"]

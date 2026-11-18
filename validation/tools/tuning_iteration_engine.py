@@ -1544,7 +1544,8 @@ def self_test() -> None:
         for index, seed in enumerate((1, 2, 3)):
             corpus = {
                 "schema_version": 1, "corpus_id": f"c{index}", "tier": "regression",
-                "generator": {"seed": seed}, "cases": [{"case_id": "same"}],
+                "generator": {"seed": seed}, "sources": ["synthetic"],
+                "cases": [{"case_id": "same", "source": {"dataset_id": "synthetic"}}],
             }
             (root / f"{index}.json").write_text(json.dumps(corpus), encoding="utf-8")
         identities = enforce_partition_independence(root / "0.json", root / "1.json", root / "2.json")

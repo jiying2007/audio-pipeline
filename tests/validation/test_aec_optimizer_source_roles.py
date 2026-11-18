@@ -59,7 +59,7 @@ class SourceRoles(unittest.TestCase):
         for i, role in enumerate(('development', 'validation', 'shadow')):
             self.data.append({'schema_version': 1, 'corpus_id': 'independent-' + role,
                 'tier': 'research-validation', 'generator': {'seed': i},
-                'sources': ['synthetic'], 'cases': [{'case_id': role, 'split': role}]})
+                'sources': ['synthetic'], 'cases': [{'case_id': role, 'split': role, 'source': {'dataset_id': 'synthetic'}}]})
         self.save()
         self.checks = {
             'authority': lambda: authority.validate_optimizer_partitions(authority.load_authority(), *self.paths),
@@ -87,8 +87,34 @@ class SourceRoles(unittest.TestCase):
                 for location in ('top', 'case'):
                     with self.subTest(identity=composition, location=location):
                         self.data[0]['sources'] = [composition] if location == 'top' else ['synthetic']
-                        self.data[0]['cases'][0]['source'] = {'dataset_id': composition} if location == 'case' else {}
+                        self.data[0]['cases'][0]['source'] = {'dataset_id': composition} if location == 'case' else {'dataset_id': 'synthetic'}
                         self.reject_all()
+
+    def test_erased_or_empty_source_identity_is_not_development(self):
+        original = copy.deepcopy(self.data[0])
+        mutations = [
+            lambda c: c.pop('sources'), lambda c: c.update(sources=[]),
+            lambda c: c.update(sources=['']), lambda c: c.update(sources=['  ']),
+            lambda c: c.update(sources=['synthetic+']),
+            lambda c: c.update(sources=[' microsoft-aec-challenge']),
+            lambda c: c['cases'][0]['source'].update(dataset_id='synthetic+ microsoft-aec-challenge'),
+            lambda c: c.update(sources=None), lambda c: c.update(sources='synthetic'),
+            lambda c: c['cases'].append({'case_id': 'late-missing-source'}),
+            lambda c: c['cases'][0].pop('source'),
+            lambda c: c['cases'][0].update(source=None),
+            lambda c: c['cases'][0]['source'].pop('dataset_id'),
+            lambda c: c['cases'][0]['source'].update(dataset_id=''),
+            lambda c: c['cases'][0]['source'].update(dataset_id='synthetic++other'),
+        ]
+        for mutate in mutations:
+            self.data[0] = copy.deepcopy(original)
+            mutate(self.data[0]); self.save()
+            for name, check in self.checks.items():
+                with self.subTest(entry=name, corpus=self.data[0]), self.assertRaises(ValueError):
+                    check()
+            # This is optimizer admission, not a new validation/shadow requirement.
+            replay.enforce_role(self.paths[0], 'validation')
+            replay.enforce_role(self.paths[0], 'shadow')
 
     def test_legacy_builder_identity_all_entries(self):
         for name in ('build_aec_research_corpus.py', 'build_hosted_aec_corpus.py'):

@@ -120,9 +120,11 @@ def enforce_corpus_source_role(corpus_path: Path, role: str) -> None:
     sources = corpus.get("sources", [])
     if not isinstance(sources, list) or any(not isinstance(s, str) for s in sources):
         raise ValueError("invalid corpus source declarations")
+    if not sources or any(not s.strip() or any(not token or token != token.strip() for token in s.split("+")) for s in sources):
+        raise ValueError("development corpus requires complete source declarations")
     declarations = list(sources)
     cases = corpus.get("cases", [])
-    if not isinstance(cases, list):
+    if not isinstance(cases, list) or not cases:
         raise ValueError("invalid corpus cases")
     for case in cases:
         if not isinstance(case, dict):
@@ -133,10 +135,9 @@ def enforce_corpus_source_role(corpus_path: Path, role: str) -> None:
         if not isinstance(source, dict):
             raise ValueError("invalid case source declaration")
         identity = source.get("dataset_id")
-        if identity is not None:
-            if not isinstance(identity, str):
-                raise ValueError("invalid case dataset identity")
-            declarations.append(identity)
+        if not isinstance(identity, str) or not identity.strip() or any(not token or token != token.strip() for token in identity.split("+")):
+            raise ValueError("development case requires a nonempty dataset identity")
+        declarations.append(identity)
     generator = corpus.get("generator")
     if generator is None:
         generator = {}

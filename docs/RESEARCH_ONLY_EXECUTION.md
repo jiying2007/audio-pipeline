@@ -179,7 +179,14 @@ This guard covers the authority, tuning frontdoor, strict partition check,
 direct tuning engine and development replay. Existing tier checks remain.
 Validation/shadow replay and ordinary regression evaluation keep their existing
 behavior, data and acoustic thresholds. This is a known-source development
-quarantine, not authentication of metadata with all provenance removed or
-forged, not complete optimizer-feedback isolation, and not proof that any new
+quarantine, not authentication of forged metadata, not complete optimizer-feedback isolation, and not proof that any new
 independent development corpus has been admitted. It does not resolve the
 closed #962 acoustic failure or promote its rejected numerical candidate.
+
+Development admission also requires nonempty top-level source declarations and
+a nonempty dataset identity for every case (including each token of composed
+IDs). Deleting or blanking provenance is rejected before candidate evaluation.
+Canonical synthetic, stage, AGC and NS generators already emit these fields;
+metadata-only test fixtures must declare their synthetic identity explicitly.
+This presence check does not establish that claimed source identities or audio
+bytes are genuine. Validation/shadow behavior and acoustic gates are unchanged.

@@ -156,6 +156,9 @@ RELEASE_NEUTRAL_VALIDATION_FILES = {
     # data. It cannot change installed DSP or SDK ABI; retain conservative
     # full Verify and the dedicated DSP Data Research workflow.
     "validation/tools/build_aec_research_corpus.py",
+    # Exact companion inventory and synthetic isolation tests, not DSP/SDK.
+    "validation/tools/aec_test_inventory.json",
+    "validation/tools/test_aec_research_inventory.py",
     "validation/research-authority.json",
     "validation/tools/authority.py",
     "validation/failure-replay/schema-v1.json",
@@ -717,7 +720,9 @@ def analyze(paths: list[str], force_full: bool = False, cmake_version_only_chang
     # Keep FULL verification; unknown validation tools are not exempt.
     if any(p in ("validation/research-authority.json", "validation/tools/authority.py",
                  "validation/tools/downstream_metrics.py",
-                 "validation/tools/build_aec_research_corpus.py")
+                 "validation/tools/build_aec_research_corpus.py",
+                 "validation/tools/aec_test_inventory.json",
+                 "validation/tools/test_aec_research_inventory.py")
            for p in effective_paths):
         return _full("canonical research validation authority requires full checks",
                      paths, run_tuning=requires_tuning_search(paths))
@@ -951,6 +956,33 @@ def self_test() -> None:
     assert not is_release_neutral("validation/tools/build_aec_research_corpus_unreviewed.py")
     aec_research = analyze(["validation/tools/build_aec_research_corpus.py"])
     assert aec_research["full"] and aec_research["run_audio"] and aec_research["run_extended"]
+    for path in ("validation/tools/aec_test_inventory.json",
+                 "validation/tools/test_aec_research_inventory.py"):
+        assert is_release_neutral(path), path
+        classified = analyze([path])
+        assert classified["full"] and classified["run_audio"] and classified["run_extended"], path
+        assert not classified["docs_only"], path
+        mixed = analyze([path, "src/aec/ap_aec_mdf.c"])
+        assert mixed["full"] and mixed["run_audio"], path
+    for path in ("validation/tools/aec_test_inventory_unreviewed.json",
+                 "validation/tools/test_aec_research_inventory_unreviewed.py",
+                 "validation/tools/subdir/aec_test_inventory.json",
+                 "src/aec/ap_aec_mdf.c"):
+        assert not is_release_neutral(path), path
+    companions = ["validation/tools/aec_test_inventory.json",
+                  "validation/tools/test_aec_research_inventory.py"]
+    combined = analyze(companions)
+    assert combined["full"] and combined["run_audio"] and combined["run_extended"]
+    # Classification must not exempt a production change mixed into research.
+    from unittest.mock import patch
+    with patch(__name__ + ".project_version", return_value="2.3.65"):
+        enforce_release_version("base", "head", companions)
+        try:
+            enforce_release_version("base", "head", companions + ["src/aec/ap_aec_mdf.c"])
+        except ValueError as error:
+            assert "must advance SemVer" in str(error)
+        else:
+            raise AssertionError("research companions exempted unchanged production version")
     assert not is_release_neutral("validation/tools/unregistered_source_adapter.py")
     assert is_release_neutral("scripts/program.py")
     assert is_release_neutral("scripts/test_history.py")

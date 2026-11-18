@@ -163,3 +163,23 @@ The automatic `ci-dechorate-governance-evidence.yml` workflow-run observer and i
 All eleven removed paths remain byte-exact in Git commit `e504368662f41d0a731f7ca777f4d62af7f92754`, tree `e720700b4f4f83f242eeab8d137b61276371f937`, with per-file hashes in `tests/fixtures/archived-governance.json`. Required CI runs `scripts/run_archived_governance_tests.py`: it makes a disposable local checkout of that fixed tree, validates every retained member, and runs the same eight historical test/mode invocations with explicit fake HTTP fixtures. It cannot select a new revision or live operation, does not fetch Git objects, strips credentials/Actions context, blocks the GitHub CLI and bounds total test time. This is offline regression, not a general network sandbox or a new observation.
 
 New negative tests reject restored active legacy paths, modified archive members, substituted history, credential inheritance and omitted test entries. Existing source/measurement failures and real attempt budgets remain unchanged. No old receipt is relabeled as a new scientific or hardware PASS.
+
+## Known AEC source development quarantine
+
+The current Microsoft AEC Challenge research corpus still comes from the
+existing test-set roots. Its research tier or case split does not establish
+training provenance. The shared optimizer admission check rejects development
+inputs declaring `microsoft-aec-challenge` or
+`microsoft-aec-challenge-hosted-real`, including exact tokens in `+`-composed
+source IDs, case source declarations, and the two known AEC builder identities.
+Renaming corpus IDs/seeds or asserting a training flag is not an admission.
+There is currently no reviewed training-provenance exception on main.
+
+This guard covers the authority, tuning frontdoor, strict partition check,
+direct tuning engine and development replay. Existing tier checks remain.
+Validation/shadow replay and ordinary regression evaluation keep their existing
+behavior, data and acoustic thresholds. This is a known-source development
+quarantine, not authentication of metadata with all provenance removed or
+forged, not complete optimizer-feedback isolation, and not proof that any new
+independent development corpus has been admitted. It does not resolve the
+closed #962 acoustic failure or promote its rejected numerical candidate.

@@ -25,6 +25,8 @@ import time
 from pathlib import Path
 from typing import Any, Callable
 
+from authority import enforce_corpus_source_role
+
 TUNING_KEYS = ("aec_mu", "ns_floor", "agc_target_dbfs", "limiter_dbfs")
 TUNING_IDENTITY_ABS_TOLERANCE = 1.0e-6
 # The top-level contract of a search space, matching
@@ -638,6 +640,7 @@ def load_corpus_identity(path: Path) -> dict[str, Any]:
 
 
 def enforce_partition_independence(dev: Path, validation: Path, shadow: Path) -> dict[str, Any]:
+    enforce_corpus_source_role(dev, "development")
     identities = {
         "development": load_corpus_identity(dev),
         "validation": load_corpus_identity(validation),

@@ -14,7 +14,7 @@ import json
 import tempfile
 from pathlib import Path
 
-from authority import load_authority, optimizer_role_allowed
+from authority import enforce_corpus_source_role, load_authority, optimizer_role_allowed
 import tuning_iteration as guarded
 import tuning_iteration_engine as engine
 
@@ -30,6 +30,7 @@ def load_tuning(path: Path) -> dict[str, float]:
 
 
 def enforce_role(corpus: Path, role: str) -> str:
+    enforce_corpus_source_role(corpus, role)
     raw = json.loads(corpus.read_text(encoding="utf-8"))
     tier = raw.get("tier")
     if not isinstance(tier, str) or not tier:

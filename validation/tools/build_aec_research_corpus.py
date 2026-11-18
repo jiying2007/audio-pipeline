@@ -40,6 +40,30 @@ def sha256(path: Path) -> str:
     return h.hexdigest()
 
 
+def _validate_recording_id(identity: object) -> str:
+    # IDs are filename components, never paths. Do not infer speaker identity.
+    if (not isinstance(identity, str) or not identity or identity in {".", ".."} or
+        any(c in identity for c in ("/", "\\")) or
+        any(ord(c) < 32 or ord(c) == 127 for c in identity)):
+        raise ValueError("AEC recording identity is not a safe filename component")
+    return identity
+
+
+def _training_root(source_root: Path) -> Path:
+    root = source_root.resolve() / TRAIN_ROOT
+    if (root.is_symlink() or root.parent.is_symlink() or
+        root.resolve() != root or not root.is_dir()):
+        raise ValueError("AEC training directory is not confined to the source tree")
+    return root
+
+
+def _training_file(source_root: Path, path: Path) -> Path:
+    root = _training_root(source_root)
+    if path.is_symlink() or path.resolve().parent != root:
+        raise ValueError("AEC training file is not confined to the training directory")
+    return path
+
+
 def recording_id(path: Path) -> str:
     # Audio IDs may themselves contain underscores; parse the *terminal*
     # scenario label rather than splitting on the first underscore.
@@ -51,7 +75,7 @@ def recording_id(path: Path) -> str:
     )
     if match is None:
         raise ValueError(f"unrecognized AEC mic filename; cannot prove isolation: {path}")
-    return match.group(1)
+    return _validate_recording_id(match.group(1))
 
 
 def classify(path: Path) -> str | None:
@@ -109,9 +133,8 @@ def excluded_test_ids(source_root: Path) -> set[str]:
 
 
 def select(source_root: Path) -> dict:
-    root = source_root / TRAIN_ROOT
-    if not root.is_dir():
-        raise FileNotFoundError(root)
+    source_root = source_root.resolve()
+    root = _training_root(source_root)
     forbidden = excluded_test_ids(source_root)
     groups = {name: [] for name in SCENARIOS}
     for mic in sorted(root.glob("*_mic.wav")):
@@ -120,6 +143,8 @@ def select(source_root: Path) -> dict:
             continue
         render = mic.with_name(mic.name[:-8] + "_lpb.wav")
         if render.is_file():
+            _training_file(source_root, mic)
+            _training_file(source_root, render)
             groups[scenario].append((mic, render))
     cases = []
     used_ids: set[str] = set()
@@ -183,7 +208,7 @@ def build(selection_path: Path, source_root: Path, output: Path) -> dict:
         scenario = item.get("scenario")
         if scenario not in counts:
             raise ValueError("unexpected AEC research scenario")
-        identity = item.get("source_id")
+        identity = _validate_recording_id(item.get("source_id"))
         if not isinstance(identity, str) or not identity or identity in forbidden or identity in used:
             raise ValueError("AEC development source identity overlaps test/selection")
         if item.get("id") != f"{scenario}-{counts[scenario]}":
@@ -196,8 +221,8 @@ def build(selection_path: Path, source_root: Path, output: Path) -> dict:
             raise ValueError("AEC research scenario dimension drifted")
         used.add(identity)
         counts[scenario] += 1
-        mic_src = source_root / expected_mic
-        render_src = source_root / expected_render
+        mic_src = _training_file(source_root, source_root / expected_mic)
+        render_src = _training_file(source_root, source_root / expected_render)
         mic_rate, mic_frames = inspect_wav(mic_src)
         render_rate, render_frames = inspect_wav(render_src)
         if mic_rate != render_rate:

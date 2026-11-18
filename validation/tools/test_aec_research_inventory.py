@@ -60,6 +60,66 @@ class InventoryTests(unittest.TestCase):
         manifest = json.loads(Path(result['manifest']).read_text())
         self.assertEqual(manifest['test_inventory_sha256'], builder.TEST_INVENTORY_SHA256)
 
+    def test_selection_identity_cannot_escape_training_directory(self):
+        selection = self.selection_file()
+        original = json.loads(selection.read_text())
+        invalid = ("../outside", "nested/id", "/absolute", "..\\outside",
+                   ".", "..", "", "bad\x00id", "bad\nid", "bad\x7fid", None, 42)
+        for identity in invalid:
+            with self.subTest(identity=repr(identity)):
+                value = json.loads(json.dumps(original))
+                item = value['cases'][0]
+                item['source_id'] = identity
+                for role, key in (('mic', 'mic'), ('lpb', 'render')):
+                    item[key] = f'{builder.TRAIN_ROOT}/{identity}{builder.SUFFIXES[item["scenario"]]}_{role}.wav'
+                selection.write_text(json.dumps(value))
+                with patch.object(builder, 'inspect_wav') as inspect:
+                    with self.assertRaises(ValueError):
+                        builder.build(selection, self.root, self.root / 'output')
+                    inspect.assert_not_called()
+
+    def test_training_file_symlinks_rejected_before_audio_read(self):
+        selection = self.selection_file()
+        value = json.loads(selection.read_text())
+        for role in ('mic', 'render'):
+            with self.subTest(role=role):
+                p = self.root / value['cases'][0][role]
+                saved = p.read_bytes()
+                outside = self.root / ('outside-' + role + '.wav')
+                outside.write_bytes(saved)
+                p.unlink(); p.symlink_to(outside)
+                with self.assertRaises(ValueError):
+                    builder.select(self.root)
+                with patch.object(builder, 'inspect_wav') as inspect:
+                    with self.assertRaises(ValueError):
+                        builder.build(selection, self.root, self.root / 'output')
+                    inspect.assert_not_called()
+                p.unlink(); p.write_bytes(saved)
+
+    def test_training_directory_symlink_rejected(self):
+        selection = self.selection_file()
+        train = self.root / builder.TRAIN_ROOT
+        moved = self.root / 'outside-training'
+        train.rename(moved); train.symlink_to(moved, target_is_directory=True)
+        with self.assertRaises(ValueError):
+            builder.select(self.root)
+        with patch.object(builder, 'inspect_wav') as inspect:
+            with self.assertRaises(ValueError):
+                builder.build(selection, self.root, self.root / 'output')
+            inspect.assert_not_called()
+
+    def test_datasets_directory_symlink_rejected(self):
+        selection = self.selection_file()
+        datasets = self.root / 'datasets'
+        moved = self.root / 'outside-datasets'
+        datasets.rename(moved); datasets.symlink_to(moved, target_is_directory=True)
+        with self.assertRaises(ValueError):
+            builder.select(self.root)
+        with patch.object(builder, 'inspect_wav') as inspect:
+            with self.assertRaises(ValueError):
+                builder.build(selection, self.root, self.root / 'output')
+            inspect.assert_not_called()
+
     def test_empty_all_test_roots_fail_select_and_build(self):
         selection = self.selection_file()
         for p in (self.root / 'datasets').glob('*test_set*/**/*'):

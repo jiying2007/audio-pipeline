@@ -200,6 +200,7 @@ class OpusSession:
         require(status == 0, f"Opus CTL {request} error {status}")
 
     def encode(self, samples: list[int]) -> bytes:
+        require(bool(self.encoder), "Opus encoder session is closed")
         require(len(samples) == PACKET_SAMPLES, "codec input must be one complete 20 ms frame")
         pcm_bytes(samples)  # Reject invalid types/ranges before ctypes coercion.
         source = (ct.c_int16 * PACKET_SAMPLES)(*samples)
@@ -210,6 +211,7 @@ class OpusSession:
         return bytes(encoded[:count])
 
     def decode(self, payload: bytes | None) -> list[int]:
+        require(bool(self.decoder), "Opus decoder session is closed")
         encoded = None
         if payload is not None:
             require(type(payload) is bytes and 0 < len(payload) <= MAX_PACKET_BYTES,

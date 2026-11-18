@@ -144,6 +144,25 @@ class RealOpusTests(unittest.TestCase):
             output = (ct.c_int16 * 320)()
             self.assertLess(self.library.lib.opus_decode(codec.decoder, bad_packet, 1, output, 320, 0), 0)
 
+    def test_closed_codec_rejects_calls_and_fresh_session_works(self):
+        codec = self.library.session()
+        try:
+            payload = codec.encode([0] * 320)
+        finally:
+            codec.close()
+        codec.close()  # Idempotent cleanup must not revive freed handles.
+        with self.assertRaisesRegex(transport.ContractError, "encoder session is closed"):
+            codec.encode([0] * 320)
+        for packet in (payload, None):
+            with self.subTest(plc=packet is None), self.assertRaisesRegex(
+                    transport.ContractError, "decoder session is closed"):
+                codec.decode(packet)
+        with self.library.session() as reopened:
+            self.assertEqual(len(reopened.decode(reopened.encode([0] * 320))), 320)
+            self.assertEqual(len(reopened.decode(None)), 320)
+        with self.assertRaisesRegex(transport.ContractError, "encoder session is closed"):
+            reopened.encode([0] * 320)
+
     def test_partial_twenty_ms_stream_never_silently_padded(self):
         with tempfile.TemporaryDirectory() as temporary:
             for count in (0, 160, 321):

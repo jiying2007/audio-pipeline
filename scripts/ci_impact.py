@@ -712,11 +712,12 @@ def analyze(paths: list[str], force_full: bool = False, cmake_version_only_chang
         return _fast_only(reason, paths)
     if force_full:
         return _full("main push / explicit full verification", paths)
-    # Canonical research authority or downstream metric edits may change
+    # Canonical research authority, admitted research corpus selection, or downstream metrics may change
     # eligibility/scoring even when they do not affect SDK or SemVer.
     # Keep FULL verification; unknown validation tools are not exempt.
     if any(p in ("validation/research-authority.json", "validation/tools/authority.py",
-                 "validation/tools/downstream_metrics.py")
+                 "validation/tools/downstream_metrics.py",
+                 "validation/tools/build_aec_research_corpus.py")
            for p in effective_paths):
         return _full("canonical research validation authority requires full checks",
                      paths, run_tuning=requires_tuning_search(paths))

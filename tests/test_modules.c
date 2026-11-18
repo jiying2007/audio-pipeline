@@ -196,6 +196,56 @@ static void test_aec(void) {
 #endif
 }
 
+/* Reset must discard adaptation/history, not merely remain callable. */
+static void test_aec_reset_equivalence(void) {
+#if AP_HAVE_MODULE_AEC
+    static AP_ALIGN16 unsigned char fresh_memory[AP_MODULE_STATE_MAX_BYTES];
+    ap_aec_module_t *trained = NULL;
+    ap_aec_module_t *fresh = NULL;
+    ap_module_aec_config_t cfg;
+    ap_module_aec_result_t got, expected;
+    float fresh_out[AP_MAX_IO_FRAME_SAMPLES];
+    float fresh_echo[AP_MAX_IO_FRAME_SAMPLES];
+    const size_t frame = test_frame();
+    unsigned f;
+    size_t i;
+    cfg.sample_rate_hz = test_rate();
+    cfg.filter_ms = AP_BUILD_MAX_AEC_TAIL_MS < 64u ? AP_BUILD_MAX_AEC_TAIL_MS : 64u;
+    cfg.adapt_stride = 1u;
+    cfg.mu = 0.2f;
+    assert(ap_module_aec_init(memory, sizeof(memory), &cfg, &trained) == AP_OK);
+    for (f = 0u; f < 32u; ++f) {
+        for (i = 0u; i < frame; ++i) {
+            b[i] = 0.2f * sinf((float)(i + f * frame) * 0.13f);
+            a[i] = 0.4f * b[i];
+        }
+        assert(ap_module_aec_process(trained, a, b, out, echo, frame,
+                                     1, 0, &got) == AP_OK);
+    }
+    ap_module_aec_reset(trained);
+    assert(ap_module_aec_init(fresh_memory, sizeof(fresh_memory), &cfg, &fresh) == AP_OK);
+    for (f = 0u; f < 32u; ++f) {
+        const int far = (f % 3u) != 0u;
+        const int dt = (f % 4u) == 0u;
+        for (i = 0u; i < frame; ++i) {
+            b[i] = 0.15f * cosf((float)(i + f * frame) * 0.07f);
+            a[i] = 0.3f * b[i] + 0.02f * sinf((float)i * 0.19f);
+        }
+        assert(ap_module_aec_process(trained, a, b, out, echo, frame,
+                                     far, dt, &got) == AP_OK);
+        assert(ap_module_aec_process(fresh, a, b, fresh_out, fresh_echo, frame,
+                                     far, dt, &expected) == AP_OK);
+        assert(memcmp(out, fresh_out, frame * sizeof(float)) == 0);
+        assert(memcmp(echo, fresh_echo, frame * sizeof(float)) == 0);
+        assert(isfinite(got.echo_energy) && got.echo_energy == expected.echo_energy);
+        assert(got.active_taps == expected.active_taps);
+        assert(got.active_partitions == expected.active_partitions);
+        assert(got.block_samples == expected.block_samples);
+        assert(got.backend == expected.backend);
+    }
+#endif
+}
+
 static void test_res(void) {
 #if AP_HAVE_MODULE_RES
     ap_res_module_t *m = NULL;
@@ -271,6 +321,7 @@ int main(void) {
     test_sync_timestamp_bounds();
     test_activity();
     test_aec();
+    test_aec_reset_equivalence();
     test_res();
     test_ns();
     test_agc();

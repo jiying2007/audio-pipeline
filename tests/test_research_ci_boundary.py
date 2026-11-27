@@ -258,24 +258,62 @@ class ResearchCIBoundaryTests(unittest.TestCase):
         self.assertNotIn("gh release", source)
 
     def test_fe09_s2a_readback_is_exact_attempt_id_bound(self):
-        # v7 artifacts are immutable and name discovery may lag final upload.
-        # The retry attempt must create a distinct artifact and consume the
-        # exact ID returned by the successful upload, not a name lookup.
-        workflow = (ROOT / ".github/workflows/quality.yml").read_text(
-            encoding="utf-8"
+        # Bind the current source readback to the exact upload and attempt.
+        # One saved ZIP feeds the unchanged independent scientific reader.
+        workflow = (ROOT / ".github/workflows/quality.yml").read_text(encoding="utf-8")
+        block = workflow.split('  frontend-s3-t3s2a:\n', 1)[1].split("\n  frontend-", 1)[0]
+        markers = (
+            'id: t3s2a_artifact\n',
+            'name: frontend-fe09-t3s2a-posix-spool-${{ github.run_id }}-attempt-${{ github.run_attempt }}\n',
+            'Save and admit the exact T3S2A original ZIP',
+            'id: t3s2a_artifact_readback\n',
+            'GH_TOKEN: ${{ github.token }}',
+            'ARTIFACT_ID: ${{ steps.t3s2a_artifact.outputs.artifact-id }}',
+            'RUN_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}',
+            'python3 tests/validation/frontend_evolution/fe09_same_run_artifact_download.py',
+            '--stage t3s2a --repository "$GITHUB_REPOSITORY"',
+            '--artifact-id "$ARTIFACT_ID" --run-id "$GITHUB_RUN_ID"',
+            '--artifact-name "frontend-fe09-t3s2a-posix-spool-$GITHUB_RUN_ID-attempt-$GITHUB_RUN_ATTEMPT"',
+            '--run-attempt "$GITHUB_RUN_ATTEMPT" --run-head-sha "$RUN_HEAD_SHA"',
+            '--execution-source "$GITHUB_SHA"',
+            '--output fe09-t3s2a-readback --evidence fe09-t3s2a-transport',
+            'path: fe09-t3s2a-transport/\n',
+            '--verify --output fe09-t3s2a-readback',
+            'FE09_T3S2A_EXACT_SOURCE_POSIX_READBACK_PASS',
         )
-        block = workflow.split("  frontend-s3-t3s2a:", 1)[1].split(
-            "\n  frontend-", 1
-        )[0]
-        self.assertIn("id: t3s2a_artifact", block)
-        self.assertIn("github.run_attempt", block)
-        self.assertIn("artifact-ids: ${{ steps.t3s2a_artifact.outputs.artifact-id }}", block)
-        self.assertIn("fe09-t3s2a-readback", block)
-        self.assertIn("SHA256SUMS", block)
-        self.assertNotIn(
-            "name: frontend-fe09-t3s2a-posix-spool-${{ github.run_id }}\n"
-            "          path: fe09-t3s2a-readback", block
-        )
+
+        def check(current):
+            cursor = 0
+            for required in markers:
+                self.assertIn(required, current[cursor:])
+                cursor = current.index(required, cursor) + len(required)
+            self.assertEqual(current.count("fe09_same_run_artifact_download.py"), 1)
+            self.assertNotIn("actions/download-artifact@", current)
+            self.assertNotIn("python3 tests/validation/frontend_evolution/fe09_same_run_artifact_visibility.py", current)
+            for flag in ("--a1-archive-ready", "--t2a-archive-ready", "--t2f0-archive-ready"):
+                self.assertNotIn(flag, current)
+            self.assertNotIn("continue-on-error", current)
+            self.assertNotIn("overwrite:", current)
+            self.assertEqual(current.count("if: steps.fe09_t3s2a.outcome == 'success'"), 2)
+            self.assertIn("if: always() && (steps.t3s2a_artifact_readback.outcome == 'success' || steps.t3s2a_artifact_readback.outcome == 'failure')", current)
+            self.assertIn('timeout-minutes: 25', current)
+            self.assertIn('SHA256SUMS', current)
+            self.assertIn('retention-days: 30', current)
+            self.assertIn('if-no-files-found: error', current)
+
+        check(block)
+        start = block.index("Save and admit the exact ")
+        for old, new in (
+            ('ARTIFACT_ID: ${{ steps.t3s2a_artifact.outputs.artifact-id }}', 'ARTIFACT_ID: wrong-upload'),
+            ('--run-attempt "$GITHUB_RUN_ATTEMPT"', '--run-attempt "1"'),
+            ('--execution-source "$GITHUB_SHA"', '--execution-source "wrong-source"'),
+            ('fe09_same_run_artifact_download.py', 'fe09_same_run_artifact_download.py fe09_same_run_artifact_download.py'),
+            ('--verify --output fe09-t3s2a-readback', '--verify --output wrong-reader'),
+            ('--stage t3s2a --repository', '--a1-archive-ready --stage t3s2a --repository'),
+            ('id: t3s2a_artifact_readback\n', 'id: t3s2a_artifact_readback\n        continue-on-error: true\n'),
+        ):
+            with self.subTest(mutation=old), self.assertRaises(AssertionError):
+                check(block[:start] + block[start:].replace(old, new, 1))
 
     def test_orphaned_product_program_executables_are_retired(self):
         # These historic helpers only served deleted commercial Release / 72h

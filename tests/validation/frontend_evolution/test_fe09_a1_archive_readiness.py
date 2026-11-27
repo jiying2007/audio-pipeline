@@ -129,14 +129,63 @@ class ReadinessTests(unittest.TestCase):
                 probe.assert_not_called()
 
     def test_workflow_opt_in_only_a1_and_downloader_remains(self):
-        workflow = (Path(__file__).resolve().parents[3] / '.github/workflows/quality.yml').read_text()
-        self.assertEqual(workflow.count('--a1-archive-ready'), 1)
-        stage = workflow.split('  frontend-s3-t3s2b1ba1:\n')[1].split('\n  frontend-s3-t3s2b1ba2:')[0]
-        self.assertLess(stage.index('--a1-archive-ready'), stage.index('uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131'))
-        for required in ('timeout-minutes: 30', '--negative-readback',
-                         'FE09_A1_SAME_RUN_ORIGINAL_MEMBERS_INDEPENDENT_READBACK_PASS'):
-            self.assertIn(required, stage)
-        self.assertNotIn('continue-on-error:', stage)
+        # The historical probe/HTTP matrices above remain unchanged. Current
+        # workflow admission consumes one saved ZIP, then the original reader.
+        workflow = (Path(__file__).resolve().parents[3] / ".github/workflows/quality.yml").read_text("utf-8")
+        block = workflow.split('  frontend-s3-t3s2b1ba1:\n', 1)[1].split("\n  frontend-", 1)[0]
+        markers = (
+            'id: fe09_a1_upload\n',
+            'name: frontend-fe09-t3s2b1ba1-anchor-${{ github.run_id }}\n',
+            'Save and admit the exact BA1 original ZIP',
+            'id: fe09_a1_readback\n',
+            'GH_TOKEN: ${{ github.token }}',
+            'ARTIFACT_ID: ${{ steps.fe09_a1_upload.outputs.artifact-id }}',
+            'RUN_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}',
+            'python3 tests/validation/frontend_evolution/fe09_same_run_artifact_download.py',
+            '--stage ba1 --repository "$GITHUB_REPOSITORY"',
+            '--artifact-id "$ARTIFACT_ID" --run-id "$GITHUB_RUN_ID"',
+            '--artifact-name "frontend-fe09-t3s2b1ba1-anchor-$GITHUB_RUN_ID"',
+            '--run-attempt "$GITHUB_RUN_ATTEMPT" --run-head-sha "$RUN_HEAD_SHA"',
+            '--execution-source "$GITHUB_SHA"',
+            '--output fe09-t3s2b1ba1-readback --evidence fe09-t3s2b1ba1-transport',
+            'path: fe09-t3s2b1ba1-transport/\n',
+            '--verify --output fe09-t3s2b1ba1-readback',
+            '--negative-readback --output fe09-t3s2b1ba1-readback',
+            'FE09_A1_SAME_RUN_ORIGINAL_MEMBERS_INDEPENDENT_READBACK_PASS',
+        )
+
+        def check(current):
+            cursor = 0
+            for required in markers:
+                self.assertIn(required, current[cursor:])
+                cursor = current.index(required, cursor) + len(required)
+            self.assertEqual(current.count("fe09_same_run_artifact_download.py"), 1)
+            self.assertNotIn("actions/download-artifact@", current)
+            self.assertNotIn("python3 tests/validation/frontend_evolution/fe09_same_run_artifact_visibility.py", current)
+            for flag in ("--a1-archive-ready", "--t2a-archive-ready", "--t2f0-archive-ready"):
+                self.assertNotIn(flag, current)
+            self.assertNotIn("continue-on-error", current)
+            self.assertNotIn("overwrite:", current)
+            self.assertEqual(current.count("if: steps.fe09_t3s2b1ba1.outcome == 'success'"), 2)
+            self.assertIn("if: always() && (steps.fe09_a1_readback.outcome == 'success' || steps.fe09_a1_readback.outcome == 'failure')", current)
+            self.assertIn('timeout-minutes: 30', current)
+            self.assertIn('SHA256SUMS', current)
+            self.assertIn('retention-days: 30', current)
+            self.assertIn('if-no-files-found: error', current)
+
+        check(block)
+        start = block.index("Save and admit the exact ")
+        for old, new in (
+            ('ARTIFACT_ID: ${{ steps.fe09_a1_upload.outputs.artifact-id }}', 'ARTIFACT_ID: wrong-upload'),
+            ('--run-attempt "$GITHUB_RUN_ATTEMPT"', '--run-attempt "1"'),
+            ('--execution-source "$GITHUB_SHA"', '--execution-source "wrong-source"'),
+            ('fe09_same_run_artifact_download.py', 'fe09_same_run_artifact_download.py fe09_same_run_artifact_download.py'),
+            ('--verify --output fe09-t3s2b1ba1-readback', '--verify --output wrong-reader'),
+            ('--stage ba1 --repository', '--a1-archive-ready --stage ba1 --repository'),
+            ('id: fe09_a1_readback\n', 'id: fe09_a1_readback\n        continue-on-error: true\n'),
+        ):
+            with self.subTest(mutation=old), self.assertRaises(AssertionError):
+                check(block[:start] + block[start:].replace(old, new, 1))
 
 
 if __name__ == '__main__':

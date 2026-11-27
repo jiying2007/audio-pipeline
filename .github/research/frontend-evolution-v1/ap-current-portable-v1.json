@@ -931,7 +931,7 @@
     "reviewed_ci_source_transport": {
       "public_parent": "90a50276643960a6a8047ca6bfb095040b710369",
       "base_main": "4eec2329be9f2138c7ac73e8dd59026f3dc0a3ba",
-      "file_count": 10,
+      "file_count": 14,
       "boundary": "Closed 90a50276-to-reviewed transport/cache transitions and their actual 4eec composition only. The nineteen four-member consumers keep the original scientific readers and bounded shared downloader. The new immutable offset8 cache profile restores only the original source bytes from a fixed successful protected-main artifact, then invokes the unchanged source contract; it never restores old acoustic scores. Exact one-line docs tiny wiring is separately normalized. Unknown predecessor, changed payload, deletion and rollback are rejected. No source/role/DSP/metric or engineering-trigger widening.",
       "files": {
         ".github/workflows/quality.yml": {
@@ -1003,7 +1003,47 @@
           "sha256": "d4cd3c667d042702d239ac1b4ca4a90d033f80de59d28a4dd89ab81e57af7760",
           "size_bytes": 7247,
           "role": "exact_reviewed_finite_transport_and_pinned_original_source_no_engineering_trigger"
+        },
+        "tests/test_research_ci_boundary.py": {
+          "base_sha256": "972db2ada2685af299d1a985026332e3abed3f25cd66d036061e3cc50b4d45c4",
+          "main_base_sha256": "972db2ada2685af299d1a985026332e3abed3f25cd66d036061e3cc50b4d45c4",
+          "sha256": "f8bbe8118c87350b74b29ee8c6866da3961640a84ffe65e2f3f5632144633e9d",
+          "size_bytes": 22626,
+          "role": "exact_reviewed_current_transport_wiring_assertion_no_engineering_trigger"
+        },
+        "tests/validation/frontend_evolution/test_fe09_a1_archive_readiness.py": {
+          "base_sha256": "245f569a52d61989ad9b0577a5856c48ecb326d5ce8a0eb92a27b53b95487ef9",
+          "main_base_sha256": "245f569a52d61989ad9b0577a5856c48ecb326d5ce8a0eb92a27b53b95487ef9",
+          "sha256": "d429b1fc124c54e28fb1ff3003935bd46e793184d58b0aa354298e9ffb16818f",
+          "size_bytes": 10443,
+          "role": "exact_reviewed_current_transport_wiring_assertion_no_engineering_trigger"
+        },
+        "tests/validation/frontend_evolution/test_fe09_t2a_archive_readiness.py": {
+          "base_sha256": "d5d840b8cc85e0fdac936edf327d7a65987a00e998cc64ac50c7547a4ec25479",
+          "main_base_sha256": "d5d840b8cc85e0fdac936edf327d7a65987a00e998cc64ac50c7547a4ec25479",
+          "sha256": "fdfbb504782c45948bd188145e8625c4e966ca216adc5710bbce13f015886408",
+          "size_bytes": 12264,
+          "role": "exact_reviewed_current_transport_wiring_assertion_no_engineering_trigger"
+        },
+        "tests/validation/frontend_evolution/test_fe09_t2f0_archive_readiness.py": {
+          "base_sha256": "1dff2ef5f018a5179709d54358afa2b8dde121497a8012db1be911d7fb0dc662",
+          "main_base_sha256": "1dff2ef5f018a5179709d54358afa2b8dde121497a8012db1be911d7fb0dc662",
+          "sha256": "d5c61c07f54bc591ac35c5bd8198a937b3f70182ab7e744662332c0ac3866362",
+          "size_bytes": 12108,
+          "role": "exact_reviewed_current_transport_wiring_assertion_no_engineering_trigger"
         }
+      },
+      "test_wiring_followup": {
+        "public_parent": "4e6e9179be1e43d57246c990e4eef60fbe65267b",
+        "failed_verify_run_id": 46075122341,
+        "failed_job_id": 140761014271,
+        "boundary": "Only four current-workflow assertion functions change. The old probe/HTTP/budget tests and every production workflow, transport/source helper, algorithm, metric and scientific result remain unchanged from this failed public parent. Their before bytes also exactly match the original public90 base; the ten prior registry entries are unchanged. Complete affected suites and the actual main diff must still pass. This is a coverage correction, not a production or scientific waiver.",
+        "files": [
+          "tests/test_research_ci_boundary.py",
+          "tests/validation/frontend_evolution/test_fe09_a1_archive_readiness.py",
+          "tests/validation/frontend_evolution/test_fe09_t2a_archive_readiness.py",
+          "tests/validation/frontend_evolution/test_fe09_t2f0_archive_readiness.py"
+        ]
       }
     }
   },

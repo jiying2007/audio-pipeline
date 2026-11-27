@@ -1,0 +1,2776 @@
+{
+  "acceptance": [
+    "Publicly freeze exact plan and harness before any real synthesis or acoustic processing",
+    "Revalidate original archive/source receipt and all 32 full PCM inputs; no old56 substitution",
+    "Exact fixed 64-input/128-output schedule and source/timing/configuration readback",
+    "Before every call enforce equal render/capture length, explicit profile, no tuning flags and fixed source latency declaration",
+    "Complete original source support survives the common primary mask; no target-correlated delay selection",
+    "Retain full raw inputs, output PCM, per-frame telemetry, command, per-call wall/returncode, primary and secondary values",
+    "Preserve negative and null measurements; completion requires all128 successful calls and identities/continuity/budgets, not acoustic benefit",
+    "Fail once on malformed input, execution/identity/continuity/nonfinite/budget error; keep prefix and failure; never retry or select replacement",
+    "Independent readback recomputes source/case bytes and both metric families without decoder or processor invocation"
+  ],
+  "budgets": {
+    "automatic_retries": 0,
+    "base_inputs": 64,
+    "generator_wall_seconds": 120,
+    "independent_readback_wall_seconds": 600,
+    "matrix_wall_seconds": 600,
+    "maximum_audio_processor_calls": 128,
+    "maximum_case_samples": 479840,
+    "maximum_case_seconds": 29.99,
+    "output_files_maximum": 4000,
+    "output_payload_bytes_maximum": 1073741824,
+    "parallel_processors": 1,
+    "parameter_searches": 0,
+    "planned_audio_processor_calls": 128,
+    "processor_case_wall_seconds": 30,
+    "source_original_samples": 5241680,
+    "source_original_seconds": 327.605,
+    "total_output_samples": 28277760,
+    "total_output_seconds": 1767.36
+  },
+  "data_use": {
+    "blind_status": "NOT_BLIND",
+    "corpus_tier": "validation-grade",
+    "enforcement_scope": "This dedicated harness exposes only one frozen descriptive matrix and no optimizer/training path. The existing generic authority can admit validation-grade for an optimizer validation role; the role declaration is not a platform-wide access-control guarantee or blind holdout. Such optimizer use of these reserved inputs is not authorized by this contract.",
+    "independence_units": "8 source speakers / 32 original utterances / 4 disjoint speaker pairs; profile and scene outputs are correlated repeats, not 128 independent samples",
+    "new_use_authorized_only_by_this_study": "fixed 128-call descriptive measurement; source preparation receipt remains unchanged",
+    "optimizer_selection_allowed": false,
+    "promotion_allowed": false,
+    "role": "reserved-validation-visible-scope-separated",
+    "sealed_data": true,
+    "sealed_data_definition": "Exact input-file hashes are frozen before processing; this is not blind access control, an unseen holdout, or a universal independence claim.",
+    "split": "validation",
+    "training_allowed": false,
+    "universal_independence_established": false
+  },
+  "implementation_base": "5dc7176e0dde61944ba141952af7a9d8978a61f7",
+  "measurement": {
+    "aggregation": "retain every case and null; separate scene/profile; per-speaker equal weight summaries over its four originals; report source/pair counts; no confidence or independence claim from repeated views",
+    "doubletalk_projection_limit": "known-interference projection attenuation is descriptive and is not pure far-end ERLE",
+    "doubletalk_scope": "Whole-original-near preservation in scenes containing doubletalk; structural overlap is partial (reported per case), not continuous full-utterance doubletalk pressure.",
+    "near_identity_rule": "raw near-only equals clean reference: preserve true identity and original finite epsilon-regularized canonical value; do not invent zero baseline or erase negative deltas",
+    "no_metric_cherry_pick": true,
+    "nonfinite": "nonfinite numbers fail integrity; legitimate null remains null",
+    "parameter_searches": 0,
+    "phase_limit": "fixed API-declared block latency compensation does not calibrate frequency-dependent HPF/BF phase or physical propagation delay",
+    "primary_delays_samples": {
+      "assistant": 160,
+      "call": 160,
+      "raw": 0
+    },
+    "primary_function": "validation/tools/run_validation_engine.py:si_sdr_span_with_identity",
+    "primary_mask_rule": "near_mask=[24000,24000+near_native_frames); common lo=max(mask_lo, all -delay); hi=min(mask_hi, every signal_length-delay); require entire native near support survives",
+    "primary_metrics": [
+      "raw_near_si_sdr_db",
+      "raw_near_reference_identical",
+      "call_near_si_sdr_db",
+      "call_near_reference_identical",
+      "assistant_near_si_sdr_db",
+      "assistant_near_reference_identical",
+      "call_minus_raw_db",
+      "assistant_minus_raw_db"
+    ],
+    "primary_scope": "same complete original-near source interval, intersected with valid raw/CALL/ASSISTANT sample ranges under fixed declared delays",
+    "primary_target_lag_searches": 0,
+    "promotion_allowed": false,
+    "secondary": "retain unchanged dualmic_profile_support.validation_semantics full-case canonical results including existing bounded target-correlation alignment +/-3ms and quality projections",
+    "secondary_diagnostic_lag_search": "Unchanged canonical render/interference max_abs_corr diagnostics also search +/-100ms; these diagnostics never select primary delays or sources.",
+    "secondary_render_interference_maxcorr_radius_ms": 100,
+    "secondary_target_lag_search": "existing canonical method only, explicitly reported; never used to choose primary delay, source, profile or candidate",
+    "secondary_target_refinement_ms": 3,
+    "zero_energy": "preserve canonical null and explicit counts; no replacement or score-driven omission"
+  },
+  "not_run": [
+    "human-listening",
+    "ASR/KWS",
+    "real-room-or-real-array",
+    "new-models-or-weights",
+    "RIR-resampling-or-new-RIR-synthesis",
+    "physical-SSC305",
+    "optimizer-or-training",
+    "historical-candidate-reopening"
+  ],
+  "processor": {
+    "bundle_kind": "AP_CURRENT_PORTABLE_V1",
+    "bundle_status": "PASS_ENGINEERING_ONLY",
+    "bundle_verifier": "ap_current_ci.verify_bundle",
+    "default_pipeline_only": true,
+    "default_tuning": "read hash-bound engineering default_tuning for both profiles; implicit_default_equals_call must be true",
+    "engineering_copy_bound": {
+      "bytes": 67108864,
+      "files": 512
+    },
+    "engineering_rule": "synthetic engineering must verify every trace reports 10ms; no impulse-peak or target-lag fitting",
+    "host_verifier": "ap_current_ci.require_host_engineering",
+    "metadata_queries_during_matrix": 0,
+    "revision_rule": "bundle.code_revision equals the actual publicly frozen harness revision; distinct source preparation revision remains a058b025",
+    "runtime_binding": "require current-host engineering before data calls; preserve original CI and selected host receipts and runtime identity; verify stability after execution",
+    "source_declared_algorithmic_latency_ms": {
+      "assistant": 10,
+      "call": 10,
+      "raw": 0
+    },
+    "source_declared_algorithmic_latency_samples": {
+      "assistant": 160,
+      "call": 160,
+      "raw": 0
+    },
+    "source_reference_main": "4eec2329be9f2138c7ac73e8dd59026f3dc0a3ba"
+  },
+  "quality_decision": "NO_PROMOTION_DESCRIPTIVE_VALIDATION",
+  "question": "Describe the fixed complete CALL and ASSISTANT pipelines versus raw microphone 0 on all 32 reserved full utterances, with near-only and synthetic doubletalk; no candidate selection or promotion.",
+  "renderer": {
+    "doubletalk": "full capture+render with clean-near and separate interference reference; no pure-echo ERLE claim",
+    "echo_angle_degrees": 60.0,
+    "echo_mic0": "existing echo_from_render of render; finite FIR taps above",
+    "echo_mic1": "existing fractional_delay with physical_tdoa_samples(35,60); fixed linear interpolation, zero before source start",
+    "echo_taps": [
+      [
+        320,
+        0.52
+      ],
+      [
+        640,
+        0.21
+      ],
+      [
+        1120,
+        0.09
+      ]
+    ],
+    "far_source_gain": 0.25,
+    "frame_samples": 160,
+    "gain_rule": "fixed 1/4 for every original in every scene/profile; no peak/RMS/outcome normalization",
+    "human_vad_labels": false,
+    "length_rule": "near-only ceil160(lead+near_native+tail); doubletalk ceil160(max(lead+near_native,far_native)+tail)",
+    "mic_channels": 2,
+    "mic_spacing_mm": 35.0,
+    "native_originals_untouched": true,
+    "near_channels": "same scaled near signal at both microphones",
+    "near_lead_samples": 24000,
+    "near_only": "capture-only with no render; full default capture profile",
+    "near_source_gain": 0.25,
+    "padding": "only synthetic lead/context/tail and final 0..159 zeros in new case; final original samples are never truncated",
+    "pair_rule": "numeric adjacent speakers; same ordinal 0..3; both near/far orientations; no waveform-dependent selection",
+    "profiles": [
+      "call",
+      "assistant"
+    ],
+    "real_array_recording": false,
+    "real_room_rir": false,
+    "render_length_rule": "when present, render sample count must equal microphone samples per channel before invocation; do not rely on CLI short-render padding",
+    "rounding": "reuse existing scale/echo_from_render/fractional_delay PCM16 rounding; fail if any mix needs clipping",
+    "sample_bits": 16,
+    "sample_rate_hz": 16000,
+    "scenes": [
+      "near-only",
+      "doubletalk"
+    ],
+    "schedule": [
+      {
+        "far_member": "LibriSpeech/dev-clean/2428/83699/2428-83699-0000.flac",
+        "far_speaker": 2428,
+        "frame_tail_padding_samples": 0,
+        "near_mask": [
+          24000,
+          64800
+        ],
+        "near_member": "LibriSpeech/dev-clean/2412/153947/2412-153947-0000.flac",
+        "ordinal": 0,
+        "samples_per_channel": 72800,
+        "scene": "near-only",
+        "speaker": 2412,
+        "structural_support": {
+          "meaning": "metadata-structural-envelope-not-VAD",
+          "mic0": null,
+          "mic1": null,
+          "near_support": [
+            24000,
+            64800
+          ]
+        }
+      },
+      {
+        "far_member": "LibriSpeech/dev-clean/2428/83699/2428-83699-0000.flac",
+        "far_speaker": 2428,
+        "frame_tail_padding_samples": 80,
+        "near_mask": [
+          24000,
+          64800
+        ],
+        "near_member": "LibriSpeech/dev-clean/2412/153947/2412-153947-0000.flac",
+        "ordinal": 0,
+        "samples_per_channel": 220960,
+        "scene": "doubletalk",
+        "speaker": 2412,
+        "structural_support": {
+          "meaning": "metadata-structural-envelope-not-VAD",
+          "mic0": {
+            "echo_support": [
+              320,
+              214000
+            ],
+            "fraction_of_original_near": 1.0,
+            "intersection_samples": 40800,
+            "near_intersection": [
+              24000,
+              64800
+            ]
+          },
+          "mic1": {
+            "echo_support": [
+              321,
+              214002
+            ],
+            "fraction_of_original_near": 1.0,
+            "intersection_samples": 40800,
+            "near_intersection": [
+              24000,
+              64800
+            ]
+          },
+          "near_support": [
+            24000,
+            64800
+          ]
+        }
+      },
+      {
+        "far_member": "LibriSpeech/dev-clean/2428/83699/2428-83699-0001.flac",
+        "far_speaker": 2428,
+        "frame_tail_padding_samples": 80,
+        "near_mask": [
+          24000,
+          75600
+        ],
+        "near_member": "LibriSpeech/dev-clean/2412/153947/2412-153947-0001.flac",
+        "ordinal": 1,
+        "samples_per_channel": 83680,
+        "scene": "near-only",
+        "speaker": 2412,
+        "structural_support": {
+          "meaning": "metadata-structural-envelope-not-VAD",
+          "mic0": null,
+          "mic1": null,
+          "near_support": [
+            24000,
+            75600
+          ]
+        }
+      },
+      {
+        "far_member": "LibriSpeech/dev-clean/2428/83699/2428-83699-0001.flac",
+        "far_speaker": 2428,
+        "frame_tail_padding_samples": 80,
+        "near_mask": [
+          24000,
+          75600
+        ],
+        "near_member": "LibriSpeech/dev-clean/2412/153947/2412-153947-0001.flac",
+        "ordinal": 1,
+        "samples_per_channel": 83680,
+        "scene": "doubletalk",
+        "speaker": 2412,
+        "structural_support": {
+          "meaning": "metadata-structural-envelope-not-VAD",
+          "mic0": {
+            "echo_support": [
+              320,
+              34240
+            ],
+            "fraction_of_original_near": 0.19844961240310077,
+            "intersection_samples": 10240,
+            "near_intersection": [
+              24000,
+              34240
+            ]
+          },
+          "mic1": {
+            "echo_support": [
+              321,
+              34242
+            ],
+            "fraction_of_original_near": 0.19848837209302325,
+            "intersection_samples": 10242,
+            "near_intersection": [
+              24000,
+              34242
+            ]
+          },
+          "near_support": [
+            24000,
+            75600
+          ]
+        }
+      },
+      {
+        "far_member": "LibriSpeech/dev-clean/2428/83699/2428-83699-0002.flac",
+        "far_speaker": 2428,
+        "frame_tail_padding_samples": 80,
+        "near_mask": [
+          24000,
+          129520
+        ],
+        "near_member": "LibriSpeech/dev-clean/2412/153947/2412-153947-0002.flac",
+        "ordinal": 2,
+        "samples_per_channel": 137600,
+        "scene": "near-only",
+        "speaker": 2412,
+        "structural_support": {
+          "meaning": "metadata-structural-envelope-not-VAD",
+          "mic0": null,
+          "mic1": null,
+          "near_support": [
+            24000,
+            129520
+          ]
+        }
+      },
+      {
+        "far_member": "LibriSpeech/dev-clean/2428/83699/2428-83699-0002.flac",
+        "far_speaker": 2428,
+        "frame_tail_padding_samples": 80,
+        "near_mask": [
+          24000,
+          129520
+        ],
+        "near_member": "LibriSpeech/dev-clean/2412/153947/2412-153947-0002.flac",
+        "ordinal": 2,
+        "samples_per_channel": 137600,
+        "scene": "doubletalk",
+        "speaker": 2412,
+        "structural_support": {
+          "meaning": "metadata-structural-envelope-not-VAD",
+          "mic0": {
+            "echo_support": [
+              320,
+              69280
+            ],
+            "fraction_of_original_near": 0.4291129643669447,
+            "intersection_samples": 45280,
+            "near_intersection": [
+              24000,
+              69280
+            ]
+          },
+          "mic1": {
+            "echo_support": [
+              321,
+              69282
+            ],
+            "fraction_of_original_near": 0.42913191811978774,
+            "intersection_samples": 45282,
+            "near_intersection": [
+              24000,
+              69282
+            ]
+          },
+          "near_support": [
+            24000,
+            129520
+          ]
+        }
+      },
+      {
+        "far_member": "LibriSpeech/dev-clean/2428/83699/2428-83699-0003.flac",
+        "far_speaker": 2428,
+        "frame_tail_padding_samples": 80,
+        "near_mask": [
+          24000,
+          176240
+        ],
+        "near_member": "LibriSpeech/dev-clean/2412/153947/2412-153947-0003.flac",
+        "ordinal": 3,
+        "samples_per_channel": 184320,
+        "scene": "near-only",
+        "speaker": 2412,
+        "structural_support": {
+          "meaning": "metadata-structural-envelope-not-VAD",
+          "mic0": null,
+          "mic1": null,
+          "near_support": [
+            24000,
+            176240
+          ]
+        }
+      },
+      {
+        "far_member": "LibriSpeech/dev-clean/2428/83699/2428-83699-0003.flac",
+        "far_speaker": 2428,
+        "frame_tail_padding_samples": 80,
+        "near_mask": [
+          24000,
+          176240
+        ],
+        "near_member": "LibriSpeech/dev-clean/2412/153947/2412-153947-0003.flac",
+        "ordinal": 3,
+        "samples_per_channel": 184320,
+        "scene": "doubletalk",
+        "speaker": 2412,
+        "structural_support": {
+          "meaning": "metadata-structural-envelope-not-VAD",
+          "mic0": {
+            "echo_support": [
+              320,
+              101360
+            ],
+            "fraction_of_original_near": 0.5081450341565948,
+            "intersection_samples": 77360,
+            "near_intersection": [
+              24000,
+              101360
+            ]
+          },
+          "mic1": {
+            "echo_support": [
+              321,
+              101362
+            ],
+            "fraction_of_original_near": 0.5081581713084603,
+            "intersection_samples": 77362,
+            "near_intersection": [
+              24000,
+              101362
+            ]
+          },
+          "near_support": [
+            24000,
+            176240
+          ]
+        }
+      },
+      {
+        "far_member": "LibriSpeech/dev-clean/2412/153947/2412-153947-0000.flac",
+        "far_speaker": 2412,
+        "frame_tail_padding_samples": 80,
+        "near_mask": [
+          24000,
+          236880
+        ],
+        "near_member": "LibriSpeech/dev-clean/2428/83699/2428-83699-0000.flac",
+        "ordinal": 0,
+        "samples_per_channel": 244960,
+        "scene": "near-only",
+        "speaker": 2428,
+        "structural_support": {
+          "meaning": "metadata-structural-envelope-not-VAD",
+          "mic0": null,
+          "mic1": null,
+          "near_support": [
+            24000,
+            236880
+          ]
+        }
+      },
+      {
+        "far_member": "LibriSpeech/dev-clean/2412/153947/2412-153947-0000.flac",
+        "far_speaker": 2412,
+        "frame_tail_padding_samples": 80,
+        "near_mask": [
+          24000,
+          236880
+        ],
+        "near_member": "LibriSpeech/dev-clean/2428/83699/2428-83699-0000.flac",
+        "ordinal": 0,
+        "samples_per_channel": 244960,
+        "scene": "doubletalk",
+        "speaker": 2428,
+        "structural_support": {
+          "meaning": "metadata-structural-envelope-not-VAD",
+          "mic0": {
+            "echo_support": [
+              320,
+              41920
+            ],
+            "fraction_of_original_near": 0.08417888012025554,
+            "intersection_samples": 17920,
+            "near_intersection": [
+              24000,
+              41920
+            ]
+          },
+          "mic1": {
+            "echo_support": [
+              321,
+              41922
+            ],
+            "fraction_of_original_near": 0.08418827508455468,
+            "intersection_samples": 17922,
+            "near_intersection": [
+              24000,
+              41922
+            ]
+          },
+          "near_support": [
+            24000,
+            236880
+          ]
+        }
+      },
+      {
+        "far_member": "LibriSpeech/dev-clean/2412/153947/2412-153947-0001.flac",
+        "far_speaker": 2412,
+        "frame_tail_padding_samples": 0,
+        "near_mask": [
+          24000,
+          57120
+        ],
+        "near_member": "LibriSpeech/dev-clean/2428/83699/2428-83699-0001.flac",
+        "ordinal": 1,
+        "samples_per_channel": 65120,
+        "scene": "near-only",
+        "speaker": 2428,
+        "structural_support": {
+          "meaning": "metadata-structural-envelope-not-VAD",
+          "mic0": null,
+          "mic1": null,
+          "near_support": [
+            24000,
+            57120
+          ]
+        }
+      },
+      {
+        "far_member": "LibriSpeech/dev-clean/2412/153947/2412-153947-0001.flac",
+        "far_speaker": 2412,
+        "frame_tail_padding_samples": 0,
+        "near_mask": [
+          24000,
+          57120
+        ],
+        "near_member": "LibriSpeech/dev-clean/2428/83699/2428-83699-0001.flac",
+        "ordinal": 1,
+        "samples_per_channel": 65120,
+        "scene": "doubletalk",
+        "speaker": 2428,
+        "structural_support": {
+          "meaning": "metadata-structural-envelope-not-VAD",
+          "mic0": {
+            "echo_support": [
+              320,
+              52720
+            ],
+            "fraction_of_original_near": 0.8671497584541062,
+            "intersection_samples": 28720,
+            "near_intersection": [
+              24000,
+              52720
+            ]
+          },
+          "mic1": {
+            "echo_support": [
+              321,
+              52722
+            ],
+            "fraction_of_original_near": 0.8672101449275362,
+            "intersection_samples": 28722,
+            "near_intersection": [
+              24000,
+              52722
+            ]
+          },
+          "near_support": [
+            24000,
+            57120
+          ]
+        }
+      },
+      {
+        "far_member": "LibriSpeech/dev-clean/2412/153947/2412-153947-0002.flac",
+        "far_speaker": 2412,
+        "frame_tail_padding_samples": 0,
+        "near_mask": [
+          24000,
+          92160
+        ],
+        "near_member": "LibriSpeech/dev-clean/2428/83699/2428-83699-0002.flac",
+        "ordinal": 2,
+        "samples_per_channel": 100160,
+        "scene": "near-only",
+        "speaker": 2428,
+        "structural_support": {
+          "meaning": "metadata-structural-envelope-not-VAD",
+          "mic0": null,
+          "mic1": null,
+          "near_support": [
+            24000,
+            92160
+          ]
+        }
+      },
+      {
+        "far_member": "LibriSpeech/dev-clean/2412/153947/2412-153947-0002.flac",
+        "far_speaker": 2412,
+        "frame_tail_padding_samples": 80,
+        "near_mask": [
+          24000,
+          92160
+        ],
+        "near_member": "LibriSpeech/dev-clean/2428/83699/2428-83699-0002.flac",
+        "ordinal": 2,
+        "samples_per_channel": 113600,
+        "scene": "doubletalk",
+        "speaker": 2428,
+        "structural_support": {
+          "meaning": "metadata-structural-envelope-not-VAD",
+          "mic0": {
+            "echo_support": [
+              320,
+              106640
+            ],
+            "fraction_of_original_near": 1.0,
+            "intersection_samples": 68160,
+            "near_intersection": [
+              24000,
+              92160
+            ]
+          },
+          "mic1": {
+            "echo_support": [
+              321,
+              106642
+            ],
+            "fraction_of_original_near": 1.0,
+            "intersection_samples": 68160,
+            "near_intersection": [
+              24000,
+              92160
+            ]
+          },
+          "near_support": [
+            24000,
+            92160
+          ]
+        }
+      },
+      {
+        "far_member": "LibriSpeech/dev-clean/2412/153947/2412-153947-0003.flac",
+        "far_speaker": 2412,
+        "frame_tail_padding_samples": 80,
+        "near_mask": [
+          24000,
+          124240
+        ],
+        "near_member": "LibriSpeech/dev-clean/2428/83699/2428-83699-0003.flac",
+        "ordinal": 3,
+        "samples_per_channel": 132320,
+        "scene": "near-only",
+        "speaker": 2428,
+        "structural_support": {
+          "meaning": "metadata-structural-envelope-not-VAD",
+          "mic0": null,
+          "mic1": null,
+          "near_support": [
+            24000,
+            124240
+          ]
+        }
+      },
+      {
+        "far_member": "LibriSpeech/dev-clean/2412/153947/2412-153947-0003.flac",
+        "far_speaker": 2412,
+        "frame_tail_padding_samples": 80,
+        "near_mask": [
+          24000,
+          124240
+        ],
+        "near_member": "LibriSpeech/dev-clean/2428/83699/2428-83699-0003.flac",
+        "ordinal": 3,
+        "samples_per_channel": 160320,
+        "scene": "doubletalk",
+        "speaker": 2428,
+        "structural_support": {
+          "meaning": "metadata-structural-envelope-not-VAD",
+          "mic0": {
+            "echo_support": [
+              320,
+              153360
+            ],
+            "fraction_of_original_near": 1.0,
+            "intersection_samples": 100240,
+            "near_intersection": [
+              24000,
+              124240
+            ]
+          },
+          "mic1": {
+            "echo_support": [
+              321,
+              153362
+            ],
+            "fraction_of_original_near": 1.0,
+            "intersection_samples": 100240,
+            "near_intersection": [
+              24000,
+              124240
+            ]
+          },
+          "near_support": [
+            24000,
+            124240
+          ]
+        }
+      },
+      {
+        "far_member": "LibriSpeech/dev-clean/2902/9006/2902-9006-0000.flac",
+        "far_speaker": 2902,
+        "frame_tail_padding_samples": 0,
+        "near_mask": [
+          24000,
+          207680
+        ],
+        "near_member": "LibriSpeech/dev-clean/2803/154320/2803-154320-0000.flac",
+        "ordinal": 0,
+        "samples_per_channel": 215680,
+        "scene": "near-only",
+        "speaker": 2803,
+        "structural_support": {
+          "meaning": "metadata-structural-envelope-not-VAD",
+          "mic0": null,
+          "mic1": null,
+          "near_support": [
+            24000,
+            207680
+          ]
+        }
+      },
+      {
+        "far_member": "LibriSpeech/dev-clean/2902/9006/2902-9006-0000.flac",
+        "far_speaker": 2902,
+        "frame_tail_padding_samples": 0,
+        "near_mask": [
+          24000,
+          207680
+        ],
+        "near_member": "LibriSpeech/dev-clean/2803/154320/2803-154320-0000.flac",
+        "ordinal": 0,
+        "samples_per_channel": 215680,
+        "scene": "doubletalk",
+        "speaker": 2803,
+        "structural_support": {
+          "meaning": "metadata-structural-envelope-not-VAD",
+          "mic0": {
+            "echo_support": [
+              320,
+              77920
+            ],
+            "fraction_of_original_near": 0.2935540069686411,
+            "intersection_samples": 53920,
+            "near_intersection": [
+              24000,
+              77920
+            ]
+          },
+          "mic1": {
+            "echo_support": [
+              321,
+              77922
+            ],
+            "fraction_of_original_near": 0.2935648954703833,
+            "intersection_samples": 53922,
+            "near_intersection": [
+              24000,
+              77922
+            ]
+          },
+          "near_support": [
+            24000,
+            207680
+          ]
+        }
+      },
+      {
+        "far_member": "LibriSpeech/dev-clean/2902/9006/2902-9006-0001.flac",
+        "far_speaker": 2902,
+        "frame_tail_padding_samples": 0,
+        "near_mask": [
+          24000,
+          272960
+        ],
+        "near_member": "LibriSpeech/dev-clean/2803/154320/2803-154320-0001.flac",
+        "ordinal": 1,
+        "samples_per_channel": 280960,
+        "scene": "near-only",
+        "speaker": 2803,
+        "structural_support": {
+          "meaning": "metadata-structural-envelope-not-VAD",
+          "mic0": null,
+          "mic1": null,
+          "near_support": [
+            24000,
+            272960
+          ]
+        }
+      },
+      {
+        "far_member": "LibriSpeech/dev-clean/2902/9006/2902-9006-0001.flac",
+        "far_speaker": 2902,
+        "frame_tail_padding_samples": 0,
+        "near_mask": [
+          24000,
+          272960
+        ],
+        "near_member": "LibriSpeech/dev-clean/2803/154320/2803-154320-0001.flac",
+        "ordinal": 1,
+        "samples_per_channel": 377120,
+        "scene": "doubletalk",
+        "speaker": 2803,
+        "structural_support": {
+          "meaning": "metadata-structural-envelope-not-VAD",
+          "mic0": {
+            "echo_support": [
+              320,
+              370240
+            ],
+            "fraction_of_original_near": 1.0,
+            "intersection_samples": 248960,
+            "near_intersection": [
+              24000,
+              272960
+            ]
+          },
+          "mic1": {
+            "echo_support": [
+              321,
+              370242
+            ],
+            "fraction_of_original_near": 1.0,
+            "intersection_samples": 248960,
+            "near_intersection": [
+              24000,
+              272960
+            ]
+          },
+          "near_support": [
+            24000,
+            272960
+          ]
+        }
+      },
+      {
+        "far_member": "LibriSpeech/dev-clean/2902/9006/2902-9006-0002.flac",
+        "far_speaker": 2902,
+        "frame_tail_padding_samples": 0,
+        "near_mask": [
+          24000,
+          80480
+        ],
+        "near_member": "LibriSpeech/dev-clean/2803/154320/2803-154320-0002.flac",
+        "ordinal": 2,
+        "samples_per_channel": 88480,
+        "scene": "near-only",
+        "speaker": 2803,
+        "structural_support": {
+          "meaning": "metadata-structural-envelope-not-VAD",
+          "mic0": null,
+          "mic1": null,
+          "near_support": [
+            24000,
+            80480
+          ]
+        }
+      },
+      {
+        "far_member": "LibriSpeech/dev-clean/2902/9006/2902-9006-0002.flac",
+        "far_speaker": 2902,
+        "frame_tail_padding_samples": 80,
+        "near_mask": [
+          24000,
+          80480
+        ],
+        "near_member": "LibriSpeech/dev-clean/2803/154320/2803-154320-0002.flac",
+        "ordinal": 2,
+        "samples_per_channel": 198080,
+        "scene": "doubletalk",
+        "speaker": 2803,
+        "structural_support": {
+          "meaning": "metadata-structural-envelope-not-VAD",
+          "mic0": {
+            "echo_support": [
+              320,
+              191120
+            ],
+            "fraction_of_original_near": 1.0,
+            "intersection_samples": 56480,
+            "near_intersection": [
+              24000,
+              80480
+            ]
+          },
+          "mic1": {
+            "echo_support": [
+              321,
+              191122
+            ],
+            "fraction_of_original_near": 1.0,
+            "intersection_samples": 56480,
+            "near_intersection": [
+              24000,
+              80480
+            ]
+          },
+          "near_support": [
+            24000,
+            80480
+          ]
+        }
+      },
+      {
+        "far_member": "LibriSpeech/dev-clean/2902/9006/2902-9006-0003.flac",
+        "far_speaker": 2902,
+        "frame_tail_padding_samples": 80,
+        "near_mask": [
+          24000,
+          127600
+        ],
+        "near_member": "LibriSpeech/dev-clean/2803/154320/2803-154320-0003.flac",
+        "ordinal": 3,
+        "samples_per_channel": 135680,
+        "scene": "near-only",
+        "speaker": 2803,
+        "structural_support": {
+          "meaning": "metadata-structural-envelope-not-VAD",
+          "mic0": null,
+          "mic1": null,
+          "near_support": [
+            24000,
+            127600
+          ]
+        }
+      },
+      {
+        "far_member": "LibriSpeech/dev-clean/2902/9006/2902-9006-0003.flac",
+        "far_speaker": 2902,
+        "frame_tail_padding_samples": 0,
+        "near_mask": [
+          24000,
+          127600
+        ],
+        "near_member": "LibriSpeech/dev-clean/2803/154320/2803-154320-0003.flac",
+        "ordinal": 3,
+        "samples_per_channel": 244800,
+        "scene": "doubletalk",
+        "speaker": 2803,
+        "structural_support": {
+          "meaning": "metadata-structural-envelope-not-VAD",
+          "mic0": {
+            "echo_support": [
+              320,
+              237920
+            ],
+            "fraction_of_original_near": 1.0,
+            "intersection_samples": 103600,
+            "near_intersection": [
+              24000,
+              127600
+            ]
+          },
+          "mic1": {
+            "echo_support": [
+              321,
+              237922
+            ],
+            "fraction_of_original_near": 1.0,
+            "intersection_samples": 103600,
+            "near_intersection": [
+              24000,
+              127600
+            ]
+          },
+          "near_support": [
+            24000,
+            127600
+          ]
+        }
+      },
+      {
+        "far_member": "LibriSpeech/dev-clean/2803/154320/2803-154320-0000.flac",
+        "far_speaker": 2803,
+        "frame_tail_padding_samples": 0,
+        "near_mask": [
+          24000,
+          100800
+        ],
+        "near_member": "LibriSpeech/dev-clean/2902/9006/2902-9006-0000.flac",
+        "ordinal": 0,
+        "samples_per_channel": 108800,
+        "scene": "near-only",
+        "speaker": 2902,
+        "structural_support": {
+          "meaning": "metadata-structural-envelope-not-VAD",
+          "mic0": null,
+          "mic1": null,
+          "near_support": [
+            24000,
+            100800
+          ]
+        }
+      },
+      {
+        "far_member": "LibriSpeech/dev-clean/2803/154320/2803-154320-0000.flac",
+        "far_speaker": 2803,
+        "frame_tail_padding_samples": 0,
+        "near_mask": [
+          24000,
+          100800
+        ],
+        "near_member": "LibriSpeech/dev-clean/2902/9006/2902-9006-0000.flac",
+        "ordinal": 0,
+        "samples_per_channel": 191680,
+        "scene": "doubletalk",
+        "speaker": 2902,
+        "structural_support": {
+          "meaning": "metadata-structural-envelope-not-VAD",
+          "mic0": {
+            "echo_support": [
+              320,
+              184800
+            ],
+            "fraction_of_original_near": 1.0,
+            "intersection_samples": 76800,
+            "near_intersection": [
+              24000,
+              100800
+            ]
+          },
+          "mic1": {
+            "echo_support": [
+              321,
+              184802
+            ],
+            "fraction_of_original_near": 1.0,
+            "intersection_samples": 76800,
+            "near_intersection": [
+              24000,
+              100800
+            ]
+          },
+          "near_support": [
+            24000,
+            100800
+          ]
+        }
+      },
+      {
+        "far_member": "LibriSpeech/dev-clean/2803/154320/2803-154320-0001.flac",
+        "far_speaker": 2803,
+        "frame_tail_padding_samples": 0,
+        "near_mask": [
+          24000,
+          393120
+        ],
+        "near_member": "LibriSpeech/dev-clean/2902/9006/2902-9006-0001.flac",
+        "ordinal": 1,
+        "samples_per_channel": 401120,
+        "scene": "near-only",
+        "speaker": 2902,
+        "structural_support": {
+          "meaning": "metadata-structural-envelope-not-VAD",
+          "mic0": null,
+          "mic1": null,
+          "near_support": [
+            24000,
+            393120
+          ]
+        }
+      },
+      {
+        "far_member": "LibriSpeech/dev-clean/2803/154320/2803-154320-0001.flac",
+        "far_speaker": 2803,
+        "frame_tail_padding_samples": 0,
+        "near_mask": [
+          24000,
+          393120
+        ],
+        "near_member": "LibriSpeech/dev-clean/2902/9006/2902-9006-0001.flac",
+        "ordinal": 1,
+        "samples_per_channel": 401120,
+        "scene": "doubletalk",
+        "speaker": 2902,
+        "structural_support": {
+          "meaning": "metadata-structural-envelope-not-VAD",
+          "mic0": {
+            "echo_support": [
+              320,
+              250080
+            ],
+            "fraction_of_original_near": 0.6124837451235371,
+            "intersection_samples": 226080,
+            "near_intersection": [
+              24000,
+              250080
+            ]
+          },
+          "mic1": {
+            "echo_support": [
+              321,
+              250082
+            ],
+            "fraction_of_original_near": 0.6124891634156914,
+            "intersection_samples": 226082,
+            "near_intersection": [
+              24000,
+              250082
+            ]
+          },
+          "near_support": [
+            24000,
+            393120
+          ]
+        }
+      },
+      {
+        "far_member": "LibriSpeech/dev-clean/2803/154320/2803-154320-0002.flac",
+        "far_speaker": 2803,
+        "frame_tail_padding_samples": 80,
+        "near_mask": [
+          24000,
+          214000
+        ],
+        "near_member": "LibriSpeech/dev-clean/2902/9006/2902-9006-0002.flac",
+        "ordinal": 2,
+        "samples_per_channel": 222080,
+        "scene": "near-only",
+        "speaker": 2902,
+        "structural_support": {
+          "meaning": "metadata-structural-envelope-not-VAD",
+          "mic0": null,
+          "mic1": null,
+          "near_support": [
+            24000,
+            214000
+          ]
+        }
+      },
+      {
+        "far_member": "LibriSpeech/dev-clean/2803/154320/2803-154320-0002.flac",
+        "far_speaker": 2803,
+        "frame_tail_padding_samples": 80,
+        "near_mask": [
+          24000,
+          214000
+        ],
+        "near_member": "LibriSpeech/dev-clean/2902/9006/2902-9006-0002.flac",
+        "ordinal": 2,
+        "samples_per_channel": 222080,
+        "scene": "doubletalk",
+        "speaker": 2902,
+        "structural_support": {
+          "meaning": "metadata-structural-envelope-not-VAD",
+          "mic0": {
+            "echo_support": [
+              320,
+              57600
+            ],
+            "fraction_of_original_near": 0.17684210526315788,
+            "intersection_samples": 33600,
+            "near_intersection": [
+              24000,
+              57600
+            ]
+          },
+          "mic1": {
+            "echo_support": [
+              321,
+              57602
+            ],
+            "fraction_of_original_near": 0.17685263157894737,
+            "intersection_samples": 33602,
+            "near_intersection": [
+              24000,
+              57602
+            ]
+          },
+          "near_support": [
+            24000,
+            214000
+          ]
+        }
+      },
+      {
+        "far_member": "LibriSpeech/dev-clean/2803/154320/2803-154320-0003.flac",
+        "far_speaker": 2803,
+        "frame_tail_padding_samples": 0,
+        "near_mask": [
+          24000,
+          260800
+        ],
+        "near_member": "LibriSpeech/dev-clean/2902/9006/2902-9006-0003.flac",
+        "ordinal": 3,
+        "samples_per_channel": 268800,
+        "scene": "near-only",
+        "speaker": 2902,
+        "structural_support": {
+          "meaning": "metadata-structural-envelope-not-VAD",
+          "mic0": null,
+          "mic1": null,
+          "near_support": [
+            24000,
+            260800
+          ]
+        }
+      },
+      {
+        "far_member": "LibriSpeech/dev-clean/2803/154320/2803-154320-0003.flac",
+        "far_speaker": 2803,
+        "frame_tail_padding_samples": 0,
+        "near_mask": [
+          24000,
+          260800
+        ],
+        "near_member": "LibriSpeech/dev-clean/2902/9006/2902-9006-0003.flac",
+        "ordinal": 3,
+        "samples_per_channel": 268800,
+        "scene": "doubletalk",
+        "speaker": 2902,
+        "structural_support": {
+          "meaning": "metadata-structural-envelope-not-VAD",
+          "mic0": {
+            "echo_support": [
+              320,
+              104720
+            ],
+            "fraction_of_original_near": 0.34087837837837837,
+            "intersection_samples": 80720,
+            "near_intersection": [
+              24000,
+              104720
+            ]
+          },
+          "mic1": {
+            "echo_support": [
+              321,
+              104722
+            ],
+            "fraction_of_original_near": 0.3408868243243243,
+            "intersection_samples": 80722,
+            "near_intersection": [
+              24000,
+              104722
+            ]
+          },
+          "near_support": [
+            24000,
+            260800
+          ]
+        }
+      },
+      {
+        "far_member": "LibriSpeech/dev-clean/3081/166546/3081-166546-0000.flac",
+        "far_speaker": 3081,
+        "frame_tail_padding_samples": 0,
+        "near_mask": [
+          24000,
+          74080
+        ],
+        "near_member": "LibriSpeech/dev-clean/3000/15664/3000-15664-0000.flac",
+        "ordinal": 0,
+        "samples_per_channel": 82080,
+        "scene": "near-only",
+        "speaker": 3000,
+        "structural_support": {
+          "meaning": "metadata-structural-envelope-not-VAD",
+          "mic0": null,
+          "mic1": null,
+          "near_support": [
+            24000,
+            74080
+          ]
+        }
+      },
+      {
+        "far_member": "LibriSpeech/dev-clean/3081/166546/3081-166546-0000.flac",
+        "far_speaker": 3081,
+        "frame_tail_padding_samples": 0,
+        "near_mask": [
+          24000,
+          74080
+        ],
+        "near_member": "LibriSpeech/dev-clean/3000/15664/3000-15664-0000.flac",
+        "ordinal": 0,
+        "samples_per_channel": 176000,
+        "scene": "doubletalk",
+        "speaker": 3000,
+        "structural_support": {
+          "meaning": "metadata-structural-envelope-not-VAD",
+          "mic0": {
+            "echo_support": [
+              320,
+              169120
+            ],
+            "fraction_of_original_near": 1.0,
+            "intersection_samples": 50080,
+            "near_intersection": [
+              24000,
+              74080
+            ]
+          },
+          "mic1": {
+            "echo_support": [
+              321,
+              169122
+            ],
+            "fraction_of_original_near": 1.0,
+            "intersection_samples": 50080,
+            "near_intersection": [
+              24000,
+              74080
+            ]
+          },
+          "near_support": [
+            24000,
+            74080
+          ]
+        }
+      },
+      {
+        "far_member": "LibriSpeech/dev-clean/3081/166546/3081-166546-0001.flac",
+        "far_speaker": 3081,
+        "frame_tail_padding_samples": 0,
+        "near_mask": [
+          24000,
+          357760
+        ],
+        "near_member": "LibriSpeech/dev-clean/3000/15664/3000-15664-0001.flac",
+        "ordinal": 1,
+        "samples_per_channel": 365760,
+        "scene": "near-only",
+        "speaker": 3000,
+        "structural_support": {
+          "meaning": "metadata-structural-envelope-not-VAD",
+          "mic0": null,
+          "mic1": null,
+          "near_support": [
+            24000,
+            357760
+          ]
+        }
+      },
+      {
+        "far_member": "LibriSpeech/dev-clean/3081/166546/3081-166546-0001.flac",
+        "far_speaker": 3081,
+        "frame_tail_padding_samples": 0,
+        "near_mask": [
+          24000,
+          357760
+        ],
+        "near_member": "LibriSpeech/dev-clean/3000/15664/3000-15664-0001.flac",
+        "ordinal": 1,
+        "samples_per_channel": 365760,
+        "scene": "doubletalk",
+        "speaker": 3000,
+        "structural_support": {
+          "meaning": "metadata-structural-envelope-not-VAD",
+          "mic0": {
+            "echo_support": [
+              320,
+              155040
+            ],
+            "fraction_of_original_near": 0.3926174496644295,
+            "intersection_samples": 131040,
+            "near_intersection": [
+              24000,
+              155040
+            ]
+          },
+          "mic1": {
+            "echo_support": [
+              321,
+              155042
+            ],
+            "fraction_of_original_near": 0.39262344199424737,
+            "intersection_samples": 131042,
+            "near_intersection": [
+              24000,
+              155042
+            ]
+          },
+          "near_support": [
+            24000,
+            357760
+          ]
+        }
+      },
+      {
+        "far_member": "LibriSpeech/dev-clean/3081/166546/3081-166546-0002.flac",
+        "far_speaker": 3081,
+        "frame_tail_padding_samples": 0,
+        "near_mask": [
+          24000,
+          138720
+        ],
+        "near_member": "LibriSpeech/dev-clean/3000/15664/3000-15664-0002.flac",
+        "ordinal": 2,
+        "samples_per_channel": 146720,
+        "scene": "near-only",
+        "speaker": 3000,
+        "structural_support": {
+          "meaning": "metadata-structural-envelope-not-VAD",
+          "mic0": null,
+          "mic1": null,
+          "near_support": [
+            24000,
+            138720
+          ]
+        }
+      },
+      {
+        "far_member": "LibriSpeech/dev-clean/3081/166546/3081-166546-0002.flac",
+        "far_speaker": 3081,
+        "frame_tail_padding_samples": 0,
+        "near_mask": [
+          24000,
+          138720
+        ],
+        "near_member": "LibriSpeech/dev-clean/3000/15664/3000-15664-0002.flac",
+        "ordinal": 2,
+        "samples_per_channel": 146720,
+        "scene": "doubletalk",
+        "speaker": 3000,
+        "structural_support": {
+          "meaning": "metadata-structural-envelope-not-VAD",
+          "mic0": {
+            "echo_support": [
+              320,
+              46400
+            ],
+            "fraction_of_original_near": 0.19525801952580196,
+            "intersection_samples": 22400,
+            "near_intersection": [
+              24000,
+              46400
+            ]
+          },
+          "mic1": {
+            "echo_support": [
+              321,
+              46402
+            ],
+            "fraction_of_original_near": 0.19527545327754534,
+            "intersection_samples": 22402,
+            "near_intersection": [
+              24000,
+              46402
+            ]
+          },
+          "near_support": [
+            24000,
+            138720
+          ]
+        }
+      },
+      {
+        "far_member": "LibriSpeech/dev-clean/3081/166546/3081-166546-0003.flac",
+        "far_speaker": 3081,
+        "frame_tail_padding_samples": 0,
+        "near_mask": [
+          24000,
+          98720
+        ],
+        "near_member": "LibriSpeech/dev-clean/3000/15664/3000-15664-0003.flac",
+        "ordinal": 3,
+        "samples_per_channel": 106720,
+        "scene": "near-only",
+        "speaker": 3000,
+        "structural_support": {
+          "meaning": "metadata-structural-envelope-not-VAD",
+          "mic0": null,
+          "mic1": null,
+          "near_support": [
+            24000,
+            98720
+          ]
+        }
+      },
+      {
+        "far_member": "LibriSpeech/dev-clean/3081/166546/3081-166546-0003.flac",
+        "far_speaker": 3081,
+        "frame_tail_padding_samples": 0,
+        "near_mask": [
+          24000,
+          98720
+        ],
+        "near_member": "LibriSpeech/dev-clean/3000/15664/3000-15664-0003.flac",
+        "ordinal": 3,
+        "samples_per_channel": 106720,
+        "scene": "doubletalk",
+        "speaker": 3000,
+        "structural_support": {
+          "meaning": "metadata-structural-envelope-not-VAD",
+          "mic0": {
+            "echo_support": [
+              320,
+              67120
+            ],
+            "fraction_of_original_near": 0.5770877944325482,
+            "intersection_samples": 43120,
+            "near_intersection": [
+              24000,
+              67120
+            ]
+          },
+          "mic1": {
+            "echo_support": [
+              321,
+              67122
+            ],
+            "fraction_of_original_near": 0.5771145610278373,
+            "intersection_samples": 43122,
+            "near_intersection": [
+              24000,
+              67122
+            ]
+          },
+          "near_support": [
+            24000,
+            98720
+          ]
+        }
+      },
+      {
+        "far_member": "LibriSpeech/dev-clean/3000/15664/3000-15664-0000.flac",
+        "far_speaker": 3000,
+        "frame_tail_padding_samples": 0,
+        "near_mask": [
+          24000,
+          192000
+        ],
+        "near_member": "LibriSpeech/dev-clean/3081/166546/3081-166546-0000.flac",
+        "ordinal": 0,
+        "samples_per_channel": 200000,
+        "scene": "near-only",
+        "speaker": 3081,
+        "structural_support": {
+          "meaning": "metadata-structural-envelope-not-VAD",
+          "mic0": null,
+          "mic1": null,
+          "near_support": [
+            24000,
+            192000
+          ]
+        }
+      },
+      {
+        "far_member": "LibriSpeech/dev-clean/3000/15664/3000-15664-0000.flac",
+        "far_speaker": 3000,
+        "frame_tail_padding_samples": 0,
+        "near_mask": [
+          24000,
+          192000
+        ],
+        "near_member": "LibriSpeech/dev-clean/3081/166546/3081-166546-0000.flac",
+        "ordinal": 0,
+        "samples_per_channel": 200000,
+        "scene": "doubletalk",
+        "speaker": 3081,
+        "structural_support": {
+          "meaning": "metadata-structural-envelope-not-VAD",
+          "mic0": {
+            "echo_support": [
+              320,
+              51200
+            ],
+            "fraction_of_original_near": 0.1619047619047619,
+            "intersection_samples": 27200,
+            "near_intersection": [
+              24000,
+              51200
+            ]
+          },
+          "mic1": {
+            "echo_support": [
+              321,
+              51202
+            ],
+            "fraction_of_original_near": 0.16191666666666665,
+            "intersection_samples": 27202,
+            "near_intersection": [
+              24000,
+              51202
+            ]
+          },
+          "near_support": [
+            24000,
+            192000
+          ]
+        }
+      },
+      {
+        "far_member": "LibriSpeech/dev-clean/3000/15664/3000-15664-0001.flac",
+        "far_speaker": 3000,
+        "frame_tail_padding_samples": 0,
+        "near_mask": [
+          24000,
+          177920
+        ],
+        "near_member": "LibriSpeech/dev-clean/3081/166546/3081-166546-0001.flac",
+        "ordinal": 1,
+        "samples_per_channel": 185920,
+        "scene": "near-only",
+        "speaker": 3081,
+        "structural_support": {
+          "meaning": "metadata-structural-envelope-not-VAD",
+          "mic0": null,
+          "mic1": null,
+          "near_support": [
+            24000,
+            177920
+          ]
+        }
+      },
+      {
+        "far_member": "LibriSpeech/dev-clean/3000/15664/3000-15664-0001.flac",
+        "far_speaker": 3000,
+        "frame_tail_padding_samples": 0,
+        "near_mask": [
+          24000,
+          177920
+        ],
+        "near_member": "LibriSpeech/dev-clean/3081/166546/3081-166546-0001.flac",
+        "ordinal": 1,
+        "samples_per_channel": 341760,
+        "scene": "doubletalk",
+        "speaker": 3081,
+        "structural_support": {
+          "meaning": "metadata-structural-envelope-not-VAD",
+          "mic0": {
+            "echo_support": [
+              320,
+              334880
+            ],
+            "fraction_of_original_near": 1.0,
+            "intersection_samples": 153920,
+            "near_intersection": [
+              24000,
+              177920
+            ]
+          },
+          "mic1": {
+            "echo_support": [
+              321,
+              334882
+            ],
+            "fraction_of_original_near": 1.0,
+            "intersection_samples": 153920,
+            "near_intersection": [
+              24000,
+              177920
+            ]
+          },
+          "near_support": [
+            24000,
+            177920
+          ]
+        }
+      },
+      {
+        "far_member": "LibriSpeech/dev-clean/3000/15664/3000-15664-0002.flac",
+        "far_speaker": 3000,
+        "frame_tail_padding_samples": 0,
+        "near_mask": [
+          24000,
+          69280
+        ],
+        "near_member": "LibriSpeech/dev-clean/3081/166546/3081-166546-0002.flac",
+        "ordinal": 2,
+        "samples_per_channel": 77280,
+        "scene": "near-only",
+        "speaker": 3081,
+        "structural_support": {
+          "meaning": "metadata-structural-envelope-not-VAD",
+          "mic0": null,
+          "mic1": null,
+          "near_support": [
+            24000,
+            69280
+          ]
+        }
+      },
+      {
+        "far_member": "LibriSpeech/dev-clean/3000/15664/3000-15664-0002.flac",
+        "far_speaker": 3000,
+        "frame_tail_padding_samples": 0,
+        "near_mask": [
+          24000,
+          69280
+        ],
+        "near_member": "LibriSpeech/dev-clean/3081/166546/3081-166546-0002.flac",
+        "ordinal": 2,
+        "samples_per_channel": 122720,
+        "scene": "doubletalk",
+        "speaker": 3081,
+        "structural_support": {
+          "meaning": "metadata-structural-envelope-not-VAD",
+          "mic0": {
+            "echo_support": [
+              320,
+              115840
+            ],
+            "fraction_of_original_near": 1.0,
+            "intersection_samples": 45280,
+            "near_intersection": [
+              24000,
+              69280
+            ]
+          },
+          "mic1": {
+            "echo_support": [
+              321,
+              115842
+            ],
+            "fraction_of_original_near": 1.0,
+            "intersection_samples": 45280,
+            "near_intersection": [
+              24000,
+              69280
+            ]
+          },
+          "near_support": [
+            24000,
+            69280
+          ]
+        }
+      },
+      {
+        "far_member": "LibriSpeech/dev-clean/3000/15664/3000-15664-0003.flac",
+        "far_speaker": 3000,
+        "frame_tail_padding_samples": 80,
+        "near_mask": [
+          24000,
+          90000
+        ],
+        "near_member": "LibriSpeech/dev-clean/3081/166546/3081-166546-0003.flac",
+        "ordinal": 3,
+        "samples_per_channel": 98080,
+        "scene": "near-only",
+        "speaker": 3081,
+        "structural_support": {
+          "meaning": "metadata-structural-envelope-not-VAD",
+          "mic0": null,
+          "mic1": null,
+          "near_support": [
+            24000,
+            90000
+          ]
+        }
+      },
+      {
+        "far_member": "LibriSpeech/dev-clean/3000/15664/3000-15664-0003.flac",
+        "far_speaker": 3000,
+        "frame_tail_padding_samples": 80,
+        "near_mask": [
+          24000,
+          90000
+        ],
+        "near_member": "LibriSpeech/dev-clean/3081/166546/3081-166546-0003.flac",
+        "ordinal": 3,
+        "samples_per_channel": 98080,
+        "scene": "doubletalk",
+        "speaker": 3081,
+        "structural_support": {
+          "meaning": "metadata-structural-envelope-not-VAD",
+          "mic0": {
+            "echo_support": [
+              320,
+              75840
+            ],
+            "fraction_of_original_near": 0.7854545454545454,
+            "intersection_samples": 51840,
+            "near_intersection": [
+              24000,
+              75840
+            ]
+          },
+          "mic1": {
+            "echo_support": [
+              321,
+              75842
+            ],
+            "fraction_of_original_near": 0.7854848484848485,
+            "intersection_samples": 51842,
+            "near_intersection": [
+              24000,
+              75842
+            ]
+          },
+          "near_support": [
+            24000,
+            90000
+          ]
+        }
+      },
+      {
+        "far_member": "LibriSpeech/dev-clean/3536/8226/3536-8226-0000.flac",
+        "far_speaker": 3536,
+        "frame_tail_padding_samples": 0,
+        "near_mask": [
+          24000,
+          471840
+        ],
+        "near_member": "LibriSpeech/dev-clean/3170/137482/3170-137482-0000.flac",
+        "ordinal": 0,
+        "samples_per_channel": 479840,
+        "scene": "near-only",
+        "speaker": 3170,
+        "structural_support": {
+          "meaning": "metadata-structural-envelope-not-VAD",
+          "mic0": null,
+          "mic1": null,
+          "near_support": [
+            24000,
+            471840
+          ]
+        }
+      },
+      {
+        "far_member": "LibriSpeech/dev-clean/3536/8226/3536-8226-0000.flac",
+        "far_speaker": 3536,
+        "frame_tail_padding_samples": 0,
+        "near_mask": [
+          24000,
+          471840
+        ],
+        "near_member": "LibriSpeech/dev-clean/3170/137482/3170-137482-0000.flac",
+        "ordinal": 0,
+        "samples_per_channel": 479840,
+        "scene": "doubletalk",
+        "speaker": 3170,
+        "structural_support": {
+          "meaning": "metadata-structural-envelope-not-VAD",
+          "mic0": {
+            "echo_support": [
+              320,
+              173200
+            ],
+            "fraction_of_original_near": 0.3331546981064666,
+            "intersection_samples": 149200,
+            "near_intersection": [
+              24000,
+              173200
+            ]
+          },
+          "mic1": {
+            "echo_support": [
+              321,
+              173202
+            ],
+            "fraction_of_original_near": 0.33315916398713824,
+            "intersection_samples": 149202,
+            "near_intersection": [
+              24000,
+              173202
+            ]
+          },
+          "near_support": [
+            24000,
+            471840
+          ]
+        }
+      },
+      {
+        "far_member": "LibriSpeech/dev-clean/3536/8226/3536-8226-0001.flac",
+        "far_speaker": 3536,
+        "frame_tail_padding_samples": 0,
+        "near_mask": [
+          24000,
+          362720
+        ],
+        "near_member": "LibriSpeech/dev-clean/3170/137482/3170-137482-0001.flac",
+        "ordinal": 1,
+        "samples_per_channel": 370720,
+        "scene": "near-only",
+        "speaker": 3170,
+        "structural_support": {
+          "meaning": "metadata-structural-envelope-not-VAD",
+          "mic0": null,
+          "mic1": null,
+          "near_support": [
+            24000,
+            362720
+          ]
+        }
+      },
+      {
+        "far_member": "LibriSpeech/dev-clean/3536/8226/3536-8226-0001.flac",
+        "far_speaker": 3536,
+        "frame_tail_padding_samples": 0,
+        "near_mask": [
+          24000,
+          362720
+        ],
+        "near_member": "LibriSpeech/dev-clean/3170/137482/3170-137482-0001.flac",
+        "ordinal": 1,
+        "samples_per_channel": 370720,
+        "scene": "doubletalk",
+        "speaker": 3170,
+        "structural_support": {
+          "meaning": "metadata-structural-envelope-not-VAD",
+          "mic0": {
+            "echo_support": [
+              320,
+              143760
+            ],
+            "fraction_of_original_near": 0.3535663675011809,
+            "intersection_samples": 119760,
+            "near_intersection": [
+              24000,
+              143760
+            ]
+          },
+          "mic1": {
+            "echo_support": [
+              321,
+              143762
+            ],
+            "fraction_of_original_near": 0.3535722720831365,
+            "intersection_samples": 119762,
+            "near_intersection": [
+              24000,
+              143762
+            ]
+          },
+          "near_support": [
+            24000,
+            362720
+          ]
+        }
+      },
+      {
+        "far_member": "LibriSpeech/dev-clean/3536/8226/3536-8226-0002.flac",
+        "far_speaker": 3536,
+        "frame_tail_padding_samples": 80,
+        "near_mask": [
+          24000,
+          340080
+        ],
+        "near_member": "LibriSpeech/dev-clean/3170/137482/3170-137482-0002.flac",
+        "ordinal": 2,
+        "samples_per_channel": 348160,
+        "scene": "near-only",
+        "speaker": 3170,
+        "structural_support": {
+          "meaning": "metadata-structural-envelope-not-VAD",
+          "mic0": null,
+          "mic1": null,
+          "near_support": [
+            24000,
+            340080
+          ]
+        }
+      },
+      {
+        "far_member": "LibriSpeech/dev-clean/3536/8226/3536-8226-0002.flac",
+        "far_speaker": 3536,
+        "frame_tail_padding_samples": 80,
+        "near_mask": [
+          24000,
+          340080
+        ],
+        "near_member": "LibriSpeech/dev-clean/3170/137482/3170-137482-0002.flac",
+        "ordinal": 2,
+        "samples_per_channel": 348160,
+        "scene": "doubletalk",
+        "speaker": 3170,
+        "structural_support": {
+          "meaning": "metadata-structural-envelope-not-VAD",
+          "mic0": {
+            "echo_support": [
+              320,
+              152320
+            ],
+            "fraction_of_original_near": 0.40597317134902555,
+            "intersection_samples": 128320,
+            "near_intersection": [
+              24000,
+              152320
+            ]
+          },
+          "mic1": {
+            "echo_support": [
+              321,
+              152322
+            ],
+            "fraction_of_original_near": 0.40597949886104784,
+            "intersection_samples": 128322,
+            "near_intersection": [
+              24000,
+              152322
+            ]
+          },
+          "near_support": [
+            24000,
+            340080
+          ]
+        }
+      },
+      {
+        "far_member": "LibriSpeech/dev-clean/3536/8226/3536-8226-0003.flac",
+        "far_speaker": 3536,
+        "frame_tail_padding_samples": 0,
+        "near_mask": [
+          24000,
+          333600
+        ],
+        "near_member": "LibriSpeech/dev-clean/3170/137482/3170-137482-0003.flac",
+        "ordinal": 3,
+        "samples_per_channel": 341600,
+        "scene": "near-only",
+        "speaker": 3170,
+        "structural_support": {
+          "meaning": "metadata-structural-envelope-not-VAD",
+          "mic0": null,
+          "mic1": null,
+          "near_support": [
+            24000,
+            333600
+          ]
+        }
+      },
+      {
+        "far_member": "LibriSpeech/dev-clean/3536/8226/3536-8226-0003.flac",
+        "far_speaker": 3536,
+        "frame_tail_padding_samples": 0,
+        "near_mask": [
+          24000,
+          333600
+        ],
+        "near_member": "LibriSpeech/dev-clean/3170/137482/3170-137482-0003.flac",
+        "ordinal": 3,
+        "samples_per_channel": 341600,
+        "scene": "doubletalk",
+        "speaker": 3170,
+        "structural_support": {
+          "meaning": "metadata-structural-envelope-not-VAD",
+          "mic0": {
+            "echo_support": [
+              320,
+              128160
+            ],
+            "fraction_of_original_near": 0.3364341085271318,
+            "intersection_samples": 104160,
+            "near_intersection": [
+              24000,
+              128160
+            ]
+          },
+          "mic1": {
+            "echo_support": [
+              321,
+              128162
+            ],
+            "fraction_of_original_near": 0.3364405684754522,
+            "intersection_samples": 104162,
+            "near_intersection": [
+              24000,
+              128162
+            ]
+          },
+          "near_support": [
+            24000,
+            333600
+          ]
+        }
+      },
+      {
+        "far_member": "LibriSpeech/dev-clean/3170/137482/3170-137482-0000.flac",
+        "far_speaker": 3170,
+        "frame_tail_padding_samples": 80,
+        "near_mask": [
+          24000,
+          196080
+        ],
+        "near_member": "LibriSpeech/dev-clean/3536/8226/3536-8226-0000.flac",
+        "ordinal": 0,
+        "samples_per_channel": 204160,
+        "scene": "near-only",
+        "speaker": 3536,
+        "structural_support": {
+          "meaning": "metadata-structural-envelope-not-VAD",
+          "mic0": null,
+          "mic1": null,
+          "near_support": [
+            24000,
+            196080
+          ]
+        }
+      },
+      {
+        "far_member": "LibriSpeech/dev-clean/3170/137482/3170-137482-0000.flac",
+        "far_speaker": 3170,
+        "frame_tail_padding_samples": 0,
+        "near_mask": [
+          24000,
+          196080
+        ],
+        "near_member": "LibriSpeech/dev-clean/3536/8226/3536-8226-0000.flac",
+        "ordinal": 0,
+        "samples_per_channel": 455840,
+        "scene": "doubletalk",
+        "speaker": 3536,
+        "structural_support": {
+          "meaning": "metadata-structural-envelope-not-VAD",
+          "mic0": {
+            "echo_support": [
+              320,
+              448960
+            ],
+            "fraction_of_original_near": 1.0,
+            "intersection_samples": 172080,
+            "near_intersection": [
+              24000,
+              196080
+            ]
+          },
+          "mic1": {
+            "echo_support": [
+              321,
+              448962
+            ],
+            "fraction_of_original_near": 1.0,
+            "intersection_samples": 172080,
+            "near_intersection": [
+              24000,
+              196080
+            ]
+          },
+          "near_support": [
+            24000,
+            196080
+          ]
+        }
+      },
+      {
+        "far_member": "LibriSpeech/dev-clean/3170/137482/3170-137482-0001.flac",
+        "far_speaker": 3170,
+        "frame_tail_padding_samples": 80,
+        "near_mask": [
+          24000,
+          166640
+        ],
+        "near_member": "LibriSpeech/dev-clean/3536/8226/3536-8226-0001.flac",
+        "ordinal": 1,
+        "samples_per_channel": 174720,
+        "scene": "near-only",
+        "speaker": 3536,
+        "structural_support": {
+          "meaning": "metadata-structural-envelope-not-VAD",
+          "mic0": null,
+          "mic1": null,
+          "near_support": [
+            24000,
+            166640
+          ]
+        }
+      },
+      {
+        "far_member": "LibriSpeech/dev-clean/3170/137482/3170-137482-0001.flac",
+        "far_speaker": 3170,
+        "frame_tail_padding_samples": 0,
+        "near_mask": [
+          24000,
+          166640
+        ],
+        "near_member": "LibriSpeech/dev-clean/3536/8226/3536-8226-0001.flac",
+        "ordinal": 1,
+        "samples_per_channel": 346720,
+        "scene": "doubletalk",
+        "speaker": 3536,
+        "structural_support": {
+          "meaning": "metadata-structural-envelope-not-VAD",
+          "mic0": {
+            "echo_support": [
+              320,
+              339840
+            ],
+            "fraction_of_original_near": 1.0,
+            "intersection_samples": 142640,
+            "near_intersection": [
+              24000,
+              166640
+            ]
+          },
+          "mic1": {
+            "echo_support": [
+              321,
+              339842
+            ],
+            "fraction_of_original_near": 1.0,
+            "intersection_samples": 142640,
+            "near_intersection": [
+              24000,
+              166640
+            ]
+          },
+          "near_support": [
+            24000,
+            166640
+          ]
+        }
+      },
+      {
+        "far_member": "LibriSpeech/dev-clean/3170/137482/3170-137482-0002.flac",
+        "far_speaker": 3170,
+        "frame_tail_padding_samples": 0,
+        "near_mask": [
+          24000,
+          175200
+        ],
+        "near_member": "LibriSpeech/dev-clean/3536/8226/3536-8226-0002.flac",
+        "ordinal": 2,
+        "samples_per_channel": 183200,
+        "scene": "near-only",
+        "speaker": 3536,
+        "structural_support": {
+          "meaning": "metadata-structural-envelope-not-VAD",
+          "mic0": null,
+          "mic1": null,
+          "near_support": [
+            24000,
+            175200
+          ]
+        }
+      },
+      {
+        "far_member": "LibriSpeech/dev-clean/3170/137482/3170-137482-0002.flac",
+        "far_speaker": 3170,
+        "frame_tail_padding_samples": 80,
+        "near_mask": [
+          24000,
+          175200
+        ],
+        "near_member": "LibriSpeech/dev-clean/3536/8226/3536-8226-0002.flac",
+        "ordinal": 2,
+        "samples_per_channel": 324160,
+        "scene": "doubletalk",
+        "speaker": 3536,
+        "structural_support": {
+          "meaning": "metadata-structural-envelope-not-VAD",
+          "mic0": {
+            "echo_support": [
+              320,
+              317200
+            ],
+            "fraction_of_original_near": 1.0,
+            "intersection_samples": 151200,
+            "near_intersection": [
+              24000,
+              175200
+            ]
+          },
+          "mic1": {
+            "echo_support": [
+              321,
+              317202
+            ],
+            "fraction_of_original_near": 1.0,
+            "intersection_samples": 151200,
+            "near_intersection": [
+              24000,
+              175200
+            ]
+          },
+          "near_support": [
+            24000,
+            175200
+          ]
+        }
+      },
+      {
+        "far_member": "LibriSpeech/dev-clean/3170/137482/3170-137482-0003.flac",
+        "far_speaker": 3170,
+        "frame_tail_padding_samples": 0,
+        "near_mask": [
+          24000,
+          151040
+        ],
+        "near_member": "LibriSpeech/dev-clean/3536/8226/3536-8226-0003.flac",
+        "ordinal": 3,
+        "samples_per_channel": 159040,
+        "scene": "near-only",
+        "speaker": 3536,
+        "structural_support": {
+          "meaning": "metadata-structural-envelope-not-VAD",
+          "mic0": null,
+          "mic1": null,
+          "near_support": [
+            24000,
+            151040
+          ]
+        }
+      },
+      {
+        "far_member": "LibriSpeech/dev-clean/3170/137482/3170-137482-0003.flac",
+        "far_speaker": 3170,
+        "frame_tail_padding_samples": 0,
+        "near_mask": [
+          24000,
+          151040
+        ],
+        "near_member": "LibriSpeech/dev-clean/3536/8226/3536-8226-0003.flac",
+        "ordinal": 3,
+        "samples_per_channel": 317600,
+        "scene": "doubletalk",
+        "speaker": 3536,
+        "structural_support": {
+          "meaning": "metadata-structural-envelope-not-VAD",
+          "mic0": {
+            "echo_support": [
+              320,
+              310720
+            ],
+            "fraction_of_original_near": 1.0,
+            "intersection_samples": 127040,
+            "near_intersection": [
+              24000,
+              151040
+            ]
+          },
+          "mic1": {
+            "echo_support": [
+              321,
+              310722
+            ],
+            "fraction_of_original_near": 1.0,
+            "intersection_samples": 127040,
+            "near_intersection": [
+              24000,
+              151040
+            ]
+          },
+          "near_support": [
+            24000,
+            151040
+          ]
+        }
+      }
+    ],
+    "sound_speed_mm_per_second": 343000.0,
+    "speaker_pairs": [
+      [
+        2412,
+        2428
+      ],
+      [
+        2803,
+        2902
+      ],
+      [
+        3000,
+        3081
+      ],
+      [
+        3170,
+        3536
+      ]
+    ],
+    "structural_overlap_definition": "Per microphone, report potential echo support from complete far file/FIR/linear delay and its intersection with the unchanged original-near mask. This is not measured speech/VAD activity or continuous doubletalk. mic0=[320,F+1120), mic1=[321,F+1122).",
+    "tail_samples": 8000,
+    "target_angle_degrees": 0.0
+  },
+  "schema_version": 1,
+  "shipping_authority": false,
+  "source": {
+    "archive": {
+      "bytes": 337926286,
+      "official_md5": "42e2234ba48799c1f50f24a7926300a1",
+      "sha256": "76f87d090650617fca0cac8f88b9416e0ebf80350acb97b343a85fa903728ab3",
+      "url": "https://www.openslr.org/resources/12/dev-clean.tar.gz"
+    },
+    "exposure_review": {
+      "equivalent_public_revision": "cbddb82cb849e9fa454227f1995efb07ad4a7bf5",
+      "equivalent_tree": "49e1c72263e55c8d018d6dd6ccc21f771e2f1ca5",
+      "excluded_speakers": [
+        84,
+        174,
+        251,
+        422,
+        652,
+        777,
+        1272,
+        1462,
+        1673,
+        1919,
+        1988,
+        1993,
+        2035,
+        2078,
+        2086,
+        2277
+      ],
+      "git_scan_scope_sha256": "c44df7a792ad30d409146749057411ed185d9acdabd413e995164b5ba9f844f3",
+      "limitations": [
+        "No-hit is not proof of non-exposure; indirect identifiers, missing or remote manifests, unsaved evaluations and unpublished use remain unresolved.",
+        "Any filename or declaration mention is conservatively excluded; a mention is not claimed as an actual execution.",
+        "SPEAKERS.TXT roster membership alone is not exposure.",
+        "All locally reachable refs were frozen at scan start; unobserved remote branches and deleted Git objects were not scanned.",
+        "The old development, validation, shadow and training roles remain unchanged; train-clean-5 is not relabeled."
+      ],
+      "metadata_source_revision": "ad7075464953162f21cd95a35e640032a4ca2634",
+      "readiness_summary_sha256": "05b31a592aa7f5507478e32f67fd8e14d1eb406e46ab5bc573132a394cd68235",
+      "scanned_files_sha256": "6d2dd4e082518a80dd008944af01756154b0a42e2101de830e10bd8c7a8b5d99",
+      "scope": "852 locally reachable commits; 4468 historical text blobs; local audit metadata and nested archives; 12638 text occurrences / 5802 distinct contents; one malformed historical JSON retained and filename-scanned",
+      "speaker_exposure_sha256": "ca2539feb0d0d92d9abfb4fb1b159d52caf67e3382a0648059b0fca1e3ea1ef3"
+    },
+    "original_files": 32,
+    "original_role_unchanged": {
+      "acoustic_execution_allowed_by_this_contract": false,
+      "blind_status": "NOT_BLIND",
+      "future_use": "Requires a separately preregistered acoustic contract; all new originals, full PCM and windows retain this reserved role.",
+      "name": "reserved-validation-visible-scope-separated",
+      "optimizer_selection_allowed": false,
+      "promotion_allowed": false,
+      "training_allowed": false,
+      "universal_independence_established": false
+    },
+    "original_samples": 5241680,
+    "original_seconds": 327.605,
+    "originals": [
+      {
+        "flac_file": "flac/2412-153947-0000.flac",
+        "flac_sha256": "7df48192953229959566fbd3bc837d240081b138d835e62f086b1030f1b1b28f",
+        "frames": 40800,
+        "member": "LibriSpeech/dev-clean/2412/153947/2412-153947-0000.flac",
+        "ordinal": 0,
+        "pcm_file": "pcm/2412-153947-0000.s16",
+        "pcm_sha256": "091f30d975b03297f01f698e1f2c29aa0e518d97e1882eebbd7a7afe1fc00213",
+        "speaker": 2412
+      },
+      {
+        "flac_file": "flac/2412-153947-0001.flac",
+        "flac_sha256": "25b4704c36b62b347974f1cacdac362ee92288290127203e451d6888c0d6f57f",
+        "frames": 51600,
+        "member": "LibriSpeech/dev-clean/2412/153947/2412-153947-0001.flac",
+        "ordinal": 1,
+        "pcm_file": "pcm/2412-153947-0001.s16",
+        "pcm_sha256": "01f5e1f4ab9237ee61f8f1ad7128b9dcf4b6623c7deb12464b9c9b6c3782c6bf",
+        "speaker": 2412
+      },
+      {
+        "flac_file": "flac/2412-153947-0002.flac",
+        "flac_sha256": "a2f3bab63a97de0797ed7b38cd22a5fefb8b230cf492aff0cdb910ba0a342827",
+        "frames": 105520,
+        "member": "LibriSpeech/dev-clean/2412/153947/2412-153947-0002.flac",
+        "ordinal": 2,
+        "pcm_file": "pcm/2412-153947-0002.s16",
+        "pcm_sha256": "69dacc664c13169689d548de2c1312dab6edb9ad622f54e6e17dac6ef05d7747",
+        "speaker": 2412
+      },
+      {
+        "flac_file": "flac/2412-153947-0003.flac",
+        "flac_sha256": "4e8fb1e237d719b7ea121245ca262c896a428c1f10f30bf1fa046bb121c19fef",
+        "frames": 152240,
+        "member": "LibriSpeech/dev-clean/2412/153947/2412-153947-0003.flac",
+        "ordinal": 3,
+        "pcm_file": "pcm/2412-153947-0003.s16",
+        "pcm_sha256": "3da7a461164d858bed0047aa06e148ad211467589f27327303a84e4372bab699",
+        "speaker": 2412
+      },
+      {
+        "flac_file": "flac/2428-83699-0000.flac",
+        "flac_sha256": "dbdfe7afcc75aa9229e7f888a060a909931215062aa7a87a3c2adccb6af35d2a",
+        "frames": 212880,
+        "member": "LibriSpeech/dev-clean/2428/83699/2428-83699-0000.flac",
+        "ordinal": 0,
+        "pcm_file": "pcm/2428-83699-0000.s16",
+        "pcm_sha256": "cf4e4ad77e3bcf019f1c580803c9debcf7fd931839dfec5996fb9053002e275d",
+        "speaker": 2428
+      },
+      {
+        "flac_file": "flac/2428-83699-0001.flac",
+        "flac_sha256": "9fae10361c9efd93631407f833a5940914ed18906d2a41818ea7dc73f6ea2219",
+        "frames": 33120,
+        "member": "LibriSpeech/dev-clean/2428/83699/2428-83699-0001.flac",
+        "ordinal": 1,
+        "pcm_file": "pcm/2428-83699-0001.s16",
+        "pcm_sha256": "5d447713c0ebac8da1b27dc41a78af34b98f174bfcff3d04d78d711989830a98",
+        "speaker": 2428
+      },
+      {
+        "flac_file": "flac/2428-83699-0002.flac",
+        "flac_sha256": "1cc0becc0a0b0bf091d41b3c6d7b2852338d96b0afa127808a9b17c61acf369b",
+        "frames": 68160,
+        "member": "LibriSpeech/dev-clean/2428/83699/2428-83699-0002.flac",
+        "ordinal": 2,
+        "pcm_file": "pcm/2428-83699-0002.s16",
+        "pcm_sha256": "2c07b2c8e15829cd534deec30c2a32dd6ad558a7bfe89195c3c9665143989020",
+        "speaker": 2428
+      },
+      {
+        "flac_file": "flac/2428-83699-0003.flac",
+        "flac_sha256": "b21a68f5c0f122b2d17e11d848f91c6bf0788435999ca153b37973e7f8498869",
+        "frames": 100240,
+        "member": "LibriSpeech/dev-clean/2428/83699/2428-83699-0003.flac",
+        "ordinal": 3,
+        "pcm_file": "pcm/2428-83699-0003.s16",
+        "pcm_sha256": "385e0eb37d57f6944073481dc5cd3156b07fb636d59a98bc65e76c45a0686086",
+        "speaker": 2428
+      },
+      {
+        "flac_file": "flac/2803-154320-0000.flac",
+        "flac_sha256": "c03cf32b36cc772a1448763e7856e53dbfa6b1679c2f4aeba20dd55d85953075",
+        "frames": 183680,
+        "member": "LibriSpeech/dev-clean/2803/154320/2803-154320-0000.flac",
+        "ordinal": 0,
+        "pcm_file": "pcm/2803-154320-0000.s16",
+        "pcm_sha256": "e70fd29a59b37d5f8d36a2a33d428aaf31cac0c636214e4be1168c45ad9c184f",
+        "speaker": 2803
+      },
+      {
+        "flac_file": "flac/2803-154320-0001.flac",
+        "flac_sha256": "93ff3d076434041277b1dab7f0eb0945087c3822c176ba9fa5c11927d23dad91",
+        "frames": 248960,
+        "member": "LibriSpeech/dev-clean/2803/154320/2803-154320-0001.flac",
+        "ordinal": 1,
+        "pcm_file": "pcm/2803-154320-0001.s16",
+        "pcm_sha256": "a4f4e1aec313bb765ec63548eac2cde50eab2adac7e5a6948dcac12255bd3f1b",
+        "speaker": 2803
+      },
+      {
+        "flac_file": "flac/2803-154320-0002.flac",
+        "flac_sha256": "18b7cb1fb2b2e9c622ef11a93faa31cba576f061267a043382fe8cf462430131",
+        "frames": 56480,
+        "member": "LibriSpeech/dev-clean/2803/154320/2803-154320-0002.flac",
+        "ordinal": 2,
+        "pcm_file": "pcm/2803-154320-0002.s16",
+        "pcm_sha256": "4e9b9d0c6c4e931c82cc5a0d1e3df42391c665f3b483bd79df03caff5a451a94",
+        "speaker": 2803
+      },
+      {
+        "flac_file": "flac/2803-154320-0003.flac",
+        "flac_sha256": "77533ec3398976db3699e8ba3104096f92d5d9d582162751cd3da60e187d8450",
+        "frames": 103600,
+        "member": "LibriSpeech/dev-clean/2803/154320/2803-154320-0003.flac",
+        "ordinal": 3,
+        "pcm_file": "pcm/2803-154320-0003.s16",
+        "pcm_sha256": "3398c68defb0073d2010f6b81605420a63445b54dc302f1579191c2473888d33",
+        "speaker": 2803
+      },
+      {
+        "flac_file": "flac/2902-9006-0000.flac",
+        "flac_sha256": "649429153bb150bce8cc147b557d6a17cd9189fce47032279e4cc0f33596b8f5",
+        "frames": 76800,
+        "member": "LibriSpeech/dev-clean/2902/9006/2902-9006-0000.flac",
+        "ordinal": 0,
+        "pcm_file": "pcm/2902-9006-0000.s16",
+        "pcm_sha256": "f22f561f768e085602ce7a4bbb397397cbaf7c900783ed7abb864e7571473860",
+        "speaker": 2902
+      },
+      {
+        "flac_file": "flac/2902-9006-0001.flac",
+        "flac_sha256": "092ce5b4c5af47b6acdd09ae8fea3966cbd8aafe774e3a38568c9adccd4c79b0",
+        "frames": 369120,
+        "member": "LibriSpeech/dev-clean/2902/9006/2902-9006-0001.flac",
+        "ordinal": 1,
+        "pcm_file": "pcm/2902-9006-0001.s16",
+        "pcm_sha256": "15b6cc2abd3a1f3dfab66b2c0ef8265eb60ad0ab37fdce95653f8c5780993690",
+        "speaker": 2902
+      },
+      {
+        "flac_file": "flac/2902-9006-0002.flac",
+        "flac_sha256": "14515713170404e20a8517bade2b6cf132dcad79b02e570ab3d60609c86d4e57",
+        "frames": 190000,
+        "member": "LibriSpeech/dev-clean/2902/9006/2902-9006-0002.flac",
+        "ordinal": 2,
+        "pcm_file": "pcm/2902-9006-0002.s16",
+        "pcm_sha256": "625e61b9b1956202746afa7a8a9a589d11e9fcd40d98baad05e3f942dfd7b429",
+        "speaker": 2902
+      },
+      {
+        "flac_file": "flac/2902-9006-0003.flac",
+        "flac_sha256": "154f9c9b5c12d643dbc745bffae1058af0eac0e99fb0e509234d56155a69274e",
+        "frames": 236800,
+        "member": "LibriSpeech/dev-clean/2902/9006/2902-9006-0003.flac",
+        "ordinal": 3,
+        "pcm_file": "pcm/2902-9006-0003.s16",
+        "pcm_sha256": "9954fe2d9d40144ab9249f6418d06ee0c42a421924a70a4c2eaad185f43e6860",
+        "speaker": 2902
+      },
+      {
+        "flac_file": "flac/3000-15664-0000.flac",
+        "flac_sha256": "9eeff067c5e377fb25bae2ef4ddf19a36d9f6edab9b9fd39352039fe327b56f3",
+        "frames": 50080,
+        "member": "LibriSpeech/dev-clean/3000/15664/3000-15664-0000.flac",
+        "ordinal": 0,
+        "pcm_file": "pcm/3000-15664-0000.s16",
+        "pcm_sha256": "66e2f8348888b74055eb2f2efb8122462545660eb2bb273d3cd34fcc15b8334c",
+        "speaker": 3000
+      },
+      {
+        "flac_file": "flac/3000-15664-0001.flac",
+        "flac_sha256": "db69c748c206a158b8289b4cc8f45a32d6ac841ba0e1280bab752f816575eda1",
+        "frames": 333760,
+        "member": "LibriSpeech/dev-clean/3000/15664/3000-15664-0001.flac",
+        "ordinal": 1,
+        "pcm_file": "pcm/3000-15664-0001.s16",
+        "pcm_sha256": "0c25457ec3edfc4dafe6d4d25b704b0d65abba99a4376839a8a424b3f14ceb36",
+        "speaker": 3000
+      },
+      {
+        "flac_file": "flac/3000-15664-0002.flac",
+        "flac_sha256": "b0ab4266b79d8b4e2e0cf14847408e032f3a00ebc7d69958174f4005fbf50d77",
+        "frames": 114720,
+        "member": "LibriSpeech/dev-clean/3000/15664/3000-15664-0002.flac",
+        "ordinal": 2,
+        "pcm_file": "pcm/3000-15664-0002.s16",
+        "pcm_sha256": "01101677735752367793cba541d2c13b3e40eaeb9145894d41096ae9a03c3170",
+        "speaker": 3000
+      },
+      {
+        "flac_file": "flac/3000-15664-0003.flac",
+        "flac_sha256": "8c8c0f6abc527b89e7e39a2deeea4432b325abc2ec41a8f84f7d97efa9215a07",
+        "frames": 74720,
+        "member": "LibriSpeech/dev-clean/3000/15664/3000-15664-0003.flac",
+        "ordinal": 3,
+        "pcm_file": "pcm/3000-15664-0003.s16",
+        "pcm_sha256": "af6816720b08237ecbf8cf88c2b27dc7d932902c603370509c663c444a38b371",
+        "speaker": 3000
+      },
+      {
+        "flac_file": "flac/3081-166546-0000.flac",
+        "flac_sha256": "a0a99c5c2f9da504669449e9f085f0963e75e4fe2968e69c9f8bb81538653e7a",
+        "frames": 168000,
+        "member": "LibriSpeech/dev-clean/3081/166546/3081-166546-0000.flac",
+        "ordinal": 0,
+        "pcm_file": "pcm/3081-166546-0000.s16",
+        "pcm_sha256": "7c0fd60e1c69cd784ae4756407596d06f59c41fe28c4688a9bd8ca1855691454",
+        "speaker": 3081
+      },
+      {
+        "flac_file": "flac/3081-166546-0001.flac",
+        "flac_sha256": "1644649121b1dbf4421670b8d00e999b519635fd495e5767798824592a55310e",
+        "frames": 153920,
+        "member": "LibriSpeech/dev-clean/3081/166546/3081-166546-0001.flac",
+        "ordinal": 1,
+        "pcm_file": "pcm/3081-166546-0001.s16",
+        "pcm_sha256": "3632d9b1ac823ffbd368c9bb916b3e5bd162607ffc393652a9fbad8c4c8c1745",
+        "speaker": 3081
+      },
+      {
+        "flac_file": "flac/3081-166546-0002.flac",
+        "flac_sha256": "488285126978166b7b780aab03fc9d0cba47622680780db27fade34e70383a7a",
+        "frames": 45280,
+        "member": "LibriSpeech/dev-clean/3081/166546/3081-166546-0002.flac",
+        "ordinal": 2,
+        "pcm_file": "pcm/3081-166546-0002.s16",
+        "pcm_sha256": "155f77aa70cb4ddd9c549744b5c3862f56900d894105b8e4be7d3587ecb3545a",
+        "speaker": 3081
+      },
+      {
+        "flac_file": "flac/3081-166546-0003.flac",
+        "flac_sha256": "3a907f5ce5e15d010b05959f51beb61a0023bfe57968e5bb6ba7599929eacfc7",
+        "frames": 66000,
+        "member": "LibriSpeech/dev-clean/3081/166546/3081-166546-0003.flac",
+        "ordinal": 3,
+        "pcm_file": "pcm/3081-166546-0003.s16",
+        "pcm_sha256": "a1e425342018caca4f6026ef5f53d3e0ea48becbdd936e4e179eacb58873dba7",
+        "speaker": 3081
+      },
+      {
+        "flac_file": "flac/3170-137482-0000.flac",
+        "flac_sha256": "5eb5546f2f99a25ca0912ed95f4d4ba952772c67a424b94c1b25a85cc8aaa323",
+        "frames": 447840,
+        "member": "LibriSpeech/dev-clean/3170/137482/3170-137482-0000.flac",
+        "ordinal": 0,
+        "pcm_file": "pcm/3170-137482-0000.s16",
+        "pcm_sha256": "adc4e61ceaf2ef2ff70f54b3389c96c86249ebd5976b0ef75682cf530864c205",
+        "speaker": 3170
+      },
+      {
+        "flac_file": "flac/3170-137482-0001.flac",
+        "flac_sha256": "fdd6cb599b940f25ad13ca176a40fcda201babd6c7f604ebb3ff998a3209fc69",
+        "frames": 338720,
+        "member": "LibriSpeech/dev-clean/3170/137482/3170-137482-0001.flac",
+        "ordinal": 1,
+        "pcm_file": "pcm/3170-137482-0001.s16",
+        "pcm_sha256": "83ef2bfab8eeec974630e7f8640cd7aa404562f48ee6bde26e601f85ceea1b00",
+        "speaker": 3170
+      },
+      {
+        "flac_file": "flac/3170-137482-0002.flac",
+        "flac_sha256": "e0af0e4aa47b6322a38ac5da679045d45b68b337a1e3ec9fb631da8a97c12911",
+        "frames": 316080,
+        "member": "LibriSpeech/dev-clean/3170/137482/3170-137482-0002.flac",
+        "ordinal": 2,
+        "pcm_file": "pcm/3170-137482-0002.s16",
+        "pcm_sha256": "cd38f7c2587e2ef09062e5e7acbc48987b3b049945e5a0554d913e71d2acb3d0",
+        "speaker": 3170
+      },
+      {
+        "flac_file": "flac/3170-137482-0003.flac",
+        "flac_sha256": "27322d6e2d8293fa33fbfd9e14d981e1edef711e83a118e764adcb927084edc0",
+        "frames": 309600,
+        "member": "LibriSpeech/dev-clean/3170/137482/3170-137482-0003.flac",
+        "ordinal": 3,
+        "pcm_file": "pcm/3170-137482-0003.s16",
+        "pcm_sha256": "eff4255ccc9e1489d758ee1e138295ab86335b01af457ee4dca95bc9620104fe",
+        "speaker": 3170
+      },
+      {
+        "flac_file": "flac/3536-8226-0000.flac",
+        "flac_sha256": "18e2eb93889274f30f6898a9b380aafe16f570c33c21191d9d9129ebd016ac59",
+        "frames": 172080,
+        "member": "LibriSpeech/dev-clean/3536/8226/3536-8226-0000.flac",
+        "ordinal": 0,
+        "pcm_file": "pcm/3536-8226-0000.s16",
+        "pcm_sha256": "51f16cb74cb1d68ed47a5385d8d8487bd879105869dc0a3b9e21317c53b4ae7d",
+        "speaker": 3536
+      },
+      {
+        "flac_file": "flac/3536-8226-0001.flac",
+        "flac_sha256": "8aff414ea7c8f908d88e99409597fcac7abe036e46663f6ad5e8b989f38bb087",
+        "frames": 142640,
+        "member": "LibriSpeech/dev-clean/3536/8226/3536-8226-0001.flac",
+        "ordinal": 1,
+        "pcm_file": "pcm/3536-8226-0001.s16",
+        "pcm_sha256": "e0ab69f7b2f9a8630ff0bb1b316c04e7ced5d2d60ff9da243bbf61ef75e2bcc4",
+        "speaker": 3536
+      },
+      {
+        "flac_file": "flac/3536-8226-0002.flac",
+        "flac_sha256": "aa0febfcc0193ee24677e2c540b6826371e53e2821011db40ca5a1c9f082dba6",
+        "frames": 151200,
+        "member": "LibriSpeech/dev-clean/3536/8226/3536-8226-0002.flac",
+        "ordinal": 2,
+        "pcm_file": "pcm/3536-8226-0002.s16",
+        "pcm_sha256": "ca3f587934b02ad0934c8b4af1af068464a122127c63f205bb4e619b09821d6c",
+        "speaker": 3536
+      },
+      {
+        "flac_file": "flac/3536-8226-0003.flac",
+        "flac_sha256": "57a3dd992341333c249a829f0e1f5431502db109908910fddc021ac9ac4adf99",
+        "frames": 127040,
+        "member": "LibriSpeech/dev-clean/3536/8226/3536-8226-0003.flac",
+        "ordinal": 3,
+        "pcm_file": "pcm/3536-8226-0003.s16",
+        "pcm_sha256": "15841cd4ed6e3d97549b6e68c33a35831e4fcb38b9eec984dbbd16d62a6b55f9",
+        "speaker": 3536
+      }
+    ],
+    "preparation_plan_sha256": "cde46538288219a077927eada139fea62c2bc156fa9bd478626aae139e0db4d3",
+    "preparation_revision": "a058b02582962875ac10e6bb42b928c46c405213",
+    "rights_review": {
+      "code": "First-party preparation code uses the repository Apache-2.0 license; existing speech_source.flac_info semantics are reused unchanged.",
+      "data": "Exact OpenSLR-12 LibriSpeech dev-clean archive; retained original LICENSE.TXT specifies CC BY 4.0. This does not admit other corpora, weights or test sets.",
+      "dependencies": "Python standard library and an already installed FFmpeg decoder. Record actual executable SHA256, version and -L license output. No package installation or redistribution of the FFmpeg executable.",
+      "redistribution": "Preserve original notices and author/source/license attribution; disclose lossless decoding and any excerpt concatenation. No endorsement. No automatic audio publication.",
+      "weights": "None; no model is loaded or downloaded."
+    },
+    "source_receipt_sha256": "35fb4797cf67d004ae1646d61b7905a85bf376f7abbd031d4b3d58531ca57e5c",
+    "speakers": [
+      2412,
+      2428,
+      2803,
+      2902,
+      3000,
+      3081,
+      3170,
+      3536
+    ],
+    "use_adapter_4s_windows": false,
+    "use_complete_pcm": true
+  },
+  "study_id": "F05-DUALMIC-RESERVED-VALIDATION-V1",
+  "success_status": "MEASUREMENT_COMPLETE_DESCRIPTIVE_ONLY"
+}

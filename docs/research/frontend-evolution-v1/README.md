@@ -1,5 +1,7 @@
 # Frontend Evolution v1 / 双麦与四麦开放研究
 
+[F05 新八说话人双麦整链验证合同（128 例，尚未执行）](F05_DUALMIC_VALIDATION_V1.zh-CN.md)
+
 [长期科研平台运行手册：来源、数据、仿真、评估、复现与 AEC3](LONG_TERM_RESEARCH_PLATFORM.zh-CN.md)
 
 ## 实测 RIR 模型覆盖诊断

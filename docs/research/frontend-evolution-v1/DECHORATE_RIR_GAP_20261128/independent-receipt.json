@@ -1,0 +1,27 @@
+{
+  "command": [
+    "python3",
+    "-B",
+    "tests/validation/frontend_evolution/dechorate_rir_gap.py",
+    "verify",
+    "--output",
+    "/workspace/scratch/cd58842626bd/audit_checks/dechorate-rir-gap-20261128"
+  ],
+  "cwd": "/workspace/scratch/cd58842626bd/source-a058b025",
+  "start_utc": "2026-11-27T19:00:31.247662+00:00",
+  "end_utc": "2026-11-27T19:00:32.086020+00:00",
+  "elapsed_seconds": 0.8383635029986181,
+  "exit_code": 0,
+  "execution_source": "a058b02582962875ac10e6bb42b928c46c405213",
+  "independent_reviewer": "root",
+  "product_dsp_executions": 0,
+  "status": {
+    "decision": "DESCRIPTIVE_ONLY_NO_PROMOTION_NO_MODEL_FIT",
+    "experiment_id": "FE-SIM-RIR-SUPPORT-GAP-V1",
+    "new_product_dsp_executions": 0,
+    "physical_room_count": 1,
+    "promotion_allowed": false,
+    "scored_ir_count": 22,
+    "status": "VERIFIED_DESCRIPTIVE_RIR_SUPPORT_GAP"
+  }
+}

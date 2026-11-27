@@ -1,0 +1,32 @@
+{
+  "archive_root": "audio-pipeline-dechorate-rir-evidence-20261128/",
+  "download_url": null,
+  "experiment_id": "FE-SIM-RIR-SUPPORT-GAP-V1",
+  "filename": "audio-pipeline-dechorate-rir-evidence-final-20261128.tar.gz",
+  "frozen_measurement_source_files": 10,
+  "full_member_readback": "ALL_53_FILE_SHA256_MATCHED",
+  "independent_verification_status": "VERIFIED_DESCRIPTIVE_RIR_SUPPORT_GAP",
+  "integration_status_at_result_registration": "PENDING_LAST_HEAD_CI_PROTECTED_MERGE_AND_FRESH_MAIN",
+  "measurement_source_revision": "a058b02582962875ac10e6bb42b928c46c405213",
+  "measurement_status": "MEASURED_DESCRIPTIVE_RIR_SUPPORT_GAP",
+  "original_source_bytes": 19403164,
+  "original_source_objects": 12,
+  "package_manifest_sha256": "b0cb1f4c57c18817006ad705149121af34a1e2a93852c1fe099b243e05c1651f",
+  "previous_draft_archive_preserved_sha256": "cc0f4a3dac503ac5b80f6493e72fd4aec62dbf8d227ddefb63a2ff85e89d4a25",
+  "public_directory_is_audio_archive": false,
+  "public_plot_script_adaptation": "RESULT path points to ../result.json and generated SVG trailing spaces are removed; plot/data semantics remain identical.",
+  "public_svg_transport": {
+    "change": "remove line-ending whitespace only",
+    "original_archive_svg_sha256": "f46d8c4bfc9087ebfe89cd5c6064d3ab7ad6e15cf83b5ad054163bdab0314d1c",
+    "parsed_xml_normalized_whitespace_identity": true,
+    "public_svg_sha256": "ac958f7d52e6cb7151bcee312232c5ad27a5cd25c14877df549ce4f099738f61"
+  },
+  "reader_path_note": "sealed/, execution/, independent-verify/, source-recovery/ and ATTRIBUTION.zh-CN.md name paths inside the complete archive, not files in this public result directory.",
+  "regular_file_members": 53,
+  "retention_record": "https://github.com/jiying2007/audio-pipeline/issues/968",
+  "schema_version": 1,
+  "sealed_manifest_sha256": "e4d9e7a331c3d6b62e9777bbc7f10abf93d45049ea2a603a2f12c6436346922a",
+  "sealed_result_sha256": "1c2bfa4ae417c76c37f0b14851b72e541bff447e08129addae0ed67c72ba29c2",
+  "sha256": "00572fed7173170c118ef723c7e1839015c6e6452961a9491a0287b5ab65b20d",
+  "size_bytes": 18833929
+}

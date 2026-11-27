@@ -1,0 +1,190 @@
+{
+  "artifact_paths": {
+    "complete_metadata": "result-v2/receipt.json",
+    "header_plan": "wav-header-preparation-v1.json",
+    "header_result": "header-derived/receipt.json",
+    "independent_readback": "independent-readback.json"
+  },
+  "boundaries": {
+    "independent_dualmic_quality_study": "NOT_RUN",
+    "new_acoustic_candidate_run": false,
+    "new_room_speaker_data_admitted": false,
+    "no_audio_resampling": true,
+    "no_dsp": true,
+    "no_new_training_or_promotion_authority": true,
+    "no_playback": true,
+    "no_transcription": true
+  },
+  "dechorate": {
+    "existing_pinned_microset_bytes": 19403164,
+    "existing_pinned_microset_objects": 12,
+    "independent_calibration_observation": "Use measured Data.IR; geometry convention/independence must be separately established; derived EchoTimings are not independent observed peaks.",
+    "local_original_sofa_hdf5_objects_found": 0,
+    "new_bounded_calibration_contract": "FEASIBLE_INTERNAL_NEXT_WORK_NOT_AN_EXTERNAL_RIGHTS_BLOCK",
+    "physical_room_count_of_existing_11_configurations": 1,
+    "reacquisition_and_exact_hash_validation": "NOT_RUN_THIS_AUDIT"
+  },
+  "device_inputs": {
+    "data_role": "development",
+    "declared_digital_headers": {
+      "PCM16_16000Hz_1_channel": 32,
+      "PCM16_16000Hz_2_channels": 36
+    },
+    "distinct_wav_file_hashes": 56,
+    "human_near_activity_labels": null,
+    "original_bytes": 114131862,
+    "original_files": 119,
+    "original_sha256_verification": "119/119 PASS",
+    "physical_channel_map": null,
+    "promotion_allowed": false,
+    "room_ids": null,
+    "sample_clock_identity": null,
+    "session_intake": "INPUT_CONTRACT_PASS_16_SESSIONS",
+    "speaker_ids": null,
+    "strict_original_wav_headers": {
+      "PASS": 66,
+      "REJECTED": 2
+    },
+    "strict_rejected_originals": [
+      "tests/audio/100_audio_in.wav",
+      "tests/audio/100_audio_in_echo.wav"
+    ],
+    "training_allowed": false,
+    "wav_files": 68
+  },
+  "header_preparation": {
+    "byte_offsets_changed": [
+      32,
+      33
+    ],
+    "cases": [
+      {
+        "derived_sha256": "214ce849d1f903db112494deb44370ed7479f8b33c71ae65fd1957517eab78c6",
+        "original_path": "tests/audio/100_audio_in.wav",
+        "original_sha256": "206fdd8031de4e8ca53adeb9e444e4920d93d57c79dd3c2dec33cea3c298db2b",
+        "pcm_payload_sha256": "e545e20373596647065da84eb4f42693b1d6849168253afdfbda6a2f895694d7"
+      },
+      {
+        "derived_sha256": "f9fa17c94caf94ff7cb07869ef893ccb3d4af55142c4e3051a3b57f468fbc570",
+        "original_path": "tests/audio/100_audio_in_echo.wav",
+        "original_sha256": "f97061c1f5cadaa83e6670893389282b1f27121d31e272c99f9959a28fc24f7f",
+        "pcm_payload_sha256": "77a1d1d9d65e04a5cfcbc64452fd78d04b4a7e359810a3c874869c2021d187db"
+      }
+    ],
+    "data_role": "development",
+    "derived_strict_reader": "2/2 PASS",
+    "elapsed_seconds": 4.878889870000421,
+    "field": "fmt.block_align",
+    "from": 1024,
+    "frozen_contract_sha256": "1f7b266da4de8a955a83f0b5f72fc0eed7630a6892f26a14fa95bebeab607a8a",
+    "modified_originals": 0,
+    "new_derivative_files": 2,
+    "original_119_before_and_after": "PASS",
+    "original_strict_rejection_preserved": true,
+    "pcm_payload_byte_equality": true,
+    "promotion_allowed": false,
+    "raw_audio_publication_allowed": false,
+    "status": "HEADER_DERIVATIVES_PREPARED_PCM_UNCHANGED_NO_ROLE_UPGRADE",
+    "to": 4,
+    "training_allowed": false
+  },
+  "scanning": {
+    "archive_records": 30,
+    "elapsed_seconds": 23.3022207060003,
+    "metadata_bytes": 316678298,
+    "parse_failure_count": 1,
+    "physical_archive_records": 18,
+    "reachable_commits": 852,
+    "reachable_git_text_blobs": 4468,
+    "scan_inventory_sha256": "6d2dd4e082518a80dd008944af01756154b0a42e2101de830e10bd8c7a8b5d99",
+    "scope_and_limitations": "All local refs frozen in git-scan-scope.json, listed metadata extensions, retained local metadata and bounded nested archives; no unreachable/deleted objects, remote-only evidence, external storage, human annotation, or opaque identity guarantee.",
+    "text_occurrences": 12638,
+    "unique_archive_hashes": 14,
+    "unique_text_contents": 5802
+  },
+  "schema_version": 1,
+  "source_identity": {
+    "equivalent_public_revision": "cbddb82cb849e9fa454227f1995efb07ad4a7bf5",
+    "equivalent_tree": "49e1c72263e55c8d018d6dd6ccc21f771e2f1ca5",
+    "equivalent_tree_verified": true,
+    "intake_sha256": "4e7948a50e94602aae446a247a49767627f2bf8a9fd289be0fa7e459a84f72bf",
+    "metadata_actual_revision": "ad7075464953162f21cd95a35e640032a4ca2634"
+  },
+  "speaker_exposure": {
+    "all_local_or_archived_flac_unique_hashes": 64,
+    "available_flac_speaker_ids": [
+      84,
+      174,
+      251,
+      422,
+      652,
+      777,
+      1272,
+      1462,
+      1673,
+      1919,
+      1988,
+      1993,
+      2035,
+      2078,
+      2086,
+      2277
+    ],
+    "complete_original_dev_clean_archive_found": false,
+    "independent_new_speakers_admitted": 0,
+    "loose_flac_unique_hashes": 32,
+    "prior_admitted_exclusions": [
+      84,
+      174,
+      251,
+      422,
+      652,
+      777,
+      1272,
+      1462,
+      1673,
+      1919,
+      1988,
+      1993,
+      2035,
+      2078,
+      2086,
+      2277
+    ],
+    "roster_speakers": 40,
+    "unresolved_candidate_ids": [
+      2412,
+      2428,
+      2803,
+      2902,
+      3000,
+      3081,
+      3170,
+      3536,
+      3576,
+      3752,
+      3853,
+      5338,
+      5536,
+      5694,
+      5895,
+      6241,
+      6295,
+      6313,
+      6319,
+      6345,
+      7850,
+      7976,
+      8297,
+      8842
+    ],
+    "unresolved_is_not_proven_unexposed": true
+  },
+  "status": "F05_SOURCE_PREPARATION_COMPLETED_INDEPENDENT_DUALMIC_STUDY_NOT_RUN",
+  "verification": {
+    "header_receipt_sha256": "dc04d22d5fd1a8aff3b77a14536f8406224ebf589fe048c1d10630dd2459cb5d",
+    "independent_readback_sha256": "6975f2c6aba4a1710801c1447ec2269aea2b9177a56bf44d2b793c0bd54d1c68",
+    "metadata_receipt_sha256": "e4fec6a6d8367162e680c78213731d0508ce7d2ad03c68de13fe3efdce098453",
+    "status": "PREPARATION_READBACK_PASS_NO_ACOUSTIC_EVIDENCE"
+  }
+}

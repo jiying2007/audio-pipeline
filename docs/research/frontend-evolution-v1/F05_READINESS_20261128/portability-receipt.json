@@ -1,0 +1,12 @@
+{
+  "status": "ORIGINAL_F05_VERIFIER_PASSED_WITH_PUBLIC_SOURCE_AND_SEALED_LOCAL_COMMIT",
+  "public_source": "cbddb82cb849e9fa454227f1995efb07ad4a7bf5",
+  "local_actual_source": "ad7075464953162f21cd95a35e640032a4ca2634",
+  "tree": "49e1c72263e55c8d018d6dd6ccc21f771e2f1ca5",
+  "local_commit_absent_before_bundle": true,
+  "bundle_size": 17544,
+  "bundle_sha256": "5fc15c42d88db086b973fcd8b16f7024b0e13aca6ef06861596da662ad4f7a28",
+  "verify_stdout": "PREPARATION_READBACK_PASS_NO_ACOUSTIC_EVIDENCE",
+  "no_dsp": true,
+  "original_evidence_changed": false
+}

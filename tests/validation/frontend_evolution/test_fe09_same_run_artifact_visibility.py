@@ -1094,6 +1094,23 @@ class ObservedReadbackParityTests(unittest.TestCase):
         for step, prefix in zip(steps, policy.READBACK_PARITY_PREFIXES):
             with self.subTest(step=step):
                 start = quality.index("        id: " + step + "_upload\n")
+                if step == "fe09_b2s2":
+                    # Its subsequent observed REST archive 404 is now covered
+                    # by one saved-ZIP transfer, without a second downloader.
+                    guard = quality.index("Save and admit the exact B2-S2 original ZIP", start)
+                    independent = quality.index("      - name: Independently", guard)
+                    block = quality[start:independent]
+                    for marker in (prefix + "${{ github.run_id }}-attempt-${{ github.run_attempt }}",
+                                   "if: steps.fe09_b2s2.outcome == 'success'",
+                                   "ARTIFACT_ID: ${{ steps.fe09_b2s2_upload.outputs.artifact-id }}",
+                                   "GH_TOKEN: ${{ github.token }}", "--stage b2s2",
+                                   '--run-id "$GITHUB_RUN_ID"', '--execution-source "$GITHUB_SHA"',
+                                   "--output fe09-b2s2-readback", "retention-days: 30"):
+                        self.assertIn(marker, block)
+                    self.assertNotIn("actions/download-artifact", block)
+                    self.assertNotIn("continue-on-error:", block)
+                    self.assertNotIn("overwrite:", block)
+                    continue
                 guard = quality.index("Witness exact " + step + " upload", start)
                 download = quality.index("uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131", guard)
                 independent = quality.index("      - name: Independently", download)

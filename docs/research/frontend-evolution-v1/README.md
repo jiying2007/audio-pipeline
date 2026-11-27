@@ -1,5 +1,7 @@
 # Frontend Evolution v1 / 双麦与四麦开放研究
 
+[长期科研平台运行手册：来源、数据、仿真、评估、复现与 AEC3](LONG_TERM_RESEARCH_PLATFORM.zh-CN.md)
+
 ## 2026-11-14 受限增益回升诊断 D9
 
 [D9 合同](DUALMIC_GATED_RISE_D9_PLAN.zh-CN.md)与[真实结果](DUALMIC_GATED_RISE_D9_RESULT.zh-CN.md)：

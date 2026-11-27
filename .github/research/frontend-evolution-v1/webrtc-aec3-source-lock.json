@@ -1,0 +1,161 @@
+{
+  "archives": {
+    "abseil": {
+      "commit_observation_url": "https://github.com/abseil/abseil-cpp/commit/4447c7562e3bc702ade25105912dce503f0c4010",
+      "destination": "subprojects/abseil-cpp-20240722.0/",
+      "filename": "abseil-cpp-20240722.0.tar.gz",
+      "files": 1538,
+      "files_manifest_sha256": "88db21340a83641c661bdf8ec069f38314f99e5cacf0f567b0dd4ac7a2b917c6",
+      "format": "tar",
+      "git_tree": "7d7c3f8f2c41ec3a809d9f7985116f485da48c5d",
+      "max_file_size": 165948,
+      "members": 1613,
+      "root": "abseil-cpp-20240722.0",
+      "sha256": "f50e5ac311a81382da7fa75b97310e4b9006474f9560ac46f54a9967f07d4ae3",
+      "size": 2242861,
+      "tag": "20240722.0",
+      "tag_commit_observed": "4447c7562e3bc702ade25105912dce503f0c4010",
+      "tree_evidence": "Git tree independently reconstructed from exact release archive; tag commit resolved by official GitHub API; no claim of an independently cloned Abseil Git checkout",
+      "unpacked_size": 10575906,
+      "url": "https://github.com/abseil/abseil-cpp/releases/download/20240722.0/abseil-cpp-20240722.0.tar.gz"
+    },
+    "abseil_meson_patch": {
+      "destination": "subprojects/abseil-cpp-20240722.0/",
+      "filename": "abseil-cpp_20240722.0-3_patch.zip",
+      "files": 2,
+      "files_manifest_sha256": "b6ae07dea6f06b06ecec10216b86a4f1bb50e04f5d61e38b738ac8588c14f413",
+      "format": "zip",
+      "git_tree": "92c44af295293cf00a5ce05a08464cb9353fdfde",
+      "max_file_size": 28522,
+      "members": 3,
+      "root": "abseil-cpp-20240722.0",
+      "sha256": "12dd8df1488a314c53e3751abd2750cf233b830651d168b6a9f15e7d0cf71f7b",
+      "size": 5929,
+      "unpacked_size": 29592,
+      "url": "https://wrapdb.mesonbuild.com/v2/abseil-cpp_20240722.0-3/get_patch"
+    },
+    "distribution": {
+      "destination": "",
+      "filename": "webrtc-audio-processing-2.1.tar.xz",
+      "files": 663,
+      "files_manifest_sha256": "1f7fd0a1be60a584e4ad18c95aecc0d4e6cf9a841c933f5f856edf4910eae8e9",
+      "format": "tar",
+      "git_tree": "704db84e4285c0006ac8204dad2497fca3d27791",
+      "max_file_size": 86350,
+      "members": 730,
+      "root": "webrtc-audio-processing-2.1",
+      "sha256": "ae9302824b2038d394f10213cab05312c564a038434269f11dbf68f511f9f9fe",
+      "size": 604192,
+      "unpacked_size": 3936456,
+      "url": "https://freedesktop.org/software/pulseaudio/webrtc-audio-processing/webrtc-audio-processing-2.1.tar.xz"
+    }
+  },
+  "build_contract": {
+    "parallel_jobs": 2,
+    "setup_arguments": [
+      "--backend=ninja",
+      "--wrap-mode=nodownload",
+      "--force-fallback-for=abseil-cpp",
+      "--buildtype=release",
+      "--default-library=shared",
+      "-Dcpp_std=c++17"
+    ],
+    "target": "webrtc-audio-processing-2",
+    "tool_packages": {
+      "meson": {
+        "role": "isolated build tooling only; install into temporary virtualenv; not product dependency",
+        "sha256": "77706e2368a00d789c097632ccf4fc39251fba56d03e1e1b262559a3c7a08f5b",
+        "size": 968744,
+        "version": "1.5.2",
+        "wheel": "meson-1.5.2-py3-none-any.whl"
+      },
+      "ninja": {
+        "role": "isolated build tooling only; install into temporary virtualenv; not product dependency",
+        "sha256": "84502ec98f02a037a169c4b0d5d86075eaf6afc55e1879003d6cab51ced2ea4b",
+        "size": 307194,
+        "version": "1.11.1.1",
+        "wheel": "ninja-1.11.1.1-py2.py3-none-manylinux1_x86_64.manylinux_2_5_x86_64.whl"
+      }
+    },
+    "tool_versions": {
+      "meson": "1.5.2",
+      "ninja": "1.11.1.git.kitware.jobserver-1"
+    },
+    "wall_seconds": 600
+  },
+  "distribution_commit": "846fe90a289f58b7c9303a635142aa2c7caa93e5",
+  "distribution_patch_policy": "Seven patch files are preserved as supplied in the distribution; the release source already includes distribution changes. Do not reapply them. Official wrap patch adds only LICENSE.build and meson.build to Abseil, with no overwrite.",
+  "distribution_patches": {
+    "patches/0001-AECM-MIPS-Use-uintptr_t-for-pointer-arithmetic.patch": {
+      "sha256": "c47478d3aeac621a70b3b1d2797542827572977623cacabc4a4fef49d56a8deb",
+      "size": 4597
+    },
+    "patches/0001-Add-support-for-BSD-systems.patch": {
+      "sha256": "5918263dc79b66ac5a6a36d85714e77029dc630f5ed7da8c7dce2b9e93231994",
+      "size": 5024
+    },
+    "patches/0001-Allow-disabling-inline-SSE.patch": {
+      "sha256": "d0a8f396f0b6c7b8b09579ef169f85b65f907d979d868ce34ec6bc77d6bf77f9",
+      "size": 13223
+    },
+    "patches/0001-Fix-up-XMM-intrinsics-usage-on-MSVC.patch": {
+      "sha256": "f582853b9f8678d736f7e5a6d3d9b5b96ca8b252cd01fd8fd3a1405e0f5c0c33",
+      "size": 2515
+    },
+    "patches/0001-Some-fixes-for-MinGW.patch": {
+      "sha256": "7862ec01b228da781e7e497cf21b3d42ce2b1acb295302ffbbd8b25a106a8ba5",
+      "size": 1804
+    },
+    "patches/0001-common_audio-Add-MIPS_DSP_R1_LE-guard-for-vector-sca.patch": {
+      "sha256": "4108b8db24671693acee7948b1b5759b56d0ed601dae1bb4c98fbf4db5563cd9",
+      "size": 2277
+    },
+    "patches/0001-meson-Fixes-for-MSVC-build.patch": {
+      "sha256": "7238bc46898a3b52a45d636bd29f02a644229f6f6830f7da0ca7bf1283f1e297",
+      "size": 3139
+    }
+  },
+  "distribution_tag": "v2.1",
+  "distribution_tree": "704db84e4285c0006ac8204dad2497fca3d27791",
+  "distribution_url": "https://gitlab.freedesktop.org/pulseaudio/webrtc-audio-processing",
+  "distribution_version": "2.1",
+  "inventory_date": "2026-11-28",
+  "license_files_sha256": {
+    "COPYING": "9b79539028e216e813e152d45f5c1ed5fdd0554426ad50270fb03134e7082dac",
+    "subprojects/abseil-cpp-20240722.0/LICENSE": "c79a7fea0e3cac04cd43f20e7b648e5a0ff8fa5344e644b0ee09ca1162b62747",
+    "subprojects/abseil-cpp-20240722.0/LICENSE.build": "7939f4c45423cec4a18236ad0a88570e33508dd7462e07b1038001f90ece65fb",
+    "webrtc/LICENSE": "ab00a482b6a3902e40211b43c5d0441962ea99b6cc7c25c0f243fa270b78d482",
+    "webrtc/PATENTS": "01462e2068d1a04c2274f3389773014c14ed9bc3446b28303543bd3e3c064145",
+    "webrtc/common_audio/third_party/ooura/LICENSE": "25b7731b70c77ecd5f3bb19303fbaa99be18860f81d44f71da670fdcd04829db",
+    "webrtc/common_audio/third_party/spl_sqrt_floor/LICENSE": "41d791701e3e1c1073470403de7e342442d1e6a2af72681023b13a2f45f2125c",
+    "webrtc/modules/third_party/fft/LICENSE": "6fdbabd2c95c5efc6f1e46175278239afb9343120a3022ed0e0cb04267a6aeb3",
+    "webrtc/third_party/pffft/LICENSE": "a46200592eb193853527250da098e6bb0c75424e7a2c7db8da526c4f301c3d88",
+    "webrtc/third_party/rnnoise/COPYING": "e2f59ff41d9d03adc3dcf3deff170f8c8cf4a6eb4a9b174762a7656d23200ffa"
+  },
+  "materialized_files": 2203,
+  "materialized_size": 14541954,
+  "materialized_source_sha256": "b353d20bbe718987c22d3aa338a3e1ee49af654b840259954680b2377c9b89fc",
+  "rights": {
+    "code": "ALLOWED",
+    "data": "NOT_APPLICABLE",
+    "dependencies": "ALLOWED",
+    "redistribution": "ALLOWED",
+    "weights": "ALLOWED"
+  },
+  "rights_review": {
+    "code": "Fixed freedesktop distribution COPYING and WebRTC LICENSE are BSD-3-Clause style; retain all notices. WebRTC PATENTS supplies a limited implementation-specific patent grant with its stated termination conditions.",
+    "data": "No corpus or training-data admission. Abseil source test fixtures are source-package contents, not audio research data. Real audio requires its own data-rights/role contract.",
+    "dependencies": "Bundled rnnoise BSD-style, pffft FFTPACK/UCAR permissive notice, spl_sqrt_floor public-domain permission, ooura permissive attribution and fft Mark Olesen notice retained. Abseil Apache-2.0 and Meson wrap LICENSE.build MIT reviewed. Build uses host C/C++ runtime, libm/threads/optional librt/libatomic and records compiler/tool identity; no external test dependencies fetched.",
+    "redistribution": "Preserve listed copyright/license/patent notices in research source/binary evidence, Apache-2.0 notice/change obligations and MIT notices. No endorsement grant, product integration or publication authority is supplied.",
+    "weights": "Only source-embedded rnnoise/src/rnn_vad_weights.cc/.h parameters supplied with this fixed distribution and its rnnoise/COPYING; no separate pretrained download or general weights permission."
+  },
+  "schema_version": 1,
+  "scope": "fixed-freedesktop-2.1-build-bounded-synthetic-and-separately-preregistered-disclosed-reference-only",
+  "shipping_authority": false,
+  "source_id": "webrtc",
+  "training_authority": false,
+  "upstream_commit": null,
+  "upstream_generation": "M131 (distribution NEWS Release 2.0; 2.1 build-system fixups)",
+  "upstream_identity_limit": "Pinned freedesktop packaging distribution, not a pristine or latest upstream WebRTC checkout; exact original M131 upstream commit is not claimed.",
+  "upstream_url": "https://webrtc.googlesource.com/src"
+}

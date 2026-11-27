@@ -601,11 +601,15 @@ def precompiled_scoring(bundle_root: Path, bundle: dict, plan: dict, ap):
     return record, guarded
 
 
-def check_math_runtime(runtime: dict, engineering: dict, ap) -> None:
-    require(runtime['loader_environment'] == 'CLEAN_AT_START_AND_NOW' and
-            type(runtime['pid']) is int and runtime['pid'] > 0 and runtime['parent_library_mappings'],
-            'invalid math helper parent-process observation')
-    require(ap.normalize_render_corr_runtime(runtime['runtime_identity']) ==
+def checked_math_observation(runtime: dict, binding: dict, helper_path: str, ap) -> dict:
+    require(runtime['helper_library_path'] == helper_path, 'math observation names another loaded helper')
+    # Shared pure reader: exact dependency+helper mapping closure, hashes and
+    # inode/device types; old absolute paths need not exist after relocation.
+    return ap.verify_render_corr_runtime(runtime,binding)
+
+
+def check_math_runtime(runtime: dict, engineering: dict, binding: dict, helper_path: str, ap) -> None:
+    require(checked_math_observation(runtime,binding,helper_path,ap) ==
             ap.normalize_render_corr_runtime(engineering['runtime_identity']['render_corr']),
             'measurement math helper host/libraries differ from selected engineering')
 
@@ -644,7 +648,8 @@ def run_matrix(archive: Path, corpus_path: Path, bundle_root: Path, engineering_
     # loaded first, and no canonical score can fall back to host compilation.
     correlation, guarded_corr = precompiled_scoring(output/'bundle', retained_bundle, plan, ap)
     math_runtime = ap.render_corr_runtime_identity(output/'bundle', module=run_validation.render_corr_exact)
-    check_math_runtime(math_runtime,host['engineering'],ap)
+    helper_path = str(output/'bundle'/correlation['bundle_relative_file'])
+    check_math_runtime(math_runtime,host['engineering'],correlation['binding'],helper_path,ap)
     report = {'schema_version':1, 'study_id':STUDY, 'status':'INCOMPLETE', 'harness_revision':controls['commit'],
         'processor_revision':bundle['manifest']['code_revision'], 'controls':controls, 'plan_sha256':source.file_hash(PLAN),
         'data_use':plan['data_use'], 'source_receipt_sha256':SOURCE_RECEIPT,
@@ -692,7 +697,7 @@ def run_matrix(archive: Path, corpus_path: Path, bundle_root: Path, engineering_
     require(precompiled_scoring(output/'bundle', retained_bundle, plan, ap)[0] == correlation, 'native correlation binding changed during measurement')
     report['math_runtime_identity_after'] = ap.render_corr_runtime_identity(output/'bundle', module=run_validation.render_corr_exact)
     report['math_runtime_observations'] = 2
-    check_math_runtime(report['math_runtime_identity_after'],host['engineering'],ap)
+    check_math_runtime(report['math_runtime_identity_after'],host['engineering'],correlation['binding'],helper_path,ap)
     require(report['math_runtime_identity_after'] == math_runtime, 'math helper runtime changed during measurement')
     require(code_identity(controls['commit']) == controls, 'harness changed during measurement')
     require(file_manifest(output/'input', plan) == file_manifest(corpus_path.parent, plan), 'retained input changed during measurement')
@@ -769,8 +774,11 @@ def verify_measurement(archive: Path, output: Path, plan: dict, revision: str) -
             report['math_runtime_observation_method'] == 'read-only-ldd-and-proc-self-environ-maps' and
             report['math_runtime_identity'] == report['math_runtime_identity_after'],
             'recorded measurement math runtime changed')
-    check_math_runtime(report['math_runtime_identity'],engineering,ap)
+    old_helper_path = str(Path(report['execution_root'])/'bundle'/correlation['bundle_relative_file'])
+    check_math_runtime(report['math_runtime_identity'],engineering,correlation['binding'],old_helper_path,ap)
     reader_math_runtime = ap.render_corr_runtime_identity(output/'bundle', module=run_validation.render_corr_exact)
+    current_helper_path = str(output/'bundle'/correlation['bundle_relative_file'])
+    checked_math_observation(reader_math_runtime,correlation['binding'],current_helper_path,ap)
     corpus = verify_corpus(archive, output/'input/corpus.json', plan, controls)
     require(source.file_hash(output/'input/corpus.json') == report['corpus_sha256'], 'retained corpus identity changed')
     require(replay_layout(output, corpus['cases'], report['matrix_wall_seconds']) == report['processor_wall_seconds_sum'], 'sequential timing readback changed')
@@ -788,6 +796,7 @@ def verify_measurement(archive: Path, output: Path, plan: dict, revision: str) -
     require(total == report['total_output_samples'] == 28277760 and report['source_original_samples'] == 5241680, 'coverage/duration drift')
     require(precompiled_scoring(output/'bundle', bundle, plan, ap)[0] == correlation, 'native correlation binding changed during readback')
     reader_math_runtime_after = ap.render_corr_runtime_identity(output/'bundle', module=run_validation.render_corr_exact)
+    checked_math_observation(reader_math_runtime_after,correlation['binding'],current_helper_path,ap)
     require(reader_math_runtime_after == reader_math_runtime, 'reader math helper runtime changed')
     require(code_identity(revision, require_head=False) == controls, 'reader control drift')
     elapsed = time.monotonic()-started

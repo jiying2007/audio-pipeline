@@ -315,17 +315,25 @@ class ValidationTests(unittest.TestCase):
     def test_measurement_math_host_matches_engineering_not_process_id_or_library_copy_path(self):
         # A transport fixture only; the real AP normalizer owns actual ldd schema.
         normalize = lambda row: {'host':row['host'],'libraries':row['libraries']}
-        api = types.SimpleNamespace(normalize_render_corr_runtime=normalize)
+        verifier = mock.Mock(side_effect=lambda observed,binding: normalize(observed['runtime_identity']))
+        api = types.SimpleNamespace(normalize_render_corr_runtime=normalize,verify_render_corr_runtime=verifier)
+        binding = {'binary_sha256':'c'*64}
         engineering = {'runtime_identity':{'render_corr':{'host':'HOST_A','libraries':{'libm':'a'*64},'path':'/original'}}}
         runtime = {'loader_environment':'CLEAN_AT_START_AND_NOW','pid':123,
+            'helper_library_path':'/copied/lib/librender_corr_exact.so',
             'parent_library_mappings':{'tiny':'opaque-not-real-maps'},
             'runtime_identity':{'host':'HOST_A','libraries':{'libm':'a'*64},'path':'/copied'}}
-        f.check_math_runtime(runtime,engineering,api)
-        for changed in ({**runtime,'loader_environment':'POLLUTED'},
-                        {**runtime,'pid':False},
+        f.check_math_runtime(runtime,engineering,binding,runtime['helper_library_path'],api)
+        verifier.assert_called_once_with(runtime,binding)
+        for changed in ({**runtime,'helper_library_path':'/other/helper.so'},
                         {**runtime,'runtime_identity':{'host':'HOST_B','libraries':{'libm':'a'*64}}},
                         {**runtime,'runtime_identity':{'host':'HOST_A','libraries':{'libm':'b'*64}}}):
-            with self.assertRaises(ValueError): f.check_math_runtime(changed,engineering,api)
+            with self.assertRaises(ValueError): f.check_math_runtime(changed,engineering,binding,runtime['helper_library_path'],api)
+        # A shared dependency-map rejection must propagate before any use of an
+        # apparently matching normalized ldd dictionary.
+        verifier.side_effect = ValueError('missing or changed dependency mapping')
+        with self.assertRaisesRegex(ValueError,'dependency mapping'):
+            f.check_math_runtime(runtime,engineering,binding,runtime['helper_library_path'],api)
 
     def test_replay_has_exact_128_cases_seven_files_and_consistent_sequential_time(self):
         cases = self.replay()

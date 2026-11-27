@@ -1,0 +1,1635 @@
+{
+  "acoustic_acceptance": false,
+  "additional_dsp_invocations": 0,
+  "artifact_audit": {
+    "actual_new_call_count": 12,
+    "all_four_arm_sample_counts_and_roles": [
+      {
+        "case_id": "p0-ula4-70-fir33-none",
+        "mic_samples": 256000,
+        "render_samples": 256000,
+        "role": "DISCLOSED_DEVELOPMENT_DIAGNOSTIC_NOT_HOLDOUT",
+        "samples": {
+          "archived_ap": 256000,
+          "archived_speex": 256000,
+          "webrtc_aec3": 256000,
+          "webrtc_apm": 256000
+        }
+      },
+      {
+        "case_id": "p0-ula4-70-fir33-steer",
+        "mic_samples": 256000,
+        "render_samples": 256000,
+        "role": "DISCLOSED_DEVELOPMENT_DIAGNOSTIC_NOT_HOLDOUT",
+        "samples": {
+          "archived_ap": 256000,
+          "archived_speex": 256000,
+          "webrtc_aec3": 256000,
+          "webrtc_apm": 256000
+        }
+      },
+      {
+        "case_id": "p0-ula4-70-fir33-path",
+        "mic_samples": 256000,
+        "render_samples": 256000,
+        "role": "DISCLOSED_DEVELOPMENT_DIAGNOSTIC_NOT_HOLDOUT",
+        "samples": {
+          "archived_ap": 256000,
+          "archived_speex": 256000,
+          "webrtc_aec3": 256000,
+          "webrtc_apm": 256000
+        }
+      },
+      {
+        "case_id": "p1-ula4-70-fir33-none",
+        "mic_samples": 256000,
+        "render_samples": 256000,
+        "role": "DISCLOSED_DEVELOPMENT_DIAGNOSTIC_NOT_HOLDOUT",
+        "samples": {
+          "archived_ap": 256000,
+          "archived_speex": 256000,
+          "webrtc_aec3": 256000,
+          "webrtc_apm": 256000
+        }
+      },
+      {
+        "case_id": "p1-ula4-70-fir33-steer",
+        "mic_samples": 256000,
+        "render_samples": 256000,
+        "role": "DISCLOSED_DEVELOPMENT_DIAGNOSTIC_NOT_HOLDOUT",
+        "samples": {
+          "archived_ap": 256000,
+          "archived_speex": 256000,
+          "webrtc_aec3": 256000,
+          "webrtc_apm": 256000
+        }
+      },
+      {
+        "case_id": "p1-ula4-70-fir33-path",
+        "mic_samples": 256000,
+        "render_samples": 256000,
+        "role": "DISCLOSED_DEVELOPMENT_DIAGNOSTIC_NOT_HOLDOUT",
+        "samples": {
+          "archived_ap": 256000,
+          "archived_speex": 256000,
+          "webrtc_aec3": 256000,
+          "webrtc_apm": 256000
+        }
+      }
+    ],
+    "all_new_cases_frames": 1600,
+    "all_new_command_returncodes_zero": true,
+    "all_new_requested_and_applied_configs_equal": true,
+    "all_new_reset_before_frame_null": true,
+    "archived_baseline_source": "e3672ffe16e4c9d42a100e7712b9bbd3d8338545",
+    "baseline_scope": "ORIGINAL_DISCLOSED_POST_BF_AP_MDF_AND_SPEEX_NOT_CURRENT_WHOLE_PIPELINE",
+    "bundle_binary_libraries_source_and_both_engineering_receipts_reverified": true,
+    "data_role": "DISCLOSED_DEVELOPMENT_DIAGNOSTIC_NOT_HOLDOUT",
+    "extra_new_acoustic_retries": 0,
+    "harness_elapsed_seconds": 6.129860424999606,
+    "manifest_itself_excluded_from_these_counts": true,
+    "manifest_sha256": "9a44b195432148296429eb0107f137675de945fb756819f9e27da02ca03a16f6",
+    "metric_source_closure_files": 20,
+    "new_frames_total": 19200,
+    "original_zip_and_all_selected_bytes_reverified": true,
+    "result_sha256": "2f65de94d7d8de636fc4dc82e2d20c0990c29e005a06958a2d1dbe08a083f60d",
+    "sealed_manifest_member_bytes": 70157180,
+    "sealed_manifest_member_count": 3099
+  },
+  "disposition": "DESCRIPTIVE_ONLY_NO_PROMOTION_NO_RANKING_RULE",
+  "executed_shell_command": "git rev-parse HEAD && git status --short && python3 -B tests/validation/frontend_evolution/webrtc_aec3_reference.py verify --output /workspace/scratch/cd58842626bd/audit_checks/aec3-reference-20261128",
+  "findings": [
+    {
+      "description_zh": "独立 verifier exit 0；未发现来源、样本、角色、帧数、命令、重试预算或结论结构异常。",
+      "kind": "integrity"
+    },
+    {
+      "byte_identical_near_initial_arm_case_windows": 12,
+      "canonical_function": "validation/tools/run_validation_engine.py::_si_sdr_span",
+      "description_zh": "archived AP 与 AEC3 的六例 near-initial 均与固定对齐后的 target S16 字节完全相同。116.8515–130.2902 dB 来自 canonical SI-SDR 对零残差加 1e-12 的数值正则项，并非真实物理 SNR、器件动态范围或盲测质量。",
+      "energy_regularizer": 1e-12,
+      "kind": "numerical_interpretation",
+      "observed_si_sdr_range_db": [
+        116.8515209861313,
+        130.29022660169525
+      ]
+    },
+    {
+      "description_zh": "AEC3 在该六例的 fixed-delay aligned far 比值为26.65–41.68 dB；同时 p1 三个 double-before SI-SDR 均为-4.78 dB。不能用远端单指标声称整体声学通过或晋级。",
+      "kind": "descriptive_observation"
+    },
+    {
+      "description_zh": "p0-path 的 APM aligned far 比值7.52 dB，AEC3为36.28 dB；这是本次固定组成的观察，不归因到单一 HPF/NS/AGC 模块，也不据此搜索新配置。",
+      "kind": "descriptive_observation"
+    },
+    {
+      "description_zh": "旧 AP/Speex 保持e367原执行身份；新结果仅是已披露开发样例的描述性对照，非当前整链重跑、独立真实房间确认或物理平台资源认证。",
+      "kind": "scope"
+    }
+  ],
+  "host_audit": {
+    "actual_pretty_name": "Debian GNU/Linux 13 (trixie)",
+    "actual_runtime_identity": {
+      "libraries": {
+        "/usr/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2": "8642358c60bdf4579911381070c69cc7b1a447809b73d483ce799c4421609d21",
+        "/usr/lib/x86_64-linux-gnu/libc.so.6": "cc7377e8816cefadbb4ee083f5387f67a4a883d90bc273160842a6ac075af662",
+        "/usr/lib/x86_64-linux-gnu/libgcc_s.so.1": "30c61ab012a4241bed033725a09b61f5fdd3bb7df95ee852d0b096520524c7af",
+        "/usr/lib/x86_64-linux-gnu/libm.so.6": "6d567d53e895273ca14a1f9dc164fc6c8d39aed2f60aa46a733c2784228915f3",
+        "/usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.33": "972bb2a18b71140dab0240f8a1f68ab3fb1d56bcd4c4f824a91b70888faf5a00",
+        "/workspace/scratch/cd58842626bd/audit_checks/aec3-reference-20261128/bundle/bin/lib/libwebrtc-audio-processing-2.so.1": "7d1a68a8b65a2da5070cb7f2d21e5fa4dbc1a15d82b6484537acff14df65a9fc"
+      },
+      "library_names": {
+        "ld-linux-x86-64.so.2": "/usr/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2",
+        "libc.so.6": "/usr/lib/x86_64-linux-gnu/libc.so.6",
+        "libgcc_s.so.1": "/usr/lib/x86_64-linux-gnu/libgcc_s.so.1",
+        "libm.so.6": "/usr/lib/x86_64-linux-gnu/libm.so.6",
+        "libstdc++.so.6": "/usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.33",
+        "libwebrtc-audio-processing-2.so.1": "/workspace/scratch/cd58842626bd/audit_checks/aec3-reference-20261128/bundle/bin/lib/libwebrtc-audio-processing-2.so.1"
+      },
+      "machine": "x86_64",
+      "os_release_sha256": "e249e69c32d81350fdd6b05ac5575255f14e380ba14b8454acea14e49f088bfa",
+      "release": "6.18.57",
+      "system": "Linux"
+    },
+    "changed_system_library_sonames_from_ci": [
+      "ld-linux-x86-64.so.2",
+      "libc.so.6",
+      "libgcc_s.so.1",
+      "libm.so.6",
+      "libstdc++.so.6"
+    ],
+    "current_os_release_hash_matches_run": true,
+    "host_scope": "x86_64 Linux offline observations; no SSC305 timing, power, RSS, or physical audio claim",
+    "original_ci_runtime_identity": {
+      "libraries": {
+        "/home/runner/work/_temp/ap-webrtc-aec3/bundle/bin/lib/libwebrtc-audio-processing-2.so.1": "7d1a68a8b65a2da5070cb7f2d21e5fa4dbc1a15d82b6484537acff14df65a9fc",
+        "/usr/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2": "5fc0940888e9d2e1a00e66d6b1a559c36364ee867683652e1074fa576952cc3f",
+        "/usr/lib/x86_64-linux-gnu/libc.so.6": "755a371e86cc9f564ab54f66140747700fb0a103f698f659f2060f707897e09a",
+        "/usr/lib/x86_64-linux-gnu/libgcc_s.so.1": "d93224d2b0dab4247598be683adca02f5cf00586f99c187579cd7e92058fb7cb",
+        "/usr/lib/x86_64-linux-gnu/libm.so.6": "5dcc4d25466e29ca390ed6fabb371c69b65dff6fa4e91c34561057a020d6994a",
+        "/usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.33": "1fd75fe70354a416d75aef22bcae68c47bd25d20e2d0568c30b1a9838cf62f11"
+      },
+      "library_names": {
+        "ld-linux-x86-64.so.2": "/usr/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2",
+        "libc.so.6": "/usr/lib/x86_64-linux-gnu/libc.so.6",
+        "libgcc_s.so.1": "/usr/lib/x86_64-linux-gnu/libgcc_s.so.1",
+        "libm.so.6": "/usr/lib/x86_64-linux-gnu/libm.so.6",
+        "libstdc++.so.6": "/usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.33",
+        "libwebrtc-audio-processing-2.so.1": "/home/runner/work/_temp/ap-webrtc-aec3/bundle/bin/lib/libwebrtc-audio-processing-2.so.1"
+      },
+      "machine": "x86_64",
+      "os_release_sha256": "87458b3b1f1ca0e5c693ade771de7007c3783bdc692fa6b39eb6414bf2af2763",
+      "release": "7.0.0-1020-azure",
+      "system": "Linux"
+    },
+    "selected_engineering_calls": 62,
+    "selected_engineering_capture_seconds": 6.95,
+    "selected_engineering_checks": 13,
+    "selected_engineering_path": "host-engineering/engineering.json",
+    "selected_engineering_status": "PASS_ENGINEERING_ONLY",
+    "selected_engineering_wall_seconds": 1.2274379380005485
+  },
+  "host_frame_timing": {
+    "first_completion_scope": "steady_clock relative to case start, includes construction before first processing; not end-to-end acoustic latency",
+    "measured_span": "ProcessReverseStream, set_stream_delay_ms(0), ProcessStream; excludes frame file I/O and initial construction",
+    "percentile_method": "nearest rank ceil(p*n), applied to all 9600 frames per mode",
+    "statistics": {
+      "aec3": {
+        "first_output_host_completion_ms": {
+          "max": 2.835213,
+          "mean": 1.3973723333333332,
+          "median": 1.020113,
+          "min": 0.92003,
+          "n": 6
+        },
+        "frame_ms": {
+          "max": 2.428912,
+          "mean": 0.0745189615625,
+          "median": 0.0388195,
+          "min": 0.021868,
+          "n": 9600
+        },
+        "frame_processing_total_seconds": 0.715382031,
+        "p95_nearest_rank_ms": 0.277844,
+        "p99_nearest_rank_ms": 0.763416,
+        "per_case": [
+          {
+            "algorithmic_latency_samples": 128,
+            "case_id": "p0-ula4-70-fir33-none",
+            "config_equal": true,
+            "first_output_host_completion_ms": 0.947213,
+            "frame_ms": {
+              "max": 0.939428,
+              "mean": 0.098308565625,
+              "median": 0.040295,
+              "min": 0.023291,
+              "n": 1600
+            },
+            "frames": 1600,
+            "reset_before_frame": null,
+            "returncode": 0,
+            "wall_seconds": 0.2141708
+          },
+          {
+            "algorithmic_latency_samples": 128,
+            "case_id": "p0-ula4-70-fir33-steer",
+            "config_equal": true,
+            "first_output_host_completion_ms": 2.835213,
+            "frame_ms": {
+              "max": 2.428912,
+              "mean": 0.10454405375,
+              "median": 0.041610499999999995,
+              "min": 0.023263,
+              "n": 1600
+            },
+            "frames": 1600,
+            "reset_before_frame": null,
+            "returncode": 0,
+            "wall_seconds": 0.214465501
+          },
+          {
+            "algorithmic_latency_samples": 128,
+            "case_id": "p0-ula4-70-fir33-path",
+            "config_equal": true,
+            "first_output_host_completion_ms": 0.92003,
+            "frame_ms": {
+              "max": 1.122628,
+              "mean": 0.0969934425,
+              "median": 0.0405215,
+              "min": 0.021868,
+              "n": 1600
+            },
+            "frames": 1600,
+            "reset_before_frame": null,
+            "returncode": 0,
+            "wall_seconds": 0.164004109
+          },
+          {
+            "algorithmic_latency_samples": 128,
+            "case_id": "p1-ula4-70-fir33-none",
+            "config_equal": true,
+            "first_output_host_completion_ms": 1.652672,
+            "frame_ms": {
+              "max": 0.785115,
+              "mean": 0.047582268125,
+              "median": 0.037988499999999994,
+              "min": 0.023258,
+              "n": 1600
+            },
+            "frames": 1600,
+            "reset_before_frame": null,
+            "returncode": 0,
+            "wall_seconds": 0.114170503
+          },
+          {
+            "algorithmic_latency_samples": 128,
+            "case_id": "p1-ula4-70-fir33-steer",
+            "config_equal": true,
+            "first_output_host_completion_ms": 1.093013,
+            "frame_ms": {
+              "max": 0.309111,
+              "mean": 0.04725087,
+              "median": 0.036934,
+              "min": 0.023342,
+              "n": 1600
+            },
+            "frames": 1600,
+            "reset_before_frame": null,
+            "returncode": 0,
+            "wall_seconds": 0.114144345
+          },
+          {
+            "algorithmic_latency_samples": 128,
+            "case_id": "p1-ula4-70-fir33-path",
+            "config_equal": true,
+            "first_output_host_completion_ms": 0.936093,
+            "frame_ms": {
+              "max": 1.550616,
+              "mean": 0.052434569375,
+              "median": 0.038548,
+              "min": 0.022873,
+              "n": 1600
+            },
+            "frames": 1600,
+            "reset_before_frame": null,
+            "returncode": 0,
+            "wall_seconds": 0.114372806
+          }
+        ]
+      },
+      "apm": {
+        "first_output_host_completion_ms": {
+          "max": 1.825122,
+          "mean": 1.5740958333333332,
+          "median": 1.5773375,
+          "min": 1.353626,
+          "n": 6
+        },
+        "frame_ms": {
+          "max": 1.941451,
+          "mean": 0.095754109375,
+          "median": 0.059583,
+          "min": 0.041275,
+          "n": 9600
+        },
+        "frame_processing_total_seconds": 0.9192394500000001,
+        "p95_nearest_rank_ms": 0.307552,
+        "p99_nearest_rank_ms": 0.780476,
+        "per_case": [
+          {
+            "algorithmic_latency_samples": 224,
+            "case_id": "p0-ula4-70-fir33-none",
+            "config_equal": true,
+            "first_output_host_completion_ms": 1.756581,
+            "frame_ms": {
+              "max": 1.053486,
+              "mean": 0.120177705625,
+              "median": 0.0617865,
+              "min": 0.044371,
+              "n": 1600
+            },
+            "frames": 1600,
+            "reset_before_frame": null,
+            "returncode": 0,
+            "wall_seconds": 0.214313912
+          },
+          {
+            "algorithmic_latency_samples": 224,
+            "case_id": "p0-ula4-70-fir33-steer",
+            "config_equal": true,
+            "first_output_host_completion_ms": 1.353626,
+            "frame_ms": {
+              "max": 1.941451,
+              "mean": 0.122793994375,
+              "median": 0.0634585,
+              "min": 0.044799,
+              "n": 1600
+            },
+            "frames": 1600,
+            "reset_before_frame": null,
+            "returncode": 0,
+            "wall_seconds": 0.214542978
+          },
+          {
+            "algorithmic_latency_samples": 224,
+            "case_id": "p0-ula4-70-fir33-path",
+            "config_equal": true,
+            "first_output_host_completion_ms": 1.574661,
+            "frame_ms": {
+              "max": 1.343791,
+              "mean": 0.12048910875,
+              "median": 0.0625625,
+              "min": 0.044603,
+              "n": 1600
+            },
+            "frames": 1600,
+            "reset_before_frame": null,
+            "returncode": 0,
+            "wall_seconds": 0.214272371
+          },
+          {
+            "algorithmic_latency_samples": 224,
+            "case_id": "p1-ula4-70-fir33-none",
+            "config_equal": true,
+            "first_output_host_completion_ms": 1.354571,
+            "frame_ms": {
+              "max": 0.30236,
+              "mean": 0.070234225625,
+              "median": 0.058480500000000005,
+              "min": 0.041275,
+              "n": 1600
+            },
+            "frames": 1600,
+            "reset_before_frame": null,
+            "returncode": 0,
+            "wall_seconds": 0.164242815
+          },
+          {
+            "algorithmic_latency_samples": 224,
+            "case_id": "p1-ula4-70-fir33-steer",
+            "config_equal": true,
+            "first_output_host_completion_ms": 1.580014,
+            "frame_ms": {
+              "max": 0.406383,
+              "mean": 0.07025928125,
+              "median": 0.058259,
+              "min": 0.041792,
+              "n": 1600
+            },
+            "frames": 1600,
+            "reset_before_frame": null,
+            "returncode": 0,
+            "wall_seconds": 0.164207708
+          },
+          {
+            "algorithmic_latency_samples": 224,
+            "case_id": "p1-ula4-70-fir33-path",
+            "config_equal": true,
+            "first_output_host_completion_ms": 1.825122,
+            "frame_ms": {
+              "max": 0.596576,
+              "mean": 0.070570340625,
+              "median": 0.057872999999999994,
+              "min": 0.041348,
+              "n": 1600
+            },
+            "frames": 1600,
+            "reset_before_frame": null,
+            "returncode": 0,
+            "wall_seconds": 0.16434859
+          }
+        ]
+      }
+    },
+    "unit": "milliseconds"
+  },
+  "independent_confirmation": false,
+  "measurement_code_modified": false,
+  "metric_aggregation": {
+    "data_independence": "two source pairs crossed with three event variants; not six independent confirmations",
+    "delay_samples": {
+      "archived_ap": 0,
+      "archived_speex": 0,
+      "webrtc_aec3": 128,
+      "webrtc_apm": 224
+    },
+    "no_padding_of_unobserved_tail": true,
+    "no_target_selected_lag": true,
+    "per_case_aligned": [
+      {
+        "case_id": "p0-ula4-70-fir33-none",
+        "metrics": {
+          "archived_ap": {
+            "double-after": 6.723564027100527,
+            "double-before": 10.418374351044609,
+            "far": 8.231141017588554,
+            "near-final": 124.44263342667489,
+            "near-initial": 130.29022660169525
+          },
+          "archived_speex": {
+            "double-after": 14.946556473144739,
+            "double-before": 14.921626326797618,
+            "far": 26.695563821175327,
+            "near-final": 15.024451701187449,
+            "near-initial": 14.986791051364525
+          },
+          "webrtc_aec3": {
+            "double-after": 7.767327001078486,
+            "double-before": 9.11988575054674,
+            "far": 41.676553009910826,
+            "near-final": 124.44263342667489,
+            "near-initial": 130.29022660169525
+          },
+          "webrtc_apm": {
+            "double-after": 5.416604393691204,
+            "double-before": 6.689286399035973,
+            "far": 41.05712606781327,
+            "near-final": 10.971304745932919,
+            "near-initial": 9.371474508162747
+          }
+        }
+      },
+      {
+        "case_id": "p0-ula4-70-fir33-steer",
+        "metrics": {
+          "archived_ap": {
+            "double-after": 7.158379412451275,
+            "double-before": 10.418374351044609,
+            "far": 8.988486810454262,
+            "near-final": 124.2301185461495,
+            "near-initial": 130.29022660169525
+          },
+          "archived_speex": {
+            "double-after": 14.083658544860755,
+            "double-before": 14.921626326797618,
+            "far": 22.38562096789287,
+            "near-final": 14.87175690205548,
+            "near-initial": 14.986791051364525
+          },
+          "webrtc_aec3": {
+            "double-after": 7.520768805770059,
+            "double-before": 9.11988575054674,
+            "far": 41.05479053706111,
+            "near-final": 124.2301185461495,
+            "near-initial": 130.29022660169525
+          },
+          "webrtc_apm": {
+            "double-after": 5.091642080719777,
+            "double-before": 6.689286399035973,
+            "far": 37.60664605249483,
+            "near-final": 10.87085343599526,
+            "near-initial": 9.371474508162747
+          }
+        }
+      },
+      {
+        "case_id": "p0-ula4-70-fir33-path",
+        "metrics": {
+          "archived_ap": {
+            "double-after": 6.444167601069164,
+            "double-before": 10.418374351044609,
+            "far": 7.091989221029495,
+            "near-final": 124.44263342667489,
+            "near-initial": 130.29022660169525
+          },
+          "archived_speex": {
+            "double-after": 9.268789215313271,
+            "double-before": 14.921626326797618,
+            "far": 14.86686595195859,
+            "near-final": 15.024514746340232,
+            "near-initial": 14.986791051364525
+          },
+          "webrtc_aec3": {
+            "double-after": 5.860650999254147,
+            "double-before": 9.11988575054674,
+            "far": 36.27541795672816,
+            "near-final": 124.44263342667489,
+            "near-initial": 130.29022660169525
+          },
+          "webrtc_apm": {
+            "double-after": 3.902651166908174,
+            "double-before": 6.689286399035973,
+            "far": 7.52142329125562,
+            "near-final": 10.952845573372178,
+            "near-initial": 9.371474508162747
+          }
+        }
+      },
+      {
+        "case_id": "p1-ula4-70-fir33-none",
+        "metrics": {
+          "archived_ap": {
+            "double-after": 24.80688170611833,
+            "double-before": 20.986215504324377,
+            "far": 19.446575606696015,
+            "near-final": 111.76126390828779,
+            "near-initial": 116.8515209861313
+          },
+          "archived_speex": {
+            "double-after": 8.699818853826327,
+            "double-before": 7.9330783446758835,
+            "far": 0.6210127840591741,
+            "near-final": 9.714892446992582,
+            "near-initial": 9.353469369196954
+          },
+          "webrtc_aec3": {
+            "double-after": 1.0684437576404315,
+            "double-before": -4.784093017112171,
+            "far": 27.512950467837094,
+            "near-final": 24.301158480513347,
+            "near-initial": 116.8515209861313
+          },
+          "webrtc_apm": {
+            "double-after": 0.33827685096633175,
+            "double-before": -5.408720483269935,
+            "far": 19.107268604426416,
+            "near-final": 5.011990168504148,
+            "near-initial": 5.919372309416725
+          }
+        }
+      },
+      {
+        "case_id": "p1-ula4-70-fir33-steer",
+        "metrics": {
+          "archived_ap": {
+            "double-after": 25.274793803393663,
+            "double-before": 20.986215504324377,
+            "far": 20.876270493937543,
+            "near-final": 111.6019063953627,
+            "near-initial": 116.8515209861313
+          },
+          "archived_speex": {
+            "double-after": 8.503398992949954,
+            "double-before": 7.9330783446758835,
+            "far": 0.616811728784178,
+            "near-final": 9.56525292853245,
+            "near-initial": 9.353469369196954
+          },
+          "webrtc_aec3": {
+            "double-after": 0.9672029039575745,
+            "double-before": -4.784093017112171,
+            "far": 27.740284675899552,
+            "near-final": 24.263970725859284,
+            "near-initial": 116.8515209861313
+          },
+          "webrtc_apm": {
+            "double-after": 0.31655149461763626,
+            "double-before": -5.408720483269935,
+            "far": 19.22706692790586,
+            "near-final": 4.830696105116604,
+            "near-initial": 5.919372309416725
+          }
+        }
+      },
+      {
+        "case_id": "p1-ula4-70-fir33-path",
+        "metrics": {
+          "archived_ap": {
+            "double-after": 20.164415336471684,
+            "double-before": 20.986215504324377,
+            "far": 9.76431199275074,
+            "near-final": 111.76126390828779,
+            "near-initial": 116.8515209861313
+          },
+          "archived_speex": {
+            "double-after": 8.73938087898414,
+            "double-before": 7.9330783446758835,
+            "far": 0.039113324846164164,
+            "near-final": 9.714893587000986,
+            "near-initial": 9.353469369196954
+          },
+          "webrtc_aec3": {
+            "double-after": 1.1044725173739458,
+            "double-before": -4.784093017112171,
+            "far": 26.6521141068613,
+            "near-final": 25.085382630867244,
+            "near-initial": 116.8515209861313
+          },
+          "webrtc_apm": {
+            "double-after": 0.19580850493491103,
+            "double-before": -5.408720483269935,
+            "far": 17.77662218504547,
+            "near-final": 4.993413100242553,
+            "near-initial": 5.919372309416725
+          }
+        }
+      }
+    ],
+    "raw_and_aligned": {
+      "archived_ap": {
+        "aligned": {
+          "double-after": {
+            "max": 25.274793803393663,
+            "mean": 15.095366981100774,
+            "median": 13.66139737446148,
+            "min": 6.444167601069164,
+            "n": 6
+          },
+          "double-before": {
+            "max": 20.986215504324377,
+            "mean": 15.702294927684493,
+            "median": 15.702294927684493,
+            "min": 10.418374351044609,
+            "n": 6
+          },
+          "far": {
+            "max": 20.876270493937543,
+            "mean": 12.399795857076102,
+            "median": 9.376399401602502,
+            "min": 7.091989221029495,
+            "n": 6
+          },
+          "near-final": {
+            "max": 124.44263342667489,
+            "mean": 118.0399699352396,
+            "median": 117.99569122721864,
+            "min": 111.6019063953627,
+            "n": 6
+          },
+          "near-initial": {
+            "max": 130.29022660169525,
+            "mean": 123.57087379391328,
+            "median": 123.57087379391328,
+            "min": 116.8515209861313,
+            "n": 6
+          }
+        },
+        "raw": {
+          "double-after": {
+            "max": 25.274793803393663,
+            "mean": 15.095366981100774,
+            "median": 13.66139737446148,
+            "min": 6.444167601069164,
+            "n": 6
+          },
+          "double-before": {
+            "max": 20.986215504324377,
+            "mean": 15.702294927684493,
+            "median": 15.702294927684493,
+            "min": 10.418374351044609,
+            "n": 6
+          },
+          "far": {
+            "max": 20.876270493937543,
+            "mean": 12.399795857076102,
+            "median": 9.376399401602502,
+            "min": 7.091989221029495,
+            "n": 6
+          },
+          "near-final": {
+            "max": 124.44263342667489,
+            "mean": 118.0399699352396,
+            "median": 117.99569122721864,
+            "min": 111.6019063953627,
+            "n": 6
+          },
+          "near-initial": {
+            "max": 130.29022660169525,
+            "mean": 123.57087379391328,
+            "median": 123.57087379391328,
+            "min": 116.8515209861313,
+            "n": 6
+          }
+        }
+      },
+      "archived_speex": {
+        "aligned": {
+          "double-after": {
+            "max": 14.946556473144739,
+            "mean": 10.706933826513197,
+            "median": 9.004085047148706,
+            "min": 8.503398992949954,
+            "n": 6
+          },
+          "double-before": {
+            "max": 14.921626326797618,
+            "mean": 11.427352335736751,
+            "median": 11.427352335736751,
+            "min": 7.9330783446758835,
+            "n": 6
+          },
+          "far": {
+            "max": 26.695563821175327,
+            "mean": 10.870831429786051,
+            "median": 7.743939368008882,
+            "min": 0.039113324846164164,
+            "n": 6
+          },
+          "near-final": {
+            "max": 15.024514746340232,
+            "mean": 12.319293718684863,
+            "median": 12.293325244528233,
+            "min": 9.56525292853245,
+            "n": 6
+          },
+          "near-initial": {
+            "max": 14.986791051364525,
+            "mean": 12.170130210280739,
+            "median": 12.170130210280739,
+            "min": 9.353469369196954,
+            "n": 6
+          }
+        },
+        "raw": {
+          "double-after": {
+            "max": 14.946556473144739,
+            "mean": 10.706933826513197,
+            "median": 9.004085047148706,
+            "min": 8.503398992949954,
+            "n": 6
+          },
+          "double-before": {
+            "max": 14.921626326797618,
+            "mean": 11.427352335736751,
+            "median": 11.427352335736751,
+            "min": 7.9330783446758835,
+            "n": 6
+          },
+          "far": {
+            "max": 26.695563821175327,
+            "mean": 10.870831429786051,
+            "median": 7.743939368008882,
+            "min": 0.039113324846164164,
+            "n": 6
+          },
+          "near-final": {
+            "max": 15.024514746340232,
+            "mean": 12.319293718684863,
+            "median": 12.293325244528233,
+            "min": 9.56525292853245,
+            "n": 6
+          },
+          "near-initial": {
+            "max": 14.986791051364525,
+            "mean": 12.170130210280739,
+            "median": 12.170130210280739,
+            "min": 9.353469369196954,
+            "n": 6
+          }
+        }
+      },
+      "webrtc_aec3": {
+        "aligned": {
+          "double-after": {
+            "max": 7.767327001078486,
+            "mean": 4.048144330845774,
+            "median": 3.4825617583140462,
+            "min": 0.9672029039575745,
+            "n": 6
+          },
+          "double-before": {
+            "max": 9.11988575054674,
+            "mean": 2.1678963667172844,
+            "median": 2.1678963667172844,
+            "min": -4.784093017112171,
+            "n": 6
+          },
+          "far": {
+            "max": 41.676553009910826,
+            "mean": 33.48535179238301,
+            "median": 32.00785131631386,
+            "min": 26.6521141068613,
+            "n": 6
+          },
+          "near-final": {
+            "max": 124.44263342667489,
+            "mean": 74.46098287278986,
+            "median": 74.65775058850838,
+            "min": 24.263970725859284,
+            "n": 6
+          },
+          "near-initial": {
+            "max": 130.29022660169525,
+            "mean": 123.57087379391328,
+            "median": 123.57087379391328,
+            "min": 116.8515209861313,
+            "n": 6
+          }
+        },
+        "raw": {
+          "double-after": {
+            "max": -13.450729106138787,
+            "mean": -14.292163216552646,
+            "median": -14.304410492611282,
+            "min": -15.078665629975767,
+            "n": 6
+          },
+          "double-before": {
+            "max": -16.389040113914742,
+            "mean": -19.77664955343398,
+            "median": -19.77664955343398,
+            "min": -23.16425899295322,
+            "n": 6
+          },
+          "far": {
+            "max": 41.67628695515417,
+            "mean": 33.48647024575824,
+            "median": 32.009108445631604,
+            "min": 26.648368574228076,
+            "n": 6
+          },
+          "near-final": {
+            "max": -27.466765841029364,
+            "mean": -28.48379051772725,
+            "median": -28.526876168772986,
+            "min": -29.213262963233014,
+            "n": 6
+          },
+          "near-initial": {
+            "max": -15.612257061196004,
+            "mean": -15.81925610365101,
+            "median": -15.81925610365101,
+            "min": -16.026255146106017,
+            "n": 6
+          }
+        }
+      },
+      "webrtc_apm": {
+        "aligned": {
+          "double-after": {
+            "max": 5.416604393691204,
+            "mean": 2.5435890819730056,
+            "median": 2.120464008937253,
+            "min": 0.19580850493491103,
+            "n": 6
+          },
+          "double-before": {
+            "max": 6.689286399035973,
+            "mean": 0.6402829578830191,
+            "median": 0.6402829578830191,
+            "min": -5.408720483269935,
+            "n": 6
+          },
+          "far": {
+            "max": 41.05712606781327,
+            "mean": 23.716025521490245,
+            "median": 19.167167766166138,
+            "min": 7.52142329125562,
+            "n": 6
+          },
+          "near-final": {
+            "max": 10.971304745932919,
+            "mean": 7.938517188193944,
+            "median": 7.941421802249704,
+            "min": 4.830696105116604,
+            "n": 6
+          },
+          "near-initial": {
+            "max": 9.371474508162747,
+            "mean": 7.6454234087897355,
+            "median": 7.6454234087897355,
+            "min": 5.919372309416725,
+            "n": 6
+          }
+        },
+        "raw": {
+          "double-after": {
+            "max": -16.16322720154046,
+            "mean": -29.08670568114796,
+            "median": -28.07048160438368,
+            "min": -43.919622545872826,
+            "n": 6
+          },
+          "double-before": {
+            "max": -21.089269043570265,
+            "mean": -22.63307955691785,
+            "median": -22.63307955691785,
+            "min": -24.17689007026543,
+            "n": 6
+          },
+          "far": {
+            "max": 41.04990357595903,
+            "mean": 23.712725933990036,
+            "median": 19.1655963076684,
+            "min": 7.521443885604592,
+            "n": 6
+          },
+          "near-final": {
+            "max": -20.365615237190614,
+            "mean": -20.823472396490054,
+            "median": -20.871719758790864,
+            "min": -21.066794208142348,
+            "n": 6
+          },
+          "near-initial": {
+            "max": -16.885709321352984,
+            "mean": -25.955621087874523,
+            "median": -25.955621087874523,
+            "min": -35.02553285439606,
+            "n": 6
+          }
+        }
+      }
+    },
+    "statistic": "unweighted arithmetic mean, median, minimum and maximum of six disclosed cases",
+    "units": "dB"
+  },
+  "near_window_byte_audit": [
+    {
+      "arm": "archived_ap",
+      "case_id": "p0-ula4-70-fir33-none",
+      "near_windows": {
+        "double-after": {
+          "different_samples": 28029,
+          "equal_s16_bytes": false,
+          "max_absolute_s16_error": 1970
+        },
+        "double-before": {
+          "different_samples": 24021,
+          "equal_s16_bytes": false,
+          "max_absolute_s16_error": 1488
+        },
+        "near-final": {
+          "different_samples": 0,
+          "equal_s16_bytes": true,
+          "max_absolute_s16_error": 0
+        },
+        "near-initial": {
+          "different_samples": 0,
+          "equal_s16_bytes": true,
+          "max_absolute_s16_error": 0
+        }
+      }
+    },
+    {
+      "arm": "archived_speex",
+      "case_id": "p0-ula4-70-fir33-none",
+      "near_windows": {
+        "double-after": {
+          "different_samples": 27941,
+          "equal_s16_bytes": false,
+          "max_absolute_s16_error": 653
+        },
+        "double-before": {
+          "different_samples": 27894,
+          "equal_s16_bytes": false,
+          "max_absolute_s16_error": 293
+        },
+        "near-final": {
+          "different_samples": 27289,
+          "equal_s16_bytes": false,
+          "max_absolute_s16_error": 292
+        },
+        "near-initial": {
+          "different_samples": 27853,
+          "equal_s16_bytes": false,
+          "max_absolute_s16_error": 653
+        }
+      }
+    },
+    {
+      "arm": "webrtc_aec3",
+      "case_id": "p0-ula4-70-fir33-none",
+      "near_windows": {
+        "double-after": {
+          "different_samples": 26259,
+          "equal_s16_bytes": false,
+          "max_absolute_s16_error": 1796
+        },
+        "double-before": {
+          "different_samples": 23144,
+          "equal_s16_bytes": false,
+          "max_absolute_s16_error": 1367
+        },
+        "near-final": {
+          "different_samples": 0,
+          "equal_s16_bytes": true,
+          "max_absolute_s16_error": 0
+        },
+        "near-initial": {
+          "different_samples": 0,
+          "equal_s16_bytes": true,
+          "max_absolute_s16_error": 0
+        }
+      }
+    },
+    {
+      "arm": "webrtc_apm",
+      "case_id": "p0-ula4-70-fir33-none",
+      "near_windows": {
+        "double-after": {
+          "different_samples": 28230,
+          "equal_s16_bytes": false,
+          "max_absolute_s16_error": 13635
+        },
+        "double-before": {
+          "different_samples": 28495,
+          "equal_s16_bytes": false,
+          "max_absolute_s16_error": 7183
+        },
+        "near-final": {
+          "different_samples": 28597,
+          "equal_s16_bytes": false,
+          "max_absolute_s16_error": 7888
+        },
+        "near-initial": {
+          "different_samples": 28353,
+          "equal_s16_bytes": false,
+          "max_absolute_s16_error": 15911
+        }
+      }
+    },
+    {
+      "arm": "archived_ap",
+      "case_id": "p0-ula4-70-fir33-steer",
+      "near_windows": {
+        "double-after": {
+          "different_samples": 28017,
+          "equal_s16_bytes": false,
+          "max_absolute_s16_error": 1659
+        },
+        "double-before": {
+          "different_samples": 24021,
+          "equal_s16_bytes": false,
+          "max_absolute_s16_error": 1488
+        },
+        "near-final": {
+          "different_samples": 0,
+          "equal_s16_bytes": true,
+          "max_absolute_s16_error": 0
+        },
+        "near-initial": {
+          "different_samples": 0,
+          "equal_s16_bytes": true,
+          "max_absolute_s16_error": 0
+        }
+      }
+    },
+    {
+      "arm": "archived_speex",
+      "case_id": "p0-ula4-70-fir33-steer",
+      "near_windows": {
+        "double-after": {
+          "different_samples": 27990,
+          "equal_s16_bytes": false,
+          "max_absolute_s16_error": 926
+        },
+        "double-before": {
+          "different_samples": 27894,
+          "equal_s16_bytes": false,
+          "max_absolute_s16_error": 293
+        },
+        "near-final": {
+          "different_samples": 27332,
+          "equal_s16_bytes": false,
+          "max_absolute_s16_error": 290
+        },
+        "near-initial": {
+          "different_samples": 27853,
+          "equal_s16_bytes": false,
+          "max_absolute_s16_error": 653
+        }
+      }
+    },
+    {
+      "arm": "webrtc_aec3",
+      "case_id": "p0-ula4-70-fir33-steer",
+      "near_windows": {
+        "double-after": {
+          "different_samples": 26319,
+          "equal_s16_bytes": false,
+          "max_absolute_s16_error": 1807
+        },
+        "double-before": {
+          "different_samples": 23144,
+          "equal_s16_bytes": false,
+          "max_absolute_s16_error": 1367
+        },
+        "near-final": {
+          "different_samples": 0,
+          "equal_s16_bytes": true,
+          "max_absolute_s16_error": 0
+        },
+        "near-initial": {
+          "different_samples": 0,
+          "equal_s16_bytes": true,
+          "max_absolute_s16_error": 0
+        }
+      }
+    },
+    {
+      "arm": "webrtc_apm",
+      "case_id": "p0-ula4-70-fir33-steer",
+      "near_windows": {
+        "double-after": {
+          "different_samples": 28221,
+          "equal_s16_bytes": false,
+          "max_absolute_s16_error": 13415
+        },
+        "double-before": {
+          "different_samples": 28495,
+          "equal_s16_bytes": false,
+          "max_absolute_s16_error": 7183
+        },
+        "near-final": {
+          "different_samples": 28580,
+          "equal_s16_bytes": false,
+          "max_absolute_s16_error": 7603
+        },
+        "near-initial": {
+          "different_samples": 28353,
+          "equal_s16_bytes": false,
+          "max_absolute_s16_error": 15911
+        }
+      }
+    },
+    {
+      "arm": "archived_ap",
+      "case_id": "p0-ula4-70-fir33-path",
+      "near_windows": {
+        "double-after": {
+          "different_samples": 28075,
+          "equal_s16_bytes": false,
+          "max_absolute_s16_error": 2199
+        },
+        "double-before": {
+          "different_samples": 24021,
+          "equal_s16_bytes": false,
+          "max_absolute_s16_error": 1488
+        },
+        "near-final": {
+          "different_samples": 0,
+          "equal_s16_bytes": true,
+          "max_absolute_s16_error": 0
+        },
+        "near-initial": {
+          "different_samples": 0,
+          "equal_s16_bytes": true,
+          "max_absolute_s16_error": 0
+        }
+      }
+    },
+    {
+      "arm": "archived_speex",
+      "case_id": "p0-ula4-70-fir33-path",
+      "near_windows": {
+        "double-after": {
+          "different_samples": 28042,
+          "equal_s16_bytes": false,
+          "max_absolute_s16_error": 1483
+        },
+        "double-before": {
+          "different_samples": 27894,
+          "equal_s16_bytes": false,
+          "max_absolute_s16_error": 293
+        },
+        "near-final": {
+          "different_samples": 27288,
+          "equal_s16_bytes": false,
+          "max_absolute_s16_error": 292
+        },
+        "near-initial": {
+          "different_samples": 27853,
+          "equal_s16_bytes": false,
+          "max_absolute_s16_error": 653
+        }
+      }
+    },
+    {
+      "arm": "webrtc_aec3",
+      "case_id": "p0-ula4-70-fir33-path",
+      "near_windows": {
+        "double-after": {
+          "different_samples": 27361,
+          "equal_s16_bytes": false,
+          "max_absolute_s16_error": 1930
+        },
+        "double-before": {
+          "different_samples": 23144,
+          "equal_s16_bytes": false,
+          "max_absolute_s16_error": 1367
+        },
+        "near-final": {
+          "different_samples": 0,
+          "equal_s16_bytes": true,
+          "max_absolute_s16_error": 0
+        },
+        "near-initial": {
+          "different_samples": 0,
+          "equal_s16_bytes": true,
+          "max_absolute_s16_error": 0
+        }
+      }
+    },
+    {
+      "arm": "webrtc_apm",
+      "case_id": "p0-ula4-70-fir33-path",
+      "near_windows": {
+        "double-after": {
+          "different_samples": 28276,
+          "equal_s16_bytes": false,
+          "max_absolute_s16_error": 13646
+        },
+        "double-before": {
+          "different_samples": 28495,
+          "equal_s16_bytes": false,
+          "max_absolute_s16_error": 7183
+        },
+        "near-final": {
+          "different_samples": 28589,
+          "equal_s16_bytes": false,
+          "max_absolute_s16_error": 7451
+        },
+        "near-initial": {
+          "different_samples": 28353,
+          "equal_s16_bytes": false,
+          "max_absolute_s16_error": 15911
+        }
+      }
+    },
+    {
+      "arm": "archived_ap",
+      "case_id": "p1-ula4-70-fir33-none",
+      "near_windows": {
+        "double-after": {
+          "different_samples": 23044,
+          "equal_s16_bytes": false,
+          "max_absolute_s16_error": 42
+        },
+        "double-before": {
+          "different_samples": 24141,
+          "equal_s16_bytes": false,
+          "max_absolute_s16_error": 30
+        },
+        "near-final": {
+          "different_samples": 0,
+          "equal_s16_bytes": true,
+          "max_absolute_s16_error": 0
+        },
+        "near-initial": {
+          "different_samples": 0,
+          "equal_s16_bytes": true,
+          "max_absolute_s16_error": 0
+        }
+      }
+    },
+    {
+      "arm": "archived_speex",
+      "case_id": "p1-ula4-70-fir33-none",
+      "near_windows": {
+        "double-after": {
+          "different_samples": 27716,
+          "equal_s16_bytes": false,
+          "max_absolute_s16_error": 313
+        },
+        "double-before": {
+          "different_samples": 28016,
+          "equal_s16_bytes": false,
+          "max_absolute_s16_error": 153
+        },
+        "near-final": {
+          "different_samples": 27003,
+          "equal_s16_bytes": false,
+          "max_absolute_s16_error": 107
+        },
+        "near-initial": {
+          "different_samples": 27214,
+          "equal_s16_bytes": false,
+          "max_absolute_s16_error": 307
+        }
+      }
+    },
+    {
+      "arm": "webrtc_aec3",
+      "case_id": "p1-ula4-70-fir33-none",
+      "near_windows": {
+        "double-after": {
+          "different_samples": 27080,
+          "equal_s16_bytes": false,
+          "max_absolute_s16_error": 871
+        },
+        "double-before": {
+          "different_samples": 27245,
+          "equal_s16_bytes": false,
+          "max_absolute_s16_error": 724
+        },
+        "near-final": {
+          "different_samples": 762,
+          "equal_s16_bytes": false,
+          "max_absolute_s16_error": 98
+        },
+        "near-initial": {
+          "different_samples": 0,
+          "equal_s16_bytes": true,
+          "max_absolute_s16_error": 0
+        }
+      }
+    },
+    {
+      "arm": "webrtc_apm",
+      "case_id": "p1-ula4-70-fir33-none",
+      "near_windows": {
+        "double-after": {
+          "different_samples": 27658,
+          "equal_s16_bytes": false,
+          "max_absolute_s16_error": 8237
+        },
+        "double-before": {
+          "different_samples": 27382,
+          "equal_s16_bytes": false,
+          "max_absolute_s16_error": 2850
+        },
+        "near-final": {
+          "different_samples": 28568,
+          "equal_s16_bytes": false,
+          "max_absolute_s16_error": 11392
+        },
+        "near-initial": {
+          "different_samples": 28050,
+          "equal_s16_bytes": false,
+          "max_absolute_s16_error": 6543
+        }
+      }
+    },
+    {
+      "arm": "archived_ap",
+      "case_id": "p1-ula4-70-fir33-steer",
+      "near_windows": {
+        "double-after": {
+          "different_samples": 23191,
+          "equal_s16_bytes": false,
+          "max_absolute_s16_error": 44
+        },
+        "double-before": {
+          "different_samples": 24141,
+          "equal_s16_bytes": false,
+          "max_absolute_s16_error": 30
+        },
+        "near-final": {
+          "different_samples": 0,
+          "equal_s16_bytes": true,
+          "max_absolute_s16_error": 0
+        },
+        "near-initial": {
+          "different_samples": 0,
+          "equal_s16_bytes": true,
+          "max_absolute_s16_error": 0
+        }
+      }
+    },
+    {
+      "arm": "archived_speex",
+      "case_id": "p1-ula4-70-fir33-steer",
+      "near_windows": {
+        "double-after": {
+          "different_samples": 27735,
+          "equal_s16_bytes": false,
+          "max_absolute_s16_error": 311
+        },
+        "double-before": {
+          "different_samples": 28016,
+          "equal_s16_bytes": false,
+          "max_absolute_s16_error": 153
+        },
+        "near-final": {
+          "different_samples": 27025,
+          "equal_s16_bytes": false,
+          "max_absolute_s16_error": 107
+        },
+        "near-initial": {
+          "different_samples": 27214,
+          "equal_s16_bytes": false,
+          "max_absolute_s16_error": 307
+        }
+      }
+    },
+    {
+      "arm": "webrtc_aec3",
+      "case_id": "p1-ula4-70-fir33-steer",
+      "near_windows": {
+        "double-after": {
+          "different_samples": 27077,
+          "equal_s16_bytes": false,
+          "max_absolute_s16_error": 828
+        },
+        "double-before": {
+          "different_samples": 27245,
+          "equal_s16_bytes": false,
+          "max_absolute_s16_error": 724
+        },
+        "near-final": {
+          "different_samples": 748,
+          "equal_s16_bytes": false,
+          "max_absolute_s16_error": 91
+        },
+        "near-initial": {
+          "different_samples": 0,
+          "equal_s16_bytes": true,
+          "max_absolute_s16_error": 0
+        }
+      }
+    },
+    {
+      "arm": "webrtc_apm",
+      "case_id": "p1-ula4-70-fir33-steer",
+      "near_windows": {
+        "double-after": {
+          "different_samples": 27664,
+          "equal_s16_bytes": false,
+          "max_absolute_s16_error": 7817
+        },
+        "double-before": {
+          "different_samples": 27382,
+          "equal_s16_bytes": false,
+          "max_absolute_s16_error": 2850
+        },
+        "near-final": {
+          "different_samples": 28525,
+          "equal_s16_bytes": false,
+          "max_absolute_s16_error": 10591
+        },
+        "near-initial": {
+          "different_samples": 28050,
+          "equal_s16_bytes": false,
+          "max_absolute_s16_error": 6543
+        }
+      }
+    },
+    {
+      "arm": "archived_ap",
+      "case_id": "p1-ula4-70-fir33-path",
+      "near_windows": {
+        "double-after": {
+          "different_samples": 24896,
+          "equal_s16_bytes": false,
+          "max_absolute_s16_error": 85
+        },
+        "double-before": {
+          "different_samples": 24141,
+          "equal_s16_bytes": false,
+          "max_absolute_s16_error": 30
+        },
+        "near-final": {
+          "different_samples": 0,
+          "equal_s16_bytes": true,
+          "max_absolute_s16_error": 0
+        },
+        "near-initial": {
+          "different_samples": 0,
+          "equal_s16_bytes": true,
+          "max_absolute_s16_error": 0
+        }
+      }
+    },
+    {
+      "arm": "archived_speex",
+      "case_id": "p1-ula4-70-fir33-path",
+      "near_windows": {
+        "double-after": {
+          "different_samples": 27536,
+          "equal_s16_bytes": false,
+          "max_absolute_s16_error": 312
+        },
+        "double-before": {
+          "different_samples": 28016,
+          "equal_s16_bytes": false,
+          "max_absolute_s16_error": 153
+        },
+        "near-final": {
+          "different_samples": 27003,
+          "equal_s16_bytes": false,
+          "max_absolute_s16_error": 107
+        },
+        "near-initial": {
+          "different_samples": 27214,
+          "equal_s16_bytes": false,
+          "max_absolute_s16_error": 307
+        }
+      }
+    },
+    {
+      "arm": "webrtc_aec3",
+      "case_id": "p1-ula4-70-fir33-path",
+      "near_windows": {
+        "double-after": {
+          "different_samples": 27025,
+          "equal_s16_bytes": false,
+          "max_absolute_s16_error": 865
+        },
+        "double-before": {
+          "different_samples": 27245,
+          "equal_s16_bytes": false,
+          "max_absolute_s16_error": 724
+        },
+        "near-final": {
+          "different_samples": 664,
+          "equal_s16_bytes": false,
+          "max_absolute_s16_error": 77
+        },
+        "near-initial": {
+          "different_samples": 0,
+          "equal_s16_bytes": true,
+          "max_absolute_s16_error": 0
+        }
+      }
+    },
+    {
+      "arm": "webrtc_apm",
+      "case_id": "p1-ula4-70-fir33-path",
+      "near_windows": {
+        "double-after": {
+          "different_samples": 27712,
+          "equal_s16_bytes": false,
+          "max_absolute_s16_error": 8329
+        },
+        "double-before": {
+          "different_samples": 27382,
+          "equal_s16_bytes": false,
+          "max_absolute_s16_error": 2850
+        },
+        "near-final": {
+          "different_samples": 28605,
+          "equal_s16_bytes": false,
+          "max_absolute_s16_error": 11327
+        },
+        "near-initial": {
+          "different_samples": 28050,
+          "equal_s16_bytes": false,
+          "max_absolute_s16_error": 6543
+        }
+      }
+    }
+  ],
+  "new_candidates": 0,
+  "new_thresholds": 0,
+  "promotion_allowed": false,
+  "published_revision": "819849ee3ed6b269b8417ef8700eecfcf29f7958",
+  "review_id": "AEC3-INDEPENDENT-READONLY-REVIEW-20261128",
+  "review_kind": "independent code-and-artifact verification; not independent acoustic confirmation",
+  "review_status": "VERIFIED_DESCRIPTIVE_REFERENCE",
+  "schema_version": 1,
+  "sealed_directory_modified": false,
+  "verification": {
+    "additional_dsp_invocations": 0,
+    "command": [
+      "python3",
+      "-B",
+      "tests/validation/frontend_evolution/webrtc_aec3_reference.py",
+      "verify",
+      "--output",
+      "/workspace/scratch/cd58842626bd/audit_checks/aec3-reference-20261128"
+    ],
+    "current_os_release_matches_run": true,
+    "git_status_short": "",
+    "manifest_file_bytes": 70157180,
+    "manifest_files": 3099,
+    "manifest_sha256": "9a44b195432148296429eb0107f137675de945fb756819f9e27da02ca03a16f6",
+    "near_byte_audit": "aec3-independent-near-byte-audit-20261128.json",
+    "observed_exit_code": 0,
+    "observed_stdout": {
+      "acoustic_acceptance": false,
+      "cases": 6,
+      "decision": "DESCRIPTIVE_ONLY_NO_PROMOTION_NO_RANKING_RULE",
+      "new_full_case_executions": 12,
+      "promotion_allowed": false,
+      "status": "VERIFIED_DESCRIPTIVE_REFERENCE"
+    },
+    "observed_verifier_stdout": "{\"acoustic_acceptance\": false, \"cases\": 6, \"decision\": \"DESCRIPTIVE_ONLY_NO_PROMOTION_NO_RANKING_RULE\", \"new_full_case_executions\": 12, \"promotion_allowed\": false, \"status\": \"VERIFIED_DESCRIPTIVE_REFERENCE\"}\n",
+    "operation": "independent_read_only_verification",
+    "published_source_revision": "819849ee3ed6b269b8417ef8700eecfcf29f7958",
+    "result_sha256": "2f65de94d7d8de636fc4dc82e2d20c0990c29e005a06958a2d1dbe08a083f60d",
+    "schema_version": 1,
+    "statistics": "aec3-independent-statistics-20261128.json",
+    "worktree": "/workspace/scratch/cd58842626bd/impl_aec3_integration"
+  }
+}

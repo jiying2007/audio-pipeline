@@ -50,16 +50,24 @@
     },
     {
       "id": "webrtc",
-      "url": "https://webrtc.googlesource.com/src",
-      "commit": null,
-      "status": "PLANNED",
+      "url": "https://gitlab.freedesktop.org/pulseaudio/webrtc-audio-processing",
+      "commit": "846fe90a289f58b7c9303a635142aa2c7caa93e5",
+      "status": "EXECUTION_ADMITTED",
       "rights": {
-        "code": "PENDING",
-        "dependencies": "PENDING",
-        "weights": "PENDING",
-        "data": "PENDING",
-        "redistribution": "PENDING"
-      }
+        "code": "ALLOWED",
+        "dependencies": "ALLOWED",
+        "weights": "ALLOWED",
+        "data": "NOT_APPLICABLE",
+        "redistribution": "ALLOWED"
+      },
+      "upstream_url": "https://webrtc.googlesource.com/src",
+      "distribution_url": "https://gitlab.freedesktop.org/pulseaudio/webrtc-audio-processing",
+      "distribution_version": "2.1",
+      "upstream_generation": "M131",
+      "scope": "fixed-freedesktop-2.1-build-bounded-synthetic-and-separately-preregistered-disclosed-reference-only",
+      "admission_receipt_path": ".github/research/frontend-evolution-v1/webrtc-aec3-admission.json",
+      "admission_receipt_sha256": "bbfac3eb206814e005b8a60cab177045fb11998c3ef0ce20d014edabc8bb23f2",
+      "materialized_source_sha256": "b353d20bbe718987c22d3aa338a3e1ee49af654b840259954680b2377c9b89fc"
     },
     {
       "id": "sof",

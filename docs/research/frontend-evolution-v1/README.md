@@ -5,6 +5,7 @@
 [F05 来源准备合同](F05_SPEECH_SOURCE_V1.zh-CN.md)冻结排除既往可见 16 人后的下一组 8 人，
 只准备 32 个原 FLAC、完整无损 PCM 与预定义适配片段。全部保留验证角色、NOT_BLIND；
 tiny tests 不代表实际大归档已取回，不构成新房间、双麦质量或普遍独立性结果。
+[长期科研平台运行手册：来源、数据、仿真、评估、复现与 AEC3](LONG_TERM_RESEARCH_PLATFORM.zh-CN.md)
 
 ## 2026-11-14 受限增益回升诊断 D9
 

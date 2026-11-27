@@ -1,0 +1,30 @@
+{
+  "data_admission": "No dataset admitted by this source record; disclosed-reference corpus execution requires a separate preregistered exact-byte, rights, role and bounded-run contract. No arbitrary data, training, search or promotion permission.",
+  "decision": "EXECUTION_ADMITTED_FIXED_REFERENCE_ONLY",
+  "distribution_commit": "846fe90a289f58b7c9303a635142aa2c7caa93e5",
+  "distribution_tree": "704db84e4285c0006ac8204dad2497fca3d27791",
+  "materialized_source_sha256": "b353d20bbe718987c22d3aa338a3e1ee49af654b840259954680b2377c9b89fc",
+  "review_date": "2026-11-28",
+  "rights": {
+    "code": "ALLOWED",
+    "data": "NOT_APPLICABLE",
+    "dependencies": "ALLOWED",
+    "redistribution": "ALLOWED",
+    "weights": "ALLOWED"
+  },
+  "rights_review": {
+    "code": "Fixed freedesktop distribution COPYING and WebRTC LICENSE are BSD-3-Clause style; retain all notices. WebRTC PATENTS supplies a limited implementation-specific patent grant with its stated termination conditions.",
+    "data": "No corpus or training-data admission. Abseil source test fixtures are source-package contents, not audio research data. Real audio requires its own data-rights/role contract.",
+    "dependencies": "Bundled rnnoise BSD-style, pffft FFTPACK/UCAR permissive notice, spl_sqrt_floor public-domain permission, ooura permissive attribution and fft Mark Olesen notice retained. Abseil Apache-2.0 and Meson wrap LICENSE.build MIT reviewed. Build uses host C/C++ runtime, libm/threads/optional librt/libatomic and records compiler/tool identity; no external test dependencies fetched.",
+    "redistribution": "Preserve listed copyright/license/patent notices in research source/binary evidence, Apache-2.0 notice/change obligations and MIT notices. No endorsement grant, product integration or publication authority is supplied.",
+    "weights": "Only source-embedded rnnoise/src/rnn_vad_weights.cc/.h parameters supplied with this fixed distribution and its rnnoise/COPYING; no separate pretrained download or general weights permission."
+  },
+  "schema_version": 1,
+  "scope": "fixed-freedesktop-2.1-build-bounded-synthetic-and-separately-preregistered-disclosed-reference-only",
+  "shipping_authority": false,
+  "source_id": "webrtc",
+  "source_lock_sha256": "30b1106eaceef3ef6e9261e418d877c6c249c1e4cb36687eb1eec9a60e7a2af1",
+  "status": "SOURCE_BYTES_VERIFIED_NOT_BUILT",
+  "training_authority": false,
+  "verification": "Three local original archives independently rehashed; distribution tar 663 files matched fixed Git commit tree exactly, including executable modes. Dependency archive/member/file manifests and license notices reviewed. No build or acoustic result is asserted by this admission."
+}

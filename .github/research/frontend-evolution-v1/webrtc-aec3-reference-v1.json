@@ -1,0 +1,321 @@
+{
+  "aec3_config": {
+    "agc1": false,
+    "agc2": false,
+    "echo_canceller": true,
+    "enforce_high_pass_filtering": false,
+    "hpf": false,
+    "includes_internal_residual_suppression": true,
+    "mobile_mode": false,
+    "ns": false
+  },
+  "apm_config": {
+    "agc1": false,
+    "agc2": true,
+    "agc2_adaptive_digital": true,
+    "agc2_input_volume_controller": false,
+    "echo_canceller": true,
+    "enforce_high_pass_filtering": false,
+    "fixed_digital_gain_db": 0,
+    "headroom_db": 5,
+    "hpf": true,
+    "hpf_apply_in_full_band": true,
+    "initial_gain_db": 15,
+    "max_gain_change_db_per_second": 6,
+    "max_gain_db": 50,
+    "max_output_noise_level_dbfs": -50,
+    "mobile_mode": false,
+    "ns": "moderate",
+    "ns_analyze_linear_output": false
+  },
+  "arms": {
+    "archived_ap": {
+      "declared_delay_samples": 0,
+      "mode": "original ACTIVITY plus MDF",
+      "new_execution": false,
+      "source_revision": "e3672ffe16e4c9d42a100e7712b9bbd3d8338545"
+    },
+    "archived_speex": {
+      "declared_delay_samples": 0,
+      "mode": "original minimal SpeexDSP echo API",
+      "new_execution": false,
+      "source_revision": "e3672ffe16e4c9d42a100e7712b9bbd3d8338545"
+    },
+    "webrtc_aec3": {
+      "declared_delay_samples": 128,
+      "mode": "aec3",
+      "new_execution": true
+    },
+    "webrtc_apm": {
+      "declared_delay_samples": 224,
+      "mode": "apm",
+      "new_execution": true
+    }
+  },
+  "budget": {
+    "extra_new_acoustic_retries": 0,
+    "input_seconds_per_case": 16,
+    "new_full_case_executions": 12,
+    "parameter_candidates_per_mode": 1,
+    "training_runs": 0,
+    "wall_seconds": 300
+  },
+  "cases": [
+    {
+      "case_id": "p0-ula4-70-fir33-none",
+      "event": "none",
+      "members": {
+        "ap.s16": {
+          "bytes": 512000,
+          "sha256": "496edf5ae7719cdb7dde6aa79db20ec93f81a8103bd4c933387312b9f29c7292"
+        },
+        "echo.s16": {
+          "bytes": 512000,
+          "sha256": "c6885ec0f9a3ff7c8057bbe1599df2e0dacb19a65b3db3f27063e8737e33f2d6"
+        },
+        "input.s16": {
+          "bytes": 1024000,
+          "sha256": "31b71674b83c3c947b1ff4f4cb6daef8b09b6a78a0b6d0a4487f438a473173d4"
+        },
+        "speex.s16": {
+          "bytes": 512000,
+          "sha256": "abadc199bc4de462f814d3940226cbf7a0875a10301b927db407125135a9eba7"
+        },
+        "target.s16": {
+          "bytes": 512000,
+          "sha256": "b037ba05f2605732657ae545b5c4628cae4c59f40cca17acb61d203ec0b558ff"
+        }
+      },
+      "pair": 0,
+      "samples": 256000
+    },
+    {
+      "case_id": "p0-ula4-70-fir33-steer",
+      "event": "steer",
+      "members": {
+        "ap.s16": {
+          "bytes": 512000,
+          "sha256": "7412e4023fdf7473554bed08fd43b72bdea0f95d7d99ac576a4b4e10a1255f1e"
+        },
+        "echo.s16": {
+          "bytes": 512000,
+          "sha256": "d665f291b9be149256af4cc61607d7181f3842e117e79f7944cd45250620ac79"
+        },
+        "input.s16": {
+          "bytes": 1024000,
+          "sha256": "57a3226e3fbd6a0f18e880d2d49c98ee87d91391401a35fb5fe593e2fc0885a1"
+        },
+        "speex.s16": {
+          "bytes": 512000,
+          "sha256": "57e59d83685b15fedd8ab87db535c4ed65c41ab20e878026c0c775616ef42677"
+        },
+        "target.s16": {
+          "bytes": 512000,
+          "sha256": "ef787d82fbc4263c9b797478fae74923aadeabc9dc0a5f9a9cf5b725376b1cbd"
+        }
+      },
+      "pair": 0,
+      "samples": 256000
+    },
+    {
+      "case_id": "p0-ula4-70-fir33-path",
+      "event": "path",
+      "members": {
+        "ap.s16": {
+          "bytes": 512000,
+          "sha256": "b589dbe47ece85a06296662526f965654f38e0486c26201bcfd4f6b4b19e7b84"
+        },
+        "echo.s16": {
+          "bytes": 512000,
+          "sha256": "1164db1db70942fa3201cdef01db5751cec9355297b10650ae5a1fc17bc147dd"
+        },
+        "input.s16": {
+          "bytes": 1024000,
+          "sha256": "ccf65691c9ee3e47cf7693eeb09d476b3c1e11a3e6f4040a3c074613b7c3452c"
+        },
+        "speex.s16": {
+          "bytes": 512000,
+          "sha256": "86dc48e60eb25905632e6d505d0733830490f64ce02b71320f666bb0ea89479d"
+        },
+        "target.s16": {
+          "bytes": 512000,
+          "sha256": "b037ba05f2605732657ae545b5c4628cae4c59f40cca17acb61d203ec0b558ff"
+        }
+      },
+      "pair": 0,
+      "samples": 256000
+    },
+    {
+      "case_id": "p1-ula4-70-fir33-none",
+      "event": "none",
+      "members": {
+        "ap.s16": {
+          "bytes": 512000,
+          "sha256": "2b47e333c66d1c8217f11c42f82abedcd62f5826042d98550128dbd7648f3863"
+        },
+        "echo.s16": {
+          "bytes": 512000,
+          "sha256": "9a9bb66ef0c3368f452f0a5158740b0269aca16ac29bd81f5ffca19aa6030fd9"
+        },
+        "input.s16": {
+          "bytes": 1024000,
+          "sha256": "e27cfc0b8c5d900a7ecfb6f1bdd44c236bc3301d78245d5aaa1fb08f6fc5b7be"
+        },
+        "speex.s16": {
+          "bytes": 512000,
+          "sha256": "dcac2b487267851dc1ff1632dbb6caaaae1ff1534fd9d20f0b47474be867671d"
+        },
+        "target.s16": {
+          "bytes": 512000,
+          "sha256": "983fabcfa721940d89a9e3876a02ef091074d45b63e4df0600707b2f44f6997a"
+        }
+      },
+      "pair": 1,
+      "samples": 256000
+    },
+    {
+      "case_id": "p1-ula4-70-fir33-steer",
+      "event": "steer",
+      "members": {
+        "ap.s16": {
+          "bytes": 512000,
+          "sha256": "679e797c20253ab845a9b52000e9749b88f4eed7e8838ab5466b12970ca09e22"
+        },
+        "echo.s16": {
+          "bytes": 512000,
+          "sha256": "1ffce794859b395681ffc22a8ff763682a3f927f72a4424c5e0b1675bddbfc9a"
+        },
+        "input.s16": {
+          "bytes": 1024000,
+          "sha256": "e792eba4eb2c4c053120aa6a8fc295a156633c218bbab1c27a335519f77578cf"
+        },
+        "speex.s16": {
+          "bytes": 512000,
+          "sha256": "2d9828e8062e1b20ebc10b4e274ae1ad1e58d7b3aede092291344b19916b43cd"
+        },
+        "target.s16": {
+          "bytes": 512000,
+          "sha256": "6f4e96f982663b53482f18c2eb66a76739d0dfff9a07f8e4e967058492263f59"
+        }
+      },
+      "pair": 1,
+      "samples": 256000
+    },
+    {
+      "case_id": "p1-ula4-70-fir33-path",
+      "event": "path",
+      "members": {
+        "ap.s16": {
+          "bytes": 512000,
+          "sha256": "7756bb72ccf760b055f4f0c9d045e7a10afee9e229fd56b26d716cf5b4d29f29"
+        },
+        "echo.s16": {
+          "bytes": 512000,
+          "sha256": "9456593137f128bcc65780a7ef7ac557cd4e2bd5e795a594692bfa94cd59e4c4"
+        },
+        "input.s16": {
+          "bytes": 1024000,
+          "sha256": "c8e40524cce8d89205d9d47989d5406bad8af8e28b0a673eccecf91e60428dd2"
+        },
+        "speex.s16": {
+          "bytes": 512000,
+          "sha256": "81210bcfe9f251711350c3a3970fe88cd40cba9133d87dc1456fe2e639de98cb"
+        },
+        "target.s16": {
+          "bytes": 512000,
+          "sha256": "983fabcfa721940d89a9e3876a02ef091074d45b63e4df0600707b2f44f6997a"
+        }
+      },
+      "pair": 1,
+      "samples": 256000
+    }
+  ],
+  "channel_map": [
+    0
+  ],
+  "data_role": "DISCLOSED_DEVELOPMENT_DIAGNOSTIC_NOT_HOLDOUT",
+  "distribution_commit": "846fe90a289f58b7c9303a635142aa2c7caa93e5",
+  "distribution_version": "2.1",
+  "experiment_id": "FE04-WEBRTC-AEC3-REFERENCE-V1",
+  "hop_samples": 160,
+  "hypothesis": "Characterize the fixed freedesktop 2.1 AEC3 and APM configurations against the original disclosed AP MDF and Speex reference outputs on identical post-BF microphone/render bytes. No selection or promotion is authorized.",
+  "implementation_base": "21448956f65916577d13082e9dc58f275f8fbb70",
+  "independent_confirmation": false,
+  "input_layout": "input.s16 is alternating post-BF microphone, render; split by sample without changing bytes",
+  "issue": "https://github.com/jiying2007/audio-pipeline/issues/968",
+  "limits": [
+    "Six already disclosed development examples only",
+    "Supplied BF direction and exact reference synchronization",
+    "Linear synthetic echo paths; not independent real-room confirmation",
+    "AEC3 includes residual echo suppression; APM additionally includes HPF NS and AGC2",
+    "Archived AP/Speex baseline outputs retain their original source identity; not a fresh whole-pipeline main run",
+    "Host timings cannot establish SSC305 memory, power or deadlines"
+  ],
+  "metrics": {
+    "aligned_far_only": "same fixed observed windows; echo/output sum-square ratio",
+    "aligned_near_phases": "canonical speech_spatial.si_sdr_span with output offset equal to the predeclared signal delay",
+    "disposition": "DESCRIPTIVE_ONLY_NO_PROMOTION_NO_RANKING_RULE",
+    "final_far_seconds": [
+      12,
+      13.9
+    ],
+    "near_phase_seconds": {
+      "double-after": [
+        8.1,
+        9.9
+      ],
+      "double-before": [
+        6.1,
+        7.9
+      ],
+      "near-final": [
+        14.1,
+        15.9
+      ],
+      "near-initial": [
+        0.1,
+        1.9
+      ]
+    },
+    "raw": "unchanged speexdsp_aec_reference.metrics and canonical SI-SDR evaluator",
+    "unobserved_output_tail": "excluded; never zero filled"
+  },
+  "mic_channels": 1,
+  "parameter_search_allowed": false,
+  "pre_registered_before_execution": true,
+  "predecessor": {
+    "archive_bytes": 10693447,
+    "archive_name": "speex-aec-main-original.zip",
+    "archive_sha256": "aa4961bae5d7eb0d3861ce04ed4c7c8408518f002b856e1f7f9cffa538bdad12",
+    "artifact_id": 12199497546,
+    "data_role": "DISCLOSED_DEVELOPMENT_DIAGNOSTIC_NOT_HOLDOUT",
+    "execution_source_revision": "e3672ffe16e4c9d42a100e7712b9bbd3d8338545",
+    "experiment_id": "FE04-SPEEXDSP-AEC-REFERENCE-V1",
+    "manifest_sha256": "f20333b58518549f10631d93d762ebc516c451c54cb015554fde5c6260452f37",
+    "run_id": 39274232480
+  },
+  "promotion_allowed": false,
+  "rate_hz": 16000,
+  "render_channels": 1,
+  "rights": {
+    "attribution": "Vassil Panayotov, Daniel Povey, Guoguo Chen, Sanjeev Khudanpur; recordings from LibriVox",
+    "data": "Existing admitted LibriSpeech/OpenSLR 12 CC BY 4.0 source and disclosed synthetic post-BF derivation; unchanged original ZIP and notices",
+    "data_source_url": "https://www.openslr.org/12/",
+    "external_code": "Separate fixed webrtc-aec3-admission.json; no broader data or training admission",
+    "license_url": "https://creativecommons.org/licenses/by/4.0/"
+  },
+  "schema_version": 1,
+  "source_id": "webrtc",
+  "status": "PREREGISTERED_NOT_EXECUTED",
+  "stream_contract": {
+    "implicit_padding": false,
+    "new_instance_per_case": true,
+    "normalization": false,
+    "oracle_alignment": false,
+    "reset_before_frame": null,
+    "reverse_before_capture": true,
+    "stream_delay_ms": 0
+  },
+  "target_timing_authority": false,
+  "training_allowed": false
+}

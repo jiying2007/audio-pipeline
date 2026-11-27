@@ -199,13 +199,19 @@ python3 tests/validation/frontend_evolution/webrtc_aec3_reference.py verify --ou
 
 ### 本轮结果入口（仅此处维护新 AEC3 的可变进度）
 
-状态：工程代码已实现，Actions 真实构建及工程验证 **CI_PENDING**；六例参考执行 **NOT_RUN**。
-本段由 #968 的实际 exact-head CI、原件回读与参考结果替换/补充；源码检查或 tiny 方法测试
-不能填充这里的执行结果。其它段落只描述固定接口，不复制尚未取得的成功状态。
+2026-11-28：实际源码 `819849ee3ed6b269b8417ef8700eecfcf29f7958` 的 Actions run
+[46043812502](https://github.com/jiying2007/audio-pipeline/actions/runs/46043812502) 已完成真实构建与工程验证。
+同一 binary 在 Debian 13 宿主工程复验后，六例已按冻结合同执行 12 次并独立回读，
+状态为 **VERIFIED_DESCRIPTIVE_REFERENCE**，无训练、搜参或额外声学重试。
+完整结果、失败保留、数据与计时边界、原件 SHA256 见
+[本轮真实结果](WEBRTC_AEC3_RESULT_20261128.zh-CN.md)。
+AEC3 远端抑制与双讲保真呈现明显取舍；本轮保持诊断参考，不替换默认算法、不产生晋级或实机结论。
+方法集成 [#970](https://github.com/jiying2007/audio-pipeline/pull/970) 与研究集成
+[#971](https://github.com/jiying2007/audio-pipeline/pull/971) 各以实际受保护 merge/main 记录为准。
 
 ## 6. 原始 ZIP 长期恢复与证据保全
 
-F03 的 [DUALMIC_ARCHIVE_RECOVERY.zh-CN.md](DUALMIC_ARCHIVE_RECOVERY.zh-CN.md) 与 PR #969
+F03 的 [DUALMIC_ARCHIVE_RECOVERY.zh-CN.md](DUALMIC_ARCHIVE_RECOVERY.zh-CN.md) 与原 PR #969（已汇入方法集成 #970）
 提供一个严格限定的 D1/D2 恢复入口：既有 D3 锁指定原 run/attempt、source、artifact、
 474165229-byte ZIP 及 SHA256，复用冻结 D2 reader 只读核验。不是任意工件导入器，
 也不重新运行 D5/D6/D8/D9 以制造替代证据。

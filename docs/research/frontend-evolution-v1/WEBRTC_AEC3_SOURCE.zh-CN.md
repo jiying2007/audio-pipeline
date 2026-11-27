@@ -145,9 +145,11 @@ configure 包含编译器能力探针，不是整个库编译、运行 AEC3 或�
 仍对应原 commit/源锁。新源锁 SHA 不接受旧 prepared receipt，须 fresh preflight，
 不得改写旧 receipt 的 SHA 来复用。
 
-本次源码准入尚未执行大规模 C++ 构建或声学处理。实际 CI 构建和后续适配器
+上述源码准入与 configure-only 回执本身不证明大规模 C++ 构建或声学处理。实际 CI 构建和后续适配器
 回放必须各自保存精确提交、失败、日志与结果；不能把计划状态改写成实际结果。
 
 Meson 参数语义见官方 [Subprojects](https://mesonbuild.com/Subprojects.html)
 与 [Commands](https://mesonbuild.com/Commands.html)。依赖许可和分发声明以本次冻结的
 源文件为权威，后续 upstream README 或许可证变化不自动重判既有冻结版本。
+
+实际执行状态统一见[长期平台运行手册的本轮结果入口](LONG_TERM_RESEARCH_PLATFORM.zh-CN.md)。

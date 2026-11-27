@@ -3,7 +3,7 @@
 本入口把[固定源码准入](WEBRTC_AEC3_SOURCE.zh-CN.md)和
 [独立适配器工程测试](WEBRTC_AEC3_ADAPTER.zh-CN.md)接入既有
 `.github/workflows/frontend-research.yml` 的单独 `webrtc-aec3-engineering` job。
-**当前实现与小型回归不代表完整库已经编译或工程测试已经通过。**
+**实现与小型回归本身不构成真实工程执行证据。实际状态统一见[平台运行手册](LONG_TERM_RESEARCH_PLATFORM.zh-CN.md)及其中的原始结果入口。**
 实际结果以该 job 的精确提交、原始日志、`ci-receipt.json` 和 bundle 为准。
 六例已披露语音对照由独立冻结合同在合格 bundle 上另行执行，不包含在这个 job 中。
 

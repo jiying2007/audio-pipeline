@@ -1,0 +1,99 @@
+{
+  "schema_version": 1,
+  "study_id": "F05-SPEECH-SOURCE-V1",
+  "implementation_base": "4eec2329be9f2138c7ac73e8dd59026f3dc0a3ba",
+  "scope": "Bounded source preparation only; no acoustic experiment or independence admission",
+  "archive": {
+    "url": "https://www.openslr.org/resources/12/dev-clean.tar.gz",
+    "bytes": 337926286,
+    "sha256": "76f87d090650617fca0cac8f88b9416e0ebf80350acb97b343a85fa903728ab3",
+    "official_md5": "42e2234ba48799c1f50f24a7926300a1"
+  },
+  "notices_sha256": {
+    "LibriSpeech/LICENSE.TXT": "908b0b565ae9bf61b7b41447cb0b83564f320375723bcc884ec30e5537a0d5dc",
+    "LibriSpeech/README.TXT": "596ea41ecf75d10a0393f086d863d46d1a0b0afd6670717c352b8a46f42650bf",
+    "LibriSpeech/SPEAKERS.TXT": "3350f093382f8baa1d589c9f5a5cee8ec3705e656f521d6eafbaa31a5fcd8f76"
+  },
+  "exposure_review": {
+    "metadata_source_revision": "ad7075464953162f21cd95a35e640032a4ca2634",
+    "equivalent_public_revision": "cbddb82cb849e9fa454227f1995efb07ad4a7bf5",
+    "equivalent_tree": "49e1c72263e55c8d018d6dd6ccc21f771e2f1ca5",
+    "readiness_summary_sha256": "05b31a592aa7f5507478e32f67fd8e14d1eb406e46ab5bc573132a394cd68235",
+    "speaker_exposure_sha256": "ca2539feb0d0d92d9abfb4fb1b159d52caf67e3382a0648059b0fca1e3ea1ef3",
+    "git_scan_scope_sha256": "c44df7a792ad30d409146749057411ed185d9acdabd413e995164b5ba9f844f3",
+    "scanned_files_sha256": "6d2dd4e082518a80dd008944af01756154b0a42e2101de830e10bd8c7a8b5d99",
+    "scope": "852 locally reachable commits; 4468 historical text blobs; local audit metadata and nested archives; 12638 text occurrences / 5802 distinct contents; one malformed historical JSON retained and filename-scanned",
+    "excluded_speakers": [84, 174, 251, 422, 652, 777, 1272, 1462, 1673, 1919, 1988, 1993, 2035, 2078, 2086, 2277],
+    "limitations": [
+      "No-hit is not proof of non-exposure; indirect identifiers, missing or remote manifests, unsaved evaluations and unpublished use remain unresolved.",
+      "Any filename or declaration mention is conservatively excluded; a mention is not claimed as an actual execution.",
+      "SPEAKERS.TXT roster membership alone is not exposure.",
+      "All locally reachable refs were frozen at scan start; unobserved remote branches and deleted Git objects were not scanned.",
+      "The old development, validation, shadow and training roles remain unchanged; train-clean-5 is not relabeled."
+    ]
+  },
+  "selection": {
+    "rule": "exclude-frozen-16-then-lowest-8-numeric-speaker-ids; first-4-numeric-chapter-utterance-files-per-speaker",
+    "roster": [84, 174, 251, 422, 652, 777, 1272, 1462, 1673, 1919, 1988, 1993, 2035, 2078, 2086, 2277, 2412, 2428, 2803, 2902, 3000, 3081, 3170, 3536, 3576, 3752, 3853, 5338, 5536, 5694, 5895, 6241, 6295, 6313, 6319, 6345, 7850, 7976, 8297, 8842],
+    "expected_speakers": [2412, 2428, 2803, 2902, 3000, 3081, 3170, 3536],
+    "utterances_per_speaker": 4,
+    "sample_rate_hz": 16000,
+    "channels": 1,
+    "sample_bits": 16,
+    "window_frames": 64000,
+    "window_rule": "first-64000-frames-of-ordered-utterance-concatenation; preserve-every-source-span; no-padding-or-reselection",
+    "main_assets": "32 original FLAC files and their complete losslessly decoded PCM; 8 x 4s windows are only predefined adapter excerpts, not sufficient validation coverage",
+    "selection_inputs": ["frozen-exclusion-ids", "archive-member-paths", "native-format-metadata"],
+    "quality_selection": false
+  },
+  "role": {
+    "name": "reserved-validation-visible-scope-separated",
+    "blind_status": "NOT_BLIND",
+    "universal_independence_established": false,
+    "training_allowed": false,
+    "optimizer_selection_allowed": false,
+    "promotion_allowed": false,
+    "acoustic_execution_allowed_by_this_contract": false,
+    "future_use": "Requires a separately preregistered acoustic contract; all new originals, full PCM and windows retain this reserved role."
+  },
+  "rights_review": {
+    "code": "First-party preparation code uses the repository Apache-2.0 license; existing speech_source.flac_info semantics are reused unchanged.",
+    "dependencies": "Python standard library and an already installed FFmpeg decoder. Record actual executable SHA256, version and -L license output. No package installation or redistribution of the FFmpeg executable.",
+    "weights": "None; no model is loaded or downloaded.",
+    "data": "Exact OpenSLR-12 LibriSpeech dev-clean archive; retained original LICENSE.TXT specifies CC BY 4.0. This does not admit other corpora, weights or test sets.",
+    "redistribution": "Preserve original notices and author/source/license attribution; disclose lossless decoding and any excerpt concatenation. No endorsement. No automatic audio publication."
+  },
+  "budgets": {
+    "transport_attempts": 1,
+    "download_wall_seconds": 600,
+    "prepare_wall_seconds": 300,
+    "verify_wall_seconds": 300,
+    "decode_wall_seconds_total": 180,
+    "decode_wall_seconds_per_file": 20,
+    "archive_members": 10000,
+    "expanded_bytes": 1073741824,
+    "member_bytes": 5000000,
+    "notice_bytes": 2000000,
+    "output_bytes": 268435456,
+    "output_files": 100,
+    "native_seconds_per_file": 60,
+    "decoded_files": 32,
+    "native_audio_seconds_maximum": 1920,
+    "window_audio_seconds": 32,
+    "acoustic_runs": 0,
+    "listening_sessions": 0,
+    "parameter_searches": 0
+  },
+  "acceptance": [
+    "Exact archive byte count, SHA256 and official MD5 before extraction or decoder launch",
+    "No links, special members, duplicate identities, unsafe paths, missing notices or roster drift",
+    "Persist fixed metadata selection before the first decoder invocation",
+    "Decode native mono 16 kHz PCM16 without resampling, gain, filtering, normalization or padding",
+    "Verify every complete PCM frame count and nonzero FLAC STREAMINFO MD5; preserve original and decoded SHA256",
+    "Reconstruct all excerpt bytes and half-open source spans without invoking a codec in verify",
+    "Verify Git controls, archive, original FLAC and all output bytes again before success",
+    "Keep failures; no alternate source, retries, quality-driven replacement or historical role change"
+  ],
+  "success_status": "SOURCE_PREPARED_RESERVED_VALIDATION_NOT_BLIND",
+  "shipping_authority": false
+}

@@ -1,5 +1,11 @@
 # Frontend Evolution v1 / 双麦与四麦开放研究
 
+## F05 有限保留语音来源准备
+
+[F05 来源准备合同](F05_SPEECH_SOURCE_V1.zh-CN.md)冻结排除既往可见 16 人后的下一组 8 人，
+只准备 32 个原 FLAC、完整无损 PCM 与预定义适配片段。全部保留验证角色、NOT_BLIND；
+tiny tests 不代表实际大归档已取回，不构成新房间、双麦质量或普遍独立性结果。
+
 ## 2026-11-14 受限增益回升诊断 D9
 
 [D9 合同](DUALMIC_GATED_RISE_D9_PLAN.zh-CN.md)与[真实结果](DUALMIC_GATED_RISE_D9_RESULT.zh-CN.md)：

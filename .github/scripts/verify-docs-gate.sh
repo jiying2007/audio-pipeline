@@ -4,6 +4,7 @@
 set -eu
 
 python3 tests/validation/frontend_evolution/test_contracts.py
+python3 -B tests/validation/frontend_evolution/test_dechorate_rir_gap.py
 python3 scripts/ci_impact.py --self-test
 python3 tests/validation/test_aec_source_paths.py
 python3 tests/validation/test_aec_optimizer_source_roles.py

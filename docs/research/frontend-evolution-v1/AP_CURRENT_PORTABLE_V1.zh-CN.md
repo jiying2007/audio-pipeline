@@ -241,3 +241,29 @@ custody 与说明文档；原 84 对象不改，两个新增对象继续保留�
 结果路径及唯一固定结果导航片段只算 support；结果单独变更选择两个工程
 job 均为 false，初次完整方法集成仍必须二者都执行。未知结果路径直接拒绝。
 路径准入不预先批准结果数值、独立性或任何科学结论。
+
+
+## 同次 Verify 容器 Git 读取后继
+
+公开 `83fa46c3` 的 [Verify 46063199931 / fast-code 140722263561](https://github.com/jiying2007/audio-pipeline/actions/runs/46063199931/job/140722263561)
+在原 AEC3 tiny 读取 `21448956` 固定 workflow blob 时返回 128。checkout 已以
+`fetch-depth: 0` 成功获取全部 refs；原 `ci.git` 捕获的底层 stderr 没有打印，故不能把
+“缺少历史对象”或具体 dubious-ownership 文本写成原 CI 已观测事实。
+
+容器 checkout 日志把 safe.directory 写入临时配置；实际 Git 所有权负例中，原读取调用
+被拒绝，进程级准确 workspace 配置可读回同一 42,567 B / SHA256
+`d5dc866941cd9ca3cbae5a6dc5297b97115e903ca59573dd0a5a6c790a9e313f` 原 blob，
+错误 workspace 仍拒绝。这是具体兼容性依据，不是对缺失原 stderr 的重建。
+
+后继只在 Verify 的 `Validate test-intelligence and assurance tools` 步骤设置
+`GIT_CONFIG_COUNT=1`、`GIT_CONFIG_KEY_0=safe.directory` 和
+`GIT_CONFIG_VALUE_0=${{ github.workspace }}`；不使用 `*`，不写全局/仓库配置、不增加
+fetch 或重试。该步骤首先直接 `git cat-file -e` 检查原 baseline blob，使失败 stderr
+保存在真实日志；原所有测试、旧 AEC3 Git helper 和 Frontend Research 历史 jobs 保持。
+AP selector 只归一化锚定于这一完整 step header 的精确增量，移位、重复、额外 key、通配
+或移除均拒绝。原失败日志和真实 Actions merge commit 另行保全；新公开提交必须取得
+自己的真实 CI，不能用本地 fixture 或此前 head 的结果替代。
+
+Git 的进程级配置与受保护 safe.directory 语义见
+[Git 2.43 官方说明](https://git-scm.com/docs/git-config/2.43.0)。本修复没有改变任何
+音频、评分、来源角色或实验预算，F05 科学计划保持原 SHA。

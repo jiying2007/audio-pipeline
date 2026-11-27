@@ -71,6 +71,8 @@ VERIFY_LINES = (
     "          timeout 60s python3 -B tests/validation/frontend_evolution/test_ap_current_ci.py\n",
     "          timeout 60s python3 -B tests/validation/frontend_evolution/test_f05_dualmic_validation.py\n",
 )
+VERIFY_GIT_CONTEXT_OLD = '      - name: Validate test-intelligence and assurance tools\n        run: |\n'
+VERIFY_GIT_CONTEXT_NEW = "      - name: Validate test-intelligence and assurance tools\n        env:\n          GIT_CONFIG_COUNT: '1'\n          GIT_CONFIG_KEY_0: safe.directory\n          GIT_CONFIG_VALUE_0: ${{ github.workspace }}\n        run: |\n          git -c core.fsmonitor=false cat-file -e 21448956f65916577d13082e9dc58f275f8fbb70:.github/workflows/frontend-research.yml\n"
 TEST_VIEW_OLD = "        cls.current = (ci.ROOT / ci.WORKFLOW).read_text()\n"
 TEST_VIEW_NEW = ("        from ap_current_ci import predecessor_workflow\n"
                  "        cls.current = predecessor_workflow((ci.ROOT / ci.WORKFLOW).read_text())\n")
@@ -219,6 +221,13 @@ def validate_transition(path: str, before, after, configuration: dict) -> str:
         if before is not None:
             before = before.replace(TEST_VIEW_NEW.encode(), TEST_VIEW_OLD.encode())
     elif path == previous.VERIFY_WORKFLOW:
+        # Trust only the checkout path for this one container step; preserve
+        # original Git readers and all historical tests without global writes.
+        require(after.count(VERIFY_GIT_CONTEXT_NEW.encode()) == 1, "AP_EXACT_VERIFY_GIT_CONTEXT_MISSING")
+        after = after.replace(VERIFY_GIT_CONTEXT_NEW.encode(), VERIFY_GIT_CONTEXT_OLD.encode())
+        if before is not None:
+            require(before.count(VERIFY_GIT_CONTEXT_NEW.encode()) <= 1, "AP_DUPLICATE_VERIFY_GIT_CONTEXT")
+            before = before.replace(VERIFY_GIT_CONTEXT_NEW.encode(), VERIFY_GIT_CONTEXT_OLD.encode())
         require(all(after.count(line.encode()) == 1 for line in VERIFY_LINES), "AP_TINY_WIRING_MISSING")
         after = strip_exact(after, VERIFY_LINES)
         if before is not None:

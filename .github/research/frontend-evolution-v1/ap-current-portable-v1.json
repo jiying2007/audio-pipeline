@@ -886,7 +886,17 @@
       "docs/research/frontend-evolution-v1/F05_DUALMIC_VALIDATION_20261128/primary-by-speaker.svg",
       "docs/research/frontend-evolution-v1/PLATFORM_IMPLEMENTATION_CLOSURE_20261128.zh-CN.md"
     ],
-    "result_publication_boundary": "These five exact previously absent result paths and one exact navigation fragment are reserved before measurement. They are support-only, cannot trigger AP/AEC3 engineering, cannot delete/rewrite existing published paths, and do not permit any other documentation/science changes. Initial base-to-head method introduction still selects both applicable engineering jobs. Actual result contents remain subject to independent measurement/readback; path admission grants no scientific PASS."
+    "result_publication_boundary": "These five exact previously absent result paths and one exact navigation fragment are reserved before measurement. They are support-only, cannot trigger AP/AEC3 engineering, cannot delete/rewrite existing published paths, and do not permit any other documentation/science changes. Initial base-to-head method introduction still selects both applicable engineering jobs. Actual result contents remain subject to independent measurement/readback; path admission grants no scientific PASS.",
+    "verify_workspace_git_context": {
+      "failed_revision": "83fa46c3c3a5477782ca8cf24293a498fac90367",
+      "failed_run_id": 46063199931,
+      "failed_job_id": 140722263561,
+      "observation_limit": "Original git show returned 128 after successful full-history checkout; its captured child stderr was not displayed. Container ownership/configuration is a supported inference, not a recovered original fatal message.",
+      "scope": "Only fast-code Validate test-intelligence and assurance tools step; command-scope safe.directory equals github.workspace exactly. No wildcard, extra key, persistent config write, fetch, retry, skipped test or historical observer change.",
+      "preflight": "Original baseline blob cat-file -e runs before the unchanged tests; any stderr remains in the actual job log.",
+      "selector": "Normalize only the exact anchored full step header/env/preflight fragment. Missing, relocated, duplicate, weakened or removed contexts fail; other Verify bytes remain subject to the original frozen registrations.",
+      "scientific_effect": "None. No processor/metric/corpus/threshold/budget/source-rights change. Real successor CI is still required."
+    }
   },
   "failure_policy": "Preserve every actual failed prefix and log. No retry, compiler fallback, parameter/lag search or false success manifest. Late identity, budget or packaging failure changes the admissible status to FAIL and renames already-created tar/manifest/receipt to explicit before-failure names without discarding their bytes. Upload both original failed archives and reports. The 600s process alarm and 60s engineering alarm include source admission/readback; the outer 630s timeout is cleanup-only grace.",
   "render_correlation": {
@@ -957,7 +967,12 @@
       "historical_observation_limit": "The original CI ldd stdout/stderr were not preserved. Its exact failing line is unknown. On preserved byte-identical ELF copies, later local read-only inspection reproduced the same parser error for the helper with ldd exit 0 and a single tab-prefixed statically linked line. This is not a claim about unrecorded CI output.",
       "exception_scope": "render_corr only; original C/loader/engine pins and helper binary hash must match the verified bundle. Do not accept empty SDK dependencies or absolute-loader alias guesses.",
       "elf_required": "Read the actual preserved bytes, bounded to 1 MiB: ELF64 little-endian x86_64 ET_DYN; ordinary bounded header/program/section tables; matching unique PT_DYNAMIC/SHT_DYNAMIC offsets/address/size, zero DT_NEEDED; bounded unique SHT_DYNSYM and dynstr with matching DT_SYMTAB/SYMENT/STRTAB/STRSZ; no strong undefined symbol; only the four named CRT weak undefined symbols may be ignored; unique global defined function ap_validation_max_abs_corr.",
-      "allowed_weak_undefined": ["_ITM_deregisterTMCloneTable", "_ITM_registerTMCloneTable", "__cxa_finalize", "__gmon_start__"],
+      "allowed_weak_undefined": [
+        "_ITM_deregisterTMCloneTable",
+        "_ITM_registerTMCloneTable",
+        "__cxa_finalize",
+        "__gmon_start__"
+      ],
       "ldd_required": "Exit code 0, no stderr, and stdout bytes exactly TAB + statically linked + LF. Reject added, duplicate, warning, unresolved, nonzero, or unknown lines. Every non-exception uses the unchanged strict parser.",
       "stable_proof": "Only an empty render_corr identity adds dependency_free_elf. Bind its SHA and ELF/ldd facts to render_correlation/build and stable native binding. verify_build and the raw-journal reader recompute the proof from the actual preserved ELF; shared math readback requires exactly that verified binding proof plus the helper's own actual process mapping. An empty dict without proof is invalid.",
       "original_output_preservation": "Before parsing, append and flush command, tool/binary SHA, start/time/returncode/timeout and base64 stdout/stderr. Normal observations and ordinary parse failures retain both streams losslessly. If combined output exceeds 64 KiB, retain at most 65537 bytes per stream plus actual original byte counts, mark output_complete=false and fail immediately; this is an explicit incomplete failure prefix, never a complete raw observation or success. Save one runtime-observations.jsonl in build and one in engineering; always also emit JSONL to stderr. Public read-only/scoring callers must retain the complete command stderr outside sealed bundles. Parsed records also bind each original raw library path to its actually resolved path and SHA. ASLR-containing raw logs stay separate from stable before/after identity.",

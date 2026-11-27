@@ -131,7 +131,12 @@ jobs:
         with:
           namespace: fast-clang
       - name: Validate test-intelligence and assurance tools
+        env:
+          GIT_CONFIG_COUNT: '1'
+          GIT_CONFIG_KEY_0: safe.directory
+          GIT_CONFIG_VALUE_0: ${{ github.workspace }}
         run: |
+          git -c core.fsmonitor=false cat-file -e 21448956f65916577d13082e9dc58f275f8fbb70:.github/workflows/frontend-research.yml
           sh .github/scripts/verify-docs-gate.sh
           python3 scripts/public_surface_contract.py --self-test
           python3 scripts/public_surface_contract.py

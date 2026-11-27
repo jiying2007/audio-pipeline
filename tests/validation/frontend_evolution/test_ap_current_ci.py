@@ -205,6 +205,30 @@ class SelectorTests(unittest.TestCase):
             with self.subTest(name=name), self.assertRaises(ValueError):
                 ap.select("pull_request", "", changes, self.current)
 
+    def test_verify_git_context_is_exact_and_step_scoped(self):
+        path = ap.previous.VERIFY_WORKFLOW
+        current = (ap.ROOT / path).read_bytes()
+        context = ap.VERIFY_GIT_CONTEXT_NEW.encode()
+        self.assertEqual(current.count(context), 1)
+        stripped = current.replace(context, ap.VERIFY_GIT_CONTEXT_OLD.encode())
+        self.assertEqual(ap.strip_exact(stripped, ap.VERIFY_LINES), ap.git_bytes(ap.REFERENCE, path))
+        self.assert_flags(ap.select("pull_request", "", {path: (stripped, current)}, self.current), False, False)
+        for changed in (
+                current.replace(b"${{ github.workspace }}", b"'*'", 1),
+                current.replace(b"GIT_CONFIG_COUNT: '1'", b"GIT_CONFIG_COUNT: '2'", 1),
+                current.replace(b"GIT_CONFIG_KEY_0: safe.directory", b"GIT_CONFIG_KEY_0: safe.bareRepository", 1),
+                current.replace(b"      - name: Validate test-intelligence and assurance tools", b"      - name: Another step", 1),
+                current + context):
+            with self.subTest(), self.assertRaises(ValueError):
+                ap.select("pull_request", "", {path: (stripped, changed)}, self.current)
+
+    def test_verify_git_context_cannot_be_removed_after_introduction(self):
+        path = ap.previous.VERIFY_WORKFLOW
+        current = (ap.ROOT / path).read_bytes()
+        stripped = current.replace(ap.VERIFY_GIT_CONTEXT_NEW.encode(), ap.VERIFY_GIT_CONTEXT_OLD.encode())
+        with self.assertRaisesRegex(ValueError, "EXACT_VERIFY_GIT_CONTEXT"):
+            ap.select("pull_request", "", {path: (current, stripped)}, self.current)
+
     def test_metadata_does_not_replace_actual_workflow(self):
         changes = self.initial()
         changes[ap.WORKFLOW] = (changes[ap.WORKFLOW][0], ap.git_bytes(ap.REFERENCE, ap.WORKFLOW))

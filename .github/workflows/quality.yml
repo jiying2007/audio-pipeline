@@ -2315,11 +2315,28 @@ jobs:
           path: fe09-t3s2a/
           retention-days: 30
           if-no-files-found: error
+      - name: Witness exact t3s2a upload before mandatory storage readback
+        if: steps.fe09_t3s2a.outcome == 'success'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ARTIFACT_ID: ${{ steps.t3s2a_artifact.outputs.artifact-id }}
+          RUN_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          python3 tests/validation/frontend_evolution/fe09_same_run_artifact_visibility.py \
+            --artifact-id "$ARTIFACT_ID" --run-id "$GITHUB_RUN_ID" \
+            --artifact-name "frontend-fe09-t3s2a-posix-spool-$GITHUB_RUN_ID-attempt-$GITHUB_RUN_ATTEMPT" \
+            --run-attempt "$GITHUB_RUN_ATTEMPT" --run-head-sha "$RUN_HEAD_SHA" \
+            --execution-source "$GITHUB_SHA"
       - name: Download exact original current-run S2-A four-member Artifact
         if: steps.fe09_t3s2a.outcome == 'success'
         uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
           artifact-ids: ${{ steps.t3s2a_artifact.outputs.artifact-id }}
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ github.run_id }}
           path: fe09-t3s2a-readback
       - name: Independently rehash original S2-A members, reject fake durable HIL qualification
         if: steps.fe09_t3s2a.outcome == 'success'

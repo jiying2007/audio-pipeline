@@ -1109,5 +1109,49 @@ class ObservedReadbackParityTests(unittest.TestCase):
                 self.assertNotIn('overwrite:', block)
 
 
+class T3S2AAttemptVisibilityTests(T2AAttemptVisibilityTests):
+    """Reuse the strict REST matrix for the observed protected-main S2-A failure."""
+    NAME = "frontend-fe09-t3s2a-posix-spool-12345-attempt-2"
+    PREFIX = "frontend-fe09-t3s2a-posix-spool-"
+
+    def test_observed_stage_keeps_original_readback(self):
+        quality = (Path(__file__).resolve().parents[3] /
+                   ".github/workflows/quality.yml").read_text("utf-8")
+        stage = quality.split("  frontend-s3-t3s2a:\n", 1)[1].split(
+            "\n  frontend-s3-t3s2b0:", 1)[0]
+        markers = ["id: fe09_t3s2a\n", "id: t3s2a_artifact\n",
+                   "name: " + self.PREFIX + "${{ github.run_id }}-attempt-${{ github.run_attempt }}",
+                   "Witness exact t3s2a upload",
+                   "ARTIFACT_ID: ${{ steps.t3s2a_artifact.outputs.artifact-id }}",
+                   'RUN_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}',
+                   '--artifact-name "' + self.PREFIX + '$GITHUB_RUN_ID-attempt-$GITHUB_RUN_ATTEMPT"',
+                   '--run-attempt "$GITHUB_RUN_ATTEMPT" --run-head-sha "$RUN_HEAD_SHA"',
+                   '--execution-source "$GITHUB_SHA"',
+                   "uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131",
+                   "artifact-ids: ${{ steps.t3s2a_artifact.outputs.artifact-id }}",
+                   "github-token: ${{ github.token }}", "repository: ${{ github.repository }}",
+                   "run-id: ${{ github.run_id }}", "path: fe09-t3s2a-readback",
+                   "--verify --output fe09-t3s2a-readback",
+                   "FE09_T3S2A_EXACT_SOURCE_POSIX_READBACK_PASS"]
+        cursor = 0
+        for marker in markers:
+            cursor = stage.index(marker, cursor) + len(marker)
+        for required in ("timeout-minutes: 25", "retention-days: 30",
+                         "if-no-files-found: error", "--collect --output fe09-t3s2a",
+                         "set(names) | {'SHA256SUMS'}",
+                         "obj['source_commit'] == os.environ['GITHUB_SHA']",
+                         "target['profiles'] == 336", "target['fault_injections'] == 336",
+                         "target['negative_checks'] >= 680", "target['restart_idempotence'] == 672",
+                         "'hardware_qualified', 'durable_powerloss_qualified'"):
+            self.assertIn(required, stage)
+        self.assertEqual(stage.count("if: steps.fe09_t3s2a.outcome == 'success'"), 3)
+        self.assertNotIn("continue-on-error:", stage)
+        self.assertNotIn("overwrite:", stage)
+
+
+class T3S2ASnapshotRestartTests(A1SnapshotRestartTests):
+    NAME = T3S2AAttemptVisibilityTests.NAME
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

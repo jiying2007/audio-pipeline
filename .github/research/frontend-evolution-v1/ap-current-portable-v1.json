@@ -199,7 +199,8 @@
     "package_files_max": 512,
     "engineering_single_process_wall_seconds": 10,
     "engineering_metadata_queries_max": 4,
-    "build_identity_queries_max": 1
+    "build_identity_queries_max": 1,
+    "render_corr_compile_wall_seconds": 30
   },
   "bundle": {
     "kind": "AP_CURRENT_PORTABLE_V1",
@@ -208,6 +209,7 @@
     "paths": {
       "processor": "bin/ap_process_pcm",
       "build_info": "bin/ap_build_info_dump",
+      "render_corr": "lib/librender_corr_exact.so",
       "build_receipt": "build/build-receipt.json",
       "engineering": "engineering/engineering.json"
     },
@@ -217,7 +219,10 @@
     "interfaces": {
       "verify_bundle": "dict {manifest, build, engineering, paths}; paths contains resolved processor/build_info/build_receipt/engineering Path objects. No binary execution.",
       "require_host_engineering": "dict {engineering, receipt, runtime_identity}; optional explicit receipt; validates actual runtime using read-only ldd and hashes. No DSP.",
-      "verify_engineering": "verify_engineering(root, receipt) -> validated engineering dict, read-only source/binary/report/trace/hash verification without current-host ldd or DSP. require_host_engineering additionally checks actual current runtime."
+      "verify_engineering": "verify_engineering(root, receipt) -> validated engineering dict, read-only source/binary/report/trace/hash verification without current-host ldd or DSP. require_host_engineering additionally checks actual current runtime.",
+      "bind_render_corr_native": "Return stable JSON binding; load only the preserved native helper into the original canonical module. No compilation or SDK execution.",
+      "build_bound_max_abs_corr": "Return original exact_score guarded by owned native-state/library/source/runtime identity before and after each call; no cold-loader fallback.",
+      "render_corr_runtime_identity": "Return actual current ldd+parent map observation only; no implicit AP engineering rerun."
     }
   },
   "workflow": {
@@ -873,7 +878,74 @@
         }
       },
       "boundary": "Only the two published source-custody additions and accompanying exact document, composed with the already-reviewed 4eec-to-F08 retained registry, are allowed. Existing 84 objects, candidate sets, policy and gc_eligible/auto_gc semantics are unchanged. Neither path triggers engineering. Reverse or arbitrary registry changes refuse."
-    }
+    },
+    "reserved_result_paths": [
+      "docs/research/frontend-evolution-v1/F05_DUALMIC_VALIDATION_20261128/README.zh-CN.md",
+      "docs/research/frontend-evolution-v1/F05_DUALMIC_VALIDATION_20261128/measurement-summary.json",
+      "docs/research/frontend-evolution-v1/F05_DUALMIC_VALIDATION_20261128/independent-readback.json",
+      "docs/research/frontend-evolution-v1/F05_DUALMIC_VALIDATION_20261128/primary-by-speaker.svg",
+      "docs/research/frontend-evolution-v1/PLATFORM_IMPLEMENTATION_CLOSURE_20261128.zh-CN.md"
+    ],
+    "result_publication_boundary": "These five exact previously absent result paths and one exact navigation fragment are reserved before measurement. They are support-only, cannot trigger AP/AEC3 engineering, cannot delete/rewrite existing published paths, and do not permit any other documentation/science changes. Initial base-to-head method introduction still selects both applicable engineering jobs. Actual result contents remain subject to independent measurement/readback; path admission grants no scientific PASS."
   },
-  "failure_policy": "Preserve every actual failed prefix and log. No retry, compiler fallback, parameter/lag search or false success manifest. Late identity, budget or packaging failure changes the admissible status to FAIL and renames already-created tar/manifest/receipt to explicit before-failure names without discarding their bytes. Upload both original failed archives and reports. The 600s process alarm and 60s engineering alarm include source admission/readback; the outer 630s timeout is cleanup-only grace."
+  "failure_policy": "Preserve every actual failed prefix and log. No retry, compiler fallback, parameter/lag search or false success manifest. Late identity, budget or packaging failure changes the admissible status to FAIL and renames already-created tar/manifest/receipt to explicit before-failure names without discarding their bytes. Upload both original failed archives and reports. The 600s process alarm and 60s engineering alarm include source admission/readback; the outer 630s timeout is cleanup-only grace.",
+  "render_correlation": {
+    "purpose": "Precompile the unchanged canonical validation-only correlation C helper in Actions so reserved-validation secondary scoring and independent readback never auto-compile locally. No product DSP or metric definition changes.",
+    "source_pins": {
+      "validation/tools/render_corr_exact.c": "19cbf9af3b3e36c5ca88546b4a6ab091af0292cbb2bffd69ac121eda70be90ac",
+      "validation/tools/render_corr_exact.py": "0a2f720e5b1eb29f7f4174bcadc8bca0d88bc5d0e34b9b19337c13d683127a81",
+      "validation/tools/run_validation_engine.py": "9082b061e7e46aa1c48c82c0ec845524110e01e910aa51e5b83c2c9d9594789a"
+    },
+    "main_source_reference": "4eec2329be9f2138c7ac73e8dd59026f3dc0a3ba",
+    "library": "lib/librender_corr_exact.so",
+    "flags": [
+      "-O3",
+      "-std=c11",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-fno-fast-math",
+      "-ffp-contract=off",
+      "-fPIC",
+      "-shared"
+    ],
+    "abi": {
+      "symbol": "ap_validation_max_abs_corr",
+      "result": "double",
+      "arguments": [
+        "const int16_t*",
+        "size_t",
+        "const int16_t*",
+        "size_t",
+        "int",
+        "int*"
+      ],
+      "sizes_bytes": {
+        "int16_t": 2,
+        "size_t": 8,
+        "int": 4,
+        "double": 8
+      }
+    },
+    "compiler": "Same actually recorded GNU compiler as AP; preserve exact command, stdout/stderr, ELF, dependencies and original loader/compiler identity.",
+    "compile_wall_seconds_max": 30,
+    "shares_existing_compile_stage_seconds": 240,
+    "engineering_cases": [
+      "positive-17-unequal",
+      "negative-17-unequal",
+      "zero-energy",
+      "less-than-64"
+    ],
+    "engineering_case_count": 4,
+    "engineering_max_samples_per_vector": 320,
+    "engineering_sample_rate_hz": 16000,
+    "engineering_native_function_calls": 8,
+    "engineering_python_oracle_lags_per_case": 3201,
+    "engineering_shared_wall_seconds": 60,
+    "audio_processor_calls_added": 0,
+    "canonical_score": "Call the unmodified exact_score and original engine.normalized_corr(stride=4); retain its 1e-10 native/canonical agreement requirement. The bounded Python oracle is restricted to four synthetic helper checks, never real data or scientific search.",
+    "loader_policy": "Under the original non-reentrant _NATIVE_LOCK, accept only initial None/_NATIVE_TEMP=None or this binder-owned identical state/CDLL/function/path/SHA. Reject any automatic compilation, cleared/replaced state or compiler fallback before exact_score.",
+    "parent_process": "Require fresh Linux Python with no LD_PRELOAD/LD_AUDIT/LD_LIBRARY_PATH at exec-time (/proc/self/environ) or now; never pop variables to claim a clean parent. Compare the actually mapped library/dependency path, inode, device and SHA to ldd identities.",
+    "independent_reader": "verify_bundle/verify_engineering remain no-execution byte/math readback. Explicit bind+guarded max_abs_corr may load the preserved .so for canonical scoring with no C compiler, SDK processor or decoder calls; report the reader math host separately from original measurement host."
+  }
 }

@@ -11,8 +11,10 @@ from __future__ import annotations
 import argparse
 import array
 from contextlib import contextmanager
+import ctypes
 from datetime import datetime, timezone
 import hashlib
+import importlib
 import json
 import math
 import os
@@ -50,7 +52,17 @@ NAVIGATION = "docs/research/frontend-evolution-v1/README.md"
 NAVIGATION_ENTRIES = (
     "[当前 AP 可搬移工程包：源码身份、双麦帧与宿主复验](AP_CURRENT_PORTABLE_V1.zh-CN.md)\n\n",
     "[F05 新八说话人双麦整链验证合同（128 例，尚未执行）](F05_DUALMIC_VALIDATION_V1.zh-CN.md)\n\n",
+    "[F05 新八说话人双麦实际结果与独立回读](F05_DUALMIC_VALIDATION_20261128/README.zh-CN.md)\n\n",
 )
+RESULT_PATHS = (
+    "docs/research/frontend-evolution-v1/F05_DUALMIC_VALIDATION_20261128/README.zh-CN.md",
+    "docs/research/frontend-evolution-v1/F05_DUALMIC_VALIDATION_20261128/measurement-summary.json",
+    "docs/research/frontend-evolution-v1/F05_DUALMIC_VALIDATION_20261128/independent-readback.json",
+    "docs/research/frontend-evolution-v1/F05_DUALMIC_VALIDATION_20261128/primary-by-speaker.svg",
+    "docs/research/frontend-evolution-v1/PLATFORM_IMPLEMENTATION_CLOSURE_20261128.zh-CN.md",
+)
+RESULT_DETECTION_PREFIXES = ("docs/research/frontend-evolution-v1/F05_DUALMIC_VALIDATION_20261128/",
+                             "docs/research/frontend-evolution-v1/PLATFORM_IMPLEMENTATION_CLOSURE_")
 VERIFY_LINES = (
     "          timeout 60s python3 -B tests/validation/frontend_evolution/test_ap_current_ci.py\n",
     "          timeout 60s python3 -B tests/validation/frontend_evolution/test_f05_dualmic_validation.py\n",
@@ -65,9 +77,28 @@ DOCS_LINES = (
 CONTROL_FILES = (MODULE, TEST, PLAN, WORKFLOW,
                  "tests/validation/frontend_evolution/webrtc_aec3_ci.py",
                  "tests/validation/frontend_evolution/webrtc_aec3_source.py",
-                 "tests/validation/frontend_evolution/contracts.py")
+                 "tests/validation/frontend_evolution/contracts.py",
+                 "validation/tools/render_corr_exact.c",
+                 "validation/tools/render_corr_exact.py",
+                 "validation/tools/run_validation_engine.py")
 PATHS = {"processor": "bin/ap_process_pcm", "build_info": "bin/ap_build_info_dump",
+         "render_corr": "lib/librender_corr_exact.so",
          "build_receipt": "build/build-receipt.json", "engineering": "engineering/engineering.json"}
+ELF_KEYS = ("processor", "build_info", "render_corr")
+CORR_SOURCE = "validation/tools/render_corr_exact.c"
+CORR_LOADER = "validation/tools/render_corr_exact.py"
+CORR_ENGINE = "validation/tools/run_validation_engine.py"
+CORR_PINS = {
+    CORR_SOURCE: "19cbf9af3b3e36c5ca88546b4a6ab091af0292cbb2bffd69ac121eda70be90ac",
+    CORR_LOADER: "0a2f720e5b1eb29f7f4174bcadc8bca0d88bc5d0e34b9b19337c13d683127a81",
+    CORR_ENGINE: "9082b061e7e46aa1c48c82c0ec845524110e01e910aa51e5b83c2c9d9594789a",
+}
+CORR_FLAGS = ["-O3", "-std=c11", "-Wall", "-Wextra", "-Werror", "-fno-fast-math",
+              "-ffp-contract=off", "-fPIC", "-shared"]
+CORR_ABI = {"symbol": "ap_validation_max_abs_corr", "result": "double",
+            "arguments": ["const int16_t*", "size_t", "const int16_t*", "size_t", "int", "int*"],
+            "sizes_bytes": {"int16_t": 2, "size_t": 8, "int": 4, "double": 8}}
+_RENDER_BINDINGS = {}
 LATENCY_MS = {"call": 10, "assistant": 10}
 LATENCY_SAMPLES = {"call": 160, "assistant": 160}
 TRACE_KEYS = {"frame", "algorithmic_latency_ms", "vad_probability", "vad_active",
@@ -160,6 +191,10 @@ def validate_transition(path: str, before, after, configuration: dict) -> str:
     """Closed old→new registrations prevent later-main rollback acceptance."""
     require(after is not None, "AP_DELETION_NOT_REGISTERED: " + path)
     workflow = configuration["workflow"]
+    require(workflow["reserved_result_paths"] == list(RESULT_PATHS), "reserved result paths changed")
+    if path in RESULT_PATHS:
+        require(before is None, "AP_PUBLISHED_RESULT_REWRITE_FORBIDDEN: " + path)
+        return "support"
     if path in workflow["trigger_core_paths"]:
         return "ap"
     if path == WORKFLOW:
@@ -222,9 +257,10 @@ def select(event: str, selected: str, changes: dict, current: str) -> dict | Non
     if WORKFLOW in changes:
         require(changes[WORKFLOW][1] == current.encode(), "AP_ACTUAL_WORKFLOW_DIFF_MISMATCH")
     known = set(configuration["workflow"]["trigger_core_paths"])
+    known.update(RESULT_PATHS)
     for name in REGISTRIES:
         known.update(configuration["workflow"][name]["files"])
-    if not changes or not any(path in known for path in changes):
+    if not changes or not any(path in known or path.startswith(RESULT_DETECTION_PREFIXES) for path in changes):
         return None
     roles = [validate_transition(path, values[0], values[1], configuration)
              for path, values in changes.items()]
@@ -345,22 +381,28 @@ def build_info(data: bytes, revision: str) -> dict:
 
 def runtime_identity(paths: dict) -> dict:
     return {name: previous.runtime_identity(paths[name], execution_environment())
-            for name in ("processor", "build_info")}
+            for name in ELF_KEYS}
 
 
 def normalize_runtime(value: dict) -> dict:
     result = {}
-    for binary in ("processor", "build_info"):
-        row = value[binary]
-        require(set(row) == {"system", "machine", "release", "os_release_sha256", "libraries", "library_names"},
-                "incomplete runtime identity")
-        require(row["system"] == "Linux" and row["machine"] == "x86_64"
-                and hex_digest(row["os_release_sha256"], 64), "unsupported runtime host")
-        libraries = {name: row["libraries"][path] for name, path in row["library_names"].items()}
-        require(libraries and all(hex_digest(item, 64) for item in libraries.values()), "invalid runtime library identity")
-        result[binary] = {"system": row["system"], "machine": row["machine"], "release": row["release"],
-                          "os_release_sha256": row["os_release_sha256"], "libraries": libraries}
+    require(set(value) == set(ELF_KEYS), "missing processor or validation-helper runtime identity")
+    for binary in ELF_KEYS:
+        result[binary] = normalize_render_corr_runtime(value[binary])
     return result
+
+
+def normalize_render_corr_runtime(row: dict) -> dict:
+    """Normalize one actual ldd observation, without asserting host equivalence."""
+    require(set(row) == {"system", "machine", "release", "os_release_sha256", "libraries", "library_names"},
+            "incomplete runtime identity")
+    require(row["system"] == "Linux" and row["machine"] == "x86_64"
+            and hex_digest(row["os_release_sha256"], 64), "unsupported runtime host")
+    libraries = {name: row["libraries"][path] for name, path in row["library_names"].items()}
+    require(libraries and all(hex_digest(item, 64) for item in libraries.values())
+            and set(row["libraries"]) == set(row["library_names"].values()), "invalid runtime library identity")
+    return {"system": row["system"], "machine": row["machine"], "release": row["release"],
+            "os_release_sha256": row["os_release_sha256"], "libraries": libraries}
 
 
 def controls(revision: str) -> dict:
@@ -371,6 +413,290 @@ def controls(revision: str) -> dict:
         require(data is not None and (ROOT / name).read_bytes() == data, "loaded method differs from committed source: " + name)
         result[name] = sha256(data)
     return result
+
+
+def correlation_sources() -> dict:
+    require(plan()["render_correlation"]["source_pins"] == CORR_PINS, "canonical helper pins changed")
+    for name, digest in CORR_PINS.items():
+        require(sha256((ROOT / name).read_bytes()) == digest and
+                git_bytes(MAIN_REFERENCE, name) == (ROOT / name).read_bytes(),
+                "canonical helper/loader/engine source changed")
+    directory = str(ROOT / "validation/tools")
+    if directory not in sys.path:
+        sys.path.insert(0, directory)
+    module = importlib.import_module("render_corr_exact")
+    engine = importlib.import_module("run_validation_engine")
+    require(Path(module.__file__).resolve() == ROOT / CORR_LOADER
+            and Path(module.SOURCE_PATH).resolve() == ROOT / CORR_SOURCE
+            and Path(engine.__file__).resolve() == ROOT / CORR_ENGINE,
+            "unexpected loaded canonical module path")
+    return {"module": module, "engine": engine}
+
+
+def reject_loader_pollution(current: dict, initial: bytes) -> None:
+    names = ("LD_PRELOAD", "LD_AUDIT", "LD_LIBRARY_PATH")
+    original = {}
+    for item in initial.split(b"\x00"):
+        key, separator, value = item.partition(b"=")
+        if separator and key.decode(errors="replace") in names:
+            original[key.decode()] = value
+    require(not any(current.get(name) or original.get(name) for name in names),
+            "fresh clean Python required: loader pollution at process start or now")
+
+
+def require_clean_parent() -> None:
+    # /proc preserves the exec-time environment, so deleting os.environ entries
+    # after startup cannot claim that an already-loaded preload was removed.
+    path = Path("/proc/self/environ")
+    require(path.is_file(), "Linux process-start environment observation required")
+    with path.open("rb") as handle:
+        initial = handle.read(1024 * 1024 + 1)
+    require(len(initial) <= 1024 * 1024, "process environment observation bound exceeded")
+    reject_loader_pollution(os.environ, initial)
+
+
+def mapped_library_identity(library: Path, runtime: dict) -> dict:
+    with Path("/proc/self/maps").open("rb") as handle:
+        raw = handle.read(4 * 1024 * 1024 + 1)
+    require(len(raw) <= 4 * 1024 * 1024, "mapped-library observation bound exceeded")
+    wanted = dict(runtime["libraries"])
+    wanted[str(library)] = sha256(library.read_bytes())
+    mapped = {}
+    for line in raw.decode().splitlines():
+        parts = line.split(None, 5)
+        if len(parts) != 6 or not parts[5].startswith("/"):
+            continue
+        path = parts[5]
+        require(not (path.endswith(" (deleted)") and path[:-10] in wanted), "loaded helper dependency was deleted")
+        resolved = str(Path(path).resolve())
+        if resolved not in wanted:
+            continue
+        info = Path(resolved).stat()
+        major, minor = (int(item, 16) for item in parts[3].split(":"))
+        require(int(parts[4]) == info.st_ino and (major, minor) == (os.major(info.st_dev), os.minor(info.st_dev)),
+                "loaded helper dependency differs from current file inode")
+        require(sha256(Path(resolved).read_bytes()) == wanted[resolved], "loaded helper dependency byte mismatch")
+        mapped[resolved] = {"sha256": wanted[resolved], "inode": info.st_ino, "device": [major, minor]}
+    require(set(mapped) == set(wanted), "helper/runtime dependency not mapped in actual Python process")
+    return mapped
+
+
+def native_abi_types() -> list:
+    require(ctypes.sizeof(ctypes.c_int16) == 2 and ctypes.sizeof(ctypes.c_size_t) == 8
+            and ctypes.sizeof(ctypes.c_int) == 4 and ctypes.sizeof(ctypes.c_double) == 8,
+            "unsupported exact helper ABI")
+    return [ctypes.POINTER(ctypes.c_int16), ctypes.c_size_t, ctypes.POINTER(ctypes.c_int16),
+            ctypes.c_size_t, ctypes.c_int, ctypes.POINTER(ctypes.c_int)]
+
+
+def check_bound_state(module, entry: dict) -> None:
+    require(module._NATIVE_TEMP is None and module._NATIVE_STATE is entry["state"]
+            and os.getpid() == entry["pid"], "canonical native state changed or was auto-compiled")
+    state = module._NATIVE_STATE
+    require(state["library"] is entry["library"] and state["function"] is entry["function"]
+            and state["library_path"] == entry["path"] and state["binary_sha256"] == entry["binding"]["binary_sha256"]
+            and state["compiler"] == entry["binding"]["compiler"], "canonical native object/identity changed")
+    require(state["function"].restype is ctypes.c_double and state["function"].argtypes == native_abi_types(),
+            "canonical native ABI changed")
+    require(module.exact_score is entry["exact_score"] and module.find_best_lag is entry["find_best_lag"]
+            and module._load_native is entry["load_native"], "canonical native loader/functions replaced")
+    require(sha256(entry["path"].read_bytes()) == entry["binding"]["binary_sha256"], "loaded native helper bytes changed")
+    for name, digest in CORR_PINS.items():
+        require(sha256((ROOT / name).read_bytes()) == digest, "canonical helper source changed during scoring")
+    require_clean_parent()
+    require(mapped_library_identity(entry["path"], entry["runtime"]) == entry["mapped"],
+            "actual loaded math runtime changed")
+
+
+def bind_verified_render_corr(root: Path, build: dict, paths: dict, module=None) -> dict:
+    require_clean_parent()
+    original = correlation_sources()["module"]
+    require(module is None or module is original, "must bind the canonical singleton module")
+    module = original
+    path = paths["render_corr"].resolve()
+    helper = build["render_correlation"]
+    require(sha256(path.read_bytes()) == helper["binary_sha256"], "precompiled helper byte identity mismatch")
+    binding = render_binding(build)
+    require(module.SEARCH_ID == binding["search_id"], "canonical search identity changed")
+    with module._NATIVE_LOCK:
+        require(module._NATIVE_TEMP is None, "auto-compiled canonical helper state is forbidden")
+        if module._NATIVE_STATE is not None:
+            require(module in _RENDER_BINDINGS, "preexisting native state was not bound by this method")
+            entry = _RENDER_BINDINGS[module]
+            require(entry["path"] == path and entry["binding"] == binding, "another helper/path/source was already loaded")
+            check_bound_state(module, entry)
+            return dict(binding)
+        require(module not in _RENDER_BINDINGS, "previously bound canonical state was cleared; no fallback is allowed")
+        runtime = previous.runtime_identity(path, execution_environment())
+        library = ctypes.CDLL(str(path))
+        function = library.ap_validation_max_abs_corr
+        function.restype = ctypes.c_double
+        function.argtypes = native_abi_types()
+        state = {"library": library, "function": function, "library_path": path,
+                 "binary_sha256": binding["binary_sha256"], "compiler": binding["compiler"]}
+        entry = {"state": state, "library": library, "function": function, "path": path, "binding": binding,
+                 "runtime": runtime, "mapped": mapped_library_identity(path, runtime), "pid": os.getpid(),
+                 "exact_score": module.exact_score, "find_best_lag": module.find_best_lag, "load_native": module._load_native}
+        _RENDER_BINDINGS[module] = entry
+        module._NATIVE_STATE = state
+        check_bound_state(module, entry)
+    return dict(binding)
+
+
+def render_binding(build: dict) -> dict:
+    helper = build["render_correlation"]
+    return {"schema_version": 1, "status": "BOUND_PREBUILT_VALIDATION_HELPER", "code_revision": build["source_revision"],
+               "search_id": "exact-all-integer-lags-stride4-v1", "library": PATHS["render_corr"],
+               "binary_sha256": helper["binary_sha256"], "source_sha256": CORR_PINS[CORR_SOURCE],
+               "loader_sha256": CORR_PINS[CORR_LOADER], "engine_sha256": CORR_PINS[CORR_ENGINE],
+               "compiler": helper["compiler"], "abi": CORR_ABI, "local_compilation": False}
+
+
+def bind_render_corr_native(root: Path, module=None) -> dict:
+    verified = verify_bundle(root)
+    return bind_verified_render_corr(root.resolve(), verified["build"], verified["paths"], module)
+
+
+def guarded_max_abs_corr(module, normalized_corr):
+    entry = _RENDER_BINDINGS[module]
+    def max_abs_corr(a, b, sample_rate):
+        # The unchanged cold loader cannot compile while this lock is held;
+        # missing/replaced state is refused before the original exact_score.
+        with module._NATIVE_LOCK:
+            check_bound_state(module, entry)
+            value = module.exact_score(normalized_corr, a, b, sample_rate)
+            check_bound_state(module, entry)
+            return value
+    return max_abs_corr
+
+
+def build_bound_max_abs_corr(root: Path, normalized_corr, module=None):
+    bind_render_corr_native(root, module)
+    original = correlation_sources()
+    require(normalized_corr is original["engine"].normalized_corr, "original canonical normalized_corr required")
+    return guarded_max_abs_corr(original["module"], normalized_corr)
+
+
+def bound_math_runtime(module) -> dict:
+    with module._NATIVE_LOCK:
+        require(module in _RENDER_BINDINGS, "helper must be explicitly bound first")
+        entry = _RENDER_BINDINGS[module]
+        check_bound_state(module, entry)
+        actual = previous.runtime_identity(entry["path"], execution_environment())
+        require(actual == entry["runtime"], "math dependency identity changed after explicit load")
+        return {"runtime_identity": actual, "parent_library_mappings": mapped_library_identity(entry["path"], actual),
+                "helper_library_path": str(entry["path"]), "pid": os.getpid(),
+                "loader_environment": "CLEAN_AT_START_AND_NOW"}
+
+
+def render_corr_runtime_identity(root: Path, module=None) -> dict:
+    bind_render_corr_native(root, module)
+    return bound_math_runtime(correlation_sources()["module"])
+
+
+def verify_render_corr_runtime(observed: dict, binding: dict, original_bundle: Path = None) -> dict:
+    """Pure stored-observation closure check; no current-host existence checks."""
+    normalized = normalize_render_corr_runtime(observed["runtime_identity"])
+    require(observed["loader_environment"] == "CLEAN_AT_START_AND_NOW"
+            and type(observed["pid"]) is int and observed["pid"] > 0, "math host observation mismatch")
+    helper_path = observed["helper_library_path"]
+    if original_bundle is not None:
+        require(helper_path == str(original_bundle / PATHS["render_corr"]),
+                "math helper path differs from original engineering bundle")
+    require(binding["library"] == PATHS["render_corr"] and hex_digest(binding["binary_sha256"], 64)
+            and helper_path.endswith("/" + binding["library"]), "invalid actual helper mapping path")
+    expected = dict(observed["runtime_identity"]["libraries"])
+    require(helper_path not in expected, "helper must be distinct from its dynamic dependencies")
+    expected[helper_path] = binding["binary_sha256"]
+    for name in expected:
+        path = PurePosixPath(name)
+        require(path.is_absolute() and not name.startswith("//") and str(path) == name and ".." not in path.parts and "\\" not in name,
+                "noncanonical absolute math mapping path")
+    mapped = observed["parent_library_mappings"]
+    require(set(mapped) == set(expected) and all(mapped[name]["sha256"] == digest and
+            type(mapped[name]["inode"]) is int and mapped[name]["inode"] > 0
+            and isinstance(mapped[name]["device"], list) and len(mapped[name]["device"]) == 2
+            and all(type(number) is int and number >= 0 for number in mapped[name]["device"])
+            for name, digest in expected.items()), "actual parent helper/dependency mapping missing or changed")
+    return normalized
+
+
+def correlation_fixture_specs() -> list:
+    state, signal = 20260904, []
+    for _ in range(303):
+        state = (1664525 * state + 1013904223) & 0xffffffff
+        signal.append(int((state >> 8) % 24001) - 12000)
+    delayed = [0] * 17 + signal
+    return [{"id": "positive-17-unequal", "a": delayed, "b": signal, "expected_lag": 17},
+            {"id": "negative-17-unequal", "a": signal, "b": delayed, "expected_lag": -17},
+            {"id": "zero-energy", "a": [0] * 128, "b": [0] * 128, "expected_lag": 0},
+            {"id": "less-than-64", "a": signal[:63], "b": signal[:59], "expected_lag": 0}]
+
+
+def correlation_oracle(a: list, b: list, normalized_corr) -> tuple:
+    require(len(a) <= 320 and len(b) <= 320, "engineering-only oracle sample bound exceeded")
+    best, selected = 0.0, 0
+    for lag in range(-1600, 1601):
+        score = normalized_corr(a, b, lag, stride=4)
+        if score > best:
+            best, selected = score, lag
+    return selected, best
+
+
+def run_correlation_checks(root: Path, build: dict, paths: dict, output: Path) -> dict:
+    started = time.monotonic()
+    original = correlation_sources()
+    module, engine = original["module"], original["engine"]
+    binding = bind_verified_render_corr(root, build, paths, module)
+    guarded = guarded_max_abs_corr(module, engine.normalized_corr)
+    rows = []
+    for spec in correlation_fixture_specs():
+        with module._NATIVE_LOCK:
+            check_bound_state(module, _RENDER_BINDINGS[module])
+            lag, native = module.find_best_lag(spec["a"], spec["b"], 16000)
+            check_bound_state(module, _RENDER_BINDINGS[module])
+        canonical = guarded(spec["a"], spec["b"], 16000)
+        oracle_lag, oracle = correlation_oracle(spec["a"], spec["b"], engine.normalized_corr)
+        require(lag == oracle_lag == spec["expected_lag"] and abs(native - canonical) <= 1e-10
+                and abs(canonical - oracle) <= 1e-10, "precompiled canonical correlation engineering mismatch")
+        rows.append(dict(spec, sample_rate_hz=16000, a_sha256=sha256(pcm(spec["a"])), b_sha256=sha256(pcm(spec["b"])),
+                         native_lag=lag, native_score=native, canonical_score=canonical,
+                         oracle_lag=oracle_lag, oracle_score=oracle))
+    value = {"schema_version": 1, "status": "PASS_MATH_HELPER_ENGINEERING_ONLY", "binding": binding,
+             "checks": rows, "native_function_calls": 8, "oracle_lags_per_case": 3201,
+             "audio_processor_calls": 0, "local_compilation": False, "actual_math_runtime": bound_math_runtime(module),
+             "elapsed_seconds": time.monotonic() - started}
+    write_json(output / "render-corr-checks.json", value)
+    return value
+
+
+def verify_correlation_checks(path: Path, build: dict, runtime: dict) -> dict:
+    value = read_json(path)
+    require(value.get("schema_version") == 1 and value.get("status") == "PASS_MATH_HELPER_ENGINEERING_ONLY"
+            and value["binding"] == render_binding(build) and value["native_function_calls"] == 8
+            and value["oracle_lags_per_case"] == 3201 and value["audio_processor_calls"] == 0
+            and value["local_compilation"] is False and type(value["elapsed_seconds"]) in (int, float)
+            and 0 <= value["elapsed_seconds"] <= 60,
+            "canonical helper engineering schema/budget mismatch")
+    normalized = correlation_sources()["engine"].normalized_corr
+    specs = correlation_fixture_specs()
+    require(len(value["checks"]) == len(specs), "missing canonical helper engineering case")
+    for spec, row in zip(specs, value["checks"]):
+        require(all(row[key] == data for key, data in spec.items()) and row["sample_rate_hz"] == 16000,
+                "canonical helper synthetic inputs changed")
+        require(row["a_sha256"] == sha256(pcm(spec["a"])) and row["b_sha256"] == sha256(pcm(spec["b"])),
+                "canonical helper input SHA mismatch")
+        lag, score = correlation_oracle(spec["a"], spec["b"], normalized)
+        require(all(type(row[name]) is int for name in ("oracle_lag", "native_lag"))
+                and all(type(row[name]) in (int, float) for name in ("oracle_score", "native_score", "canonical_score"))
+                and row["oracle_lag"] == row["native_lag"] == lag == spec["expected_lag"]
+                and finite(row) and row["oracle_score"] == score
+                and abs(row["native_score"] - score) <= 1e-10 and abs(row["canonical_score"] - score) <= 1e-10,
+                "canonical helper saved score/lag mismatch")
+    observed = value["actual_math_runtime"]
+    require(verify_render_corr_runtime(observed, value["binding"]) == normalize_render_corr_runtime(runtime),
+            "math check and engineering host differ")
+    return value
 
 
 def pcm(values: list) -> bytes:
@@ -546,6 +872,10 @@ def semantic_engineering(root: Path, receipt: Path, binding: dict) -> dict:
             and report["build_info_sha256"] == binding["build_info_sha256"], "engineering source/binary binding mismatch")
     require(report["algorithmic_latency_ms"] == LATENCY_MS and report["algorithmic_latency_samples"] == LATENCY_SAMPLES,
             "frozen latency changed")
+    require(report["render_corr_sha256"] == binding["render_correlation"]["binary_sha256"]
+            and report["render_corr_checks_file"] == "render-corr-checks.json", "engineering math helper identity mismatch")
+    helper_checks = verify_correlation_checks(folder / report["render_corr_checks_file"], binding,
+                                              report["runtime_identity"]["render_corr"])
     require(type(report["elapsed_seconds"]) in (int, float) and 0 < report["elapsed_seconds"] <= 60
             and report["automatic_retries"] == 0 and report["real_speech_used"] is False
             and report["acoustic_acceptance"] is False and report["physical_target_measurement"] is False,
@@ -556,6 +886,7 @@ def semantic_engineering(root: Path, receipt: Path, binding: dict) -> dict:
     require(old_folder.is_absolute(), "missing original command directory")
     old_bundle = Path(report["bundle_directory"])
     require(old_bundle.is_absolute(), "missing original engineering bundle directory")
+    verify_render_corr_runtime(helper_checks["actual_math_runtime"], helper_checks["binding"], old_bundle)
     executable = {key: Path(report["executables"][key]) for key in ("processor", "build_info")}
     require(all(path == old_bundle / PATHS[key] for key, path in executable.items()),
             "invalid engineering command binary")
@@ -576,7 +907,8 @@ def semantic_engineering(root: Path, receipt: Path, binding: dict) -> dict:
     specs = fixture_specs()
     require(len(report["calls"]) == len(specs), "engineering audio call count mismatch")
     require(math.fsum(row["elapsed_seconds"] for row in report["calls"] + report["metadata_queries"])
-            <= report["elapsed_seconds"], "process elapsed sum exceeds actual engineering wall time")
+            + helper_checks["elapsed_seconds"] <= report["elapsed_seconds"],
+            "process/helper elapsed sum exceeds actual engineering wall time")
     actual_requested = sum(len(row["mic"]) / 4 / 16000 for row in specs)
     require(report["requested_capture_audio_seconds"] == actual_requested <= 5,
             "engineering audio duration mismatch")
@@ -614,7 +946,8 @@ def semantic_engineering(root: Path, receipt: Path, binding: dict) -> dict:
             and all(row["status"] == "REFUSED_BEFORE_EXECUTION" for row in report["wrapper_checks"]),
             "missing wrapper rejection")
     require(report["checks"] == ["source-binary-runtime-identity", "default-presets", "strict-frame-count",
-                                 "fixed-10ms-metadata", "repeat-and-prefix-continuity", "bounded-negative-inputs"],
+                                 "fixed-10ms-metadata", "repeat-and-prefix-continuity", "bounded-negative-inputs",
+                                 "precompiled-canonical-render-correlation"],
             "engineering conclusion schema mismatch")
     return report
 
@@ -650,6 +983,8 @@ def engineering_impl(root: Path, output: Path, initial: bool, started: float, de
               "controls": controls(binding["source_revision"]), "failures": [], "calls": [], "metadata_queries": [],
               "processor_sha256": sha256(paths["processor"].read_bytes()),
               "build_info_sha256": sha256(paths["build_info"].read_bytes()),
+              "render_corr_sha256": sha256(paths["render_corr"].read_bytes()),
+              "render_corr_checks_file": "render-corr-checks.json",
               "executables": {key: str(paths[key]) for key in ("processor", "build_info")},
               "execution_directory": str(output), "bundle_directory": str(root), "algorithmic_latency_ms": LATENCY_MS,
               "algorithmic_latency_samples": LATENCY_SAMPLES, "automatic_retries": 0,
@@ -657,6 +992,7 @@ def engineering_impl(root: Path, output: Path, initial: bool, started: float, de
     try:
         report["runtime_identity"] = runtime_identity(paths)
         normalize_runtime(report["runtime_identity"])
+        run_correlation_checks(root, binding, paths, output)
         for name, command in metadata_queries(paths):
             directory = output / "metadata" / name
             directory.mkdir(parents=True)
@@ -688,11 +1024,13 @@ def engineering_impl(root: Path, output: Path, initial: bool, started: float, de
         require(report["runtime_identity"] == report["runtime_identity_after"], "actual runtime changed")
         require(controls(binding["source_revision"]) == report["controls"]
                 and sha256(paths["processor"].read_bytes()) == report["processor_sha256"]
-                and sha256(paths["build_info"].read_bytes()) == report["build_info_sha256"], "source or binary changed")
+                and sha256(paths["build_info"].read_bytes()) == report["build_info_sha256"]
+                and sha256(paths["render_corr"].read_bytes()) == report["render_corr_sha256"], "source or binary changed")
         report["elapsed_seconds"] = time.monotonic() - started
         require(report["elapsed_seconds"] <= 60, "engineering wall budget exceeded")
         report["checks"] = ["source-binary-runtime-identity", "default-presets", "strict-frame-count",
-                            "fixed-10ms-metadata", "repeat-and-prefix-continuity", "bounded-negative-inputs"]
+                            "fixed-10ms-metadata", "repeat-and-prefix-continuity", "bounded-negative-inputs",
+                            "precompiled-canonical-render-correlation"]
         report["status"] = "PASS_ENGINEERING_ONLY"
         report["files"] = file_map(output)
         write_json(output / "engineering.json", report)
@@ -757,6 +1095,7 @@ def verify_build(root: Path) -> tuple:
             "build source tree or method mismatch")
     pins = configuration["source"]["main_reference_files_sha256"]
     require(build["main_reference_files_sha256"] == pins and len(pins) == 59, "main DSP snapshot binding mismatch")
+    correlation_sources()
     for name, expected in dict(pins, **expected_controls).items():
         data = relative_file(root, "source/" + name).read_bytes()
         require(sha256(data) == expected and data == git_bytes(revision, name), "source snapshot mismatch: " + name)
@@ -766,8 +1105,14 @@ def verify_build(root: Path) -> tuple:
             "first-party license changed")
     require(build["processor_sha256"] == sha256(paths["processor"].read_bytes())
             and build["build_info_sha256"] == sha256(paths["build_info"].read_bytes()), "binary SHA mismatch")
-    require(all(path.read_bytes()[:4] == b"\x7fELF" for key, path in paths.items() if key in ("processor", "build_info")),
+    require(all(path.read_bytes()[:4] == b"\x7fELF" for key, path in paths.items() if key in ELF_KEYS),
             "actual ELF binary required")
+    helper = build["render_correlation"]
+    require(helper["source_pins"] == CORR_PINS and helper["abi"] == CORR_ABI
+            and helper["flags"] == CORR_FLAGS and helper["library"] == PATHS["render_corr"]
+            and helper["binary_sha256"] == sha256(paths["render_corr"].read_bytes())
+            and helper["compiler"] == build["tools"]["gcc"]["version"].splitlines()[0].strip(),
+            "precompiled canonical helper source/ABI/compiler mismatch")
     require(build["cmake_options"] == configuration["build"]["cmake_options"]
             and build["parallelism"] == 2 and build["generator"] == "Unix Makefiles", "build options changed")
     cache = cache_values(relative_file(root, "build/CMakeCache.txt").read_text())
@@ -781,7 +1126,7 @@ def verify_build(root: Path) -> tuple:
             "clean source or relocation check absent")
     require(build["runtime_identity"] == build["runtime_identity_after_relocation"], "relocation changed host dependencies")
     normalize_runtime(build["runtime_identity"])
-    require(set(build["elf_observations"]) == {"processor", "build_info"}, "missing actual ELF observations")
+    require(set(build["elf_observations"]) == set(ELF_KEYS), "missing actual ELF observations")
     for key, row in build["elf_observations"].items():
         folder = root / "build/elf" / key
         require(row["returncode"] == 0 and 0 <= row["elapsed_seconds"] <= 10
@@ -793,9 +1138,9 @@ def verify_build(root: Path) -> tuple:
     for row in build["tools"].values():
         require(Path(row["path"]).is_absolute() and hex_digest(row["sha256"], 64) and row["version"]
                 and row["sha256"] == row["sha256_after"], "actual tool identity missing or changed")
-    for name in ("configure", "compile", "identity"):
+    for name in ("configure", "compile", "render-corr", "identity"):
         row = build["commands"][name]
-        require(row["returncode"] == 0 and 0 <= row["elapsed_seconds"] <= {"configure": 90, "compile": 240, "identity": 10}[name],
+        require(row["returncode"] == 0 and 0 <= row["elapsed_seconds"] <= {"configure": 90, "compile": 240, "render-corr": 30, "identity": 10}[name],
                 "build command failed or exceeded budget")
         require(row["files"] == file_map(root / "build" / name), "build command output mismatch")
         validate_invocation(row, root / "build" / name)
@@ -805,6 +1150,11 @@ def verify_build(root: Path) -> tuple:
             "configure command changed")
     require(build["commands"]["compile"]["command"] == compile_command(Path(build["original_build_directory"]), build["tools"]),
             "compile command changed")
+    require(build["commands"]["render-corr"]["command"] == render_corr_command(
+                Path(build["original_build_directory"]), build["tools"], Path(build["original_source_directory"])),
+            "canonical helper compile command changed")
+    require(math.fsum(build["commands"][key]["elapsed_seconds"] for key in ("compile", "render-corr"))
+            <= build["compile_stage_elapsed_seconds"] <= 240, "shared compile-stage budget changed")
     return build, paths
 
 
@@ -830,6 +1180,11 @@ def configure_command(directory: Path, tools: dict, source_root: Path = None) ->
 
 def compile_command(directory: Path, tools: dict) -> list:
     return [tools["cmake"]["path"], "--build", str(directory), "--target", "ap_process_pcm", "ap_build_info_dump", "--parallel", "2"]
+
+
+def render_corr_command(directory: Path, tools: dict, source_root: Path = None) -> list:
+    root = ROOT if source_root is None else source_root
+    return [tools["gcc"]["path"]] + CORR_FLAGS + [str(root / CORR_SOURCE), "-lm", "-o", str(directory / "librender_corr_exact.so")]
 
 
 def tool_records(output: Path, deadline: float) -> dict:
@@ -951,12 +1306,13 @@ def run_impl(expected: str, output: Path, started: float, deadline: float) -> di
         require(status_before == "", "source must be clean before build")
         actual_controls = controls(expected)
         configuration = plan()
+        correlation_sources()
         source_pins = configuration["source"]["main_reference_files_sha256"]
         for name, digest in source_pins.items():
             data = (ROOT / name).read_bytes()
             require(sha256(data) == digest and data == git_bytes(expected, name) == git_bytes(MAIN_REFERENCE, name),
                     "source differs from main DSP pin: " + name)
-        for directory in (bundle / "bin", bundle / "build", bundle / "licenses", build_dir.parent):
+        for directory in (bundle / "bin", bundle / "lib", bundle / "build", bundle / "licenses", build_dir.parent):
             directory.mkdir(parents=True)
         for name in dict(source_pins, **actual_controls):
             target = bundle / "source" / name
@@ -965,15 +1321,25 @@ def run_impl(expected: str, output: Path, started: float, deadline: float) -> di
         (bundle / "licenses/audio-pipeline-LICENSE").write_bytes((ROOT / "LICENSE").read_bytes())
         tools = tool_records(bundle / "build/tools", deadline)
         command_records = {}
-        for name, command, budget in (("configure", configure_command(build_dir, tools), 90),
-                                      ("compile", compile_command(build_dir, tools), 240)):
-            directory = bundle / "build" / name
-            directory.mkdir()
-            record = invoke(command, directory, deadline, budget)
-            record["files"] = file_map(directory)
-            command_records[name] = record
-            require(record["returncode"] == 0, name + " failed; preserve original logs")
-        for key in ("processor", "build_info"):
+        directory = bundle / "build/configure"
+        directory.mkdir()
+        record = invoke(configure_command(build_dir, tools), directory, deadline, 90)
+        record["files"] = file_map(directory)
+        command_records["configure"] = record
+        require(record["returncode"] == 0, "configure failed; preserve original logs")
+        compile_started = time.monotonic()
+        compile_deadline = min(deadline, compile_started + 240)
+        with wall_guard(compile_deadline):
+            for name, command, budget in (("compile", compile_command(build_dir, tools), 240),
+                                          ("render-corr", render_corr_command(build_dir, tools), 30)):
+                directory = bundle / "build" / name
+                directory.mkdir()
+                record = invoke(command, directory, compile_deadline, budget)
+                record["files"] = file_map(directory)
+                command_records[name] = record
+                require(record["returncode"] == 0, name + " failed; preserve original logs")
+        compile_elapsed = time.monotonic() - compile_started
+        for key in ELF_KEYS:
             original = build_dir / PATHS[key].split("/")[-1]
             target = bundle / PATHS[key]
             require(original.is_file() and original.read_bytes()[:4] == b"\x7fELF", "compiled ELF missing")
@@ -993,7 +1359,7 @@ def run_impl(expected: str, output: Path, started: float, deadline: float) -> di
         (bundle / "build/CMakeCCompiler.cmake").write_bytes(compiler_records[0].read_bytes())
         before_runtime = runtime_identity(paths)
         elf_observations = {}
-        for key in ("processor", "build_info"):
+        for key in ELF_KEYS:
             directory = bundle / "build/elf" / key
             directory.mkdir(parents=True)
             observation = invoke([tools["readelf"]["path"], "-h", "-d", str(paths[key])], directory, deadline)
@@ -1025,6 +1391,10 @@ def run_impl(expected: str, output: Path, started: float, deadline: float) -> di
                  "main_reference_files_sha256": source_pins, "controls": actual_controls,
                  "processor_sha256": sha256(paths["processor"].read_bytes()),
                  "build_info_sha256": sha256(paths["build_info"].read_bytes()), "build_info": info,
+                 "render_correlation": {"source_pins": CORR_PINS, "abi": CORR_ABI, "flags": CORR_FLAGS,
+                                        "library": PATHS["render_corr"], "binary_sha256": sha256(paths["render_corr"].read_bytes()),
+                                        "compiler": tools["gcc"]["version"].splitlines()[0].strip()},
+                 "compile_stage_elapsed_seconds": compile_elapsed,
                  "tools": tools, "commands": command_records, "cmake_options": configuration["build"]["cmake_options"],
                  "generator": "Unix Makefiles", "parallelism": 2, "runtime_identity": before_runtime,
                  "elf_observations": elf_observations,

@@ -8,7 +8,9 @@ import subprocess
 import sys
 import tarfile
 import tempfile
+import threading
 import time
+import types
 import unittest
 from unittest import mock
 
@@ -117,6 +119,25 @@ class SelectorTests(unittest.TestCase):
     def test_registered_metadata_alone_never_runs_engineering(self):
         name = "docs/research/frontend-evolution-v1/DECHORATE_RIR_GAP_20261128/result.json"
         self.assert_flags(ap.select("pull_request", "", {name: (None, self.c7_files[name])}, self.current), False, False)
+
+    def test_reserved_results_only_are_support_before_any_measurement(self):
+        changes = {name: (None, b"selector-only future result fixture; no measurement claim\n") for name in ap.RESULT_PATHS}
+        self.assert_flags(ap.select("pull_request", "", changes, self.current), False, False)
+        before = (ap.ROOT / ap.NAVIGATION).read_bytes()
+        changes[ap.NAVIGATION] = (before, before + ap.NAVIGATION_ENTRIES[-1].encode())
+        self.assert_flags(ap.select("pull_request", "", changes, self.current), False, False)
+
+    def test_reserved_results_do_not_hide_missing_engineering_in_initial_mix(self):
+        changes = self.initial(True)
+        changes.update({name: (None, b"future result path fixture\n") for name in ap.RESULT_PATHS})
+        self.assert_flags(ap.select("pull_request", "", changes, self.current), True, True)
+
+    def test_unknown_result_or_published_result_rewrite_is_refused(self):
+        path = ap.RESULT_PATHS[0]
+        for changes in ({path: (b"published", b"rewrite")}, {path: (b"published", None)},
+                        {path.replace("README.zh-CN.md", "unregistered.json"): (None, b"unknown")}):
+            with self.subTest(), self.assertRaises(ValueError):
+                ap.select("pull_request", "", changes, self.current)
 
     def test_exact_transport_alone_never_runs_engineering(self):
         changes = {name: (ap.git_bytes(ap.MAIN_REFERENCE, name), ap.git_bytes(self.transport["public_revision"], name))
@@ -442,6 +463,140 @@ class EngineeringDataTests(unittest.TestCase):
     def test_source_and_test_parse_as_python38(self):
         for name in (ap.MODULE, ap.TEST):
             ast.parse((ap.ROOT / name).read_text(), feature_version=(3, 8))
+
+
+class PrecompiledCorrelationTests(unittest.TestCase):
+    """Pure/source/state negative fixtures; never load or compile a helper .so."""
+    def test_source_pins_and_compile_flags_match_original_cold_loader(self):
+        original = ap.correlation_sources()
+        self.assertIsNone(original["module"]._NATIVE_STATE)
+        tree = ast.parse((ap.ROOT / ap.CORR_LOADER).read_text())
+        flags = next([item.value for item in node.value.right.elts] for node in ast.walk(tree)
+                     if isinstance(node, ast.Assign) and any(isinstance(target, ast.Name) and target.id == "command" for target in node.targets)
+                     and isinstance(node.value, ast.BinOp) and isinstance(node.value.right, ast.List))
+        self.assertEqual(ap.CORR_FLAGS, flags + ["-shared"])
+        command = ap.render_corr_command(Path("/unit-fixture/build"), {"gcc": {"path": "/unit-fixture/gcc"}}, Path("/frozen/source"))
+        self.assertEqual(command, ["/unit-fixture/gcc"] + flags + ["-shared", "/frozen/source/" + ap.CORR_SOURCE,
+                                                               "-lm", "-o", "/unit-fixture/build/librender_corr_exact.so"])
+        self.assertEqual(len(ap.plan()["source"]["main_reference_files_sha256"]), 59)
+        for name, digest in ap.CORR_PINS.items():
+            self.assertEqual(ap.sha256((ap.ROOT / name).read_bytes()), digest)
+            self.assertEqual(ap.git_bytes(ap.MAIN_REFERENCE, name), (ap.ROOT / name).read_bytes())
+
+    def test_four_short_pure_python_oracles_do_not_initialize_native_state(self):
+        original = ap.correlation_sources()
+        module = original["module"]
+        with mock.patch.object(module, "_load_native", side_effect=AssertionError("must not compile or load")), \
+                mock.patch.object(ap.ctypes, "CDLL") as cdll:
+            for spec, expected in zip(ap.correlation_fixture_specs(), [(17, 1.0), (-17, 1.0), (0, 0.0), (0, 0.0)]):
+                self.assertEqual(ap.correlation_oracle(spec["a"], spec["b"], original["engine"].normalized_corr), expected)
+            with self.assertRaisesRegex(ValueError, "sample bound"):
+                ap.correlation_oracle([0] * 321, [0] * 64, original["engine"].normalized_corr)
+            cdll.assert_not_called()
+        self.assertIsNone(module._NATIVE_STATE)
+
+    def test_parent_pollution_cannot_be_hidden_by_removing_current_environment(self):
+        ap.reject_loader_pollution({}, b"SAFE=value\x00")
+        for name in ("LD_PRELOAD", "LD_AUDIT", "LD_LIBRARY_PATH"):
+            with self.subTest(name=name), self.assertRaisesRegex(ValueError, "fresh clean Python"):
+                ap.reject_loader_pollution({name: "fixture"}, b"SAFE=value\x00")
+            with self.subTest(name=name), self.assertRaisesRegex(ValueError, "fresh clean Python"):
+                ap.reject_loader_pollution({}, (name + "=exec-time-fixture\x00").encode())
+
+    def test_preexisting_native_state_and_auto_compile_temp_refuse_before_cdll(self):
+        module = ap.correlation_sources()["module"]
+        with tempfile.TemporaryDirectory() as temp:
+            path = Path(temp) / "librender_corr_exact.so"
+            path.write_bytes(b"negative state fixture; this is not an ELF")
+            build = {"source_revision": "0" * 40,
+                     "render_correlation": {"binary_sha256": ap.sha256(path.read_bytes()), "compiler": "unit fixture"}}
+            for state, native_temp in (({"binary_sha256": ap.sha256(path.read_bytes())}, None), (None, object())):
+                with self.subTest(), mock.patch.object(module, "_NATIVE_STATE", state), \
+                        mock.patch.object(module, "_NATIVE_TEMP", native_temp), mock.patch.object(ap.ctypes, "CDLL") as cdll:
+                    with self.assertRaisesRegex(ValueError, "state|compiled"):
+                        ap.bind_verified_render_corr(Path(temp), build, {"render_corr": path}, module)
+                    cdll.assert_not_called()
+
+    def test_guard_refuses_cleared_or_replaced_state_before_original_score(self):
+        for mutation in ("clear", "state", "library", "function", "temporary"):
+            module = types.ModuleType("synthetic_native_state_negative")
+            module._NATIVE_LOCK = threading.Lock()
+            module._NATIVE_TEMP = None
+            library, function = object(), object()
+            state = {"library": library, "function": function, "library_path": Path("/unit-fixture/helper.so"),
+                     "binary_sha256": "1" * 64, "compiler": "unit fixture"}
+            module._NATIVE_STATE = state
+            module.exact_score, module.find_best_lag, module._load_native = mock.Mock(), mock.Mock(), mock.Mock()
+            entry = {"state": state, "library": library, "function": function, "path": state["library_path"], "pid": os.getpid(),
+                     "binding": {"binary_sha256": "1" * 64, "compiler": "unit fixture"}}
+            with self.subTest(mutation=mutation), mock.patch.dict(ap._RENDER_BINDINGS, {module: entry}):
+                guarded = ap.guarded_max_abs_corr(module, lambda *args: 0.0)
+                if mutation == "clear":
+                    module._NATIVE_STATE = None
+                elif mutation == "state":
+                    module._NATIVE_STATE = dict(state)
+                elif mutation == "temporary":
+                    module._NATIVE_TEMP = object()
+                else:
+                    state[mutation] = object()
+                with self.assertRaisesRegex(ValueError, "state|object"):
+                    guarded([1] * 64, [1] * 64, 16000)
+                module.exact_score.assert_not_called()
+                module._load_native.assert_not_called()
+
+    def runtime_fixture(self):
+        helper = "/old-host/bundle/lib/librender_corr_exact.so"
+        libraries = {"/old-host/lib/libc.so.6": "1" * 64, "/old-host/lib/libm.so.6": "2" * 64,
+                     "/old-host/lib/ld-linux-x86-64.so.2": "3" * 64}
+        value = {"runtime_identity": {"system": "Linux", "machine": "x86_64", "release": "schema-fixture",
+                  "os_release_sha256": "4" * 64, "libraries": libraries,
+                  "library_names": {Path(path).name: path for path in libraries}},
+                 "helper_library_path": helper, "pid": 1, "loader_environment": "CLEAN_AT_START_AND_NOW",
+                 "parent_library_mappings": {path: {"sha256": digest, "inode": index + 1, "device": [0, 1]}
+                   for index, (path, digest) in enumerate(dict(libraries, **{helper: "5" * 64}).items())}}
+        return value, {"library": ap.PATHS["render_corr"], "binary_sha256": "5" * 64}
+
+    def test_stored_math_runtime_is_portable_without_current_host_or_file_access(self):
+        value, binding = self.runtime_fixture()
+        with mock.patch.object(ap.previous, "runtime_identity") as ldd, mock.patch.object(ap.ctypes, "CDLL") as cdll:
+            self.assertEqual(ap.verify_render_corr_runtime(value, binding), ap.normalize_render_corr_runtime(value["runtime_identity"]))
+            ldd.assert_not_called()
+            cdll.assert_not_called()
+
+    def test_resealed_math_path_must_still_bind_original_engineering_bundle(self):
+        value, binding = self.runtime_fixture()
+        ap.verify_render_corr_runtime(value, binding, Path("/old-host/bundle"))
+        old = value["helper_library_path"]
+        replacement = "/another-host/bundle/" + ap.PATHS["render_corr"]
+        value["helper_library_path"] = replacement
+        value["parent_library_mappings"][replacement] = value["parent_library_mappings"].pop(old)
+        # Its own map is coherent, but it is not the original report's bundle.
+        ap.verify_render_corr_runtime(value, binding)
+        with self.assertRaisesRegex(ValueError, "original engineering bundle"):
+            ap.verify_render_corr_runtime(value, binding, Path("/old-host/bundle"))
+
+    def test_stored_math_runtime_cannot_drop_dependencies_or_change_sha_inode_path(self):
+        original, binding = self.runtime_fixture()
+        for mutation in ("drop-libc", "only-helper", "wrong-sha", "wrong-helper", "zero-inode", "bool-device", "relative-path"):
+            value = json.loads(json.dumps(original))
+            mappings = value["parent_library_mappings"]
+            key = "/old-host/lib/libc.so.6"
+            if mutation == "drop-libc":
+                del mappings[key]
+            elif mutation == "only-helper":
+                value["parent_library_mappings"] = {value["helper_library_path"]: mappings[value["helper_library_path"]]}
+            elif mutation == "wrong-sha":
+                mappings[key]["sha256"] = "0" * 64
+            elif mutation == "wrong-helper":
+                mappings[value["helper_library_path"]]["sha256"] = "0" * 64
+            elif mutation == "zero-inode":
+                mappings[key]["inode"] = 0
+            elif mutation == "bool-device":
+                mappings[key]["device"] = [True, 1]
+            else:
+                value["helper_library_path"] = "relative/" + ap.PATHS["render_corr"]
+            with self.subTest(mutation=mutation), self.assertRaises(ValueError):
+                ap.verify_render_corr_runtime(value, binding)
 
 
 if __name__ == "__main__":

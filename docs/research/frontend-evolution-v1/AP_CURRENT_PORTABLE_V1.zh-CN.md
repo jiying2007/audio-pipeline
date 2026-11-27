@@ -39,6 +39,52 @@ MDF / EMA / bandlimited、完整模块、双麦及资源上限逐项写入合同
 原源码/build 的动态依赖，然后从 bundle 跑全部合成检查。后续搬移验证
 使用原命令记录中的目录解释历史路径，不要求本机目录与 CI 一致。
 
+## 预编译原 canonical 相关性数学库
+
+F05 secondary 的原 `render_corr_exact._load_native` 在冷进程内会自动调用
+C 编译器。这个既有行为与本次“仅 Actions 编译”的执行合同冲突，因此
+本包另保全 **原样** `validation/tools/render_corr_exact.c` 生成的
+`lib/librender_corr_exact.so`。原 C、原 Python loader 和原
+`run_validation_engine.normalized_corr` 所在文件分别精确锁定；不改原
+loader/engine，不将研究数学库计入 59 个 main DSP 文件，也不链接进产品运行时。
+
+同一实际 GNU 编译器使用原 Linux loader 的完整 flags：
+`-O3 -std=c11 -Wall -Wextra -Werror -fno-fast-math -ffp-contract=off -fPIC -shared`，
+接原 C 路径、`-lm -o` 和输出路径。单独 helper 编译最多 30 s，和 AP
+CMake 编译**共享原 240 s 阶段**，总 600 s 不扩。保全原源码、实际编译命令、
+日志、库 SHA、ELF、实际依赖与 compiler 标识。库只在 Actions 构建。
+
+工程在同一原 60 s 预算内增加 4 个有限数学检查：不等长输入的 `+17/-17`
+样点延迟、零能量、有效重叠少于 64 样点；向量最多 320 样点、16 kHz。
+每例调用原 `find_best_lag` 与原 `exact_score` 各一次，共 **8 次 native
+数学函数调用**。原 exact-score 路径仍使用原 `normalized_corr(stride=4)`
+重算最终值，保留原 `1e-10` 一致性拒绝。四例的 Python 全 lag oracle
+各固定 3201 个 lag，仅用于这组短合成检查，不能用于真实语音、候选搜索或
+改动原科学计分。数学检查与 **42 次 AP 音频调用、4 次 AP metadata 查询**
+分别记录，不产生新声学通过。
+
+显式 `bind_render_corr_native` 在原 `_NATIVE_LOCK` 中只接收初始
+`_NATIVE_STATE=None`、`_NATIVE_TEMP=None`，或本 binder 已拥有的同一
+state/CDLL/function/路径/字节身份。任何自动编译缓存、被清除/替换的状态
+都会拒绝；不能仅凭状态字典自报 SHA 接收另一个函数。
+`build_bound_max_abs_corr` 返回 guarded callable：每次原 `exact_score`
+前后核对状态、源码、库和真实加载依赖，不能落回冷 loader 编译。
+原锁是非重入锁，guard 内不再调用公开 bind。
+
+CDLL 在 Python 父进程加载，清理子进程环境不够。装载前同时检查当前环境
+和 `/proc/self/environ` 保存的启动环境，拒绝 `LD_PRELOAD/LD_AUDIT/LD_LIBRARY_PATH`
+污染；不能运行中删除变量后宣称已清除预载库。要求 fresh clean Linux Python。
+实际加载后对照 `/proc/self/maps` 与 ldd 的路径、设备、inode、SHA，完整保全
+helper 与依赖。三项 ELF 的依赖均纳入工程 `runtime_identity` 首尾检查。
+
+纯 `verify_bundle/verify_engineering` 不装载库；它们用原 Python normalized-corr
+复核四个短 oracle 和已封存的数学记录。F05 独立读回可**显式**加载已封存
+数学库重算原 canonical secondary，仍为 0 编译、0 SDK 处理器、0 decoder。
+`render_corr_runtime_identity` 只做本次宿主/加载库观察，不隐式重做 42 次
+AP 工程；读者宿主与原测量宿主分别记录。`verify_render_corr_runtime` 是共享
+纯 metadata 校验，要求已保存 mappings 恰好覆盖全部 ldd 依赖及一个 helper，
+逐项核 SHA/设备/inode，不要求旧绝对路径在读者机器上存在。
+
 ## 固定工程检查及延迟含义
 
 固定 `call/assistant` × `capture-only/full-zero-render` 四组，16 kHz、
@@ -86,9 +132,11 @@ CI 内部总墙钟 600 s；configure 90 s、compile 240 s、engineering
 |---|---|
 | `bin/ap_process_pcm` | 实际两 profile 双麦处理器 |
 | `bin/ap_build_info_dump` | 同 source/build 的身份查询程序 |
+| `lib/librender_corr_exact.so` | 原 canonical 相关性数学 helper；不链接产品 DSP |
 | `source/` | 59 个 main 相同原件及方法控制闭包 |
 | `build/build-receipt.json` | 实际工具、源码、配置、命令、ELF 与依赖身份 |
 | `engineering/engineering.json` | CI 宿主的完整实际合成工程报告 |
+| `engineering/render-corr-checks.json` | 四个短数学检查、源码/库绑定及真实父进程映射 |
 | `licenses/` | 本项目许可及可获得的已安装系统包版权说明 |
 
 成功报告只能写 `PASS_ENGINEERING_ONLY`。归档生成后重新逐成员读取并
@@ -138,3 +186,12 @@ custody 与说明文档；原 84 对象不改，两个新增对象继续保留�
 中，未变化文件不参与选择；把较新 quality.yml 回退成已登记的旧 c7
 字节仍拒绝。只有精确声明的 tiny/nav 增量可合成，不泛放行 quality、
 其它 workflow、旧科学文件或 DSP 改动，也不以回落历史 job 处理拒绝。
+
+为使测量完成后只提交结果、不再改变执行方法，执行前另外保留五个精确结果
+路径：`F05_DUALMIC_VALIDATION_20261128/` 中的 `README.zh-CN.md`、
+`measurement-summary.json`、`independent-readback.json`、`primary-by-speaker.svg`，
+以及 `PLATFORM_IMPLEMENTATION_CLOSURE_20261128.zh-CN.md`。这些都是上述本目录
+下的路径，仅允许原 base 不存在时新增，不能删除或重写旧科学文件。
+结果路径及唯一固定结果导航片段只算 support；结果单独变更选择两个工程
+job 均为 false，初次完整方法集成仍必须二者都执行。未知结果路径直接拒绝。
+路径准入不预先批准结果数值、独立性或任何科学结论。

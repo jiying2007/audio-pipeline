@@ -141,3 +141,94 @@ Python 3.8 AST 检查与 `git diff --check` 通过。这不是实际 Python 3.8 
 本地测试不替代实际 CI。新 exact-head required summary、两个原 reader 的实际回读及
 protected fresh-main 仍待后续验收，统一在 #968 登记。保留两次原失败，不自动 rerun、
 取消、merge 或重写历史科学结论。
+
+
+## 后继：BA0 实际 404 后的 17 条同类原件消费者闭集迁移
+
+本节是新方法修订；上文两条失败、原方案和当时的 32/285 项测试记录保持为历史。
+新冻结基线为公开 head `90a50276643960a6a8047ca6bfb095040b710369`，
+tree `f4e979948e8bdedf9399336ebec4e6290f5c0d46`，Verify run `46070597129`、attempt `1`。
+本节没有重跑原 head，没有把事后取回的 ZIP 改称当时 CI reader 已通过。
+
+### 已发生的 BA0 运输失败
+
+[`frontend-s3-t3s2b1ba0` job `140747911957`](https://github.com/jiying2007/audio-pipeline/actions/runs/46070597129/job/140747911957)
+中，原 18 项 tiny、四目标收集/验证、四成员上传、严格列表身份见证均成功；
+在 `2026-11-27T21:36:49.3025450Z`，已显式绑定 token/repository/run/upload-ID 的
+原下载仍在 archive GET 返回 404。原独立 reader 未运行。该事实再次说明列表可见
+不保证后续 archive GET 同时可取，不能归因于漏传 token，也不能断言存储后端的内部原因。
+
+原 artifact 为 `15232189967`，名称
+`frontend-fe09-t3s2b1ba0-finite-46070597129-attempt-1`。只读取回的原 ZIP 为 7,283 B，
+SHA256 `5faa91a96967aa516a685d786c5961e3d39935f3436f2b9b61d05e487941bc12`；
+四原成员共 79,112 B，其 SHA256SUMS 与实际字节相符。原 source receipt 绑定当次
+Actions merge `a0f618255af2179a1a90c34bb67e8e4771ba8f45`，其 tree 与公开 head 相同。
+原失败日志为 39,920 B，SHA256
+`a8900645cbb3c5e8d3534152437d2ca0fa45d8f030e602b39a54d02721d0f1e3`。
+此次保全只检查归档和身份，没有执行原 reader、SDK 或真实语音。
+
+### 一次覆盖相同失效模式的有限名单
+
+静态盘点在 `quality.yml` 找到同一四根成员类的 19 条消费者：现有 B2-S2、BA2 两条
+保持原字节，其余 **17 条、16 个 job** 改为同一个已验证的 saved-ZIP helper。
+28 条其他 schema 的 v4 下游包不在本次范围。所有上传名称、当前 run/attempt 语义、
+原 source 输出、reader 目录与 reader 后续断言保持；B2S3/F0 原来没有 upload step ID，
+仅补固定 ID 来使用上传结果。其余原 ID 不变。
+
+| stage | 原 job | 原 reader 目录 | 名称含 attempt | ZIP 上限（B） | 原四成员展开总上限（B） |
+| --- | --- | --- | :---: | ---: | ---: |
+| `b2s1` | `frontend-reference` | `fe09-b2s1-readback` | 是 | 1,048,576 | 1,115,392 |
+| `b2s3` | `frontend-reference` | `fe09-b2s3-readback` | 否 | 2,097,152 | 1,115,392 |
+| `t1` | `frontend-s3-t1` | `fe09-b2s3-t1-readback` | 是 | 1,048,576 | 1,115,392 |
+| `t2f0` | `frontend-s3-t2-f0` | `fe09-t2-f0-readback` | 是 | 1,048,576 | 1,115,392 |
+| `t2a` | `frontend-s3-t2a` | `fe09-t2a-readback` | 是 | 1,048,576 | 1,115,392 |
+| `t2b0` | `frontend-s3-t2b-b0` | `fe09-t2b-b0-readback` | 是 | 1,048,576 | 2,360,576 |
+| `b1s0` | `frontend-s3-t2b-b1s0` | `fe09-b1s0-readback` | 否 | 1,048,576 | 2,360,576 |
+| `b1s1` | `frontend-s3-t2b-b1s1` | `fe09-b1s1-readback` | 否 | 1,048,576 | 2,360,576 |
+| `t2c0` | `frontend-s3-t2c0` | `fe09-t2c0-readback` | 是 | 1,048,576 | 2,360,576 |
+| `t3s0` | `frontend-s3-t3s0` | `fe09-t3s0-readback` | 是 | 1,048,576 | 4,457,216 |
+| `t3s1` | `frontend-s3-t3s1` | `fe09-t3s1-readback` | 是 | 1,048,576 | 4,457,216 |
+| `t3s2a` | `frontend-s3-t3s2a` | `fe09-t3s2a-readback` | 是 | 1,048,576 | 4,495,072 |
+| `t3s2b0` | `frontend-s3-t3s2b0` | `fe09-t3s2b0-readback` | 是 | 1,048,576 | 4,495,072 |
+| `t3s2b1a` | `frontend-s3-t3s2b1a` | `fe09-t3s2b1a-readback` | 是 | 1,048,576 | 4,495,072 |
+| `f0` | `frontend-s3-t3s2b1bf0` | `fe09-t3s2b1bf0-readback` | 否 | 8,388,608 | 4,495,072 |
+| `ba0` | `frontend-s3-t3s2b1ba0` | `fe09-t3s2b1ba0-readback` | 是 | 1,048,576 | 5,543,648 |
+| `ba1` | `frontend-s3-t3s2b1ba1` | `fe09-t3s2b1ba1-readback` | 否 | 1,048,576 | 5,543,648 |
+
+15 条原有 metadata guard 的压缩上限 **1 MiB 原样保留**。B2S3/F0 原来没有压缩
+metadata 上限，本次明确新冻结 2 MiB / 8 MiB；不得将这两项说成原有门限。它们分别
+大于原合法展开总和 1,115,392 / 4,495,072 B，容纳四成员的普通 ZIP 封装；每个
+科学 reader 原来的单成员 cap 和所有语义检查仍独立执行，不因运输总上限而放松。
+旧 B2-S2 的 64 KiB / 1 MiB 与 BA2 的 8 MiB / 16 MiB 合同不变。
+
+此次仅增加 17 项固定 stage 参数和替换相应 workflow 运输块。`class TransientHTTP`
+起直到 helper 末尾的下载实现与 `90a50276` **逐字相同**；旧 visibility 模块也保持
+全文件逐字相同。原 run/list/archive/blob **共用 8 次请求、10 秒单请求、94 秒总时钟
+和 2 秒间隔**，没有为原 302 probe、metadata witness 或 action 再叠加一组预算。
+原 302-only probe 函数仍保留历史回归测试，但新接线只请求一条 saved-ZIP 运输链。
+所有 job 原来的 15–30 分钟等各自预算均未增加。
+
+新运输成功或失败都保全同一次 `original.zip` / `original.zip.partial` 与
+`transport.json`，然后只有从此 ZIP 验证得到的四成员能进入原目录。各阶段 reader
+仍按原成功条件执行；任何下载失败、证据保全失败或 reader 失败都不能被后续成功覆盖。
+运输 receipt 仍仅为 `PASS_TRANSPORT_ONLY`，没有科学、设备或声学晋级含义。
+
+### 后继验收边界
+
+现有 download tiny 扩展为 38 项，合成四成员正例遍历完整 19 个固定 stage；对
+17 项新增展开边界、所有压缩 cap、错误 stage/name/attempt/upload 身份、原 reader
+删除或改写、额外跳过/忽略失败、错误证据目录等做负例。原 285 项 visibility tests
+只更新实际 workflow 的运输断言，原 metadata、302、分页、冲突、预算及拒绝矩阵保持。
+测试直接检查当前工作树接线，再将精确 17 个新运输块及两个新增 step ID 还原，要求
+16 个受影响 job 和旧 BA2 job 全部等于冻结原文，因此包含完整原 reader/所有后续断言。
+本次单因果提交另有整个 workflow 块外逐字比较；独立的后续来源准备修复不属于本合同。
+
+这些 tiny 在旧 R11 source reader 之前执行，其只读 Git 获取冻结原文时自行传
+`-c safe.directory=<当前物理仓库路径>` 和 `-c core.fsmonitor=false`，先清空继承的
+safe.directory 列表，不写 global 配置，不给后续步骤 export Git 环境。
+`GIT_TEST_ASSUME_DIFFERENT_OWNER=1` 下检查同一实际接线，旧 R11 的外来 Git 环境
+拒绝规则不变。Python 3.8 AST 只验证语法兼容，不宣称实际运行 3.8 解释器。
+
+以上均是离线 synthetic/metadata 验收，未编译 C、运行 SDK、真实语音或原科学任务。
+新公开 source 的完整 exact-head CI、17 条原 reader 的实际回读与 protected fresh-main
+仍须随后真实完成；原 `90a50276` 的失败及未运行 reader 状态保留。

@@ -79,6 +79,7 @@ python3 tests/validation/frontend_evolution/test_fe09_t2a_archive_readiness.py
 python3 tests/validation/frontend_evolution/test_speech_download_retry.py
 python3 tests/validation/frontend_evolution/test_speech_source_stage_budget.py
 python3 tests/validation/frontend_evolution/test_speech_source_recovery.py
+python3 tests/validation/frontend_evolution/test_spatial_source_cache.py
 python3 tests/validation/frontend_evolution/speech_pinned_snapshot.py --self-test
 python3 tests/validation/frontend_evolution/test_fe09_b3_f0_deadline_r1.py
 # R2 T1 verifies the separately preregistered 2/4-file source identity, never

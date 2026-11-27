@@ -108,6 +108,44 @@ class SelectorTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "ROLLBACK"):
                 ap.select("pull_request", "", invalid, self.current)
 
+    def test_closed_ci_transport_rows_bind_actual_bytes_from_both_public_bases(self):
+        registry = self.config["workflow"]["reviewed_ci_source_transport"]
+        for base in (registry["public_parent"], registry["base_main"]):
+            changes = {}
+            for path, row in registry["files"].items():
+                before = ap.git_bytes(base, path)
+                after = (ap.ROOT / path).read_bytes()
+                key = "base_sha256" if base == registry["public_parent"] else "main_base_sha256"
+                self.assertEqual(ap.digest_or_none(before), row[key], path)
+                self.assertEqual(ap.sha256(after), row["sha256"], path)
+                self.assertEqual(len(after), row["size_bytes"], path)
+                changes[path] = (before, after)
+            self.assertTrue(changes)
+            self.assert_flags(ap.select("pull_request", "", changes, self.current), False, False)
+
+    def test_closed_ci_transport_cannot_admit_reverse_unknown_base_or_changed_payload(self):
+        registry = self.config["workflow"]["reviewed_ci_source_transport"]
+        for path in registry["files"]:
+            before = ap.git_bytes(registry["public_parent"], path)
+            after = (ap.ROOT / path).read_bytes()
+            self.assertEqual(ap.validate_transition(path, before, after, self.config), "support")
+            for bad_before, bad_after in ((after, before),
+                    (b"unregistered predecessor\n", after),
+                    (before, after + b"\nunreviewed change\n"), (before, None)):
+                with self.subTest(path=path), self.assertRaises(ValueError):
+                    ap.validate_transition(path, bad_before, bad_after, self.config)
+
+    def test_closed_ci_transport_composition_keeps_required_initial_engineering(self):
+        changes = self.initial(True)
+        for key in ("reviewed_transport_followup", "reviewed_ref_retention"):
+            registry = self.config["workflow"][key]
+            for path in registry["files"]:
+                changes[path] = (ap.git_bytes(ap.MAIN_REFERENCE, path),
+                                 ap.git_bytes(registry["public_revision"], path))
+        for path in self.config["workflow"]["reviewed_ci_source_transport"]["files"]:
+            changes[path] = (ap.git_bytes(ap.MAIN_REFERENCE, path), (ap.ROOT / path).read_bytes())
+        self.assert_flags(ap.select("pull_request", "", changes, self.current), True, True)
+
     def test_after_transport_merge_actual_base_is_used(self):
         final = {name: value[1] for name, value in self.initial(True).items()}
         before = {name: ap.git_bytes(self.transport["public_revision"], name) for name in final}

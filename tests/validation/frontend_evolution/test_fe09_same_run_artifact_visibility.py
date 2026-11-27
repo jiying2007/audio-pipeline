@@ -223,8 +223,8 @@ class SameRunReadbackPolicyTests(unittest.TestCase):
             "id: fe09_b1s1\n",
             "id: fe09_b1s1_upload\n",
             "steps.fe09_b1s1_upload.outputs.artifact-id",
+            "--stage b1s1 --repository",
             "--artifact-name \"frontend-fe09-t2b-b1s1-source-apx3-$GITHUB_RUN_ID\"",
-            "uses: actions/download-artifact@",
             "--verify --output fe09-b1s1-readback",
             "B1S1_ARTIFACT_FOUR_MEMBERS_DRIFT",
         ]
@@ -237,7 +237,8 @@ class SameRunReadbackPolicyTests(unittest.TestCase):
         previous = quality.split("  frontend-s3-t2b-b1s0:\n", 1)[1].split(
             "\n  frontend-s3-t2b-b1s1:", 1)[0]
         self.assertIn("steps.fe09_b1s0_upload.outputs.artifact-id", previous)
-        self.assertIn("uses: actions/download-artifact@", previous)
+        self.assertIn("--stage b1s0 --repository", previous)
+        self.assertNotIn("uses: actions/download-artifact@", previous)
 
 class A1RestListVisibilityTests(unittest.TestCase):
     """Synthetic metadata only; no uploaded or scientific evidence is created."""
@@ -572,12 +573,12 @@ class A1RestListVisibilityTests(unittest.TestCase):
         stage = quality.split("  frontend-s3-t3s2b1ba1:\n", 1)[1].split(
             "\n  frontend-s3-t3s2b1ba2:", 1)[0]
         markers = ["id: fe09_t3s2b1ba1\n", "id: fe09_a1_upload\n",
-                   "Witness exact A1 upload in the pinned downloader REST list",
+                   "Save and admit the exact BA1 original ZIP",
+                   "ARTIFACT_ID: ${{ steps.fe09_a1_upload.outputs.artifact-id }}",
+                   "--stage ba1 --repository",
                    '--run-attempt "$GITHUB_RUN_ATTEMPT" --run-head-sha "$RUN_HEAD_SHA"',
-                   "uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131",
-                   "artifact-ids: ${{ steps.fe09_a1_upload.outputs.artifact-id }}",
-                   "github-token: ${{ github.token }}", "repository: ${{ github.repository }}",
-                   "run-id: ${{ github.run_id }}", "--verify --output fe09-t3s2b1ba1-readback",
+                   "--output fe09-t3s2b1ba1-readback --evidence fe09-t3s2b1ba1-transport",
+                   "--verify --output fe09-t3s2b1ba1-readback",
                    "--negative-readback --output fe09-t3s2b1ba1-readback",
                    "FE09_A1_SAME_RUN_ORIGINAL_MEMBERS_INDEPENDENT_READBACK_PASS"]
         offsets = [stage.index(marker) for marker in markers]
@@ -604,16 +605,14 @@ class T3S1RestListVisibilityTests(A1RestListVisibilityTests):
             "\n  frontend-s3-t3s2a:", 1)[0]
         markers = ["id: fe09_t3s1\n", "id: fe09_t3s1_upload\n",
                    'name: frontend-fe09-t3s1-compact-handoff-${{ github.run_id }}-attempt-${{ github.run_attempt }}',
-                   "Witness exact T3-S1 upload in the pinned downloader REST list",
+                   "Save and admit the exact T3S1 original ZIP",
                    'ARTIFACT_ID: ${{ steps.fe09_t3s1_upload.outputs.artifact-id }}',
                    'RUN_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}',
                    '--artifact-name "frontend-fe09-t3s1-compact-handoff-$GITHUB_RUN_ID-attempt-$GITHUB_RUN_ATTEMPT"',
                    '--run-attempt "$GITHUB_RUN_ATTEMPT" --run-head-sha "$RUN_HEAD_SHA"',
                    '--execution-source "$GITHUB_SHA"',
-                   "uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131",
-                   "artifact-ids: ${{ steps.fe09_t3s1_upload.outputs.artifact-id }}",
-                   "github-token: ${{ github.token }}", "repository: ${{ github.repository }}",
-                   "run-id: ${{ github.run_id }}", "--verify --output fe09-t3s1-readback",
+                   "--output fe09-t3s1-readback --evidence fe09-t3s1-transport",
+                   "--verify --output fe09-t3s1-readback",
                    "FE09_T3S1_EXACT_SOURCE_AND_OUTBOARD_READBACK_PASS"]
         # execution-source also appears in the unchanged collector; find each
         # marker after its predecessor so this checks the new transport order.
@@ -624,7 +623,7 @@ class T3S1RestListVisibilityTests(A1RestListVisibilityTests):
                          "--collect --output fe09-t3s1", "--verify --output fe09-t3s1",
                          "{'SHA256SUMS', *names}", "r['device_memory_admitted'] is False"):
             self.assertIn(required, stage)
-        self.assertEqual(stage.count("if: steps.fe09_t3s1.outcome == 'success'"), 3)
+        self.assertEqual(stage.count("if: steps.fe09_t3s1.outcome == 'success'"), 2)
         self.assertNotIn('name: frontend-fe09-t3s1-compact-handoff-${{ github.run_id }}\n', stage)
         self.assertNotIn('--artifact-name "frontend-fe09-t3s1-compact-handoff-$GITHUB_RUN_ID"', stage)
         self.assertNotIn("overwrite:", stage)
@@ -824,16 +823,13 @@ class T2AAttemptVisibilityTests(A1RestListVisibilityTests):
         upload = "fe09_" + step + "_upload"
         markers = ["id: fe09_" + step + "\n", "id: " + upload + "\n",
                    "name: " + self.PREFIX + "${{ github.run_id }}-attempt-${{ github.run_attempt }}",
-                   "Witness exact " + self.STAGE + " upload",
+                   "Save and admit the exact " + self.STAGE.replace("-", "").upper() + " original ZIP",
                    "ARTIFACT_ID: ${{ steps." + upload + ".outputs.artifact-id }}",
                    'RUN_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}',
                    '--artifact-name "' + self.PREFIX + '$GITHUB_RUN_ID-attempt-$GITHUB_RUN_ATTEMPT"',
                    '--run-attempt "$GITHUB_RUN_ATTEMPT" --run-head-sha "$RUN_HEAD_SHA"',
                    '--execution-source "$GITHUB_SHA"',
-                   "uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131",
-                   "artifact-ids: ${{ steps." + upload + ".outputs.artifact-id }}",
-                   "github-token: ${{ github.token }}", "repository: ${{ github.repository }}",
-                   "run-id: ${{ github.run_id }}",
+                   "--output fe09-" + self.STAGE + "-readback --evidence fe09-" + self.STAGE + "-transport",
                    "--verify --output fe09-" + self.STAGE + "-readback", self.MARKER]
         cursor = 0
         for marker in markers:
@@ -841,7 +837,7 @@ class T2AAttemptVisibilityTests(A1RestListVisibilityTests):
         for required in ("timeout-minutes: " + str(self.TIMEOUT), "retention-days: 30",
                          "if-no-files-found: error", "--collect --output fe09-" + self.STAGE):
             self.assertIn(required, stage)
-        self.assertEqual(stage.count("if: steps.fe09_" + step + ".outcome == 'success'"), 3)
+        self.assertEqual(stage.count("if: steps.fe09_" + step + ".outcome == 'success'"), 2)
         self.assertNotIn("overwrite:", stage)
         self.assertNotIn("continue-on-error:", stage)
 
@@ -989,14 +985,11 @@ class T2B0AttemptVisibilityTests(T2AAttemptVisibilityTests):
         stage = quality.split("  frontend-s3-t2b-b0:\n", 1)[1].split("\n  frontend-", 1)[0]
         markers = ["id: fe09_t2b_b0_upload", "name: " + self.PREFIX +
                    "${{ github.run_id }}-attempt-${{ github.run_attempt }}",
-                   "Witness exact t2b-b0 upload", "ARTIFACT_ID: ${{ steps.fe09_t2b_b0_upload.outputs.artifact-id }}",
+                   "Save and admit the exact T2B0 original ZIP", "ARTIFACT_ID: ${{ steps.fe09_t2b_b0_upload.outputs.artifact-id }}",
                    '--artifact-name "' + self.PREFIX + '$GITHUB_RUN_ID-attempt-$GITHUB_RUN_ATTEMPT"',
                    '--run-attempt "$GITHUB_RUN_ATTEMPT" --run-head-sha "$RUN_HEAD_SHA"',
                    '--execution-source "$GITHUB_SHA"',
-                   "uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131",
-                   "artifact-ids: ${{ steps.fe09_t2b_b0_upload.outputs.artifact-id }}",
-                   "github-token: ${{ github.token }}", "repository: ${{ github.repository }}",
-                   "run-id: ${{ github.run_id }}", self.MARKER]
+                   "--output fe09-t2b-b0-readback --evidence fe09-t2b-b0-transport", self.MARKER]
         cursor = 0
         for marker in markers:
             cursor = stage.index(marker, cursor) + len(marker)
@@ -1005,7 +998,7 @@ class T2B0AttemptVisibilityTests(T2AAttemptVisibilityTests):
                        "retention-days: 30", "if-no-files-found: error",
                        "root = Path('fe09-t2b-b0-readback')", "T2B_B0_INNER_SHA_DRIFT_"):
             self.assertIn(marker, stage)
-        self.assertEqual(stage.count("if: steps.fe09_t2b_b0.outcome == 'success'"), 3)
+        self.assertEqual(stage.count("if: steps.fe09_t2b_b0.outcome == 'success'"), 2)
         self.assertNotIn("continue-on-error:", stage)
         self.assertNotIn("overwrite:", stage)
 
@@ -1094,36 +1087,23 @@ class ObservedReadbackParityTests(unittest.TestCase):
         for step, prefix in zip(steps, policy.READBACK_PARITY_PREFIXES):
             with self.subTest(step=step):
                 start = quality.index("        id: " + step + "_upload\n")
-                if step == "fe09_b2s2":
-                    # Its subsequent observed REST archive 404 is now covered
-                    # by one saved-ZIP transfer, without a second downloader.
-                    guard = quality.index("Save and admit the exact B2-S2 original ZIP", start)
-                    independent = quality.index("      - name: Independently", guard)
-                    block = quality[start:independent]
-                    for marker in (prefix + "${{ github.run_id }}-attempt-${{ github.run_attempt }}",
-                                   "if: steps.fe09_b2s2.outcome == 'success'",
-                                   "ARTIFACT_ID: ${{ steps.fe09_b2s2_upload.outputs.artifact-id }}",
-                                   "GH_TOKEN: ${{ github.token }}", "--stage b2s2",
-                                   '--run-id "$GITHUB_RUN_ID"', '--execution-source "$GITHUB_SHA"',
-                                   "--output fe09-b2s2-readback", "retention-days: 30"):
-                        self.assertIn(marker, block)
-                    self.assertNotIn("actions/download-artifact", block)
-                    self.assertNotIn("continue-on-error:", block)
-                    self.assertNotIn("overwrite:", block)
-                    continue
-                guard = quality.index("Witness exact " + step + " upload", start)
-                download = quality.index("uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131", guard)
-                independent = quality.index("      - name: Independently", download)
+                stage_key = {"fe09_b2s1": "b2s1", "fe09_b2s2": "b2s2",
+                             "fe09_t1": "t1", "fe09_t3s2b0": "t3s2b0",
+                             "fe09_t3s2b1ba0": "ba0"}[step]
+                title = "B2-S2" if stage_key == "b2s2" else stage_key.upper()
+                guard = quality.index("Save and admit the exact " + title + " original ZIP", start)
+                independent = quality.index("      - name: Independently", guard)
                 block = quality[start:independent]
-                self.assertIn(prefix + "${{ github.run_id }}-attempt-${{ github.run_attempt }}", block)
-                self.assertIn('if: steps.' + step + ".outcome == 'success'", block)
-                self.assertIn('artifact-ids: ${{ steps.' + step + '_upload.outputs.artifact-id }}', block)
-                self.assertIn('github-token: ${{ github.token }}', block)
-                self.assertIn('run-id: ${{ github.run_id }}', block)
-                self.assertIn('--execution-source "$GITHUB_SHA"', block)
-                self.assertIn('retention-days: 30', block)
-                self.assertNotIn('continue-on-error:', block)
-                self.assertNotIn('overwrite:', block)
+                for marker in (prefix + "${{ github.run_id }}-attempt-${{ github.run_attempt }}",
+                               "if: steps." + step + ".outcome == 'success'",
+                               "ARTIFACT_ID: ${{ steps." + step + "_upload.outputs.artifact-id }}",
+                               "GH_TOKEN: ${{ github.token }}", "--stage " + stage_key,
+                               '--run-id "$GITHUB_RUN_ID"', '--execution-source "$GITHUB_SHA"',
+                               "retention-days: 30"):
+                    self.assertIn(marker, block)
+                self.assertNotIn("actions/download-artifact", block)
+                self.assertNotIn("continue-on-error:", block)
+                self.assertNotIn("overwrite:", block)
 
 
 class T3S2AAttemptVisibilityTests(T2AAttemptVisibilityTests):
@@ -1138,16 +1118,13 @@ class T3S2AAttemptVisibilityTests(T2AAttemptVisibilityTests):
             "\n  frontend-s3-t3s2b0:", 1)[0]
         markers = ["id: fe09_t3s2a\n", "id: t3s2a_artifact\n",
                    "name: " + self.PREFIX + "${{ github.run_id }}-attempt-${{ github.run_attempt }}",
-                   "Witness exact t3s2a upload",
+                   "Save and admit the exact T3S2A original ZIP",
                    "ARTIFACT_ID: ${{ steps.t3s2a_artifact.outputs.artifact-id }}",
                    'RUN_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}',
                    '--artifact-name "' + self.PREFIX + '$GITHUB_RUN_ID-attempt-$GITHUB_RUN_ATTEMPT"',
                    '--run-attempt "$GITHUB_RUN_ATTEMPT" --run-head-sha "$RUN_HEAD_SHA"',
                    '--execution-source "$GITHUB_SHA"',
-                   "uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131",
-                   "artifact-ids: ${{ steps.t3s2a_artifact.outputs.artifact-id }}",
-                   "github-token: ${{ github.token }}", "repository: ${{ github.repository }}",
-                   "run-id: ${{ github.run_id }}", "path: fe09-t3s2a-readback",
+                   "--output fe09-t3s2a-readback --evidence fe09-t3s2a-transport",
                    "--verify --output fe09-t3s2a-readback",
                    "FE09_T3S2A_EXACT_SOURCE_POSIX_READBACK_PASS"]
         cursor = 0
@@ -1161,7 +1138,7 @@ class T3S2AAttemptVisibilityTests(T2AAttemptVisibilityTests):
                          "target['negative_checks'] >= 680", "target['restart_idempotence'] == 672",
                          "'hardware_qualified', 'durable_powerloss_qualified'"):
             self.assertIn(required, stage)
-        self.assertEqual(stage.count("if: steps.fe09_t3s2a.outcome == 'success'"), 3)
+        self.assertEqual(stage.count("if: steps.fe09_t3s2a.outcome == 'success'"), 2)
         self.assertNotIn("continue-on-error:", stage)
         self.assertNotIn("overwrite:", stage)
 

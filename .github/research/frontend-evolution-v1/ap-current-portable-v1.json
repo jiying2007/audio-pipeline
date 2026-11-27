@@ -927,6 +927,84 @@
         "head_to_merge_delta_bytes": 0,
         "acceptance": "Real POSIX shell/Git metadata fixture must reproduce frozen host-context failure and runtime container-workspace success under the same simulated ownership mismatch. Require clean old-reader checks before/after, failure propagation at each unchanged tiny position, refusal of missing/empty/relative/nonexistent/other-directory workspace, and physical normalization of a same-checkout alias. Timeout is an explicitly declared command-schema stub; no compiler, SDK, old full suite or real data is executed. No CI success is claimed before an actual successor head runs."
       }
+    },
+    "reviewed_ci_source_transport": {
+      "public_parent": "90a50276643960a6a8047ca6bfb095040b710369",
+      "base_main": "4eec2329be9f2138c7ac73e8dd59026f3dc0a3ba",
+      "file_count": 10,
+      "boundary": "Closed 90a50276-to-reviewed transport/cache transitions and their actual 4eec composition only. The nineteen four-member consumers keep the original scientific readers and bounded shared downloader. The new immutable offset8 cache profile restores only the original source bytes from a fixed successful protected-main artifact, then invokes the unchanged source contract; it never restores old acoustic scores. Exact one-line docs tiny wiring is separately normalized. Unknown predecessor, changed payload, deletion and rollback are rejected. No source/role/DSP/metric or engineering-trigger widening.",
+      "files": {
+        ".github/workflows/quality.yml": {
+          "base_sha256": "f3b79c9af8536fd376a12cf0a33d2bcf97180bb2a591ff564d57189fed1d5361",
+          "main_base_sha256": "f0ce64e4871116038e97af5b2708e5f1c0fadcb75fb1fa0ca3a6417ac88685f1",
+          "sha256": "a3f3043331d60601bc8003f27f0998528d9654e02ce02cd7521ec0b23e040312",
+          "size_bytes": 203174,
+          "role": "exact_reviewed_finite_transport_and_pinned_original_source_no_engineering_trigger"
+        },
+        "docs/research/frontend-evolution-v1/CI_B2S2_BA2_ARCHIVE_READBACK_20261128.zh-CN.md": {
+          "base_sha256": "2a5ad7dfad137792d526c8bce3b391bd5ac5a7f3b3bff8141e9ed400298c3fac",
+          "main_base_sha256": null,
+          "sha256": "4f08681ca0ace372940368a71d4ce36a8650813840c7212653650d416b26412a",
+          "size_bytes": 16499,
+          "role": "exact_reviewed_finite_transport_and_pinned_original_source_no_engineering_trigger"
+        },
+        "tests/validation/frontend_evolution/fe09_same_run_artifact_download.py": {
+          "base_sha256": "38c6f3ffddcfb855a688e9a3624e128ccd32cb4fce76b0a55eeb554c34eb8a52",
+          "main_base_sha256": null,
+          "sha256": "825bbf1aeda24c3c330b40b70fabe3459c34a22f7cc216c6a8e0418ca95485e1",
+          "size_bytes": 25650,
+          "role": "exact_reviewed_finite_transport_and_pinned_original_source_no_engineering_trigger"
+        },
+        "tests/validation/frontend_evolution/test_fe09_same_run_artifact_download.py": {
+          "base_sha256": "b0384675b8ece9a66bdf76d19be459fa3b3d14d77da8f40961364ce62927364c",
+          "main_base_sha256": null,
+          "sha256": "f5e9514cc847ba4803434c7e9408e934516dfe16ef07c12238a6a33dd79221d6",
+          "size_bytes": 44694,
+          "role": "exact_reviewed_finite_transport_and_pinned_original_source_no_engineering_trigger"
+        },
+        "tests/validation/frontend_evolution/test_fe09_same_run_artifact_visibility.py": {
+          "base_sha256": "7663aa15b9a181782d34aabcb774d086c08876ca927687462b7ddef3771b1315",
+          "main_base_sha256": "841cf81e0c07a9d9d0531cf77ff110021079747d324481e49f6f65cec97e3413",
+          "sha256": "71a0e634686e60324a777a08e70fd6989010dcaadf4e24147c38f7e781df1220",
+          "size_bytes": 60466,
+          "role": "exact_reviewed_finite_transport_and_pinned_original_source_no_engineering_trigger"
+        },
+        "tests/validation/frontend_evolution/speech_pinned_snapshot.py": {
+          "base_sha256": "74ffb7f07b3425a7c5502b478c8093c05ab239350ed806b648e5db5182ff75f0",
+          "main_base_sha256": "74ffb7f07b3425a7c5502b478c8093c05ab239350ed806b648e5db5182ff75f0",
+          "sha256": "f9e905c01cf0cd45956cd035d03a147e2f86bfa078ac31717ade96844786b8fc",
+          "size_bytes": 39771,
+          "role": "exact_reviewed_finite_transport_and_pinned_original_source_no_engineering_trigger"
+        },
+        "tests/validation/frontend_evolution/speech_source_cache_profiles.py": {
+          "base_sha256": null,
+          "main_base_sha256": null,
+          "sha256": "c7656b284e3805fc0c59e48f450f9bd00a5e013e00cb9fb884902d15142b9cd2",
+          "size_bytes": 2724,
+          "role": "exact_reviewed_finite_transport_and_pinned_original_source_no_engineering_trigger"
+        },
+        "tests/validation/frontend_evolution/speech_source_cas.py": {
+          "base_sha256": null,
+          "main_base_sha256": null,
+          "sha256": "2ce6ac717896fd1222e80c6164036fef0c2de11b3cf1fc67a9d09a5fa65f3864",
+          "size_bytes": 8182,
+          "role": "exact_reviewed_finite_transport_and_pinned_original_source_no_engineering_trigger"
+        },
+        "tests/validation/frontend_evolution/test_spatial_source_cache.py": {
+          "base_sha256": null,
+          "main_base_sha256": null,
+          "sha256": "ffa4cbdcf4c72e5ea17ed21bf0457a8e0fad8916adcd99709333f921b6e8d2d9",
+          "size_bytes": 21572,
+          "role": "exact_reviewed_finite_transport_and_pinned_original_source_no_engineering_trigger"
+        },
+        "docs/research/frontend-evolution-v1/CI_SPATIAL_SOURCE_CACHE_20261128.zh-CN.md": {
+          "base_sha256": null,
+          "main_base_sha256": null,
+          "sha256": "d4cd3c667d042702d239ac1b4ca4a90d033f80de59d28a4dd89ab81e57af7760",
+          "size_bytes": 7247,
+          "role": "exact_reviewed_finite_transport_and_pinned_original_source_no_engineering_trigger"
+        }
+      }
     }
   },
   "failure_policy": "Preserve every actual failed prefix and log. No retry, compiler fallback, parameter/lag search or false success manifest. Late identity, budget or packaging failure changes the admissible status to FAIL and renames already-created tar/manifest/receipt to explicit before-failure names without discarding their bytes. Upload both original failed archives and reports. The 600s process alarm and 60s engineering alarm include source admission/readback; the outer 630s timeout is cleanup-only grace.",

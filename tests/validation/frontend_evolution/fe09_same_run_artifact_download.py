@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fetch one saved ZIP for the two observed B2-S2 / BA2 readback failures.
+"""Fetch one saved ZIP for the closed nineteen four-member source consumers.
 
 This is transport admission only. The original scientific reader remains
 mandatory. Run identity, every listing page, the archive redirect and its blob
@@ -36,6 +36,40 @@ STAGES = {
              "zip_cap": 64 * 1024, "expanded_cap": 1024 * 1024},
     "ba2": {"prefix": "frontend-fe09-t3s2b1ba2-retirement-", "attempt_name": False,
             "zip_cap": 8 * 1024 * 1024, "expanded_cap": 16 * 1024 * 1024},
+    "b2s1": {"prefix": "frontend-fe09-b2s1-private-queue-", "attempt_name": True,
+             "zip_cap": 1048576, "expanded_cap": 1115392},
+    "b2s3": {"prefix": "frontend-fe09-b2s3-threaded-", "attempt_name": False,
+             "zip_cap": 2097152, "expanded_cap": 1115392},
+    "t1": {"prefix": "frontend-fe09-s3-t1-source-wrap-", "attempt_name": True,
+             "zip_cap": 1048576, "expanded_cap": 1115392},
+    "t2f0": {"prefix": "frontend-fe09-s3-t2-f0-render-feasibility-", "attempt_name": True,
+             "zip_cap": 1048576, "expanded_cap": 1115392},
+    "t2a": {"prefix": "frontend-fe09-s3-t2a-controlled-restart-", "attempt_name": True,
+             "zip_cap": 1048576, "expanded_cap": 1115392},
+    "t2b0": {"prefix": "frontend-fe09-s3-t2b-b0-capture-only-bf-", "attempt_name": True,
+             "zip_cap": 1048576, "expanded_cap": 2360576},
+    "b1s0": {"prefix": "frontend-fe09-t2b-b1s0-owner-spsc-", "attempt_name": False,
+             "zip_cap": 1048576, "expanded_cap": 2360576},
+    "b1s1": {"prefix": "frontend-fe09-t2b-b1s1-source-apx3-", "attempt_name": False,
+             "zip_cap": 1048576, "expanded_cap": 2360576},
+    "t2c0": {"prefix": "frontend-fe09-s3-t2c0-owner-fallback-", "attempt_name": True,
+             "zip_cap": 1048576, "expanded_cap": 2360576},
+    "t3s0": {"prefix": "frontend-fe09-t3s0-compiled-resource-", "attempt_name": True,
+             "zip_cap": 1048576, "expanded_cap": 4457216},
+    "t3s1": {"prefix": "frontend-fe09-t3s1-compact-handoff-", "attempt_name": True,
+             "zip_cap": 1048576, "expanded_cap": 4457216},
+    "t3s2a": {"prefix": "frontend-fe09-t3s2a-posix-spool-", "attempt_name": True,
+             "zip_cap": 1048576, "expanded_cap": 4495072},
+    "t3s2b0": {"prefix": "frontend-fe09-t3s2b0-fbs1-index-", "attempt_name": True,
+             "zip_cap": 1048576, "expanded_cap": 4495072},
+    "t3s2b1a": {"prefix": "frontend-fe09-t3s2b1a-immutable-root-", "attempt_name": True,
+             "zip_cap": 1048576, "expanded_cap": 4495072},
+    "f0": {"prefix": "frontend-fe09-t3s2b1bf0-seq17-", "attempt_name": False,
+             "zip_cap": 8388608, "expanded_cap": 4495072},
+    "ba0": {"prefix": "frontend-fe09-t3s2b1ba0-finite-", "attempt_name": True,
+             "zip_cap": 1048576, "expanded_cap": 5543648},
+    "ba1": {"prefix": "frontend-fe09-t3s2b1ba1-anchor-", "attempt_name": False,
+             "zip_cap": 1048576, "expanded_cap": 5543648},
 }
 
 

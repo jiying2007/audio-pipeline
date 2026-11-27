@@ -111,6 +111,7 @@ TEST_VIEW_NEW = ("        from ap_current_ci import predecessor_workflow\n"
 DOCS_LINES = (
     "python3 -B tests/validation/frontend_evolution/test_dechorate_rir_gap.py\n",
     "python3 tests/validation/frontend_evolution/test_fe09_same_run_artifact_download.py\n",
+    "python3 tests/validation/frontend_evolution/test_spatial_source_cache.py\n",
 )
 CONTROL_FILES = (MODULE, TEST, PLAN, WORKFLOW,
                  "tests/validation/frontend_evolution/webrtc_aec3_ci.py",
@@ -149,7 +150,8 @@ TRACE_KEYS = {"frame", "algorithmic_latency_ms", "vad_probability", "vad_active"
 BUILD_KEYS = {"version", "module_mask", "aec_backend", "ns_estimator", "simd_backend",
               "resampler_mode", "fast_math", "source_revision", "compiler_id",
               "compiler_version", "target_triple", "build_type", "config_digest"}
-REGISTRIES = ("reviewed_integration", "reviewed_transport", "reviewed_transport_followup", "reviewed_ref_retention")
+REGISTRIES = ("reviewed_integration", "reviewed_transport", "reviewed_transport_followup",
+              "reviewed_ref_retention", "reviewed_ci_source_transport")
 
 
 def json_value(data):

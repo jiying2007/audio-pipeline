@@ -2979,8 +2979,14 @@ jobs:
           python3 tests/validation/frontend_evolution/test_speech_spatial.py
           python3 tests/validation/frontend_evolution/test_speech_source_stage_budget.py
           mkdir fe-speech
-          sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends ffmpeg
+          # FFmpeg needs the runner's Ubuntu archive, not unrelated vendor feeds.
+          # Keep its existing Signed-By/security policy and do not edit host sources.
+          test -s /etc/apt/sources.list.d/ubuntu.sources
+          sha256sum /etc/apt/sources.list.d/ubuntu.sources
+          sudo apt-get -o Dir::Etc::sourcelist=/etc/apt/sources.list.d/ubuntu.sources \
+            -o Dir::Etc::sourceparts=- update -qq
+          sudo apt-get -o Dir::Etc::sourcelist=/etc/apt/sources.list.d/ubuntu.sources \
+            -o Dir::Etc::sourceparts=- install -y --no-install-recommends ffmpeg
           python3 tests/validation/frontend_evolution/speech_pinned_snapshot.py --self-test
           # Cache failure is retained separately. Only the original admitted
           # official archive may recover it; old acoustic scores are never used.

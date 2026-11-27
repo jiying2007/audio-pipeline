@@ -341,6 +341,7 @@ jobs:
         run: |
           python3 validation/tools/authority.py --self-test
           python3 validation/tools/run_validation.py --self-test
+          python3 tests/validation/test_authority_binding.py
           python3 validation/tools/tuning_iteration.py --self-test
 
   frontend-reference:

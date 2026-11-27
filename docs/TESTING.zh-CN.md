@@ -111,13 +111,6 @@ Extended Real 保留 P10 tail、clipping/DC/level、VAD precision/recall/FPR/FNR
 
 真实设备/route 测量是独立科研证据类型，不是其他研究的商业认证前提。
 
-当前 validation 报告的 `authority_sha256` 绑定执行开始时实际读取并验证的
-`validation/research-authority.json` 原始字节；不是重新序列化后的 JSON，也不在
-执行结束时重新读取文件。基线复用核对同一研究权威的原始字节身份，拒绝旧
-`validation/authority.json` 的 hash；历史 v1 文件和原报告保持原样。
-`tests/validation/test_authority_binding.py` 在现有 Quality/Audio Quality 合同门禁中
-验证默认及自定义加载路径、字节变化、执行期间文件变化和旧身份拒绝，不执行声学实验。
-
 ## 失败分类与可复现包
 
 `scripts/ci_failure.py` 输出稳定机器分类，包括 build、ABI、unit、sanitizer、DSP quality、performance、resource、QEMU、HIL、XRUN、infra、evidence、security。
@@ -129,6 +122,22 @@ Verify 使用 `aggregate --enforce` 同时生成门禁结论与失败回执，�
 单独失败、错误跳过或执行、取消、无效元数据，以及实际命令行的回执与退出码。
 
 声学 validation 失败时，`scripts/validation_reproducer.py` 保存精确输入、case JSON、metrics/failure 数据和复现入口，避免依赖人工阅读长日志。
+
+复现包按 `original/<输入角色>/` 保存原文件，同 basename 的 mic/render/clean/echo
+及 VAD 标签不会覆盖。WAV 复用 canonical `stage_audio` 解码为 S16LE，`case.json`
+指向实际 PCM；原始 case 另存为 `source-case.json`。`input-manifest.json` 绑定原文件
+与解码 PCM 的 SHA-256、声道/采样率/帧数、原 corpus/report 身份，以及包内原样封存
+的 canonical engine/stage-profile 源码。复现入口直接调用该源码的 invocation，重放前
+检查包内输入与源码哈希，保留当前 capture profile/control 语义，不另写处理器命令。
+
+使用 `PROCESSOR=/绝对路径/ap_process_pcm sh <case目录>/reproduce.sh` 可从任意目录
+重放，生成 canonical `out.pcm` 与 `metrics.jsonl`。需要 Python 3.8+；`PYTHON` 可指定
+解释器。`--processor` 会立即重放并保存日志和退出码；处理器失败使打包命令返回非零，
+仍保留失败回执。目标目录必须为空，避免覆盖已有证据。缺失/异常输入、截断 WAV、
+不匹配的 WAV 格式/几何和不安全或重复 case ID 显式失败；失败中途留下的部分目录
+不构成完整复现包。现有 CI 的 `--self-test` 使用每条 10 ms 的合成工程 fixture，
+检查 WAV/raw 同一性、同名角色隔离、canonical profile/control 调用、搬移后重放与
+负例退出码；这些测试不代表真实声学效果。
 
 ## Flaky 与历史成熟度
 

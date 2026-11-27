@@ -205,19 +205,26 @@ class SelectorTests(unittest.TestCase):
             with self.subTest(name=name), self.assertRaises(ValueError):
                 ap.select("pull_request", "", changes, self.current)
 
-    def test_verify_git_context_is_exact_and_step_scoped(self):
+    def test_verify_git_context_is_exact_and_five_command_scoped(self):
         path = ap.previous.VERIFY_WORKFLOW
         current = (ap.ROOT / path).read_bytes()
-        context = ap.VERIFY_GIT_CONTEXT_NEW.encode()
+        context = ap.VERIFY_RESEARCH_SCOPED.encode()
         self.assertEqual(current.count(context), 1)
-        stripped = current.replace(context, ap.VERIFY_GIT_CONTEXT_OLD.encode())
+        stripped = current.replace(context, ap.VERIFY_RESEARCH_PLAIN.encode())
         self.assertEqual(ap.strip_exact(stripped, ap.VERIFY_LINES), ap.git_bytes(ap.REFERENCE, path))
-        self.assert_flags(ap.select("pull_request", "", {path: (stripped, current)}, self.current), False, False)
+        for before in (stripped, ap.git_bytes(ap.MAIN_REFERENCE, path), ap.git_bytes(ap.REFERENCE, path),
+                       ap.git_bytes(ap.VERIFY_GIT_CONTEXT_FAILED_REVISION, path)):
+            with self.subTest(predecessor=ap.sha256(before)):
+                self.assert_flags(ap.select("pull_request", "", {path: (before, current)}, self.current), False, False)
         for changed in (
                 current.replace(b"${{ github.workspace }}", b"'*'", 1),
-                current.replace(b"GIT_CONFIG_COUNT: '1'", b"GIT_CONFIG_COUNT: '2'", 1),
-                current.replace(b"GIT_CONFIG_KEY_0: safe.directory", b"GIT_CONFIG_KEY_0: safe.bareRepository", 1),
+                current.replace(b"GIT_CONFIG_COUNT=1", b"GIT_CONFIG_COUNT=2", 1),
+                current.replace(b"GIT_CONFIG_KEY_0=safe.directory", b"GIT_CONFIG_KEY_0=safe.bareRepository", 1),
                 current.replace(b"      - name: Validate test-intelligence and assurance tools", b"      - name: Another step", 1),
+                current.replace(ap.VERIFY_RESEARCH_COMMANDS[2].encode(), b"", 1),
+                current.replace(ap.VERIFY_RESEARCH_COMMANDS[0].encode(), ap.VERIFY_RESEARCH_COMMANDS[0].encode() * 2, 1),
+                current.replace(b"          (\n", b"          (\n            set +e\n", 1),
+                current.replace(context, b"", 1) + context,
                 current + context):
             with self.subTest(), self.assertRaises(ValueError):
                 ap.select("pull_request", "", {path: (stripped, changed)}, self.current)
@@ -225,9 +232,10 @@ class SelectorTests(unittest.TestCase):
     def test_verify_git_context_cannot_be_removed_after_introduction(self):
         path = ap.previous.VERIFY_WORKFLOW
         current = (ap.ROOT / path).read_bytes()
-        stripped = current.replace(ap.VERIFY_GIT_CONTEXT_NEW.encode(), ap.VERIFY_GIT_CONTEXT_OLD.encode())
-        with self.assertRaisesRegex(ValueError, "EXACT_VERIFY_GIT_CONTEXT"):
-            ap.select("pull_request", "", {path: (current, stripped)}, self.current)
+        stripped = current.replace(ap.VERIFY_RESEARCH_SCOPED.encode(), ap.VERIFY_RESEARCH_PLAIN.encode())
+        for previous in (stripped, ap.git_bytes(ap.VERIFY_GIT_CONTEXT_FAILED_REVISION, path)):
+            with self.subTest(), self.assertRaisesRegex(ValueError, "EXACT_VERIFY_TINY_CONTEXT"):
+                ap.select("pull_request", "", {path: (current, previous)}, self.current)
 
     def test_metadata_does_not_replace_actual_workflow(self):
         changes = self.initial()
@@ -623,6 +631,87 @@ class PrecompiledCorrelationTests(unittest.TestCase):
                 value["helper_library_path"] = "relative/" + ap.PATHS["render_corr"]
             with self.subTest(mutation=mutation), self.assertRaises(ValueError):
                 ap.verify_render_corr_runtime(value, binding)
+
+
+class VerifyGitIsolationTests(unittest.TestCase):
+    """Real POSIX shell/Git metadata; timeout stubs never execute a research test."""
+
+    def run_shell_fixture(self, fail_command=None, wrong_workspace=False):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            log = root / "observations.jsonl"
+            probe = root / "probe.py"
+            probe.write_text(
+                "import json,os,sys\nfrom pathlib import Path\n"
+                "sys.path.insert(0," + repr(str(ap.ROOT / "tests/validation/frontend_evolution")) + ")\n"
+                "from fe09_f1_r8_source_bridge import Git\n"
+                "Git(Path(" + repr(str(ap.ROOT)) + "))\n"
+                "keys=('GIT_CONFIG_COUNT','GIT_CONFIG_KEY_0','GIT_CONFIG_VALUE_0')\n"
+                "assert not any(os.environ.get(key) for key in keys)\n"
+                "with open(os.environ['AP_TEST_LOG'],'a') as out:\n"
+                " out.write(json.dumps({'phase':sys.argv[1],'git_env':{key:os.environ.get(key) for key in keys}})+'\\n')\n")
+            timeout = root / "timeout"
+            timeout.write_text("#!" + sys.executable + "\n"
+                "import json,os,sys\n"
+                "keys=('GIT_CONFIG_COUNT','GIT_CONFIG_KEY_0','GIT_CONFIG_VALUE_0')\n"
+                "actual={key:os.environ.get(key) for key in keys}\n"
+                "assert actual=={'GIT_CONFIG_COUNT':'1','GIT_CONFIG_KEY_0':'safe.directory','GIT_CONFIG_VALUE_0':os.environ['AP_TEST_WORKSPACE']}\n"
+                "assert sys.argv[1:4]==['60s','python3','-B'] and len(sys.argv)==5\n"
+                "with open(os.environ['AP_TEST_LOG'],'a') as out:\n"
+                " out.write(json.dumps({'phase':'tiny-command-schema-only','command':sys.argv[1:],'git_env':actual})+'\\n')\n"
+                "raise SystemExit(23 if sys.argv[-1]==os.environ.get('AP_TEST_FAIL_COMMAND') else 0)\n")
+            timeout.chmod(0o755)
+            # The actual five command bytes remain intact in the workflow;
+            # only the test runner's timeout executable is this declared stub.
+            workspace = str(root / "wrong-workspace") if wrong_workspace else str(ap.ROOT)
+            shell = "\n".join(line[10:] for line in ap.VERIFY_RESEARCH_SHELL.splitlines())
+            shell = shell.replace("${{ github.workspace }}", workspace)
+            script = root / "fixture.sh"
+            quoted_python = "'" + sys.executable.replace("'", "'\\''") + "'"
+            quoted_probe = "'" + str(probe).replace("'", "'\\''") + "'"
+            script.write_text(quoted_python + " -B " + quoted_probe + " before-docs-r11\n" + shell + "\n" +
+                              quoted_python + " -B " + quoted_probe + " after-research\n")
+            environment = {key:value for key,value in os.environ.items() if not key.startswith("GIT_")}
+            environment.update(PATH=str(root) + os.pathsep + os.environ.get("PATH", ""),
+                               PYTHONDONTWRITEBYTECODE="1", AP_TEST_LOG=str(log), AP_TEST_WORKSPACE=str(ap.ROOT),
+                               GIT_TEST_ASSUME_DIFFERENT_OWNER="1", GIT_CONFIG_GLOBAL="/dev/null",
+                               GIT_CONFIG_SYSTEM="/dev/null", GIT_CONFIG_NOSYSTEM="1")
+            if fail_command:
+                environment["AP_TEST_FAIL_COMMAND"] = fail_command
+            result = subprocess.run(["/bin/sh", "-e", str(script)], cwd=ap.ROOT, env=environment,
+                                    stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=15)
+            observations = [json.loads(line) for line in log.read_text().splitlines()] if log.exists() else []
+            return result, observations
+
+    def test_real_shell_preserves_clean_parent_and_original_git_reader_boundary(self):
+        result, observations = self.run_shell_fixture()
+        self.assertEqual(result.returncode, 0, result.stderr.decode())
+        self.assertEqual([row["phase"] for row in observations],
+                         ["before-docs-r11"] + ["tiny-command-schema-only"] * 5 + ["after-research"])
+        expected = [line.strip().split()[1:] for line in ap.VERIFY_RESEARCH_COMMANDS]
+        self.assertEqual([row["command"] for row in observations[1:-1]], expected)
+
+    def test_every_tiny_failure_exits_parent_without_running_later_commands(self):
+        paths = [line.strip().split()[-1] for line in ap.VERIFY_RESEARCH_COMMANDS]
+        for index, path in enumerate(paths):
+            with self.subTest(path=path):
+                result, observations = self.run_shell_fixture(fail_command=path)
+                self.assertEqual(result.returncode, 23, result.stderr.decode())
+                self.assertEqual(len(observations), index + 2)
+                self.assertNotIn("after-research", [row["phase"] for row in observations])
+
+    def test_exact_workspace_preflight_failure_cannot_reach_any_tiny(self):
+        result, observations = self.run_shell_fixture(wrong_workspace=True)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual([row["phase"] for row in observations], ["before-docs-r11"])
+
+    def test_historical_git_reader_still_refuses_step_wide_external_context(self):
+        import fe09_f1_r8_source_bridge as historical
+        with mock.patch.dict(os.environ, {"GIT_CONFIG_COUNT": "1", "GIT_CONFIG_KEY_0": "safe.directory",
+                                          "GIT_CONFIG_VALUE_0": str(ap.ROOT)}), \
+                mock.patch.object(historical.subprocess, "Popen", side_effect=AssertionError("no old suite process")):
+            with self.assertRaisesRegex(ValueError, "EXTERNAL_GIT_CONTEXT_REFUSED"):
+                historical.Git(ap.ROOT)
 
 
 class RuntimeObservationTests(unittest.TestCase):

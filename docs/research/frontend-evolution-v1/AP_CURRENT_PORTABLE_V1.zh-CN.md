@@ -255,14 +255,45 @@ job 均为 false，初次完整方法集成仍必须二者都执行。未知结�
 `d5dc866941cd9ca3cbae5a6dc5297b97115e903ca59573dd0a5a6c790a9e313f` 原 blob，
 错误 workspace 仍拒绝。这是具体兼容性依据，不是对缺失原 stderr 的重建。
 
-后继只在 Verify 的 `Validate test-intelligence and assurance tools` 步骤设置
+首个后继 `637643753` 把三项进程配置设置在整个 Validate step。其
+[Verify 46065975374 / fast-code 140731344599](https://github.com/jiying2007/audio-pipeline/actions/runs/46065975374/job/140731344599)
+已通过原 baseline 的 `cat-file` 前检，但在 2026-11-27 20:49:56 UTC 的旧
+docs/R11 source entry 实际返回
+`R11_SOURCE_ENTRIES_REJECTED:Rejected:EXTERNAL_GIT_CONTEXT_REFUSED`，exit 2。
+原因是整个 step 的 `GIT_CONFIG_COUNT` 也传给了旧 reader；原 reader 正确拒绝
+外来 Git context，不能为使 CI 通过而改变这一历史边界。
+
+本次 CI 后继撤去 step-wide env，只在一个精确 POSIX subshell 内设置
 `GIT_CONFIG_COUNT=1`、`GIT_CONFIG_KEY_0=safe.directory` 和
-`GIT_CONFIG_VALUE_0=${{ github.workspace }}`；不使用 `*`，不写全局/仓库配置、不增加
-fetch 或重试。该步骤首先直接 `git cat-file -e` 检查原 baseline blob，使失败 stderr
-保存在真实日志；原所有测试、旧 AEC3 Git helper 和 Frontend Research 历史 jobs 保持。
-AP selector 只归一化锚定于这一完整 step header 的精确增量，移位、重复、额外 key、通配
-或移除均拒绝。原失败日志和真实 Actions merge commit 另行保全；新公开提交必须取得
-自己的真实 CI，不能用本地 fixture 或此前 head 的结果替代。
+`GIT_CONFIG_VALUE_0=${{ github.workspace }}`。该 subshell 只包含原 baseline
+`git cat-file -e` 前检，以及以下五条原样 `timeout 60s python3 -B` 命令：
+
+1. `test_webrtc_aec3_source.py`
+2. `test_webrtc_aec3_ci.py`
+3. `test_webrtc_aec3_reference.py`
+4. `test_ap_current_ci.py`
+5. `test_f05_dualmic_validation.py`
+
+它位于原 `test_f05_speech_source.py` 之后、`scripts/flaky_guard.py` 之前。
+五条命令及其 timeout 逐字不变；原 shell `-e` 使前检或任一 tiny 非零立即结束
+父步骤，不会用后续成功覆盖失败。之前的 docs/R11 和之后的测试不继承这些
+export；不使用 `*`，不写全局/仓库配置、不增加 fetch 或重试。
+
+AP selector 只归一化这个双侧锚定的精确五命令 block；接收历史 main/c7/plain
+形态与实际公开 637 的旧 step-wide 前驱。移位、漏项、重复、额外 key、通配及
+回退到宽环境或无环境形态均拒绝。移除这个 wrapper 与既有两条 AP/F05 tiny
+增量后，**整个 Verify 文件必须逐字等于公开 c7**，不开放其它位置的改写。
+
+本地仅做纯 metadata 与真实 POSIX shell 环境 fixture：原 R8 Git 构造器仍拒绝
+注入的外部 context，subshell 前后均保持 clean，五个位置逐一非零时均停止，
+错误 workspace 的真实 Git 前检在任何 tiny 前拒绝。fixture 中的 timeout 是
+明确标注的命令记录 stub，没有执行旧大套、C 编译、SDK 或真实数据。
+
+同头 637 的独立 Frontend Research run `46065975163`、AP job `140731320058`
+已经成功；其实际二进制、工程报告与另行授权的 F05 测量仍绑定原公开 637
+源码，使用原冻结 checkout 回读。本次只修 Verify/selector，不随科学结果修改
+AP runtime、F05 renderer、指标或阈值。原失败日志保留；CI 后继必须取得自己的
+真实 exact-head 检查，不能借用旧 head 的 CI 成功。
 
 Git 的进程级配置与受保护 safe.directory 语义见
 [Git 2.43 官方说明](https://git-scm.com/docs/git-config/2.43.0)。本修复没有改变任何

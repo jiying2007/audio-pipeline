@@ -892,10 +892,22 @@
       "failed_run_id": 46063199931,
       "failed_job_id": 140722263561,
       "observation_limit": "Original git show returned 128 after successful full-history checkout; its captured child stderr was not displayed. Container ownership/configuration is a supported inference, not a recovered original fatal message.",
-      "scope": "Only fast-code Validate test-intelligence and assurance tools step; command-scope safe.directory equals github.workspace exactly. No wildcard, extra key, persistent config write, fetch, retry, skipped test or historical observer change.",
-      "preflight": "Original baseline blob cat-file -e runs before the unchanged tests; any stderr remains in the actual job log.",
-      "selector": "Normalize only the exact anchored full step header/env/preflight fragment. Missing, relocated, duplicate, weakened or removed contexts fail; other Verify bytes remain subject to the original frozen registrations.",
-      "scientific_effect": "None. No processor/metric/corpus/threshold/budget/source-rights change. Real successor CI is still required."
+      "scope": "Only one POSIX subshell around exactly five existing research tiny commands inside fast-code Validate test-intelligence and assurance tools. Export GIT_CONFIG_COUNT=1, GIT_CONFIG_KEY_0=safe.directory and GIT_CONFIG_VALUE_0=the exact github.workspace there. Earlier docs/R11 and later tests inherit none of these variables. No wildcard, extra key, persistent config write, fetch, retry, skipped test or historical observer change.",
+      "preflight": "The original baseline blob cat-file -e runs inside that same subshell immediately before its five unchanged commands; stderr is retained and the original shell -e propagates any preflight/tiny failure out of the parent step.",
+      "selector": "Normalize only the exact five-command subshell anchored between test_f05_speech_source.py and scripts/flaky_guard.py. Preserve each original timeout command byte-for-byte. Accept exact historical main/c7/plain shapes and the actual public 637 step-wide predecessor only; reject rollback, missing/duplicate commands, wildcard/extra context and relocation. After removing only this wrapper and the two existing AP/F05 tiny additions, the entire Verify file must equal public c7 bytes.",
+      "scientific_effect": "None. AP runtime functions, original readers, F05 processor/metric/corpus/renderer/threshold/budgets/source rights remain unchanged. The already executed AP engineering and any authorized F05 execution stay bound to public 637; use that frozen checkout for their readback. The CI-only successor requires its own exact-head CI and does not reinterpret the original failure.",
+      "step_wide_context_failure": {
+        "failed_revision": "637643753166dee42efd325bed76b7fd8e7237c4",
+        "failed_run_id": 46065975374,
+        "failed_attempt": 1,
+        "failed_job_id": 140731344599,
+        "reported_at_utc": "2026-11-27T20:49:56Z",
+        "observed_error": "R11_SOURCE_ENTRIES_REJECTED:Rejected:EXTERNAL_GIT_CONTEXT_REFUSED",
+        "exit_code": 2,
+        "cause": "The original baseline cat-file succeeded, then the step-wide GIT_CONFIG_COUNT reached the old docs/R11 source reader. Its unchanged fail-closed constructor correctly refused external Git context. Limit the caller environment instead of changing that reader.",
+        "preserved_success": "The separate Frontend Research run 46065975163 attempt 1 AP job 140731320058 succeeded on the same public 637 source. Its CI binary and F05 scientific source are preserved; this repair changes only Verify wiring and selector normalization.",
+        "acceptance": "Pure metadata/shell fixtures must prove clean parent before/after; original R8 Git constructor still refuses injected context; each of the five tiny positions returning nonzero aborts parent execution; wrong workspace preflight reaches no tiny. No old full suite, compiler, SDK or real data execution is added."
+      }
     }
   },
   "failure_policy": "Preserve every actual failed prefix and log. No retry, compiler fallback, parameter/lag search or false success manifest. Late identity, budget or packaging failure changes the admissible status to FAIL and renames already-created tar/manifest/receipt to explicit before-failure names without discarding their bytes. Upload both original failed archives and reports. The 600s process alarm and 60s engineering alarm include source admission/readback; the outer 630s timeout is cleanup-only grace.",

@@ -1,0 +1,157 @@
+{
+  "cases": [
+    {
+      "display_percent": 1.1231246491218205,
+      "mic_index_zero_based": 0,
+      "room_state": "000000",
+      "source_fraction": 0.011231246491218205
+    },
+    {
+      "display_percent": 0.9756391394800668,
+      "mic_index_zero_based": 1,
+      "room_state": "000000",
+      "source_fraction": 0.009756391394800668
+    },
+    {
+      "display_percent": 1.296943676793949,
+      "mic_index_zero_based": 0,
+      "room_state": "000001",
+      "source_fraction": 0.01296943676793949
+    },
+    {
+      "display_percent": 1.2824385291472784,
+      "mic_index_zero_based": 1,
+      "room_state": "000001",
+      "source_fraction": 0.012824385291472784
+    },
+    {
+      "display_percent": 1.7114081734102338,
+      "mic_index_zero_based": 0,
+      "room_state": "000010",
+      "source_fraction": 0.017114081734102338
+    },
+    {
+      "display_percent": 1.6217281908918468,
+      "mic_index_zero_based": 1,
+      "room_state": "000010",
+      "source_fraction": 0.01621728190891847
+    },
+    {
+      "display_percent": 2.0840535715790254,
+      "mic_index_zero_based": 0,
+      "room_state": "000100",
+      "source_fraction": 0.020840535715790254
+    },
+    {
+      "display_percent": 1.728994287304797,
+      "mic_index_zero_based": 1,
+      "room_state": "000100",
+      "source_fraction": 0.01728994287304797
+    },
+    {
+      "display_percent": 1.8080606690326517,
+      "mic_index_zero_based": 0,
+      "room_state": "001000",
+      "source_fraction": 0.018080606690326517
+    },
+    {
+      "display_percent": 1.7878653892229646,
+      "mic_index_zero_based": 1,
+      "room_state": "001000",
+      "source_fraction": 0.017878653892229646
+    },
+    {
+      "display_percent": 2.3560972995970153,
+      "mic_index_zero_based": 0,
+      "room_state": "010000",
+      "source_fraction": 0.023560972995970153
+    },
+    {
+      "display_percent": 2.3416383022275222,
+      "mic_index_zero_based": 1,
+      "room_state": "010000",
+      "source_fraction": 0.023416383022275222
+    },
+    {
+      "display_percent": 3.406514455618348,
+      "mic_index_zero_based": 0,
+      "room_state": "011000",
+      "source_fraction": 0.03406514455618348
+    },
+    {
+      "display_percent": 3.300841994602588,
+      "mic_index_zero_based": 1,
+      "room_state": "011000",
+      "source_fraction": 0.03300841994602588
+    },
+    {
+      "display_percent": 7.841846077292081,
+      "mic_index_zero_based": 0,
+      "room_state": "011100",
+      "source_fraction": 0.0784184607729208
+    },
+    {
+      "display_percent": 6.823184446570519,
+      "mic_index_zero_based": 1,
+      "room_state": "011100",
+      "source_fraction": 0.06823184446570518
+    },
+    {
+      "display_percent": 14.735868292630139,
+      "mic_index_zero_based": 0,
+      "room_state": "011110",
+      "source_fraction": 0.1473586829263014
+    },
+    {
+      "display_percent": 14.609088790427494,
+      "mic_index_zero_based": 1,
+      "room_state": "011110",
+      "source_fraction": 0.14609088790427494
+    },
+    {
+      "display_percent": 32.33641759828886,
+      "mic_index_zero_based": 0,
+      "room_state": "011111",
+      "source_fraction": 0.3233641759828886
+    },
+    {
+      "display_percent": 32.1142989534679,
+      "mic_index_zero_based": 1,
+      "room_state": "011111",
+      "source_fraction": 0.321142989534679
+    },
+    {
+      "display_percent": 4.276982151699949,
+      "mic_index_zero_based": 0,
+      "room_state": "020002",
+      "source_fraction": 0.042769821516999484
+    },
+    {
+      "display_percent": 3.862784818246956,
+      "mic_index_zero_based": 1,
+      "room_state": "020002",
+      "source_fraction": 0.03862784818246956
+    }
+  ],
+  "correlated_view_count": 22,
+  "display_unit": "percent (100 times source fraction)",
+  "fixed_state_order": [
+    "000000",
+    "000001",
+    "000010",
+    "000100",
+    "001000",
+    "010000",
+    "011000",
+    "011100",
+    "011110",
+    "011111",
+    "020002"
+  ],
+  "native_sample_rate_hz": 48000,
+  "oracle_window_samples": 1677,
+  "physical_room_count": 1,
+  "source_result_sha256": "1c2bfa4ae417c76c37f0b14851b72e541bff447e08129addae0ed67c72ba29c2",
+  "source_revision": "a058b02582962875ac10e6bb42b928c46c405213",
+  "source_statistic": "uncovered_energy_fraction_lower_bound"
+}

@@ -1,0 +1,64 @@
+{
+  "acoustic_measurement": "NOT_RUN",
+  "compile": "NOT_RUN",
+  "configure_log_sha256": "2695668c612f055f328fac182ead9893fc4f24a9c49ce699cb97ee34007a02e0",
+  "controls": {
+    "commit": "14ccc75a8131e3a593b4211173ac01a14b5ac23d",
+    "files_sha256": {
+      ".github/research/frontend-evolution-v1/sources.json": "1e5b10b60ca3c318fe016a5bb935f0560171e72da25e1bfab6009a067790c299",
+      ".github/research/frontend-evolution-v1/webrtc-aec3-admission.json": "ac9eefad5b0e01602ed10e91a91ed8a3525cdaa5fbeeed69ebea20657af28ec3",
+      ".github/research/frontend-evolution-v1/webrtc-aec3-source-lock.json": "e8e491eeaf88a78c5df0c402891c93b13f8193366e46695285db21459d393dbe",
+      "tests/validation/frontend_evolution/webrtc_aec3_source.py": "b3fa1bf127cfc666f1af18ce9f6894b60be57199327ee1739aa5c11576ff1573"
+    },
+    "tree": "40007f99098c207c7c3b5cd95f617122f625d89a"
+  },
+  "elapsed_seconds": 1.2166944979999244,
+  "evidence_scope": "Original local configure-only observation after source-admission commit; no full C++ build, no algorithm execution. Paths describe the observed local workspace, not portable authority.",
+  "exit_code": 0,
+  "pkg_config_uninstalled_sha256": "93ea16cb485e193a6317ab5287214859d0fb8b3696951e532bbaf44e7a42a189",
+  "post_source_verification": {
+    "acoustic_measurement": "NOT_RUN",
+    "archives": {
+      "abseil": {
+        "filename": "abseil-cpp-20240722.0.tar.gz",
+        "sha256": "f50e5ac311a81382da7fa75b97310e4b9006474f9560ac46f54a9967f07d4ae3",
+        "size": 2242861
+      },
+      "abseil_meson_patch": {
+        "filename": "abseil-cpp_20240722.0-3_patch.zip",
+        "sha256": "12dd8df1488a314c53e3751abd2750cf233b830651d168b6a9f15e7d0cf71f7b",
+        "size": 5929
+      },
+      "distribution": {
+        "filename": "webrtc-audio-processing-2.1.tar.xz",
+        "sha256": "ae9302824b2038d394f10213cab05312c564a038434269f11dbf68f511f9f9fe",
+        "size": 604192
+      }
+    },
+    "distribution_commit": "846fe90a289f58b7c9303a635142aa2c7caa93e5",
+    "distribution_tree": "704db84e4285c0006ac8204dad2497fca3d27791",
+    "files": 2203,
+    "materialized_source_sha256": "b353d20bbe718987c22d3aa338a3e1ee49af654b840259954680b2377c9b89fc",
+    "schema_version": 1,
+    "scope": "fixed-freedesktop-2.1-offline-reference-build-and-bounded-synthetic-engineering-only",
+    "shipping_authority": false,
+    "source_id": "webrtc",
+    "source_lock_sha256": "e8e491eeaf88a78c5df0c402891c93b13f8193366e46695285db21459d393dbe",
+    "status": "SOURCE_BYTES_VERIFIED_NOT_BUILT",
+    "training": "NOT_RUN",
+    "unpacked_size": 14541954
+  },
+  "setup": [
+    "/workspace/scratch/cd58842626bd/aec3_source/build-tools-venv/bin/meson",
+    "setup",
+    "/workspace/scratch/cd58842626bd/aec3_configure_v1/meson",
+    "/workspace/scratch/cd58842626bd/aec3_prepared_v1/source",
+    "--backend=ninja",
+    "--wrap-mode=nodownload",
+    "--force-fallback-for=abseil-cpp",
+    "--buildtype=release",
+    "--default-library=shared",
+    "-Dcpp_std=c++17"
+  ],
+  "status": "CONFIGURED_NOT_COMPILED"
+}

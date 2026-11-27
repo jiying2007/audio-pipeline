@@ -1,0 +1,19 @@
+{
+  "acoustic_runs": 0,
+  "archive": "/workspace/scratch/cd58842626bd/audit_checks/f05-source-final-20261128.tar.gz",
+  "archive_bytes": 352999000,
+  "archive_sha256": "268df36ff7335d87eb9472531245b15f7f751835d70a635c8fa25ac5e8560bdc",
+  "audio_redecoded": false,
+  "finished_at_utc": "2026-11-27T19:14:02.985411+00:00",
+  "independent_receipt_sha256": "00496dc864275cc2da3671ff2a13980e1477b1797ee9f384116f62510001e493",
+  "outer_manifest_sha256": "de809254b43fad954c4b9b3a4092c66331dd1e81bc624b5a7d81939bd96c9ddb",
+  "regular_files": 114,
+  "schema_version": 1,
+  "source_receipt_sha256": "35fb4797cf67d004ae1646d61b7905a85bf376f7abbd031d4b3d58531ca57e5c",
+  "source_revision": "a058b02582962875ac10e6bb42b928c46c405213",
+  "started_at_utc": "2026-11-27T19:13:53.417842+00:00",
+  "status": "SOURCE_EVIDENCE_PACKAGE_BYTES_VERIFIED",
+  "symlinks": 0,
+  "tar_members": 134,
+  "wall_seconds": 9.567577187001007
+}

@@ -1,5 +1,27 @@
 # Frontend Evolution v1 / 双麦与四麦开放研究
 
+[F05 新八说话人双麦实际结果与独立回读](F05_DUALMIC_VALIDATION_20261128/README.zh-CN.md)
+
+[当前 AP 可搬移工程包：源码身份、双麦帧与宿主复验](AP_CURRENT_PORTABLE_V1.zh-CN.md)
+
+[F05 新八说话人双麦整链验证合同（128 例，尚未执行）](F05_DUALMIC_VALIDATION_V1.zh-CN.md)
+
+[长期科研平台运行手册：来源、数据、仿真、评估、复现与 AEC3](LONG_TERM_RESEARCH_PLATFORM.zh-CN.md)
+
+## 实测 RIR 模型覆盖诊断
+
+[冻结方法](DECHORATE_RIR_GAP_V1.zh-CN.md)与[实际22视图结果及独立复验](DECHORATE_RIR_GAP_20261128/README.zh-CN.md)
+记录一个物理房间的11相关状态。在声明模型下，固定1677样点oracle支撑窗仍有0.975639%～32.336418%
+有限记录能量无法覆盖；它不是纯混响份额、全模型拟合误差或算法音质损失，不产生候选晋级。
+
+## F05 有限保留语音来源准备
+
+[F05 来源准备合同](F05_SPEECH_SOURCE_V1.zh-CN.md)冻结排除既往可见 16 人后的下一组 8 人，
+只准备 32 个原 FLAC、完整无损 PCM 与预定义适配片段。全部保留验证角色、NOT_BLIND；
+tiny tests 不代表实际大归档已取回，不构成新房间、双麦质量或普遍独立性结果。
+[实际准备与独立回读](F05_SPEECH_SOURCE_20261128.zh-CN.md)已取得并核验 32 个完整原件、327.605 秒，
+原完整归档与方法闭包已封存；新来源双麦整链对照仍单独登记，不能用 source-only 结果勾销。
+
 ## 2026-11-14 受限增益回升诊断 D9
 
 [D9 合同](DUALMIC_GATED_RISE_D9_PLAN.zh-CN.md)与[真实结果](DUALMIC_GATED_RISE_D9_RESULT.zh-CN.md)：

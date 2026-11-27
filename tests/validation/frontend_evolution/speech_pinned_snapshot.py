@@ -25,6 +25,7 @@ import zipfile
 import speech_source
 import speech_source_stage_budget as stage_budget
 from speech_spatial import source_check
+import speech_source_cache_profiles as profiles
 from contracts import ROOT
 
 ORIGIN_REPO = "jiying2007/audio-pipeline"
@@ -46,6 +47,43 @@ MAX_ZIP_MEMBER_BYTES = 65_000_000
 MAX_SOURCE_BYTES = 80_000_000
 ALLOWED_ORIGIN_SIZE = 204415056
 CACHE_BUDGET_SECONDS = 600
+
+def _settings(profile):
+    if profile is not None:
+        return profiles.require_profile(profile)
+    # Preserve the original runtime lookup of default constants, including
+    # existing offline test doubles. No profile mutates any of these globals.
+    return profiles.SnapshotProfile(
+        name='', offset=0, source_id='librispeech-dev-clean-fe03',
+        source_role='original-LibriSpeech-fixed-recorded-speech-revalidated',
+        origin_main=ORIGIN_MAIN, verify_run=ORIGIN_VERIFY_RUN,
+        release_run=ORIGIN_RELEASE_RUN, artifact_id=ORIGIN_ARTIFACT,
+        artifact_name=ORIGIN_ARTIFACT_NAME, zip_bytes=ORIGIN_ZIP_BYTES,
+        zip_sha256=ORIGIN_ZIP_SHA256, admitted_source_sha256=ADMITTED_SOURCE_SHA256)
+
+
+def _options(profile):
+    _settings(profile)
+    return {} if profile is None else {'profile': profile}
+
+
+def check_source(path: Path, *, profile=None) -> dict:
+    _settings(profile)
+    if profile is None:
+        return source_check(path)
+    from speech_spatial_weights import source_check as spatial_source_check
+    return spatial_source_check(path)
+
+
+def check_profile_receipt(record: dict, profile) -> None:
+    p = _settings(profile)
+    if profile is not None:
+        need(record.get('snapshot_profile') == p.name and
+             record.get('source_speaker_offset') == p.offset and
+             record.get('source_id') == p.source_id and
+             record.get('source_admission_sha256') == p.admission_sha256 and
+             record.get('source_plan_sha256') == p.plan_sha256,
+             'SOURCE_TRANSFER_PROFILE_IDENTITY_REJECTED')
 
 
 class AdmissionError(ValueError):
@@ -78,7 +116,26 @@ def strict_source_commit(source_commit: str) -> None:
     need(actual == source_commit, "CHECKED_OUT_SHA_NOT_EXECUTION_SOURCE")
 
 
-def original_source_policy() -> dict:
+def original_source_policy(*, profile=None) -> dict:
+    p = _settings(profile)
+    if profile is not None:
+        admission, plan = ROOT / p.admission_path, ROOT / p.plan_path
+        need(sha256_file(admission) == p.admission_sha256 and
+             sha256_file(plan) == p.plan_sha256,
+             'SPATIAL_SOURCE_CONTRACT_BYTES_CHANGED')
+        policy = json.loads(admission.read_text('utf-8'))
+        plan_value = json.loads(plan.read_text('utf-8'))
+        need(policy.get('decision') == 'ADMITTED_NEW_SPEAKERS_BEFORE_SCORING' and
+             policy.get('shipping_authority') is False and
+             policy.get('source_id') == p.source_id and
+             policy.get('bound_source_sha256') == p.admitted_source_sha256 and
+             policy.get('speakers') == list(p.speakers) and
+             plan_value.get('archive_sha256') == ORIGIN_ARCHIVE_SHA256 and
+             speech_source.MD5 == '42e2234ba48799c1f50f24a7926300a1' and
+             speech_source.URL == 'https://www.openslr.org/resources/12/dev-clean.tar.gz',
+             'INDEPENDENTLY_ADMITTED_SPATIAL_SOURCE_POLICY_DRIFT')
+        return {**policy, 'archive_bytes':337926286,
+                'archive_sha256':ORIGIN_ARCHIVE_SHA256, 'archive_md5':speech_source.MD5}
     path = ROOT / ".github/research/frontend-evolution-v1/speech-admission-v1.json"
     policy = json.loads(path.read_text("utf-8"))
     need(type(policy) is dict and
@@ -158,15 +215,16 @@ def fresh_destinations(output: Path, transfer: Path) -> None:
 
 def publish_source(scratch: Path, output: Path, transfer: Path, commit: str,
                    *, zip_digest: str | None, original_downloaded: bool = False,
-                   cache_failure: Path | None = None) -> dict:
+                   cache_failure: Path | None = None, profile=None) -> dict:
+    p = _settings(profile)
     # The original independent contract, not transport success, admits bytes.
-    source = source_check(scratch)
+    source = check_source(scratch, **_options(profile))
     need(type(source) is dict and
          source.get("archive_sha256") == ORIGIN_ARCHIVE_SHA256 and
          source.get("archive_md5") == speech_source.MD5 and
          source.get("archive_bytes") == 337926286 and
          source.get("url") == speech_source.URL and
-         source.get("source_id") == "librispeech-dev-clean-fe03" and
+         source.get("source_id") == p.source_id and
          source.get("shipping_authority") is False,
          "FIRST_PARTY_ADMITTED_ARCHIVE_SOURCE_IDENTITY_DRIFT")
     source_receipt_sha = sha256_file(scratch / "source-receipt.json")
@@ -183,18 +241,18 @@ def publish_source(scratch: Path, output: Path, transfer: Path, commit: str,
          <= MAX_SOURCE_BYTES, "SELECTED_OFFICIAL_DATA_SET_TOO_LARGE")
     record = {
         "schema_version": 2, "decision": DECISION,
-        "source_role": "original-LibriSpeech-fixed-recorded-speech-revalidated",
+        "source_role": p.source_role,
         "source_commit": commit,
         "acquisition_path": ("protected-artifact-cache" if zip_digest else
                              "official-original-archive"),
-        "protected_source_main": ORIGIN_MAIN,
-        "protected_source_verify_run_id": ORIGIN_VERIFY_RUN,
-        "protected_source_release_run_id": ORIGIN_RELEASE_RUN,
-        "original_source_artifact_id": ORIGIN_ARTIFACT,
-        "original_source_artifact_name": ORIGIN_ARTIFACT_NAME,
+        "protected_source_main": p.origin_main,
+        "protected_source_verify_run_id": p.verify_run,
+        "protected_source_release_run_id": p.release_run,
+        "original_source_artifact_id": p.artifact_id,
+        "original_source_artifact_name": p.artifact_name,
         "original_source_artifact_zip_sha256": zip_digest,
         "artifact_cache_identity_revalidated_this_run": zip_digest is not None,
-        "independently_admitted_selected_sha256": ADMITTED_SOURCE_SHA256,
+        "independently_admitted_selected_sha256": p.admitted_source_sha256,
         "original_archive_sha256_prior_verified": ORIGIN_ARCHIVE_SHA256,
         "source_receipt_sha256": source_receipt_sha,
         "original_restored_files_sha256": hashes,
@@ -209,6 +267,15 @@ def publish_source(scratch: Path, output: Path, transfer: Path, commit: str,
         "public_product_or_device_qualification": False,
         "verification_authority": "source-bytes-only-fresh-science-required"
     }
+    if profile is not None:
+        record.update({'snapshot_profile':p.name, 'source_speaker_offset':p.offset,
+            'source_id':p.source_id, 'source_admission_sha256':p.admission_sha256,
+            'source_plan_sha256':p.plan_sha256,
+            'source_roles':[row['role'] for row in source['speaker_selection']],
+            'source_cache_representation':'audio-pipeline-evidence-cas-v1' if zip_digest else None,
+            'cache_inner_sha256':p.inner_sha256 if zip_digest else None,
+            'cache_manifest_sha256':p.manifest_sha256 if zip_digest else None,
+            'cache_transport_tool_sha256':p.transport_tool_sha256 if zip_digest else None})
     receipt_tmp = scratch.parent / "source-transfer.json"
     receipt_tmp.write_text(json.dumps(record, sort_keys=True,
         separators=(",", ":"), allow_nan=False)+"\n", encoding="utf-8")
@@ -219,20 +286,26 @@ def publish_source(scratch: Path, output: Path, transfer: Path, commit: str,
     return record
 
 
-def restore(archive: Path, output: Path, transfer: Path, commit: str) -> dict:
+def restore(archive: Path, output: Path, transfer: Path, commit: str, *, profile=None) -> dict:
+    p = _settings(profile)
     strict_source_commit(commit)
-    original_source_policy()
+    original_source_policy(**_options(profile))
     fresh_destinations(output, transfer)
     need(archive.is_file() and not archive.is_symlink() and
          archive.resolve() != output.resolve() and
-         archive.stat().st_size == ALLOWED_ORIGIN_SIZE,
+         archive.stat().st_size == (ALLOWED_ORIGIN_SIZE if profile is None else p.zip_bytes),
          "ARTIFACT_FILE_OR_SIZE_WRONG")
     zip_digest = sha256_file(archive)
-    need(zip_digest == ORIGIN_ZIP_SHA256,
+    need(zip_digest == p.zip_sha256,
          "ORIGINAL_GITHUB_ARTIFACT_ZIP_SHA256_CHANGED")
     with tempfile.TemporaryDirectory(prefix=".verified-speech-", dir=output.parent) as temp:
         scratch = Path(temp) / "source"
         scratch.mkdir()
+        if profile is not None:
+            from speech_source_cas import copy_source
+            copy_source(archive, scratch, profile)
+            return publish_source(scratch, output, transfer, commit,
+                                  zip_digest=zip_digest, **_options(profile))
         with zipfile.ZipFile(archive, "r") as z:
             selected = scan_zip(z)
             for info in selected:
@@ -258,10 +331,11 @@ def restore(archive: Path, output: Path, transfer: Path, commit: str) -> dict:
 
 def reacquire_official(output: Path, transfer: Path, commit: str, *,
                       archive: Path | None = None,
-                      cache_failure: Path | None = None) -> dict:
+                      cache_failure: Path | None = None, profile=None) -> dict:
     """Recreate the frozen selection; no new URL, speaker or decoder fallback."""
     strict_source_commit(commit)
-    policy = original_source_policy()
+    p = _settings(profile)
+    policy = original_source_policy(**_options(profile))
     fresh_destinations(output, transfer)
     if cache_failure is not None:
         need(cache_failure.is_file() and not cache_failure.is_symlink() and
@@ -283,10 +357,10 @@ def reacquire_official(output: Path, transfer: Path, commit: str, *,
         need(sha256_file(original) == policy["archive_sha256"],
              "OFFICIAL_ORIGINAL_ARCHIVE_SHA256_REJECTED")
         data = scratch / "source"
-        speech_source.acquire(original, data, offset=0)
+        speech_source.acquire(original, data, offset=p.offset)
         return publish_source(data, output, transfer, commit, zip_digest=None,
                               original_downloaded=archive is None,
-                              cache_failure=cache_failure)
+                              cache_failure=cache_failure, **_options(profile))
 
 
 @contextmanager
@@ -303,20 +377,22 @@ def without_github_auth():
 
 
 def replay_official_worker(archive: Path, output: Path, transfer: Path,
-                           commit: str, *, cache_failure: Path | None = None) -> dict:
+                           commit: str, *, cache_failure: Path | None = None,
+                           profile=None) -> dict:
     """Local replay and independent readback, inside one supervised process."""
     result = reacquire_official(output, transfer, commit, archive=archive,
-                                cache_failure=cache_failure)
-    source_check(output)
+                                cache_failure=cache_failure, **_options(profile))
+    check_source(output, **_options(profile))
     return result
 
 
 def replay_official_archive(archive: Path, output: Path, transfer: Path,
-                            commit: str, *, cache_failure: Path | None = None) -> dict:
+                            commit: str, *, cache_failure: Path | None = None,
+                            profile=None) -> dict:
     """Bound the public local-archive replay just like the acquisition stage."""
     started = time.monotonic()
     strict_source_commit(commit)
-    original_source_policy()
+    original_source_policy(**_options(profile))
     fresh_destinations(output, transfer)
     need(archive.is_file() and not archive.is_symlink(),
          "OFFICIAL_ORIGINAL_ARCHIVE_SIZE_OR_FILE_REJECTED")
@@ -329,6 +405,8 @@ def replay_official_archive(archive: Path, output: Path, transfer: Path,
                "--replay-official-worker", "--original-archive", str(archive.resolve()),
                "--output", str(output.resolve()), "--transfer", str(transfer.resolve()),
                "--execution-source", commit]
+    if profile is not None:
+        command += ['--profile', _settings(profile).name]
     if cache_failure is not None:
         command += ["--cache-failure", str(cache_failure.resolve())]
     # The parent retains any cache authorization. No public-source subprocess,
@@ -345,6 +423,7 @@ def replay_official_archive(archive: Path, output: Path, transfer: Path,
              0 < transfer.stat().st_size <= 32*1024,
              "OFFICIAL_SOURCE_TRANSFER_RECEIPT_MISSING")
         record = json.loads(transfer.read_text("utf-8"))
+        check_profile_receipt(record, profile)
         need(type(record) is dict and record.get("source_commit") == commit and
              record.get("decision") == DECISION and
              record.get("acquisition_path") == "official-original-archive" and
@@ -358,7 +437,8 @@ def replay_official_archive(archive: Path, output: Path, transfer: Path,
         return record
     except Exception as error:
         preserve_failure(output, error, commit,
-                         reason_code="OFFICIAL_ORIGINAL_SOURCE_REACQUISITION_REJECTED")
+                         reason_code="OFFICIAL_ORIGINAL_SOURCE_REACQUISITION_REJECTED",
+                         **_options(profile))
         raise
 
 
@@ -394,36 +474,46 @@ def cache_api(endpoint: str, deadline: float, kind: str, *, stream=None):
 
 
 def restore_cache(archive: Path, output: Path, transfer: Path,
-                  commit: str) -> dict:
+                  commit: str, *, profile=None) -> dict:
+    p = _settings(profile)
     deadline = time.monotonic() + CACHE_BUDGET_SECONDS
-    run = cache_api("/actions/runs/" + str(ORIGIN_VERIFY_RUN),
+    run = cache_api("/actions/runs/" + str(p.verify_run),
                     deadline, "RUN")
-    if (run.get("id") != ORIGIN_VERIFY_RUN or
-        run.get("head_sha") != ORIGIN_MAIN or
-        run.get("conclusion") != "success" or run.get("event") != "push"):
+    if (run.get("id") != p.verify_run or
+        run.get("head_sha") != p.origin_main or
+        run.get("conclusion") != "success" or run.get("event") != "push" or
+        (profile is not None and run.get('head_branch') != 'main')):
         raise CacheFailure("PINNED_CACHE_RUN_IDENTITY_REJECTED")
-    artifact = cache_api("/actions/artifacts/" + str(ORIGIN_ARTIFACT),
+    artifact = cache_api("/actions/artifacts/" + str(p.artifact_id),
                          deadline, "ARTIFACT")
     if artifact.get("expired") is True:
         raise CacheFailure("PINNED_CACHE_ARTIFACT_EXPIRED")
     origin = artifact.get("workflow_run")
-    if (artifact.get("id") != ORIGIN_ARTIFACT or
-        artifact.get("name") != ORIGIN_ARTIFACT_NAME or
-        artifact.get("size_in_bytes") != ORIGIN_ZIP_BYTES or
-        artifact.get("digest") != "sha256:" + ORIGIN_ZIP_SHA256 or
+    if (artifact.get("id") != p.artifact_id or
+        artifact.get("name") != p.artifact_name or
+        artifact.get("size_in_bytes") != p.zip_bytes or
+        artifact.get("digest") != "sha256:" + p.zip_sha256 or
         artifact.get("expired") is not False or type(origin) is not dict or
-        origin.get("id") != ORIGIN_VERIFY_RUN or
-        origin.get("head_sha") != ORIGIN_MAIN):
+        origin.get("id") != p.verify_run or
+        origin.get("head_sha") != p.origin_main):
         raise CacheFailure("PINNED_CACHE_ARTIFACT_IDENTITY_REJECTED")
     with archive.open("xb") as stream:
-        cache_api("/actions/artifacts/" + str(ORIGIN_ARTIFACT) + "/zip",
+        cache_api("/actions/artifacts/" + str(p.artifact_id) + "/zip",
                   deadline, "DOWNLOAD", stream=stream)
-    return restore(archive, output, transfer, commit)
+    if profile is not None and time.monotonic() >= deadline:
+        raise CacheFailure('PINNED_CACHE_WALL_DEADLINE')
+    result = restore(archive, output, transfer, commit, **_options(profile))
+    # Completion check, not a hard alarm during Python hashing/extraction.
+    # The unchanged parent worker supplies the full-stage 1800 s hard ceiling.
+    if profile is not None and time.monotonic() > deadline:
+        raise CacheFailure('PINNED_CACHE_WALL_DEADLINE')
+    return result
 
 
-def preserve_cache_failure(path: Path, error: Exception, commit: str) -> None:
+def preserve_cache_failure(path: Path, error: Exception, commit: str, *, profile=None) -> None:
     # Known admission messages describe paths/identity only. Never serialize
     # subprocess stdout/stderr, request headers or a redirected download URL.
+    p = _settings(profile)
     record = {
         "schema_version": 1,
         "status": "CACHE_UNAVAILABLE_OR_REJECTED",
@@ -432,8 +522,8 @@ def preserve_cache_failure(path: Path, error: Exception, commit: str) -> None:
         "reason_detail": (str(error)[:180] if isinstance(error, ValueError)
                           else type(error).__name__),
         "source_commit": commit,
-        "original_source_artifact_id": ORIGIN_ARTIFACT,
-        "original_source_zip_sha256_expected": ORIGIN_ZIP_SHA256,
+        "original_source_artifact_id": p.artifact_id,
+        "original_source_zip_sha256_expected": p.zip_sha256,
         "cache_wall_seconds_ceiling": CACHE_BUDGET_SECONDS,
         "next_allowed_source": speech_source.URL,
         "next_allowed_archive_sha256": ORIGIN_ARCHIVE_SHA256,
@@ -442,6 +532,9 @@ def preserve_cache_failure(path: Path, error: Exception, commit: str) -> None:
         "acoustic_validation_qualified": False,
         "shipping_authority": False,
     }
+    if profile is not None:
+        record.update({'snapshot_profile':p.name, 'source_speaker_offset':p.offset,
+                       'source_id':p.source_id})
     with path.open("x", encoding="utf-8") as stream:
         json.dump(record, stream, sort_keys=True, separators=(",", ":"),
                   allow_nan=False)
@@ -461,7 +554,7 @@ def fresh_transport_destinations(archive: Path, output: Path, transfer: Path,
 
 
 def acquire_source_worker(archive: Path, output: Path, transfer: Path,
-                          cache_failure: Path, commit: str) -> dict:
+                          cache_failure: Path, commit: str, *, profile=None) -> dict:
     """Entire expensive stage, supervised once by acquire_source's parent.
 
     No nested process-group supervisor: gh and FFmpeg remain in this worker's
@@ -469,12 +562,12 @@ def acquire_source_worker(archive: Path, output: Path, transfer: Path,
     """
     started = time.monotonic()
     strict_source_commit(commit)
-    original_source_policy()
+    original_source_policy(**_options(profile))
     fresh_transport_destinations(archive, output, transfer, cache_failure)
     try:
-        return restore_cache(archive, output, transfer, commit)
+        return restore_cache(archive, output, transfer, commit, **_options(profile))
     except Exception as error:
-        preserve_cache_failure(cache_failure, error, commit)
+        preserve_cache_failure(cache_failure, error, commit, **_options(profile))
         # A partially published result must not be reused or overwritten.
         fresh_destinations(output, transfer)
     finally:
@@ -485,13 +578,14 @@ def acquire_source_worker(archive: Path, output: Path, transfer: Path,
     # download and any external decoder must not receive GitHub credentials.
     with without_github_auth():
         reacquire_official(output, transfer, commit,
-                           cache_failure=cache_failure)
+                           cache_failure=cache_failure, **_options(profile))
     # This independent readback is also inside the outer wall-clock deadline.
-    source_check(output)
+    check_source(output, **_options(profile))
     need(transfer.is_file() and not transfer.is_symlink() and
          0 < transfer.stat().st_size <= 32*1024,
          "OFFICIAL_SOURCE_TRANSFER_RECEIPT_MISSING")
     record = json.loads(transfer.read_text("utf-8"))
+    check_profile_receipt(record, profile)
     need(record.get("source_commit") == commit and
          record.get("decision") == DECISION and
          record.get("acquisition_path") == "official-original-archive" and
@@ -501,11 +595,12 @@ def acquire_source_worker(archive: Path, output: Path, transfer: Path,
 
 
 def acquire_source(archive: Path, output: Path, transfer: Path,
-                   cache_failure: Path, commit: str) -> dict:
+                   cache_failure: Path, commit: str, *, profile=None) -> dict:
     """Supervise cache + hash/extraction/readback + official source as one stage."""
     started = time.monotonic()
     strict_source_commit(commit)
-    original_source_policy()
+    p = _settings(profile)
+    original_source_policy(**_options(profile))
     fresh_transport_destinations(archive, output, transfer, cache_failure)
     command = [sys.executable, str(Path(__file__).resolve()),
                "--acquire-worker", "--zip", str(archive.resolve()),
@@ -513,6 +608,8 @@ def acquire_source(archive: Path, output: Path, transfer: Path,
                "--transfer", str(transfer.resolve()),
                "--cache-failure", str(cache_failure.resolve()),
                "--execution-source", commit]
+    if profile is not None:
+        command += ['--profile', p.name]
     try:
         remaining = stage_budget.DEADLINE_SECONDS - (time.monotonic() - started)
         need(remaining > 0, "ORIGINAL_SOURCE_ACQUISITION_WALL_DEADLINE")
@@ -525,6 +622,7 @@ def acquire_source(archive: Path, output: Path, transfer: Path,
              0 < transfer.stat().st_size <= 32*1024,
              "SOURCE_TRANSFER_RECEIPT_MISSING")
         record = json.loads(transfer.read_text("utf-8"))
+        check_profile_receipt(record, profile)
         need(type(record) is dict and record.get("source_commit") == commit and
              record.get("decision") == DECISION and
              record.get("acquisition_path") in
@@ -532,7 +630,7 @@ def acquire_source(archive: Path, output: Path, transfer: Path,
              "SOURCE_TRANSFER_RECEIPT_IDENTITY_REJECTED")
         if record["acquisition_path"] == "protected-artifact-cache":
             need(record.get("original_source_artifact_zip_sha256") ==
-                 ORIGIN_ZIP_SHA256, "CACHE_TRANSFER_RECEIPT_IDENTITY_REJECTED")
+                 p.zip_sha256, "CACHE_TRANSFER_RECEIPT_IDENTITY_REJECTED")
         else:
             need(cache_failure.is_file() and not cache_failure.is_symlink() and
                  record.get("cache_failure_receipt_sha256") ==
@@ -543,7 +641,7 @@ def acquire_source(archive: Path, output: Path, transfer: Path,
         return record
     except Exception as error:
         preserve_failure(output, error, commit,
-                         reason_code="ORIGINAL_SOURCE_STAGE_REJECTED")
+                         reason_code="ORIGINAL_SOURCE_STAGE_REJECTED", **_options(profile))
         raise
     finally:
         archive.unlink(missing_ok=True)
@@ -551,7 +649,9 @@ def acquire_source(archive: Path, output: Path, transfer: Path,
 
 def preserve_failure(output: Path, error: Exception, commit: str, *,
                      reason_code: str =
-                     "PINNED_ORIGINAL_SOURCE_ARTIFACT_TRANSFER_REJECTED") -> bool:
+                     "PINNED_ORIGINAL_SOURCE_ARTIFACT_TRANSFER_REJECTED",
+                     profile=None) -> bool:
+    p = _settings(profile)
     if output.is_symlink():
         return False
     try:
@@ -566,14 +666,17 @@ def preserve_failure(output: Path, error: Exception, commit: str, *,
             "reason_code": reason_code,
             "reason_detail": str(error)[:180],
             "source_commit": commit,
-            "original_source_artifact_id": ORIGIN_ARTIFACT,
-            "original_source_zip_sha256_expected": ORIGIN_ZIP_SHA256,
+            "original_source_artifact_id": p.artifact_id,
+            "original_source_zip_sha256_expected": p.zip_sha256,
             "original_source_url": speech_source.URL,
             "original_archive_sha256_expected": ORIGIN_ARCHIVE_SHA256,
             "source_substitution": False,
             "shipping_authority": False,
             "acoustic_validation_qualified": False
         }
+        if profile is not None:
+            report.update({'snapshot_profile':p.name, 'source_speaker_offset':p.offset,
+                           'source_id':p.source_id})
         with marker.open("x", encoding="utf-8") as stream:
             json.dump(report, stream, sort_keys=True, separators=(",", ":"),
                       allow_nan=False)
@@ -583,8 +686,14 @@ def preserve_failure(output: Path, error: Exception, commit: str, *,
         return False
 
 
-def self_test() -> None:
-    original_source_policy()
+def self_test(*, profile=None) -> None:
+    original_source_policy(**_options(profile))
+    if profile is not None:
+        from speech_source_cas import transport_reader
+        transport_reader()
+        print('FE03_SPATIAL_SOURCE_CACHE_PROFILE_POLICY_PASS',
+              _settings(profile).name, 'no_data_promotion')
+        return
     with tempfile.TemporaryDirectory() as tmp:
         p = Path(tmp)/"test.zip"
         def make(members: list[tuple[str, bytes]]) -> None:
@@ -646,12 +755,15 @@ def main() -> None:
     p.add_argument("--output", type=Path)
     p.add_argument("--transfer", type=Path)
     p.add_argument("--execution-source", default="")
+    p.add_argument('--profile', choices=profiles.CHOICES,
+                   help='Explicit closed source identity; omitted retains original offset-0 behavior')
     args = p.parse_args()
+    profile = profiles.select(args.profile)
     preexisting_output = (args.output is not None and
                           (args.output.exists() or args.output.is_symlink()))
     try:
         if args.self_test:
-            self_test()
+            self_test(**_options(profile))
             return
         need(args.output is not None and
              re.fullmatch("[0-9a-f]{40}", args.execution_source) is not None,
@@ -669,7 +781,8 @@ def main() -> None:
             execute = (replay_official_worker if args.replay_official_worker else
                        replay_official_archive)
             result = execute(args.original_archive, args.output, args.transfer,
-                             args.execution_source, cache_failure=args.cache_failure)
+                             args.execution_source, cache_failure=args.cache_failure,
+                             **_options(profile))
         else:
             need(args.zip is not None, "SOURCE_ZIP_MISSING")
             if args.acquire or args.acquire_worker:
@@ -677,10 +790,10 @@ def main() -> None:
                 acquire = (acquire_source_worker if args.acquire_worker else
                            acquire_source)
                 result = acquire(args.zip, args.output, args.transfer,
-                                 args.cache_failure, args.execution_source)
+                                 args.cache_failure, args.execution_source, **_options(profile))
             else:
                 result = restore(args.zip, args.output, args.transfer,
-                                 args.execution_source)
+                                 args.execution_source, **_options(profile))
         print("FE03_ORIGINAL_SOURCE_REVALIDATED",
               result["source_commit"], result["acquisition_path"],
               result["verified_selected_source_member_count"])
@@ -692,7 +805,7 @@ def main() -> None:
                       if args.acquire or args.acquire_worker else
                       "PINNED_ORIGINAL_SOURCE_ARTIFACT_TRANSFER_REJECTED")
             preserve_failure(args.output, exc, args.execution_source,
-                             reason_code=reason)
+                             reason_code=reason, **_options(profile))
         raise SystemExit(FAILURE+": "+str(exc)[:200]) from None
 
 

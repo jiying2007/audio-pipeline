@@ -1,0 +1,358 @@
+{
+  "schema_version": 1,
+  "experiment_id": "FE-SIM-RIR-SUPPORT-GAP-V1",
+  "stage": "frontend-evolution-v1",
+  "base_main": "4eec2329be9f2138c7ac73e8dd59026f3dc0a3ba",
+  "authorization": "https://github.com/jiying2007/audio-pipeline/issues/968",
+  "hypothesis": "Quantify the measured finite-record energy that the declared motion-v2-type c=343 m/s direct-plus-six-first-order-wall-path model confined to this cuboid support interval cannot cover, even with an oracle overall time shift and unrestricted tap amplitudes. This tests a fixed simulator family, not all physical propagation, an algorithm trial, or independent room generalization.",
+  "data_role": "disclosed-development-diagnostic",
+  "candidate_budget": 0,
+  "promotion_allowed": false,
+  "model_parameter_fit_allowed": false,
+  "source": {
+    "qualification_path": ".github/research/continuous-optimization/development-v3/dechorate-source-qualification-v1.json",
+    "sha256": "fd34472318f8cf47edbbb2e0428a381faca3820864be851ebfb734ec7e53d2c1",
+    "original_index": "https://www.sofaconventions.org/data/database/dechorate/",
+    "current_official_mirror": "https://sofacoustics.org/data/database/dechorate/",
+    "dataset_record": "https://zenodo.org/records/5562386",
+    "paper": "https://doi.org/10.1186/s13636-021-00229-0",
+    "dataset_license": "CC-BY-4.0",
+    "embedded_sofa_license": "MIT; preserve the original notice separately from the dataset citation and CC-BY-4.0 declaration",
+    "objects": [
+      {
+        "name": "dEchorate_room000000_src1_arr1_mics1-5.sofa",
+        "size_bytes": 1758263,
+        "sha256": "26a76bbafb80af0dc29a6838ae9d8fdc4846249c8a4e60a2ef87d13b87496b07"
+      },
+      {
+        "name": "dEchorate_room000001_src1_arr1_mics1-5.sofa",
+        "size_bytes": 1761123,
+        "sha256": "53b0807a35cce74ea589e4dd1fe55310c9b13ecd9317ecc78d176119385a3c0d"
+      },
+      {
+        "name": "dEchorate_room000010_src1_arr1_mics1-5.sofa",
+        "size_bytes": 1761078,
+        "sha256": "3c0448601991aaf05888523edb999c6660636d3fb50c2fb9d9b489c0339575d5"
+      },
+      {
+        "name": "dEchorate_room000100_src1_arr1_mics1-5.sofa",
+        "size_bytes": 1764370,
+        "sha256": "e2d4caa57f9bd2e371e813bac88b63eac2728d9877a327e6ad405669558f1512"
+      },
+      {
+        "name": "dEchorate_room001000_src1_arr1_mics1-5.sofa",
+        "size_bytes": 1760643,
+        "sha256": "2d91d0ffb510b74721f08daa935df820806bc4663e8b64e50a97c081403235a3"
+      },
+      {
+        "name": "dEchorate_room010000_src1_arr1_mics1-5.sofa",
+        "size_bytes": 1756243,
+        "sha256": "98556f7e9bf4184e2f53876b09298624f31633d9001c6ed5b938c0b4bc28aa07"
+      },
+      {
+        "name": "dEchorate_room011000_src1_arr1_mics1-5.sofa",
+        "size_bytes": 1756148,
+        "sha256": "950d3f138c6392100990097dcd8d02011ca7538a3262dfe4e59968fc35b1dd7f"
+      },
+      {
+        "name": "dEchorate_room011100_src1_arr1_mics1-5.sofa",
+        "size_bytes": 1760499,
+        "sha256": "aa7673fd2ced185966737f62955aa7cd455ae0822f4ec5f9aa694dedd653bdb7"
+      },
+      {
+        "name": "dEchorate_room011110_src1_arr1_mics1-5.sofa",
+        "size_bytes": 1767855,
+        "sha256": "5cde719736359768465df5eb9ee82c38b2ced02cf095ea5d71c0987ed72ce07d"
+      },
+      {
+        "name": "dEchorate_room011111_src1_arr1_mics1-5.sofa",
+        "size_bytes": 1767577,
+        "sha256": "ec8a4f2305b4b170e7ec9b5dab4f51695d861b462125e3119e2a33fd20813fa1"
+      },
+      {
+        "name": "dEchorate_room020002_src1_arr1_mics1-5.sofa",
+        "size_bytes": 1759041,
+        "sha256": "f3c6da17961e00bcc5b448ddccce3cfb3966c72b51d7894a84a7804941068726"
+      },
+      {
+        "name": "dEchorate_annotations.h5",
+        "size_bytes": 30324,
+        "sha256": "1c2810a2dc3870c75276a4b954c36b884e31b291483190634b2030040061317e"
+      }
+    ],
+    "total_bytes": 19403164,
+    "rights": {
+      "code": "ALLOWED",
+      "dependencies": "ALLOWED",
+      "weights": "NOT_APPLICABLE",
+      "data": "ALLOWED",
+      "redistribution": "ALLOWED"
+    },
+    "rights_scope": "Only the frozen measured-RIR microset, existing licensed local readers and output evidence under the original notices/attribution. No WSJ speech, new human recordings or training rights are inferred."
+  },
+  "dependencies": {
+    "physical_room_count": 1,
+    "source_token": "src1",
+    "array_token": "arr1",
+    "recorded_mic_count": 5,
+    "scored_microphone_indices_zero_based": [
+      0,
+      1
+    ],
+    "wall_state_tokens": [
+      "000000",
+      "000001",
+      "000010",
+      "000100",
+      "001000",
+      "010000",
+      "011000",
+      "011100",
+      "011110",
+      "011111",
+      "020002"
+    ],
+    "wall_state_interpretation": "Repeated conditions of one cuboid and the same source/array. Tokens follow the original frozen filenames. They are correlated strata, not eleven independent rooms or trials. Do not infer individual-wall causal effects from this microset.",
+    "known_room_description": "All eleven frozen SOFA files contain the same RoomDescription for 020002; retain this inconsistency. RoomTemperature=0 kelvin and RoomVolume=0 are placeholders, not measurements."
+  },
+  "metadata": {
+    "ir_shape": [
+      1,
+      5,
+      48000
+    ],
+    "ir_dtype": "float64",
+    "sample_rate_hz": 48000,
+    "data_delay": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "sofa_conventions": "SingleRoomSRIR",
+    "sofa_conventions_version": "1.0",
+    "source_short_name": "loudspeaker_id:1",
+    "listener_short_name": "array_id:0",
+    "room_dimensions_m": [
+      5.705,
+      5.965,
+      2.355
+    ],
+    "geometry_invariant_fields": {
+      "SourcePosition": [
+        [
+          1.89407487,
+          4.52190448,
+          1.4481839
+        ]
+      ],
+      "SourceView": [
+        [
+          0.0,
+          -1.0,
+          0.0
+        ]
+      ],
+      "ListenerPosition": [
+        [
+          0.90446758,
+          3.86884385,
+          1.04391528
+        ]
+      ],
+      "ListenerView": [
+        [
+          -0.39244819,
+          0.89876904,
+          0.0
+        ]
+      ],
+      "ListenerUp": [
+        [
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "ReceiverPosition": [
+        [
+          [
+            0.80316092
+          ],
+          [
+            3.83141445
+          ],
+          [
+            1.04391528
+          ]
+        ],
+        [
+          [
+            0.8406819
+          ],
+          [
+            3.84527719
+          ],
+          [
+            1.04391528
+          ]
+        ],
+        [
+          [
+            0.88758314
+          ],
+          [
+            3.86260561
+          ],
+          [
+            1.04391528
+          ]
+        ],
+        [
+          [
+            0.94855474
+          ],
+          [
+            3.88513257
+          ],
+          [
+            1.04391528
+          ]
+        ],
+        [
+          [
+            1.0423572
+          ],
+          [
+            3.91978942
+          ],
+          [
+            1.04391528
+          ]
+        ]
+      ],
+      "RoomCornerA": [
+        [
+          0.0,
+          0.0,
+          0.0
+        ]
+      ],
+      "RoomCornerB": [
+        [
+          5.705,
+          5.965,
+          2.355
+        ]
+      ]
+    },
+    "coordinate_interpretation": "Frozen ReceiverPosition equals the global microphones tensor in dEchorate_annotations.h5; the upstream exporter writes those global coordinates directly. Do not add ListenerPosition or apply ListenerView/Up again. These echo-calibrated coordinates are audit metadata, not an independent ground truth or a predictor input."
+  },
+  "geometry_evidence": {
+    "upstream_repository": "https://github.com/Chutlhu/dEchorate",
+    "upstream_revision": "d3e664f1e7a7d46241d7f7b3b3761448686b9537",
+    "exporter_blob": "cd03ca06621e64f217599a811e56ac0701b98760",
+    "annotation_builder_blob": "9638b9ef0e914b229c4e4ec576dbd1000b23f5c2",
+    "constants_blob": "53623890e13fe8360463b4acc423a86e6687d286",
+    "bips_csv_blob": "16999e4b9cd9cfff03c4f98eadd3d104dab60b8e",
+    "bips_transform_blob": "54234bb79a245a5ebefe0b3d90c67528e027be47",
+    "bips_used_in_score": false,
+    "reason": "EchoTimings/echo_toa/echo_amp are image-source-derived from echo-calibrated geometry. Original bIPS source/mic-to-wall origin is not needed here. The room-wide geometric bound is valid for any interior source/mic positions in the declared cuboid, without selecting a geometry from RIR results."
+  },
+  "model": {
+    "family": "direct plus six first-order axis-wall image paths in a cuboid",
+    "speed_of_sound_m_s": 343.0,
+    "speed_source": "Exactly the unchanged motion-v2 MODEL speed 343 m/s. This is the declared simulator family, not a measured physical speed or a universal lower bound. Official dEchorate constants 346.98 m/s remain provenance context only; no speed sensitivity scan.",
+    "source_rate_hz": 16000,
+    "fractional_delay_kernel": "unchanged motion-v2 sample(): two adjacent input samples, linear interpolation",
+    "kernel_support_source_samples": 2,
+    "room_wide_excess_distance_bound": "2 * max(room_dimensions_m), from the triangle inequality for a reflected source",
+    "window_length_native_samples": "ceil((2*max(room_dimensions_m)/speed_of_sound_m_s + kernel_support_source_samples/source_rate_hz)*sample_rate_hz) + 1",
+    "all_six_walls_retained": true,
+    "amplitudes": "unrestricted; the contiguous interval is a relaxation of seven sparse paths",
+    "unchanged_motion_v2": true
+  },
+  "measurement": {
+    "observation": "Unmodified original Data.IR float64 samples at 48000 Hz; existing load_frozen_rirs reads and finite-checks all five channels, then returns the fixed first two. No resampling, gain normalization, convolution or product DSP.",
+    "materialized_native_ir_count": 55,
+    "scored_ir_count": 22,
+    "primary": "For each scored RIR h of N samples and fixed L, E=sum(h[n]^2); C=max_{0<=s<=N-L} sum(h[s:s+L]^2)/E; report C and max(0,1-C). The latter is an energy lower bound outside every length-L support interval, including its oracle overall shift. It is not a seven-tap fit or SI-SDR.",
+    "oracle_tie_rule": "earliest index attaining the maximum computed window sum",
+    "oracle_interpretation": "Declared waveform-dependent best time placement for an energy coverage upper bound only. Never use this start as a direct-path label, transport lag, SI-SDR alignment or candidate selection.",
+    "fixed_record_windows_seconds": [
+      [
+        0.0,
+        0.005
+      ],
+      [
+        0.005,
+        0.02
+      ],
+      [
+        0.02,
+        0.05
+      ],
+      [
+        0.05,
+        0.1
+      ],
+      [
+        0.1,
+        0.2
+      ],
+      [
+        0.2,
+        1.0
+      ]
+    ],
+    "fixed_window_interpretation": "Raw archive sample-zero coordinates only; no early/direct/late acoustic labels are implied.",
+    "absolute_time_origin": "UNKNOWN. Data.Delay=0 does not establish physical excitation sample zero after upstream ESS/deconvolution/recording-offset compensation.",
+    "absolute_arrival_error_samples": null,
+    "noise_subtraction": false,
+    "uncovered_energy_interpretation": "Can include higher-order/diffuse room response, transducer response, measurement-chain effects, recording noise and finite-record effects. No single-cause attribution or absolute SPL claim.",
+    "zero_total_energy": "REJECT",
+    "short_ir": "REJECT if N < L; never pad or resize L",
+    "nonfinite_or_overflow": "REJECT",
+    "roundoff_fraction_tolerance": 1e-10,
+    "aggregate": "Descriptive min/median/max across the 22 correlated views, with every per-stratum/channel row retained; no confidence interval, independent-n count or threshold-based acoustic PASS."
+  },
+  "budget": {
+    "source_object_count": 12,
+    "source_total_bytes": 19403164,
+    "source_ceiling_bytes": 67108864,
+    "analysis_attempts": 1,
+    "automatic_retries": 0,
+    "analysis_wall_seconds": 90,
+    "output_ceiling_bytes": 100000000,
+    "candidate_executions": 0,
+    "parameter_searches": 0
+  },
+  "acceptance": {
+    "engineering": "Exact data/source/metadata, complete 22 rows and independent recomputation required. Semantic negatives must reject corrupted roles, hashes, counts, L, scores, or promotion.",
+    "scientific": "All finite observed values are reportable, including zero missing-energy bounds; there is no favorable numerical threshold or model promotion.",
+    "success_status": "MEASURED_DESCRIPTIVE_RIR_SUPPORT_GAP",
+    "verify_status": "VERIFIED_DESCRIPTIVE_RIR_SUPPORT_GAP",
+    "decision": "DESCRIPTIVE_ONLY_NO_PROMOTION_NO_MODEL_FIT",
+    "failure": "Preserve failure.json and partial evidence, exit nonzero, do not create successful result or retry with changed parameters. Any new method/source contract is a distinct future identity."
+  },
+  "source_pins": {
+    ".github/research/continuous-optimization/development-v3/dechorate-source-qualification-v1.json": "fd34472318f8cf47edbbb2e0428a381faca3820864be851ebfb734ec7e53d2c1",
+    ".github/research/continuous-optimization/development-v3/dechorate-ground-truth-diagnostic-v1.json": "8cecb1b589962c9a738a80889355f104b2ea5ba8d129d749f63d2f1940111b9c",
+    "validation/tools/build_dechorate_artifact_exclusion_corpus.py": "d453f3a2f7f7752ffd37ab3cc278fe07ec14095c790da0e53de02bd2d357fabc",
+    "validation/tools/build_validation_corpus.py": "136fddaaaa340f4d08116b93250f50c6c9d60adfdc002c054ba26983bb9d8bb9",
+    "validation/tools/build_aec_motion_corpus.py": "79ab24963a38db811e9254959c80adf3d3e3f110824f72a5ba43a8fafaa87bf6"
+  },
+  "prohibited": [
+    "Reopen S003 or I025-I040 candidates",
+    "Treat eleven wall states as eleven independent rooms",
+    "Use EchoTimings/echo_toa/echo_amp as observed arrivals",
+    "Use echo-calibrated positions as independent ground truth",
+    "Use metadata placeholder temperature as measured c",
+    "Fit c/geometry/wall gains/filter length/t0 or select windows after observing IR",
+    "Change motion-v2, old source locks, policies, scores or conclusions",
+    "Run an AEC/BF/NS/AGC candidate, speech convolution, ASR/KWS or target hardware",
+    "Interpret missing energy as purely reverberation or as an acoustic quality PASS",
+    "Normalize, resample, repair or overwrite original RIRs"
+  ]
+}

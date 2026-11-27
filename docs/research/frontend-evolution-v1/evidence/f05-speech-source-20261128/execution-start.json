@@ -1,0 +1,28 @@
+{
+  "automatic_retries": 0,
+  "command": [
+    "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+    "-B",
+    "/workspace/scratch/cd58842626bd/source-a058b025/tests/validation/frontend_evolution/f05_speech_source.py",
+    "acquire",
+    "--archive",
+    "/workspace/scratch/cd58842626bd/audit_checks/f05-source-20261128/dev-clean.tar.gz",
+    "--output",
+    "/workspace/scratch/cd58842626bd/audit_checks/f05-source-20261128/prepared",
+    "--code-revision",
+    "a058b02582962875ac10e6bb42b928c46c405213",
+    "--plan-sha256",
+    "cde46538288219a077927eada139fea62c2bc156fa9bd478626aae139e0db4d3"
+  ],
+  "cwd": "/workspace/scratch/cd58842626bd/source-a058b025",
+  "frozen_inner_limits_seconds": {
+    "decode_each": 20,
+    "decode_total": 180,
+    "download": 600,
+    "prepare": 300
+  },
+  "outer_cleanup_ceiling_seconds": 920,
+  "schema_version": 1,
+  "script_sha256": "e6f5c34c73f28975d8737a438b6775cc6f84ff31a27d5abe5a7119aa79926b55",
+  "started_utc": "2026-11-27T18:59:51.243574+00:00"
+}

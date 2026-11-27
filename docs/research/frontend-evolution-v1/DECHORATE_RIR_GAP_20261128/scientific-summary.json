@@ -1,0 +1,1209 @@
+{
+  "absolute_time_origin": "UNKNOWN",
+  "analysis_attempts": 1,
+  "automatic_retries": 0,
+  "cases": [
+    {
+      "absolute_arrival_error_samples": null,
+      "decoded_float64_le_sha256": "09ac48e3ca88a2218c2f4d588797687a4c52093eaeadc51dc134664320d03220",
+      "fixed_record_windows": [
+        {
+          "end_sample_exclusive": 240,
+          "energy": 0.000314353156163254,
+          "fraction": 0.6237157187910854,
+          "start_sample": 0
+        },
+        {
+          "end_sample_exclusive": 960,
+          "energy": 0.00016183672748056215,
+          "fraction": 0.3211041748055944,
+          "start_sample": 240
+        },
+        {
+          "end_sample_exclusive": 2400,
+          "energy": 2.5186273796853387e-05,
+          "fraction": 0.04997269649398795,
+          "start_sample": 960
+        },
+        {
+          "end_sample_exclusive": 4800,
+          "energy": 2.530506130554302e-06,
+          "fraction": 0.005020838567004088,
+          "start_sample": 2400
+        },
+        {
+          "end_sample_exclusive": 9600,
+          "energy": 9.190414124596406e-08,
+          "fraction": 0.0001823492349074258,
+          "start_sample": 4800
+        },
+        {
+          "end_sample_exclusive": 48000,
+          "energy": 2.127945077117158e-09,
+          "fraction": 4.222107420587831e-06,
+          "start_sample": 9600
+        }
+      ],
+      "mic_index_zero_based": 0,
+      "oracle_covered_energy_fraction": 0.9887687535087818,
+      "oracle_max_window_energy": 0.0004983401396128716,
+      "oracle_window_end_sample_exclusive": 1858,
+      "oracle_window_start_sample": 181,
+      "original_file": "dEchorate_room000000_src1_arr1_mics1-5.sofa",
+      "room_state": "000000",
+      "sample_count": 48000,
+      "total_energy": 0.000504000695657547,
+      "uncovered_energy_fraction_lower_bound": 0.011231246491218205,
+      "window_samples": 1677
+    },
+    {
+      "absolute_arrival_error_samples": null,
+      "decoded_float64_le_sha256": "e1a07ee1e9c01f66684772a8f202d8d573aafec52a3766eb6bda7a053cfe5029",
+      "fixed_record_windows": [
+        {
+          "end_sample_exclusive": 240,
+          "energy": 0.0005451610214594156,
+          "fraction": 0.6729326487349598,
+          "start_sample": 0
+        },
+        {
+          "end_sample_exclusive": 960,
+          "energy": 0.0002285252355443865,
+          "fraction": 0.28208563342622045,
+          "start_sample": 240
+        },
+        {
+          "end_sample_exclusive": 2400,
+          "energy": 3.2941226016705347e-05,
+          "fraction": 0.040661796429715465,
+          "start_sample": 960
+        },
+        {
+          "end_sample_exclusive": 4800,
+          "energy": 3.378388035555645e-06,
+          "fraction": 0.004170194712628044,
+          "start_sample": 2400
+        },
+        {
+          "end_sample_exclusive": 9600,
+          "energy": 1.1586358585641576e-07,
+          "fraction": 0.00014301901026152626,
+          "start_sample": 4800
+        },
+        {
+          "end_sample_exclusive": 48000,
+          "energy": 5.434078841752927e-09,
+          "fraction": 6.707686214663877e-06,
+          "start_sample": 9600
+        }
+      ],
+      "mic_index_zero_based": 1,
+      "oracle_covered_energy_fraction": 0.9902436086051993,
+      "oracle_max_window_energy": 0.0008022232509831597,
+      "oracle_window_end_sample_exclusive": 1852,
+      "oracle_window_start_sample": 175,
+      "original_file": "dEchorate_room000000_src1_arr1_mics1-5.sofa",
+      "room_state": "000000",
+      "sample_count": 48000,
+      "total_energy": 0.0008101271687207612,
+      "uncovered_energy_fraction_lower_bound": 0.009756391394800668,
+      "window_samples": 1677
+    },
+    {
+      "absolute_arrival_error_samples": null,
+      "decoded_float64_le_sha256": "5ea7c9c763a67bc2a33e82b174c5fee3122fb5c6f195bd68e44cc7e9d0a99d63",
+      "fixed_record_windows": [
+        {
+          "end_sample_exclusive": 240,
+          "energy": 0.0003171396822214718,
+          "fraction": 0.5929578245652997,
+          "start_sample": 0
+        },
+        {
+          "end_sample_exclusive": 960,
+          "energy": 0.00017608592334095188,
+          "fraction": 0.32922882847535945,
+          "start_sample": 240
+        },
+        {
+          "end_sample_exclusive": 2400,
+          "energy": 3.774875036022563e-05,
+          "fraction": 0.07057904812437409,
+          "start_sample": 960
+        },
+        {
+          "end_sample_exclusive": 4800,
+          "energy": 3.769750168846396e-06,
+          "fraction": 0.007048322819825572,
+          "start_sample": 2400
+        },
+        {
+          "end_sample_exclusive": 9600,
+          "energy": 9.708990053213831e-08,
+          "fraction": 0.00018152952605468776,
+          "start_sample": 4800
+        },
+        {
+          "end_sample_exclusive": 48000,
+          "energy": 2.3781761155231164e-09,
+          "fraction": 4.446489086499651e-06,
+          "start_sample": 9600
+        }
+      ],
+      "mic_index_zero_based": 0,
+      "oracle_covered_energy_fraction": 0.9870305632320605,
+      "oracle_max_window_energy": 0.0005279069542522309,
+      "oracle_window_end_sample_exclusive": 1859,
+      "oracle_window_start_sample": 182,
+      "original_file": "dEchorate_room000001_src1_arr1_mics1-5.sofa",
+      "room_state": "000001",
+      "sample_count": 48000,
+      "total_energy": 0.0005348435741681434,
+      "uncovered_energy_fraction_lower_bound": 0.01296943676793949,
+      "window_samples": 1677
+    },
+    {
+      "absolute_arrival_error_samples": null,
+      "decoded_float64_le_sha256": "9c518a2049b389842365edb8dafb7289c59ca77b726206180e7148b86680d010",
+      "fixed_record_windows": [
+        {
+          "end_sample_exclusive": 240,
+          "energy": 0.0005391711810379946,
+          "fraction": 0.6516198438746054,
+          "start_sample": 0
+        },
+        {
+          "end_sample_exclusive": 960,
+          "energy": 0.00023582745615509035,
+          "fraction": 0.2850112460856776,
+          "start_sample": 240
+        },
+        {
+          "end_sample_exclusive": 2400,
+          "energy": 4.737399544409325e-05,
+          "fraction": 0.05725423872909291,
+          "start_sample": 960
+        },
+        {
+          "end_sample_exclusive": 4800,
+          "energy": 4.920441455092906e-06,
+          "fraction": 0.005946640706183877,
+          "start_sample": 2400
+        },
+        {
+          "end_sample_exclusive": 9600,
+          "energy": 1.3347153096870564e-07,
+          "fraction": 0.0001613081359506188,
+          "start_sample": 4800
+        },
+        {
+          "end_sample_exclusive": 48000,
+          "energy": 5.562386273358527e-09,
+          "fraction": 6.722468489577365e-06,
+          "start_sample": 9600
+        }
+      ],
+      "mic_index_zero_based": 1,
+      "oracle_covered_energy_fraction": 0.9871756147085272,
+      "oracle_max_window_energy": 0.0008168207998538636,
+      "oracle_window_end_sample_exclusive": 1854,
+      "oracle_window_start_sample": 177,
+      "original_file": "dEchorate_room000001_src1_arr1_mics1-5.sofa",
+      "room_state": "000001",
+      "sample_count": 48000,
+      "total_energy": 0.0008274321080095131,
+      "uncovered_energy_fraction_lower_bound": 0.012824385291472784,
+      "window_samples": 1677
+    },
+    {
+      "absolute_arrival_error_samples": null,
+      "decoded_float64_le_sha256": "42e62dac7bb48f5cce939fb017ef2730b21581d5a0dd9890d175c1975c3ebc5b",
+      "fixed_record_windows": [
+        {
+          "end_sample_exclusive": 240,
+          "energy": 0.00031940751815671904,
+          "fraction": 0.6098335899471476,
+          "start_sample": 0
+        },
+        {
+          "end_sample_exclusive": 960,
+          "energy": 0.00016402245473740308,
+          "fraction": 0.3131623293706429,
+          "start_sample": 240
+        },
+        {
+          "end_sample_exclusive": 2400,
+          "energy": 3.6459625026993735e-05,
+          "fraction": 0.06961108538287153,
+          "start_sample": 960
+        },
+        {
+          "end_sample_exclusive": 4800,
+          "energy": 3.7787555097593773e-06,
+          "fraction": 0.007214645576747046,
+          "start_sample": 2400
+        },
+        {
+          "end_sample_exclusive": 9600,
+          "energy": 9.12495586320696e-08,
+          "fraction": 0.00017421958707429112,
+          "start_sample": 4800
+        },
+        {
+          "end_sample_exclusive": 48000,
+          "energy": 2.163207072777123e-09,
+          "fraction": 4.130135516545551e-06,
+          "start_sample": 9600
+        }
+      ],
+      "mic_index_zero_based": 0,
+      "oracle_covered_energy_fraction": 0.9828859182658977,
+      "oracle_max_window_energy": 0.000514798064520694,
+      "oracle_window_end_sample_exclusive": 1858,
+      "oracle_window_start_sample": 181,
+      "original_file": "dEchorate_room000010_src1_arr1_mics1-5.sofa",
+      "room_state": "000010",
+      "sample_count": 48000,
+      "total_energy": 0.0005237617661965801,
+      "uncovered_energy_fraction_lower_bound": 0.017114081734102338,
+      "window_samples": 1677
+    },
+    {
+      "absolute_arrival_error_samples": null,
+      "decoded_float64_le_sha256": "6c749b7e855fc55302871ddcd8bb5b6122e76a09e05c66fa1c0c4c3674e20837",
+      "fixed_record_windows": [
+        {
+          "end_sample_exclusive": 240,
+          "energy": 0.0005321284491547004,
+          "fraction": 0.6515721357500818,
+          "start_sample": 0
+        },
+        {
+          "end_sample_exclusive": 960,
+          "energy": 0.00022499626139136335,
+          "fraction": 0.2754998249077533,
+          "start_sample": 240
+        },
+        {
+          "end_sample_exclusive": 2400,
+          "energy": 5.457806176278278e-05,
+          "fraction": 0.06682887247311559,
+          "start_sample": 960
+        },
+        {
+          "end_sample_exclusive": 4800,
+          "energy": 4.863428607878065e-06,
+          "fraction": 0.0059550933052667935,
+          "start_sample": 2400
+        },
+        {
+          "end_sample_exclusive": 9600,
+          "energy": 1.1260935681730886e-07,
+          "fraction": 0.00013788610483700324,
+          "start_sample": 4800
+        },
+        {
+          "end_sample_exclusive": 48000,
+          "energy": 5.05319787669209e-09,
+          "fraction": 6.187458945512686e-06,
+          "start_sample": 9600
+        }
+      ],
+      "mic_index_zero_based": 1,
+      "oracle_covered_energy_fraction": 0.9837827180910815,
+      "oracle_max_window_energy": 0.000803439471027038,
+      "oracle_window_end_sample_exclusive": 1853,
+      "oracle_window_start_sample": 176,
+      "original_file": "dEchorate_room000010_src1_arr1_mics1-5.sofa",
+      "room_state": "000010",
+      "sample_count": 48000,
+      "total_energy": 0.0008166838634714186,
+      "uncovered_energy_fraction_lower_bound": 0.01621728190891847,
+      "window_samples": 1677
+    },
+    {
+      "absolute_arrival_error_samples": null,
+      "decoded_float64_le_sha256": "31aa0f85f76303d616d7e5a7d08a96a0e882b85c44c797aa8ab55fab5f8f5d28",
+      "fixed_record_windows": [
+        {
+          "end_sample_exclusive": 240,
+          "energy": 0.0003213999927676474,
+          "fraction": 0.5723905066958477,
+          "start_sample": 0
+        },
+        {
+          "end_sample_exclusive": 960,
+          "energy": 0.00015822957772462738,
+          "fraction": 0.28179561358467553,
+          "start_sample": 240
+        },
+        {
+          "end_sample_exclusive": 2400,
+          "energy": 7.68641080991267e-05,
+          "fraction": 0.13688950457877008,
+          "start_sample": 960
+        },
+        {
+          "end_sample_exclusive": 4800,
+          "energy": 4.867932004930083e-06,
+          "fraction": 0.008669440353339494,
+          "start_sample": 2400
+        },
+        {
+          "end_sample_exclusive": 9600,
+          "energy": 1.412947474584487e-07,
+          "fraction": 0.0002516358864689569,
+          "start_sample": 4800
+        },
+        {
+          "end_sample_exclusive": 48000,
+          "energy": 1.8523485495713576e-09,
+          "fraction": 3.298900898336286e-06,
+          "start_sample": 9600
+        }
+      ],
+      "mic_index_zero_based": 0,
+      "oracle_covered_energy_fraction": 0.9791594642842097,
+      "oracle_max_window_energy": 0.0005498026977350662,
+      "oracle_window_end_sample_exclusive": 1860,
+      "oracle_window_start_sample": 183,
+      "original_file": "dEchorate_room000100_src1_arr1_mics1-5.sofa",
+      "room_state": "000100",
+      "sample_count": 48000,
+      "total_energy": 0.0005615047576923395,
+      "uncovered_energy_fraction_lower_bound": 0.020840535715790254,
+      "window_samples": 1677
+    },
+    {
+      "absolute_arrival_error_samples": null,
+      "decoded_float64_le_sha256": "afedc355240dd519e388690b10dcb93bdafb78fe27908eaf834c516b856f1df7",
+      "fixed_record_windows": [
+        {
+          "end_sample_exclusive": 240,
+          "energy": 0.0005499128147698308,
+          "fraction": 0.629179821162172,
+          "start_sample": 0
+        },
+        {
+          "end_sample_exclusive": 960,
+          "energy": 0.0002104006050405781,
+          "fraction": 0.24072873280331183,
+          "start_sample": 240
+        },
+        {
+          "end_sample_exclusive": 2400,
+          "energy": 0.00010722486144541927,
+          "fraction": 0.12268075472401004,
+          "start_sample": 960
+        },
+        {
+          "end_sample_exclusive": 4800,
+          "energy": 6.293161054803471e-06,
+          "fraction": 0.007200286737568168,
+          "start_sample": 2400
+        },
+        {
+          "end_sample_exclusive": 9600,
+          "energy": 1.7874349658473305e-07,
+          "fraction": 0.0002045084205978273,
+          "start_sample": 4800
+        },
+        {
+          "end_sample_exclusive": 48000,
+          "energy": 5.153327587169476e-09,
+          "fraction": 5.896152340153213e-06,
+          "start_sample": 9600
+        }
+      ],
+      "mic_index_zero_based": 1,
+      "oracle_covered_energy_fraction": 0.982710057126952,
+      "oracle_max_window_energy": 0.0008589036638509951,
+      "oracle_window_end_sample_exclusive": 1854,
+      "oracle_window_start_sample": 177,
+      "original_file": "dEchorate_room000100_src1_arr1_mics1-5.sofa",
+      "room_state": "000100",
+      "sample_count": 48000,
+      "total_energy": 0.0008740153391348035,
+      "uncovered_energy_fraction_lower_bound": 0.01728994287304797,
+      "window_samples": 1677
+    },
+    {
+      "absolute_arrival_error_samples": null,
+      "decoded_float64_le_sha256": "b99dbc9b85a9f03405e665b63c53c2389003c1c63556e3660a4372a475425942",
+      "fixed_record_windows": [
+        {
+          "end_sample_exclusive": 240,
+          "energy": 0.0003167004761362367,
+          "fraction": 0.5559098617448172,
+          "start_sample": 0
+        },
+        {
+          "end_sample_exclusive": 960,
+          "energy": 0.00020338758504739616,
+          "fraction": 0.3570097704421272,
+          "start_sample": 240
+        },
+        {
+          "end_sample_exclusive": 2400,
+          "energy": 4.4855866670777546e-05,
+          "fraction": 0.07873628402335942,
+          "start_sample": 960
+        },
+        {
+          "end_sample_exclusive": 4800,
+          "energy": 4.59993790510818e-06,
+          "fraction": 0.00807435112211012,
+          "start_sample": 2400
+        },
+        {
+          "end_sample_exclusive": 9600,
+          "energy": 1.5159147606419642e-07,
+          "fraction": 0.00026609115820933846,
+          "start_sample": 4800
+        },
+        {
+          "end_sample_exclusive": 48000,
+          "energy": 2.074558904051304e-09,
+          "fraction": 3.6415093769436975e-06,
+          "start_sample": 9600
+        }
+      ],
+      "mic_index_zero_based": 0,
+      "oracle_covered_energy_fraction": 0.9819193933096735,
+      "oracle_max_window_energy": 0.0005593970547896609,
+      "oracle_window_end_sample_exclusive": 1852,
+      "oracle_window_start_sample": 175,
+      "original_file": "dEchorate_room001000_src1_arr1_mics1-5.sofa",
+      "room_state": "001000",
+      "sample_count": 48000,
+      "total_energy": 0.0005696975317944868,
+      "uncovered_energy_fraction_lower_bound": 0.018080606690326517,
+      "window_samples": 1677
+    },
+    {
+      "absolute_arrival_error_samples": null,
+      "decoded_float64_le_sha256": "c4771cca9c72d1d459fd428e77c02563366f96e73ecdb420ff76f596916a3775",
+      "fixed_record_windows": [
+        {
+          "end_sample_exclusive": 240,
+          "energy": 0.0005427777659845024,
+          "fraction": 0.604545836165576,
+          "start_sample": 0
+        },
+        {
+          "end_sample_exclusive": 960,
+          "energy": 0.000288362453372276,
+          "fraction": 0.3211780795340776,
+          "start_sample": 240
+        },
+        {
+          "end_sample_exclusive": 2400,
+          "energy": 6.0204561851745144e-05,
+          "fraction": 0.06705583659940229,
+          "start_sample": 960
+        },
+        {
+          "end_sample_exclusive": 4800,
+          "energy": 6.27705119430879e-06,
+          "fraction": 0.006991379162399007,
+          "start_sample": 2400
+        },
+        {
+          "end_sample_exclusive": 9600,
+          "energy": 2.0024635561728105e-07,
+          "fraction": 0.0002230343762813876,
+          "start_sample": 4800
+        },
+        {
+          "end_sample_exclusive": 48000,
+          "energy": 5.238070251179865e-09,
+          "fraction": 5.834162263720978e-06,
+          "start_sample": 9600
+        }
+      ],
+      "mic_index_zero_based": 1,
+      "oracle_covered_energy_fraction": 0.9821213461077704,
+      "oracle_max_window_energy": 0.0008817753729761312,
+      "oracle_window_end_sample_exclusive": 1853,
+      "oracle_window_start_sample": 176,
+      "original_file": "dEchorate_room001000_src1_arr1_mics1-5.sofa",
+      "room_state": "001000",
+      "sample_count": 48000,
+      "total_energy": 0.0008978273168287008,
+      "uncovered_energy_fraction_lower_bound": 0.017878653892229646,
+      "window_samples": 1677
+    },
+    {
+      "absolute_arrival_error_samples": null,
+      "decoded_float64_le_sha256": "a53b93a5632350ff1e8e9ab8992f5960b826d8c4364c799440fade7838046b31",
+      "fixed_record_windows": [
+        {
+          "end_sample_exclusive": 240,
+          "energy": 0.0003168360744099147,
+          "fraction": 0.6161813629812363,
+          "start_sample": 0
+        },
+        {
+          "end_sample_exclusive": 960,
+          "energy": 0.00013287948248686649,
+          "fraction": 0.25842341590518236,
+          "start_sample": 240
+        },
+        {
+          "end_sample_exclusive": 2400,
+          "energy": 5.720544855817631e-05,
+          "fraction": 0.11125289734819109,
+          "start_sample": 960
+        },
+        {
+          "end_sample_exclusive": 4800,
+          "energy": 6.614379386382784e-06,
+          "fraction": 0.01286361508286885,
+          "start_sample": 2400
+        },
+        {
+          "end_sample_exclusive": 9600,
+          "energy": 6.252185420168868e-07,
+          "fraction": 0.0012159221897273043,
+          "start_sample": 4800
+        },
+        {
+          "end_sample_exclusive": 48000,
+          "energy": 3.2284368041604145e-08,
+          "fraction": 6.278649279414565e-05,
+          "start_sample": 9600
+        }
+      ],
+      "mic_index_zero_based": 0,
+      "oracle_covered_energy_fraction": 0.9764390270040298,
+      "oracle_max_window_energy": 0.0005020780030083682,
+      "oracle_window_end_sample_exclusive": 1855,
+      "oracle_window_start_sample": 178,
+      "original_file": "dEchorate_room010000_src1_arr1_mics1-5.sofa",
+      "room_state": "010000",
+      "sample_count": 48000,
+      "total_energy": 0.0005141928877513988,
+      "uncovered_energy_fraction_lower_bound": 0.023560972995970153,
+      "window_samples": 1677
+    },
+    {
+      "absolute_arrival_error_samples": null,
+      "decoded_float64_le_sha256": "659f9d9aea9be712161285e797c49e517bc9c2a28a8ba0f401f199eb2c7232e0",
+      "fixed_record_windows": [
+        {
+          "end_sample_exclusive": 240,
+          "energy": 0.0005464649106587869,
+          "fraction": 0.674591069257843,
+          "start_sample": 0
+        },
+        {
+          "end_sample_exclusive": 960,
+          "energy": 0.00017776536121531122,
+          "fraction": 0.2194448769906856,
+          "start_sample": 240
+        },
+        {
+          "end_sample_exclusive": 2400,
+          "energy": 7.459216283451111e-05,
+          "fraction": 0.09208131373728283,
+          "start_sample": 960
+        },
+        {
+          "end_sample_exclusive": 4800,
+          "energy": 1.0268194938217506e-05,
+          "fraction": 0.012675713422055817,
+          "start_sample": 2400
+        },
+        {
+          "end_sample_exclusive": 9600,
+          "energy": 9.234383772534258e-07,
+          "fraction": 0.0011399511115071069,
+          "start_sample": 4800
+        },
+        {
+          "end_sample_exclusive": 48000,
+          "energy": 5.4335727521290135e-08,
+          "fraction": 6.7075480625648e-05,
+          "start_sample": 9600
+        }
+      ],
+      "mic_index_zero_based": 1,
+      "oracle_covered_energy_fraction": 0.9765836169777248,
+      "oracle_max_window_energy": 0.0007910995317351109,
+      "oracle_window_end_sample_exclusive": 1853,
+      "oracle_window_start_sample": 176,
+      "original_file": "dEchorate_room010000_src1_arr1_mics1-5.sofa",
+      "room_state": "010000",
+      "sample_count": 48000,
+      "total_energy": 0.0008100684037516014,
+      "uncovered_energy_fraction_lower_bound": 0.023416383022275222,
+      "window_samples": 1677
+    },
+    {
+      "absolute_arrival_error_samples": null,
+      "decoded_float64_le_sha256": "d2185a8324e1fdfcfa7d0da95fa5c0438c82080eea135be18165a7188ae05a9b",
+      "fixed_record_windows": [
+        {
+          "end_sample_exclusive": 240,
+          "energy": 0.000318138638802718,
+          "fraction": 0.4834058749907782,
+          "start_sample": 0
+        },
+        {
+          "end_sample_exclusive": 960,
+          "energy": 0.00024328629507147146,
+          "fraction": 0.36966910019131116,
+          "start_sample": 240
+        },
+        {
+          "end_sample_exclusive": 2400,
+          "energy": 8.59080457863827e-05,
+          "fraction": 0.1305357129784745,
+          "start_sample": 960
+        },
+        {
+          "end_sample_exclusive": 4800,
+          "energy": 9.738645736939249e-06,
+          "fraction": 0.014797695059636086,
+          "start_sample": 2400
+        },
+        {
+          "end_sample_exclusive": 9600,
+          "energy": 1.0165815101489994e-06,
+          "fraction": 0.001544677113922527,
+          "start_sample": 4800
+        },
+        {
+          "end_sample_exclusive": 48000,
+          "energy": 3.089189060527304e-08,
+          "fraction": 4.693966587762314e-05,
+          "start_sample": 9600
+        }
+      ],
+      "mic_index_zero_based": 0,
+      "oracle_covered_energy_fraction": 0.9659348554438165,
+      "oracle_max_window_energy": 0.0006357001765625175,
+      "oracle_window_end_sample_exclusive": 1857,
+      "oracle_window_start_sample": 180,
+      "original_file": "dEchorate_room011000_src1_arr1_mics1-5.sofa",
+      "room_state": "011000",
+      "sample_count": 48000,
+      "total_energy": 0.0006581190987982657,
+      "uncovered_energy_fraction_lower_bound": 0.03406514455618348,
+      "window_samples": 1677
+    },
+    {
+      "absolute_arrival_error_samples": null,
+      "decoded_float64_le_sha256": "95329691a11a4f92b921af8eb38f07cad357ac7caf517745e48f51f989a0b46e",
+      "fixed_record_windows": [
+        {
+          "end_sample_exclusive": 240,
+          "energy": 0.0005401485397413665,
+          "fraction": 0.5111269881948262,
+          "start_sample": 0
+        },
+        {
+          "end_sample_exclusive": 960,
+          "energy": 0.000359472561783759,
+          "fraction": 0.3401585199715391,
+          "start_sample": 240
+        },
+        {
+          "end_sample_exclusive": 2400,
+          "energy": 0.0001385996839840073,
+          "fraction": 0.1311528844888128,
+          "start_sample": 960
+        },
+        {
+          "end_sample_exclusive": 4800,
+          "energy": 1.6930434320259047e-05,
+          "fraction": 0.016020781815105595,
+          "start_sample": 2400
+        },
+        {
+          "end_sample_exclusive": 9600,
+          "energy": 1.5753275144681372e-06,
+          "fraction": 0.0014906870030160259,
+          "start_sample": 4800
+        },
+        {
+          "end_sample_exclusive": 48000,
+          "energy": 5.298536881724937e-08,
+          "fraction": 5.013852670030402e-05,
+          "start_sample": 9600
+        }
+      ],
+      "mic_index_zero_based": 1,
+      "oracle_covered_energy_fraction": 0.9669915800539741,
+      "oracle_max_window_energy": 0.0010218969101065322,
+      "oracle_window_end_sample_exclusive": 1854,
+      "oracle_window_start_sample": 177,
+      "original_file": "dEchorate_room011000_src1_arr1_mics1-5.sofa",
+      "room_state": "011000",
+      "sample_count": 48000,
+      "total_energy": 0.0010567795327126772,
+      "uncovered_energy_fraction_lower_bound": 0.03300841994602588,
+      "window_samples": 1677
+    },
+    {
+      "absolute_arrival_error_samples": null,
+      "decoded_float64_le_sha256": "ecf07e38355c349bb5a38b273e69a6d60890f7100d46a05dfd90e7937f7cc91b",
+      "fixed_record_windows": [
+        {
+          "end_sample_exclusive": 240,
+          "energy": 0.00031671222527843775,
+          "fraction": 0.4167725626081783,
+          "start_sample": 0
+        },
+        {
+          "end_sample_exclusive": 960,
+          "energy": 0.0002173597807567463,
+          "fraction": 0.28603124730754886,
+          "start_sample": 240
+        },
+        {
+          "end_sample_exclusive": 2400,
+          "energy": 0.00019490254408291937,
+          "fraction": 0.25647899346126696,
+          "start_sample": 960
+        },
+        {
+          "end_sample_exclusive": 4800,
+          "energy": 2.7581943250380305e-05,
+          "fraction": 0.036296032336826156,
+          "start_sample": 2400
+        },
+        {
+          "end_sample_exclusive": 9600,
+          "energy": 3.2893113327754036e-06,
+          "fraction": 0.004328518459215474,
+          "start_sample": 4800
+        },
+        {
+          "end_sample_exclusive": 48000,
+          "energy": 7.040306549212078e-08,
+          "fraction": 9.264582696429381e-05,
+          "start_sample": 9600
+        }
+      ],
+      "mic_index_zero_based": 0,
+      "oracle_covered_energy_fraction": 0.9215815392270792,
+      "oracle_max_window_energy": 0.0007003247484372875,
+      "oracle_window_end_sample_exclusive": 1860,
+      "oracle_window_start_sample": 183,
+      "original_file": "dEchorate_room011100_src1_arr1_mics1-5.sofa",
+      "room_state": "011100",
+      "sample_count": 48000,
+      "total_energy": 0.0007599162077667512,
+      "uncovered_energy_fraction_lower_bound": 0.0784184607729208,
+      "window_samples": 1677
+    },
+    {
+      "absolute_arrival_error_samples": null,
+      "decoded_float64_le_sha256": "db109da1b82af3d56d8fb85d5a563a3da3a57e090662a056f016806dc86d5e7d",
+      "fixed_record_windows": [
+        {
+          "end_sample_exclusive": 240,
+          "energy": 0.0005367089430949394,
+          "fraction": 0.4373370407873125,
+          "start_sample": 0
+        },
+        {
+          "end_sample_exclusive": 960,
+          "energy": 0.0003313612755467207,
+          "fraction": 0.270009586282369,
+          "start_sample": 240
+        },
+        {
+          "end_sample_exclusive": 2400,
+          "energy": 0.0003117072703153367,
+          "fraction": 0.253994528962947,
+          "start_sample": 960
+        },
+        {
+          "end_sample_exclusive": 4800,
+          "energy": 4.2248786494234024e-05,
+          "fraction": 0.03442640466487413,
+          "start_sample": 2400
+        },
+        {
+          "end_sample_exclusive": 9600,
+          "energy": 5.077660698577254e-06,
+          "fraction": 0.004137529535528905,
+          "start_sample": 4800
+        },
+        {
+          "end_sample_exclusive": 48000,
+          "energy": 1.1647520326045552e-07,
+          "fraction": 9.49097669684585e-05,
+          "start_sample": 9600
+        }
+      ],
+      "mic_index_zero_based": 1,
+      "oracle_covered_energy_fraction": 0.9317681555342948,
+      "oracle_max_window_energy": 0.0011434848991204872,
+      "oracle_window_end_sample_exclusive": 1853,
+      "oracle_window_start_sample": 176,
+      "original_file": "dEchorate_room011100_src1_arr1_mics1-5.sofa",
+      "room_state": "011100",
+      "sample_count": 48000,
+      "total_energy": 0.0012272204113530686,
+      "uncovered_energy_fraction_lower_bound": 0.06823184446570518,
+      "window_samples": 1677
+    },
+    {
+      "absolute_arrival_error_samples": null,
+      "decoded_float64_le_sha256": "4c9824be12b9ab8df1152082a105090dca9eb0297af3c6cca7a60e93f3110770",
+      "fixed_record_windows": [
+        {
+          "end_sample_exclusive": 240,
+          "energy": 0.0003140246852112409,
+          "fraction": 0.3825477713628863,
+          "start_sample": 0
+        },
+        {
+          "end_sample_exclusive": 960,
+          "energy": 0.00021522764666989305,
+          "fraction": 0.26219230667761223,
+          "start_sample": 240
+        },
+        {
+          "end_sample_exclusive": 2400,
+          "energy": 0.0002087449672752553,
+          "fraction": 0.25429504677522413,
+          "start_sample": 960
+        },
+        {
+          "end_sample_exclusive": 4800,
+          "energy": 6.420703042785631e-05,
+          "fraction": 0.07821759738245641,
+          "start_sample": 2400
+        },
+        {
+          "end_sample_exclusive": 9600,
+          "energy": 1.7703049160970796e-05,
+          "fraction": 0.021566017965439138,
+          "start_sample": 4800
+        },
+        {
+          "end_sample_exclusive": 48000,
+          "energy": 9.696690872121614e-07,
+          "fraction": 0.0011812598363818633,
+          "start_sample": 9600
+        }
+      ],
+      "mic_index_zero_based": 0,
+      "oracle_covered_energy_fraction": 0.8526413170736986,
+      "oracle_max_window_energy": 0.0006999136872194113,
+      "oracle_window_end_sample_exclusive": 1860,
+      "oracle_window_start_sample": 183,
+      "original_file": "dEchorate_room011110_src1_arr1_mics1-5.sofa",
+      "room_state": "011110",
+      "sample_count": 48000,
+      "total_energy": 0.0008208770478324285,
+      "uncovered_energy_fraction_lower_bound": 0.1473586829263014,
+      "window_samples": 1677
+    },
+    {
+      "absolute_arrival_error_samples": null,
+      "decoded_float64_le_sha256": "915ee4dbf0c4d3f671cbafe58e60ee745d47b687e7e8a9c92474796e8351c8c0",
+      "fixed_record_windows": [
+        {
+          "end_sample_exclusive": 240,
+          "energy": 0.0005381013674704621,
+          "fraction": 0.3930211634949729,
+          "start_sample": 0
+        },
+        {
+          "end_sample_exclusive": 960,
+          "energy": 0.0003325227327434058,
+          "fraction": 0.2428696138158674,
+          "start_sample": 240
+        },
+        {
+          "end_sample_exclusive": 2400,
+          "energy": 0.0003590487595006854,
+          "fraction": 0.2622438256824022,
+          "start_sample": 960
+        },
+        {
+          "end_sample_exclusive": 4800,
+          "energy": 0.00010786212274572086,
+          "fraction": 0.07878087576294408,
+          "start_sample": 2400
+        },
+        {
+          "end_sample_exclusive": 9600,
+          "energy": 3.0111793999598376e-05,
+          "fraction": 0.021993202448593912,
+          "start_sample": 4800
+        },
+        {
+          "end_sample_exclusive": 48000,
+          "energy": 1.4941692473548053e-06,
+          "fraction": 0.0010913187952194322,
+          "start_sample": 9600
+        }
+      ],
+      "mic_index_zero_based": 1,
+      "oracle_covered_energy_fraction": 0.8539091120957251,
+      "oracle_max_window_energy": 0.0011691219292827599,
+      "oracle_window_end_sample_exclusive": 1855,
+      "oracle_window_start_sample": 178,
+      "original_file": "dEchorate_room011110_src1_arr1_mics1-5.sofa",
+      "room_state": "011110",
+      "sample_count": 48000,
+      "total_energy": 0.0013691409457072274,
+      "uncovered_energy_fraction_lower_bound": 0.14609088790427494,
+      "window_samples": 1677
+    },
+    {
+      "absolute_arrival_error_samples": null,
+      "decoded_float64_le_sha256": "802c41ec0b4a178eaffcaf56a069d85e03fdd15b2f216ab7a5e03049d54ce650",
+      "fixed_record_windows": [
+        {
+          "end_sample_exclusive": 240,
+          "energy": 0.0003151740601867026,
+          "fraction": 0.2809965556559036,
+          "start_sample": 0
+        },
+        {
+          "end_sample_exclusive": 960,
+          "energy": 0.0002311746270069631,
+          "fraction": 0.20610602885755994,
+          "start_sample": 240
+        },
+        {
+          "end_sample_exclusive": 2400,
+          "energy": 0.00030202903576973905,
+          "fraction": 0.26927697891474844,
+          "start_sample": 960
+        },
+        {
+          "end_sample_exclusive": 4800,
+          "energy": 0.000183103336503224,
+          "fraction": 0.1632475935869566,
+          "start_sample": 2400
+        },
+        {
+          "end_sample_exclusive": 9600,
+          "energy": 8.189270328102033e-05,
+          "fraction": 0.07301225088665625,
+          "start_sample": 4800
+        },
+        {
+          "end_sample_exclusive": 48000,
+          "energy": 8.25585812447048e-06,
+          "fraction": 0.007360592098175121,
+          "start_sample": 9600
+        }
+      ],
+      "mic_index_zero_based": 0,
+      "oracle_covered_energy_fraction": 0.6766358240171114,
+      "oracle_max_window_energy": 0.000758934782760807,
+      "oracle_window_end_sample_exclusive": 1860,
+      "oracle_window_start_sample": 183,
+      "original_file": "dEchorate_room011111_src1_arr1_mics1-5.sofa",
+      "room_state": "011111",
+      "sample_count": 48000,
+      "total_energy": 0.0011216296208721196,
+      "uncovered_energy_fraction_lower_bound": 0.3233641759828886,
+      "window_samples": 1677
+    },
+    {
+      "absolute_arrival_error_samples": null,
+      "decoded_float64_le_sha256": "5635111f66b0acfd1ce045937dbac4b98d8748e956072d7269a738bd69023bc6",
+      "fixed_record_windows": [
+        {
+          "end_sample_exclusive": 240,
+          "energy": 0.0005405786277572075,
+          "fraction": 0.2901856226096594,
+          "start_sample": 0
+        },
+        {
+          "end_sample_exclusive": 960,
+          "energy": 0.00037347906285409554,
+          "fraction": 0.20048564412476966,
+          "start_sample": 240
+        },
+        {
+          "end_sample_exclusive": 2400,
+          "energy": 0.0004989712262982631,
+          "fraction": 0.2678505374294946,
+          "start_sample": 960
+        },
+        {
+          "end_sample_exclusive": 4800,
+          "energy": 0.00030478867957932777,
+          "fraction": 0.16361226324290987,
+          "start_sample": 2400
+        },
+        {
+          "end_sample_exclusive": 9600,
+          "energy": 0.0001308120321005613,
+          "fraction": 0.07022062847254328,
+          "start_sample": 4800
+        },
+        {
+          "end_sample_exclusive": 48000,
+          "energy": 1.4242221834237198e-05,
+          "fraction": 0.007645304120623187,
+          "start_sample": 9600
+        }
+      ],
+      "mic_index_zero_based": 1,
+      "oracle_covered_energy_fraction": 0.678857010465321,
+      "oracle_max_window_energy": 0.0012646236152586284,
+      "oracle_window_end_sample_exclusive": 1856,
+      "oracle_window_start_sample": 179,
+      "original_file": "dEchorate_room011111_src1_arr1_mics1-5.sofa",
+      "room_state": "011111",
+      "sample_count": 48000,
+      "total_energy": 0.0018628718504236925,
+      "uncovered_energy_fraction_lower_bound": 0.321142989534679,
+      "window_samples": 1677
+    },
+    {
+      "absolute_arrival_error_samples": null,
+      "decoded_float64_le_sha256": "a56365b0e1c52361e9b96dd012577e575a0a9da538d9365dea54848f0e982ccc",
+      "fixed_record_windows": [
+        {
+          "end_sample_exclusive": 240,
+          "energy": 0.0003197007728371819,
+          "fraction": 0.5769277871827926,
+          "start_sample": 0
+        },
+        {
+          "end_sample_exclusive": 960,
+          "energy": 0.00016518568176144042,
+          "fraction": 0.29809189701722605,
+          "start_sample": 240
+        },
+        {
+          "end_sample_exclusive": 2400,
+          "energy": 5.6876876181936096e-05,
+          "fraction": 0.10263925866149094,
+          "start_sample": 960
+        },
+        {
+          "end_sample_exclusive": 4800,
+          "energy": 1.1861695625936238e-05,
+          "fraction": 0.021405459076548432,
+          "start_sample": 2400
+        },
+        {
+          "end_sample_exclusive": 9600,
+          "energy": 5.066513959455349e-07,
+          "fraction": 0.0009142964095516726,
+          "start_sample": 4800
+        },
+        {
+          "end_sample_exclusive": 48000,
+          "energy": 1.1804171827448119e-08,
+          "fraction": 2.130165239044761e-05,
+          "start_sample": 9600
+        }
+      ],
+      "mic_index_zero_based": 0,
+      "oracle_covered_energy_fraction": 0.9572301784830005,
+      "oracle_max_window_energy": 0.0005304428641554195,
+      "oracle_window_end_sample_exclusive": 1856,
+      "oracle_window_start_sample": 179,
+      "original_file": "dEchorate_room020002_src1_arr1_mics1-5.sofa",
+      "room_state": "020002",
+      "sample_count": 48000,
+      "total_energy": 0.0005541434819742676,
+      "uncovered_energy_fraction_lower_bound": 0.042769821516999484,
+      "window_samples": 1677
+    },
+    {
+      "absolute_arrival_error_samples": null,
+      "decoded_float64_le_sha256": "7ca7f45dc6189a3f31091fe49c2db1c904f9b5accdb8c6611bba3bd1e58051ff",
+      "fixed_record_windows": [
+        {
+          "end_sample_exclusive": 240,
+          "energy": 0.0005276386490407248,
+          "fraction": 0.6230880338292082,
+          "start_sample": 0
+        },
+        {
+          "end_sample_exclusive": 960,
+          "energy": 0.0002167539508258223,
+          "fraction": 0.2559645569753371,
+          "start_sample": 240
+        },
+        {
+          "end_sample_exclusive": 2400,
+          "energy": 8.49670826940731e-05,
+          "fraction": 0.10033755600031401,
+          "start_sample": 960
+        },
+        {
+          "end_sample_exclusive": 4800,
+          "energy": 1.665622571200378e-05,
+          "fraction": 0.019669322838226942,
+          "start_sample": 2400
+        },
+        {
+          "end_sample_exclusive": 9600,
+          "energy": 7.7672221556564e-07,
+          "fraction": 0.0009172306066057475,
+          "start_sample": 4800
+        },
+        {
+          "end_sample_exclusive": 48000,
+          "energy": 1.973051656911436e-08,
+          "fraction": 2.32997503079711e-05,
+          "start_sample": 9600
+        }
+      ],
+      "mic_index_zero_based": 1,
+      "oracle_covered_energy_fraction": 0.9613721518175304,
+      "oracle_max_window_energy": 0.0008141018216848283,
+      "oracle_window_end_sample_exclusive": 1854,
+      "oracle_window_start_sample": 177,
+      "original_file": "dEchorate_room020002_src1_arr1_mics1-5.sofa",
+      "room_state": "020002",
+      "sample_count": 48000,
+      "total_energy": 0.0008468123610047587,
+      "uncovered_energy_fraction_lower_bound": 0.03862784818246956,
+      "window_samples": 1677
+    }
+  ],
+  "data_role": "disclosed-development-diagnostic",
+  "decision": "DESCRIPTIVE_ONLY_NO_PROMOTION_NO_MODEL_FIT",
+  "dependent_room_state_count": 11,
+  "descriptive_uncovered_fraction": {
+    "maximum": 0.3233641759828886,
+    "median": 0.023488678009122688,
+    "minimum": 0.009756391394800668
+  },
+  "experiment_id": "FE-SIM-RIR-SUPPORT-GAP-V1",
+  "frozen_contract_sha256": "7f11a622a856dde9b2e9c8465eb767cb34e1ce6c184e33d52b686fb3a3dbc0dc",
+  "independent_verify_elapsed_seconds": 0.8383635029986181,
+  "independent_verify_status": "VERIFIED_DESCRIPTIVE_RIR_SUPPORT_GAP",
+  "interpretation": "Lower bound on uncovered energy in the original finite record for the fixed c=343 model support, allowing an oracle overall shift. Not a measured full model-fit error, pure reverberation share, independent-room result, or algorithm-quality decision.",
+  "measurement_elapsed_seconds": 1.0773945670007379,
+  "measurement_status": "MEASURED_DESCRIPTIVE_RIR_SUPPORT_GAP",
+  "model_parameter_fit_performed": false,
+  "native_ir_materialized_count": 55,
+  "physical_room_count": 1,
+  "process_wall_seconds": 1.2007994350005902,
+  "product_dsp_executions": 0,
+  "promotion_allowed": false,
+  "result_sha256": "1c2bfa4ae417c76c37f0b14851b72e541bff447e08129addae0ed67c72ba29c2",
+  "schema_version": 1,
+  "scored_ir_count": 22,
+  "sealed_manifest_sha256": "e4d9e7a331c3d6b62e9777bbc7f10abf93d45049ea2a603a2f12c6436346922a",
+  "source_revision": "a058b02582962875ac10e6bb42b928c46c405213",
+  "source_tree": "e2b41d4a7f3678efa065dfabc09ea29ebc2c2071",
+  "support_bound": {
+    "excess_distance_bound_m": 11.93,
+    "kernel_support_seconds": 0.000125,
+    "model_speed_m_s": 343.0,
+    "native_window_samples": 1677,
+    "sample_rate_hz": 48000,
+    "scope": "declared c=343 model family; not a universal physical propagation bound",
+    "support_seconds_before_endpoint_bin": 0.03490634110787172
+  }
+}

@@ -1,0 +1,264 @@
+{
+  "historical_handoff_preserved": "The original execution-agent handoff predates this readback and remains unchanged; its pending status is historical.",
+  "independent_effect_audit_summary": {
+    "codec_subprocesses": 0,
+    "compiler_subprocesses": 0,
+    "elapsed_seconds": 386.98015464999844,
+    "git_read_subprocesses": 1259,
+    "interpretation": "Independent effects audit of the unchanged frozen verifier, not a second DSP run or independent mathematical implementation.",
+    "ldd_read_subprocesses": 3,
+    "measurement_manifest_sha256": "287d33221ae1b81bac623c96f9a6c3b5c6b7ba02d72866c119ac28cc4e5a9166",
+    "measurement_report_sha256": "56e74933924a7851ef2d0314c792ccbc3bb372faf7c79ac7dc4cc8e33c067148",
+    "native_math_loads": [
+      {
+        "path": "/workspace/scratch/cd58842626bd/audit_checks/f05-dualmic-637643753-20261128/measurement/bundle/lib/librender_corr_exact.so",
+        "sha256": "77499af684aab889115e3742e82aa8c1da2ad50194c2c4a1fb5915a9866609fa"
+      }
+    ],
+    "plan_sha256": "f9a32ca63a8ca62ae87d97276033481100de5b953aec0b668dc1526b98f315ce",
+    "returncode": 0,
+    "schema_version": 1,
+    "sdk_subprocesses": 0,
+    "source_revision": "637643753166dee42efd325bed76b7fd8e7237c4"
+  },
+  "measurement_bytes_unchanged": true,
+  "original_files": {
+    "effect-audit.json": {
+      "bytes": 318929,
+      "sha256": "fd9914ecf3d52889a31d4b4ab4ba1179f1cbd32eb96eabf5294642167a9ad85a"
+    },
+    "invocation-start.json": {
+      "bytes": 809,
+      "sha256": "a7a5ae9a85fcb8704d899c69db1054928123c6f2fb95fb7aaa21eec8d531b9df"
+    },
+    "stderr.log": {
+      "bytes": 4656,
+      "sha256": "0495929d12c01bf0dd1acc639a96b99ea4a32ce8cdce583f005386678ed9f327"
+    },
+    "stdout.log": {
+      "bytes": 5813,
+      "sha256": "d560803cc71ad65166a4668340b753594fb59d4cc0eef4ee41ee3537e7acbdd3"
+    },
+    "verify_once.py": {
+      "bytes": 3818,
+      "sha256": "72cca76f4d90652b85c4016059b56ecbde194409cf603db21b9015913aacca44"
+    },
+    "wrapper-preflight-failure.json": {
+      "bytes": 667,
+      "sha256": "b86677d64e4b8b14af48a2c425d0b6b6570e13cbc3be58a4b1cd5bea2f4ea227"
+    },
+    "wrapper-preflight-original.py": {
+      "bytes": 3812,
+      "sha256": "fc870653db3e524be1a4612f9950291fef56d7cc088bd774a687d068ac79ab9a"
+    },
+    "wrapper-preflight-stderr.log": {
+      "bytes": 365,
+      "sha256": "a78029bdae106a4ed0453353c02151182529559224586afa0816a6de34a0b928"
+    },
+    "wrapper-preflight-stdout.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "original_frozen_verifier_receipt": {
+    "artifact_manifest_sha256": "287d33221ae1b81bac623c96f9a6c3b5c6b7ba02d72866c119ac28cc4e5a9166",
+    "cases": 128,
+    "decoder_invocations": 0,
+    "elapsed_seconds": 386.9749693949998,
+    "harness_revision": "637643753166dee42efd325bed76b7fd8e7237c4",
+    "local_c_compilations": 0,
+    "math_runtime_observations": 2,
+    "original_utterances": 32,
+    "output_seconds": 1767.36,
+    "primary_target_lag_searches": 0,
+    "processor_invocations": 0,
+    "promotion_allowed": false,
+    "quality_decision": "NO_PROMOTION_DESCRIPTIVE_VALIDATION",
+    "reader_math_runtime_identity": {
+      "helper_library_path": "/workspace/scratch/cd58842626bd/audit_checks/f05-dualmic-637643753-20261128/measurement/bundle/lib/librender_corr_exact.so",
+      "loader_environment": "CLEAN_AT_START_AND_NOW",
+      "parent_library_mappings": {
+        "/workspace/scratch/cd58842626bd/audit_checks/f05-dualmic-637643753-20261128/measurement/bundle/lib/librender_corr_exact.so": {
+          "device": [
+            254,
+            16
+          ],
+          "inode": 565187,
+          "sha256": "77499af684aab889115e3742e82aa8c1da2ad50194c2c4a1fb5915a9866609fa"
+        }
+      },
+      "pid": 7,
+      "runtime_identity": {
+        "dependency_free_elf": {
+          "binary_sha256": "77499af684aab889115e3742e82aa8c1da2ad50194c2c4a1fb5915a9866609fa",
+          "byte_order": "little",
+          "dt_needed": [],
+          "elf_class": 64,
+          "elf_type": "ET_DYN",
+          "global_defined_symbols": [
+            "ap_validation_max_abs_corr"
+          ],
+          "ldd_returncode": 0,
+          "ldd_stderr": "",
+          "ldd_stdout": "\tstatically linked\n",
+          "machine": "EM_X86_64",
+          "schema_version": 1,
+          "scope": "RENDER_CORR_EXACT_ET_DYN_NO_NEEDED",
+          "strong_undefined_symbols": [],
+          "weak_undefined_symbols": [
+            "_ITM_deregisterTMCloneTable",
+            "_ITM_registerTMCloneTable",
+            "__cxa_finalize",
+            "__gmon_start__"
+          ]
+        },
+        "libraries": {},
+        "library_names": {},
+        "machine": "x86_64",
+        "os_release_sha256": "e249e69c32d81350fdd6b05ac5575255f14e380ba14b8454acea14e49f088bfa",
+        "release": "6.18.57",
+        "system": "Linux"
+      }
+    },
+    "reader_math_runtime_identity_after": {
+      "helper_library_path": "/workspace/scratch/cd58842626bd/audit_checks/f05-dualmic-637643753-20261128/measurement/bundle/lib/librender_corr_exact.so",
+      "loader_environment": "CLEAN_AT_START_AND_NOW",
+      "parent_library_mappings": {
+        "/workspace/scratch/cd58842626bd/audit_checks/f05-dualmic-637643753-20261128/measurement/bundle/lib/librender_corr_exact.so": {
+          "device": [
+            254,
+            16
+          ],
+          "inode": 565187,
+          "sha256": "77499af684aab889115e3742e82aa8c1da2ad50194c2c4a1fb5915a9866609fa"
+        }
+      },
+      "pid": 7,
+      "runtime_identity": {
+        "dependency_free_elf": {
+          "binary_sha256": "77499af684aab889115e3742e82aa8c1da2ad50194c2c4a1fb5915a9866609fa",
+          "byte_order": "little",
+          "dt_needed": [],
+          "elf_class": 64,
+          "elf_type": "ET_DYN",
+          "global_defined_symbols": [
+            "ap_validation_max_abs_corr"
+          ],
+          "ldd_returncode": 0,
+          "ldd_stderr": "",
+          "ldd_stdout": "\tstatically linked\n",
+          "machine": "EM_X86_64",
+          "schema_version": 1,
+          "scope": "RENDER_CORR_EXACT_ET_DYN_NO_NEEDED",
+          "strong_undefined_symbols": [],
+          "weak_undefined_symbols": [
+            "_ITM_deregisterTMCloneTable",
+            "_ITM_registerTMCloneTable",
+            "__cxa_finalize",
+            "__gmon_start__"
+          ]
+        },
+        "libraries": {},
+        "library_names": {},
+        "machine": "x86_64",
+        "os_release_sha256": "e249e69c32d81350fdd6b05ac5575255f14e380ba14b8454acea14e49f088bfa",
+        "release": "6.18.57",
+        "system": "Linux"
+      }
+    },
+    "renderer_reconstruction": true,
+    "report_sha256": "56e74933924a7851ef2d0314c792ccbc3bb372faf7c79ac7dc4cc8e33c067148",
+    "runtime_observation_method": "read-only-ldd-and-proc-self-environ-maps",
+    "schema_version": 1,
+    "secondary_native_correlation": {
+      "binary_sha256": "77499af684aab889115e3742e82aa8c1da2ad50194c2c4a1fb5915a9866609fa",
+      "binding": {
+        "abi": {
+          "arguments": [
+            "const int16_t*",
+            "size_t",
+            "const int16_t*",
+            "size_t",
+            "int",
+            "int*"
+          ],
+          "result": "double",
+          "sizes_bytes": {
+            "double": 8,
+            "int": 4,
+            "int16_t": 2,
+            "size_t": 8
+          },
+          "symbol": "ap_validation_max_abs_corr"
+        },
+        "binary_sha256": "77499af684aab889115e3742e82aa8c1da2ad50194c2c4a1fb5915a9866609fa",
+        "code_revision": "637643753166dee42efd325bed76b7fd8e7237c4",
+        "compiler": "x86_64-linux-gnu-gcc-13 (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
+        "dependency_free_elf": {
+          "binary_sha256": "77499af684aab889115e3742e82aa8c1da2ad50194c2c4a1fb5915a9866609fa",
+          "byte_order": "little",
+          "dt_needed": [],
+          "elf_class": 64,
+          "elf_type": "ET_DYN",
+          "global_defined_symbols": [
+            "ap_validation_max_abs_corr"
+          ],
+          "ldd_returncode": 0,
+          "ldd_stderr": "",
+          "ldd_stdout": "\tstatically linked\n",
+          "machine": "EM_X86_64",
+          "schema_version": 1,
+          "scope": "RENDER_CORR_EXACT_ET_DYN_NO_NEEDED",
+          "strong_undefined_symbols": [],
+          "weak_undefined_symbols": [
+            "_ITM_deregisterTMCloneTable",
+            "_ITM_registerTMCloneTable",
+            "__cxa_finalize",
+            "__gmon_start__"
+          ]
+        },
+        "engine_sha256": "9082b061e7e46aa1c48c82c0ec845524110e01e910aa51e5b83c2c9d9594789a",
+        "library": "lib/librender_corr_exact.so",
+        "loader_sha256": "0a2f720e5b1eb29f7f4174bcadc8bca0d88bc5d0e34b9b19337c13d683127a81",
+        "local_compilation": false,
+        "schema_version": 1,
+        "search_id": "exact-all-integer-lags-stride4-v1",
+        "source_sha256": "19cbf9af3b3e36c5ca88546b4a6ab091af0292cbb2bffd69ac121eda70be90ac",
+        "status": "BOUND_PREBUILT_VALIDATION_HELPER"
+      },
+      "bundle_relative_file": "lib/librender_corr_exact.so",
+      "implicit_compile_fallback_allowed": false,
+      "local_c_compilations": 0,
+      "search_id": "exact-all-integer-lags-stride4-v1",
+      "source_files_sha256": {
+        "validation/tools/render_corr_exact.c": "19cbf9af3b3e36c5ca88546b4a6ab091af0292cbb2bffd69ac121eda70be90ac",
+        "validation/tools/render_corr_exact.py": "0a2f720e5b1eb29f7f4174bcadc8bca0d88bc5d0e34b9b19337c13d683127a81",
+        "validation/tools/run_validation_engine.py": "9082b061e7e46aa1c48c82c0ec845524110e01e910aa51e5b83c2c9d9594789a"
+      }
+    },
+    "secondary_render_interference_maxcorr_radius_ms": 100,
+    "secondary_target_refinement_ms": 3,
+    "source_original_seconds": 327.605,
+    "source_speakers": 8,
+    "status": "DESCRIPTIVE_MEASUREMENT_READBACK_VERIFIED",
+    "study_id": "F05-DUALMIC-RESERVED-VALIDATION-V1",
+    "subprocess_policy": "Git identity and read-only ldd observations allowed; no SDK, codec or compiler execution"
+  },
+  "preserved_wrapper_preflight_failure": {
+    "corrected_wrapper_sha256": "72cca76f4d90652b85c4016059b56ecbde194409cf603db21b9015913aacca44",
+    "correction": "Use actual source-defined _NATIVE_STATE; original frozen verifier and measurement artifacts are unchanged.",
+    "error": "AttributeError: render_corr_exact has no attribute _NATIVE",
+    "frozen_verifier_invocations_before_correction": 0,
+    "matrix_retries": 0,
+    "original_stderr_sha256": "a78029bdae106a4ed0453353c02151182529559224586afa0816a6de34a0b928",
+    "original_wrapper_sha256": "fc870653db3e524be1a4612f9950291fef56d7cc088bd774a687d068ac79ab9a",
+    "schema_version": 1,
+    "status": "WRAPPER_PREFLIGHT_FAILED_BEFORE_FROZEN_VERIFIER_INVOCATION"
+  },
+  "promotion_allowed": false,
+  "publication_schema_version": 1,
+  "quality_decision": "NO_PROMOTION_DESCRIPTIVE_VALIDATION",
+  "readback_semantics": "Separate process and effects audit using the unchanged original frozen verifier and CI-built helper. Reconstructs rendering and recomputes saved-output metrics; zero SDK, codec or C/C++ compiler invocations. Does not establish an independent mathematical implementation.",
+  "runtime_observation_accounting": "Original verifier reports two scoring-runtime observations. Whole invocation audit records three ldd calls because bundle/helper admission is also observed. These scopes are distinct.",
+  "status": "DESCRIPTIVE_MEASUREMENT_READBACK_VERIFIED"
+}

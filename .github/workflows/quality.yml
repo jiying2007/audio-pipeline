@@ -638,7 +638,8 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
-      - name: Witness exact fe09_b2s1 upload before mandatory storage readback
+      - name: Save and admit the exact B2S1 original ZIP
+        id: fe09_b2s1_readback
         if: steps.fe09_b2s1.outcome == 'success'
         shell: bash
         env:
@@ -647,20 +648,21 @@ jobs:
           RUN_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: |
           set -euo pipefail
-          python3 tests/validation/frontend_evolution/fe09_same_run_artifact_visibility.py \
+          python3 tests/validation/frontend_evolution/fe09_same_run_artifact_download.py \
+            --stage b2s1 --repository "$GITHUB_REPOSITORY" \
             --artifact-id "$ARTIFACT_ID" --run-id "$GITHUB_RUN_ID" \
             --artifact-name "frontend-fe09-b2s1-private-queue-$GITHUB_RUN_ID-attempt-$GITHUB_RUN_ATTEMPT" \
             --run-attempt "$GITHUB_RUN_ATTEMPT" --run-head-sha "$RUN_HEAD_SHA" \
-            --execution-source "$GITHUB_SHA"
-      - name: Download retained B2-S1 evidence from this exact Actions run
-        if: steps.fe09_b2s1.outcome == 'success'
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+            --execution-source "$GITHUB_SHA" \
+            --output fe09-b2s1-readback --evidence fe09-b2s1-transport
+      - name: Retain B2S1 original ZIP or failed prefix and bounded transport record
+        if: always() && (steps.fe09_b2s1_readback.outcome == 'success' || steps.fe09_b2s1_readback.outcome == 'failure')
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          artifact-ids: ${{ steps.fe09_b2s1_upload.outputs.artifact-id }}
-          github-token: ${{ github.token }}
-          repository: ${{ github.repository }}
-          run-id: ${{ github.run_id }}
-          path: fe09-b2s1-readback
+          name: frontend-fe09-b2s1-transport-${{ github.run_id }}-attempt-${{ github.run_attempt }}
+          path: fe09-b2s1-transport/
+          retention-days: 30
+          if-no-files-found: error
       - name: Independently rehash uploaded B2-S1 members and source-only verdict
         if: steps.fe09_b2s1.outcome == 'success'
         shell: bash
@@ -745,7 +747,8 @@ jobs:
           path: fe09-b2s2/
           if-no-files-found: error
           retention-days: 30
-      - name: Witness exact fe09_b2s2 upload before mandatory storage readback
+      - name: Save and admit the exact B2-S2 original ZIP for mandatory readback
+        id: fe09_b2s2_readback
         if: steps.fe09_b2s2.outcome == 'success'
         shell: bash
         env:
@@ -754,20 +757,21 @@ jobs:
           RUN_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: |
           set -euo pipefail
-          python3 tests/validation/frontend_evolution/fe09_same_run_artifact_visibility.py \
+          python3 tests/validation/frontend_evolution/fe09_same_run_artifact_download.py \
+            --stage b2s2 --repository "$GITHUB_REPOSITORY" \
             --artifact-id "$ARTIFACT_ID" --run-id "$GITHUB_RUN_ID" \
             --artifact-name "frontend-fe09-b2s2-private-apd-$GITHUB_RUN_ID-attempt-$GITHUB_RUN_ATTEMPT" \
             --run-attempt "$GITHUB_RUN_ATTEMPT" --run-head-sha "$RUN_HEAD_SHA" \
-            --execution-source "$GITHUB_SHA"
-      - name: Download this exact B2-S2 four-member artifact from storage
-        if: steps.fe09_b2s2.outcome == 'success'
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+            --execution-source "$GITHUB_SHA" \
+            --output fe09-b2s2-readback --evidence fe09-b2s2-transport
+      - name: Retain B2-S2 original ZIP or failed prefix and bounded transport record
+        if: always() && (steps.fe09_b2s2_readback.outcome == 'success' || steps.fe09_b2s2_readback.outcome == 'failure')
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          artifact-ids: ${{ steps.fe09_b2s2_upload.outputs.artifact-id }}
-          github-token: ${{ github.token }}
-          repository: ${{ github.repository }}
-          run-id: ${{ github.run_id }}
-          path: fe09-b2s2-readback
+          name: frontend-fe09-b2s2-transport-${{ github.run_id }}-attempt-${{ github.run_attempt }}
+          path: fe09-b2s2-transport/
+          if-no-files-found: error
+          retention-days: 30
       - name: Independently verify retained B2-S2 APX3 source and synthetic-only verdict
         if: steps.fe09_b2s2.outcome == 'success'
         shell: bash
@@ -852,6 +856,7 @@ jobs:
           python3 tests/validation/frontend_evolution/fe09_runtime_source_boundary.py s3 \
             --verify --output fe09-b2s3 --execution-source "$GITHUB_SHA"
       - name: Retain FE09 B2-S3 actual concurrent and negative-source evidence
+        id: fe09_b2s3_upload
         if: always() && (steps.fe09_b2s3.outcome == 'success' || steps.fe09_b2s3.outcome == 'failure')
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
@@ -859,12 +864,31 @@ jobs:
           path: fe09-b2s3/
           retention-days: 30
           if-no-files-found: error
-      - name: Redownload exact B2-S3 four-member qualification from Actions storage
+      - name: Save and admit the exact B2S3 original ZIP
+        id: fe09_b2s3_readback
         if: steps.fe09_b2s3.outcome == 'success'
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ARTIFACT_ID: ${{ steps.fe09_b2s3_upload.outputs.artifact-id }}
+          RUN_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          python3 tests/validation/frontend_evolution/fe09_same_run_artifact_download.py \
+            --stage b2s3 --repository "$GITHUB_REPOSITORY" \
+            --artifact-id "$ARTIFACT_ID" --run-id "$GITHUB_RUN_ID" \
+            --artifact-name "frontend-fe09-b2s3-threaded-$GITHUB_RUN_ID" \
+            --run-attempt "$GITHUB_RUN_ATTEMPT" --run-head-sha "$RUN_HEAD_SHA" \
+            --execution-source "$GITHUB_SHA" \
+            --output fe09-b2s3-readback --evidence fe09-b2s3-transport
+      - name: Retain B2S3 original ZIP or failed prefix and bounded transport record
+        if: always() && (steps.fe09_b2s3_readback.outcome == 'success' || steps.fe09_b2s3_readback.outcome == 'failure')
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: frontend-fe09-b2s3-threaded-${{ github.run_id }}
-          path: fe09-b2s3-readback
+          name: frontend-fe09-b2s3-transport-${{ github.run_id }}-attempt-${{ github.run_attempt }}
+          path: fe09-b2s3-transport/
+          retention-days: 30
+          if-no-files-found: error
       - name: Independently check B2-S3 retained pthread TSan native stress and source-only verdict
         if: steps.fe09_b2s3.outcome == 'success'
         shell: bash
@@ -1299,7 +1323,8 @@ jobs:
           path: fe09-b2s3-t1/
           if-no-files-found: error
           retention-days: 30
-      - name: Witness exact fe09_t1 upload before mandatory storage readback
+      - name: Save and admit the exact T1 original ZIP
+        id: fe09_t1_readback
         if: steps.fe09_t1.outcome == 'success'
         shell: bash
         env:
@@ -1308,20 +1333,21 @@ jobs:
           RUN_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: |
           set -euo pipefail
-          python3 tests/validation/frontend_evolution/fe09_same_run_artifact_visibility.py \
+          python3 tests/validation/frontend_evolution/fe09_same_run_artifact_download.py \
+            --stage t1 --repository "$GITHUB_REPOSITORY" \
             --artifact-id "$ARTIFACT_ID" --run-id "$GITHUB_RUN_ID" \
             --artifact-name "frontend-fe09-s3-t1-source-wrap-$GITHUB_RUN_ID-attempt-$GITHUB_RUN_ATTEMPT" \
             --run-attempt "$GITHUB_RUN_ATTEMPT" --run-head-sha "$RUN_HEAD_SHA" \
-            --execution-source "$GITHUB_SHA"
-      - name: Download exact T1 four-member artifact from GitHub Actions storage
-        if: steps.fe09_t1.outcome == 'success'
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+            --execution-source "$GITHUB_SHA" \
+            --output fe09-b2s3-t1-readback --evidence fe09-b2s3-t1-transport
+      - name: Retain T1 original ZIP or failed prefix and bounded transport record
+        if: always() && (steps.fe09_t1_readback.outcome == 'success' || steps.fe09_t1_readback.outcome == 'failure')
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          artifact-ids: ${{ steps.fe09_t1_upload.outputs.artifact-id }}
-          github-token: ${{ github.token }}
-          repository: ${{ github.repository }}
-          run-id: ${{ github.run_id }}
-          path: fe09-b2s3-t1-readback
+          name: frontend-fe09-b2s3-t1-transport-${{ github.run_id }}-attempt-${{ github.run_attempt }}
+          path: fe09-b2s3-t1-transport/
+          retention-days: 30
+          if-no-files-found: error
       - name: Independently hash and refuse unbound T1 source witness or false device promotion
         if: steps.fe09_t1.outcome == 'success'
         shell: bash
@@ -1430,7 +1456,8 @@ jobs:
           path: fe09-t2-f0/
           retention-days: 30
           if-no-files-found: error
-      - name: Witness exact t2-f0 upload in the pinned downloader REST list
+      - name: Save and admit the exact T2F0 original ZIP
+        id: fe09_t2_f0_readback
         if: steps.fe09_t2_f0.outcome == 'success'
         shell: bash
         env:
@@ -1439,20 +1466,21 @@ jobs:
           RUN_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: |
           set -euo pipefail
-          python3 tests/validation/frontend_evolution/fe09_same_run_artifact_visibility.py \
+          python3 tests/validation/frontend_evolution/fe09_same_run_artifact_download.py \
+            --stage t2f0 --repository "$GITHUB_REPOSITORY" \
             --artifact-id "$ARTIFACT_ID" --run-id "$GITHUB_RUN_ID" \
             --artifact-name "frontend-fe09-s3-t2-f0-render-feasibility-$GITHUB_RUN_ID-attempt-$GITHUB_RUN_ATTEMPT" \
             --run-attempt "$GITHUB_RUN_ATTEMPT" --run-head-sha "$RUN_HEAD_SHA" \
-            --execution-source "$GITHUB_SHA" --t2f0-archive-ready
-      - name: Independently download exact T2 F0 four-member Artifact
-        if: steps.fe09_t2_f0.outcome == 'success'
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+            --execution-source "$GITHUB_SHA" \
+            --output fe09-t2-f0-readback --evidence fe09-t2-f0-transport
+      - name: Retain T2F0 original ZIP or failed prefix and bounded transport record
+        if: always() && (steps.fe09_t2_f0_readback.outcome == 'success' || steps.fe09_t2_f0_readback.outcome == 'failure')
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          artifact-ids: ${{ steps.fe09_t2_f0_upload.outputs.artifact-id }}
-          github-token: ${{ github.token }}
-          repository: ${{ github.repository }}
-          run-id: ${{ github.run_id }}
-          path: fe09-t2-f0-readback
+          name: frontend-fe09-t2-f0-transport-${{ github.run_id }}-attempt-${{ github.run_attempt }}
+          path: fe09-t2-f0-transport/
+          retention-days: 30
+          if-no-files-found: error
       - name: Check external T2 F0 negative-only verdict and source-linked rehash
         if: steps.fe09_t2_f0.outcome == 'success'
         shell: bash
@@ -1558,7 +1586,8 @@ jobs:
           path: fe09-t2a/
           retention-days: 30
           if-no-files-found: error
-      - name: Witness exact t2a upload in the pinned downloader REST list
+      - name: Save and admit the exact T2A original ZIP
+        id: fe09_t2a_readback
         if: steps.fe09_t2a.outcome == 'success'
         shell: bash
         env:
@@ -1567,20 +1596,21 @@ jobs:
           RUN_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: |
           set -euo pipefail
-          python3 tests/validation/frontend_evolution/fe09_same_run_artifact_visibility.py \
+          python3 tests/validation/frontend_evolution/fe09_same_run_artifact_download.py \
+            --stage t2a --repository "$GITHUB_REPOSITORY" \
             --artifact-id "$ARTIFACT_ID" --run-id "$GITHUB_RUN_ID" \
             --artifact-name "frontend-fe09-s3-t2a-controlled-restart-$GITHUB_RUN_ID-attempt-$GITHUB_RUN_ATTEMPT" \
             --run-attempt "$GITHUB_RUN_ATTEMPT" --run-head-sha "$RUN_HEAD_SHA" \
-            --execution-source "$GITHUB_SHA" --t2a-archive-ready
-      - name: Independently download exact T2A four-member Artifact
-        if: steps.fe09_t2a.outcome == 'success'
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+            --execution-source "$GITHUB_SHA" \
+            --output fe09-t2a-readback --evidence fe09-t2a-transport
+      - name: Retain T2A original ZIP or failed prefix and bounded transport record
+        if: always() && (steps.fe09_t2a_readback.outcome == 'success' || steps.fe09_t2a_readback.outcome == 'failure')
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          artifact-ids: ${{ steps.fe09_t2a_upload.outputs.artifact-id }}
-          github-token: ${{ github.token }}
-          repository: ${{ github.repository }}
-          run-id: ${{ github.run_id }}
-          path: fe09-t2a-readback
+          name: frontend-fe09-t2a-transport-${{ github.run_id }}-attempt-${{ github.run_attempt }}
+          path: fe09-t2a-transport/
+          retention-days: 30
+          if-no-files-found: error
       - name: Check external T2A control-only verdict and source-linked rehash
         if: steps.fe09_t2a.outcome == 'success'
         shell: bash
@@ -1686,7 +1716,8 @@ jobs:
           path: fe09-t2b-b0/
           retention-days: 30
           if-no-files-found: error
-      - name: Witness exact t2b-b0 upload in the pinned downloader REST list
+      - name: Save and admit the exact T2B0 original ZIP
+        id: fe09_t2b_b0_readback
         if: steps.fe09_t2b_b0.outcome == 'success'
         shell: bash
         env:
@@ -1695,20 +1726,21 @@ jobs:
           RUN_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: |
           set -euo pipefail
-          python3 tests/validation/frontend_evolution/fe09_same_run_artifact_visibility.py \
+          python3 tests/validation/frontend_evolution/fe09_same_run_artifact_download.py \
+            --stage t2b0 --repository "$GITHUB_REPOSITORY" \
             --artifact-id "$ARTIFACT_ID" --run-id "$GITHUB_RUN_ID" \
             --artifact-name "frontend-fe09-s3-t2b-b0-capture-only-bf-$GITHUB_RUN_ID-attempt-$GITHUB_RUN_ATTEMPT" \
             --run-attempt "$GITHUB_RUN_ATTEMPT" --run-head-sha "$RUN_HEAD_SHA" \
-            --execution-source "$GITHUB_SHA"
-      - name: Independently download exact T2B_B0 four-member Artifact
-        if: steps.fe09_t2b_b0.outcome == 'success'
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+            --execution-source "$GITHUB_SHA" \
+            --output fe09-t2b-b0-readback --evidence fe09-t2b-b0-transport
+      - name: Retain T2B0 original ZIP or failed prefix and bounded transport record
+        if: always() && (steps.fe09_t2b_b0_readback.outcome == 'success' || steps.fe09_t2b_b0_readback.outcome == 'failure')
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          artifact-ids: ${{ steps.fe09_t2b_b0_upload.outputs.artifact-id }}
-          github-token: ${{ github.token }}
-          repository: ${{ github.repository }}
-          run-id: ${{ github.run_id }}
-          path: fe09-t2b-b0-readback
+          name: frontend-fe09-t2b-b0-transport-${{ github.run_id }}-attempt-${{ github.run_attempt }}
+          path: fe09-t2b-b0-transport/
+          retention-days: 30
+          if-no-files-found: error
       - name: Check external T2B_B0 mic BF equivalence verdict and source-linked rehash
         if: steps.fe09_t2b_b0.outcome == 'success'
         shell: bash
@@ -1816,24 +1848,31 @@ jobs:
           path: fe09-b1s0/
           retention-days: 30
           if-no-files-found: error
-      - name: Wait for exact upload-ID visibility before pinned B1-S0 Artifact download
+      - name: Save and admit the exact B1S0 original ZIP
+        id: fe09_b1s0_readback
         if: steps.fe09_b1s0.outcome == 'success'
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
           ARTIFACT_ID: ${{ steps.fe09_b1s0_upload.outputs.artifact-id }}
+          RUN_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: |
           set -euo pipefail
-          test -n "$ARTIFACT_ID"
-          python3 tests/validation/frontend_evolution/fe09_same_run_artifact_visibility.py \
+          python3 tests/validation/frontend_evolution/fe09_same_run_artifact_download.py \
+            --stage b1s0 --repository "$GITHUB_REPOSITORY" \
             --artifact-id "$ARTIFACT_ID" --run-id "$GITHUB_RUN_ID" \
-            --artifact-name "frontend-fe09-t2b-b1s0-owner-spsc-$GITHUB_RUN_ID"
-      - name: Independently download exact T2B_B1S0 four-member Artifact
-        if: steps.fe09_b1s0.outcome == 'success'
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+            --artifact-name "frontend-fe09-t2b-b1s0-owner-spsc-$GITHUB_RUN_ID" \
+            --run-attempt "$GITHUB_RUN_ATTEMPT" --run-head-sha "$RUN_HEAD_SHA" \
+            --execution-source "$GITHUB_SHA" \
+            --output fe09-b1s0-readback --evidence fe09-b1s0-transport
+      - name: Retain B1S0 original ZIP or failed prefix and bounded transport record
+        if: always() && (steps.fe09_b1s0_readback.outcome == 'success' || steps.fe09_b1s0_readback.outcome == 'failure')
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: frontend-fe09-t2b-b1s0-owner-spsc-${{ github.run_id }}
-          path: fe09-b1s0-readback
+          name: frontend-fe09-b1s0-transport-${{ github.run_id }}-attempt-${{ github.run_attempt }}
+          path: fe09-b1s0-transport/
+          retention-days: 30
+          if-no-files-found: error
       - name: Check external T2B_B1S0 owner SPSC verdict and rehash
         if: steps.fe09_b1s0.outcome == 'success'
         shell: bash
@@ -1941,24 +1980,31 @@ jobs:
           path: fe09-b1s1/
           retention-days: 30
           if-no-files-found: error
-      - name: Wait for exact B1-S1 upload ID before mandatory pinned download
+      - name: Save and admit the exact B1S1 original ZIP
+        id: fe09_b1s1_readback
         if: steps.fe09_b1s1.outcome == 'success'
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
           ARTIFACT_ID: ${{ steps.fe09_b1s1_upload.outputs.artifact-id }}
+          RUN_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: |
           set -euo pipefail
-          test -n "$ARTIFACT_ID"
-          python3 tests/validation/frontend_evolution/fe09_same_run_artifact_visibility.py \
+          python3 tests/validation/frontend_evolution/fe09_same_run_artifact_download.py \
+            --stage b1s1 --repository "$GITHUB_REPOSITORY" \
             --artifact-id "$ARTIFACT_ID" --run-id "$GITHUB_RUN_ID" \
-            --artifact-name "frontend-fe09-t2b-b1s1-source-apx3-$GITHUB_RUN_ID"
-      - name: Download exact source-linked B1-S1 four-member Artifact
-        if: steps.fe09_b1s1.outcome == 'success'
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+            --artifact-name "frontend-fe09-t2b-b1s1-source-apx3-$GITHUB_RUN_ID" \
+            --run-attempt "$GITHUB_RUN_ATTEMPT" --run-head-sha "$RUN_HEAD_SHA" \
+            --execution-source "$GITHUB_SHA" \
+            --output fe09-b1s1-readback --evidence fe09-b1s1-transport
+      - name: Retain B1S1 original ZIP or failed prefix and bounded transport record
+        if: always() && (steps.fe09_b1s1_readback.outcome == 'success' || steps.fe09_b1s1_readback.outcome == 'failure')
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: frontend-fe09-t2b-b1s1-source-apx3-${{ github.run_id }}
-          path: fe09-b1s1-readback
+          name: frontend-fe09-b1s1-transport-${{ github.run_id }}-attempt-${{ github.run_attempt }}
+          path: fe09-b1s1-transport/
+          retention-days: 30
+          if-no-files-found: error
       - name: Independently rehash real C-emitted APX3 source, SHA256 row and four Artifact members
         if: steps.fe09_b1s1.outcome == 'success'
         shell: bash
@@ -2031,7 +2077,8 @@ jobs:
           path: fe09-t2c0/
           retention-days: 30
           if-no-files-found: error
-      - name: Witness exact t2c0 upload in the pinned downloader REST list
+      - name: Save and admit the exact T2C0 original ZIP
+        id: fe09_t2c0_readback
         if: steps.fe09_t2c0.outcome == 'success'
         shell: bash
         env:
@@ -2040,20 +2087,21 @@ jobs:
           RUN_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: |
           set -euo pipefail
-          python3 tests/validation/frontend_evolution/fe09_same_run_artifact_visibility.py \
+          python3 tests/validation/frontend_evolution/fe09_same_run_artifact_download.py \
+            --stage t2c0 --repository "$GITHUB_REPOSITORY" \
             --artifact-id "$ARTIFACT_ID" --run-id "$GITHUB_RUN_ID" \
             --artifact-name "frontend-fe09-s3-t2c0-owner-fallback-$GITHUB_RUN_ID-attempt-$GITHUB_RUN_ATTEMPT" \
             --run-attempt "$GITHUB_RUN_ATTEMPT" --run-head-sha "$RUN_HEAD_SHA" \
-            --execution-source "$GITHUB_SHA"
-      - name: Download exact current-run T2-C0 four-member Artifact
-        if: steps.fe09_t2c0.outcome == 'success'
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+            --execution-source "$GITHUB_SHA" \
+            --output fe09-t2c0-readback --evidence fe09-t2c0-transport
+      - name: Retain T2C0 original ZIP or failed prefix and bounded transport record
+        if: always() && (steps.fe09_t2c0_readback.outcome == 'success' || steps.fe09_t2c0_readback.outcome == 'failure')
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          artifact-ids: ${{ steps.fe09_t2c0_upload.outputs.artifact-id }}
-          github-token: ${{ github.token }}
-          repository: ${{ github.repository }}
-          run-id: ${{ github.run_id }}
-          path: fe09-t2c0-readback
+          name: frontend-fe09-t2c0-transport-${{ github.run_id }}-attempt-${{ github.run_attempt }}
+          path: fe09-t2c0-transport/
+          retention-days: 30
+          if-no-files-found: error
       - name: Independently rehash T2-C0 four members and enforce no-physical-source boundary
         if: steps.fe09_t2c0.outcome == 'success'
         shell: bash
@@ -2125,7 +2173,8 @@ jobs:
           path: fe09-t3s0/
           retention-days: 30
           if-no-files-found: error
-      - name: Witness exact t3s0 upload in the pinned downloader REST list
+      - name: Save and admit the exact T3S0 original ZIP
+        id: fe09_t3s0_readback
         if: steps.fe09_t3s0.outcome == 'success'
         shell: bash
         env:
@@ -2134,20 +2183,21 @@ jobs:
           RUN_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: |
           set -euo pipefail
-          python3 tests/validation/frontend_evolution/fe09_same_run_artifact_visibility.py \
+          python3 tests/validation/frontend_evolution/fe09_same_run_artifact_download.py \
+            --stage t3s0 --repository "$GITHUB_REPOSITORY" \
             --artifact-id "$ARTIFACT_ID" --run-id "$GITHUB_RUN_ID" \
             --artifact-name "frontend-fe09-t3s0-compiled-resource-$GITHUB_RUN_ID-attempt-$GITHUB_RUN_ATTEMPT" \
             --run-attempt "$GITHUB_RUN_ATTEMPT" --run-head-sha "$RUN_HEAD_SHA" \
-            --execution-source "$GITHUB_SHA"
-      - name: Download immutable current-run T3-S0 four-member Artifact
-        if: steps.fe09_t3s0.outcome == 'success'
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+            --execution-source "$GITHUB_SHA" \
+            --output fe09-t3s0-readback --evidence fe09-t3s0-transport
+      - name: Retain T3S0 original ZIP or failed prefix and bounded transport record
+        if: always() && (steps.fe09_t3s0_readback.outcome == 'success' || steps.fe09_t3s0_readback.outcome == 'failure')
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          artifact-ids: ${{ steps.fe09_t3s0_upload.outputs.artifact-id }}
-          github-token: ${{ github.token }}
-          repository: ${{ github.repository }}
-          run-id: ${{ github.run_id }}
-          path: fe09-t3s0-readback
+          name: frontend-fe09-t3s0-transport-${{ github.run_id }}-attempt-${{ github.run_attempt }}
+          path: fe09-t3s0-transport/
+          retention-days: 30
+          if-no-files-found: error
       - name: Independently rehash T3-S0 members and reject false full 192KiB qualification
         if: steps.fe09_t3s0.outcome == 'success'
         shell: bash
@@ -2222,7 +2272,8 @@ jobs:
           path: fe09-t3s1/
           retention-days: 30
           if-no-files-found: error
-      - name: Witness exact T3-S1 upload in the pinned downloader REST list
+      - name: Save and admit the exact T3S1 original ZIP
+        id: fe09_t3s1_readback
         if: steps.fe09_t3s1.outcome == 'success'
         shell: bash
         env:
@@ -2231,20 +2282,21 @@ jobs:
           RUN_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: |
           set -euo pipefail
-          python3 tests/validation/frontend_evolution/fe09_same_run_artifact_visibility.py \
+          python3 tests/validation/frontend_evolution/fe09_same_run_artifact_download.py \
+            --stage t3s1 --repository "$GITHUB_REPOSITORY" \
             --artifact-id "$ARTIFACT_ID" --run-id "$GITHUB_RUN_ID" \
             --artifact-name "frontend-fe09-t3s1-compact-handoff-$GITHUB_RUN_ID-attempt-$GITHUB_RUN_ATTEMPT" \
             --run-attempt "$GITHUB_RUN_ATTEMPT" --run-head-sha "$RUN_HEAD_SHA" \
-            --execution-source "$GITHUB_SHA"
-      - name: Download immutable current-run T3-S1 four-member Artifact
-        if: steps.fe09_t3s1.outcome == 'success'
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+            --execution-source "$GITHUB_SHA" \
+            --output fe09-t3s1-readback --evidence fe09-t3s1-transport
+      - name: Retain T3S1 original ZIP or failed prefix and bounded transport record
+        if: always() && (steps.fe09_t3s1_readback.outcome == 'success' || steps.fe09_t3s1_readback.outcome == 'failure')
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          artifact-ids: ${{ steps.fe09_t3s1_upload.outputs.artifact-id }}
-          github-token: ${{ github.token }}
-          repository: ${{ github.repository }}
-          run-id: ${{ github.run_id }}
-          path: fe09-t3s1-readback
+          name: frontend-fe09-t3s1-transport-${{ github.run_id }}-attempt-${{ github.run_attempt }}
+          path: fe09-t3s1-transport/
+          retention-days: 30
+          if-no-files-found: error
       - name: Independently rehash T3-S1 members and reject false hardware/durable qualification
         if: steps.fe09_t3s1.outcome == 'success'
         shell: bash
@@ -2315,12 +2367,31 @@ jobs:
           path: fe09-t3s2a/
           retention-days: 30
           if-no-files-found: error
-      - name: Download exact original current-run S2-A four-member Artifact
+      - name: Save and admit the exact T3S2A original ZIP
+        id: t3s2a_artifact_readback
         if: steps.fe09_t3s2a.outcome == 'success'
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ARTIFACT_ID: ${{ steps.t3s2a_artifact.outputs.artifact-id }}
+          RUN_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          python3 tests/validation/frontend_evolution/fe09_same_run_artifact_download.py \
+            --stage t3s2a --repository "$GITHUB_REPOSITORY" \
+            --artifact-id "$ARTIFACT_ID" --run-id "$GITHUB_RUN_ID" \
+            --artifact-name "frontend-fe09-t3s2a-posix-spool-$GITHUB_RUN_ID-attempt-$GITHUB_RUN_ATTEMPT" \
+            --run-attempt "$GITHUB_RUN_ATTEMPT" --run-head-sha "$RUN_HEAD_SHA" \
+            --execution-source "$GITHUB_SHA" \
+            --output fe09-t3s2a-readback --evidence fe09-t3s2a-transport
+      - name: Retain T3S2A original ZIP or failed prefix and bounded transport record
+        if: always() && (steps.t3s2a_artifact_readback.outcome == 'success' || steps.t3s2a_artifact_readback.outcome == 'failure')
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          artifact-ids: ${{ steps.t3s2a_artifact.outputs.artifact-id }}
-          path: fe09-t3s2a-readback
+          name: frontend-fe09-t3s2a-transport-${{ github.run_id }}-attempt-${{ github.run_attempt }}
+          path: fe09-t3s2a-transport/
+          retention-days: 30
+          if-no-files-found: error
       - name: Independently rehash original S2-A members, reject fake durable HIL qualification
         if: steps.fe09_t3s2a.outcome == 'success'
         shell: bash
@@ -2391,7 +2462,8 @@ jobs:
           path: fe09-t3s2b0/
           retention-days: 30
           if-no-files-found: error
-      - name: Witness exact fe09_t3s2b0 upload before mandatory storage readback
+      - name: Save and admit the exact T3S2B0 original ZIP
+        id: fe09_t3s2b0_readback
         if: steps.fe09_t3s2b0.outcome == 'success'
         shell: bash
         env:
@@ -2400,20 +2472,21 @@ jobs:
           RUN_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: |
           set -euo pipefail
-          python3 tests/validation/frontend_evolution/fe09_same_run_artifact_visibility.py \
+          python3 tests/validation/frontend_evolution/fe09_same_run_artifact_download.py \
+            --stage t3s2b0 --repository "$GITHUB_REPOSITORY" \
             --artifact-id "$ARTIFACT_ID" --run-id "$GITHUB_RUN_ID" \
             --artifact-name "frontend-fe09-t3s2b0-fbs1-index-$GITHUB_RUN_ID-attempt-$GITHUB_RUN_ATTEMPT" \
             --run-attempt "$GITHUB_RUN_ATTEMPT" --run-head-sha "$RUN_HEAD_SHA" \
-            --execution-source "$GITHUB_SHA"
-      - name: Download exact original run four-member index Artifact
-        if: steps.fe09_t3s2b0.outcome == 'success'
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+            --execution-source "$GITHUB_SHA" \
+            --output fe09-t3s2b0-readback --evidence fe09-t3s2b0-transport
+      - name: Retain T3S2B0 original ZIP or failed prefix and bounded transport record
+        if: always() && (steps.fe09_t3s2b0_readback.outcome == 'success' || steps.fe09_t3s2b0_readback.outcome == 'failure')
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          artifact-ids: ${{ steps.fe09_t3s2b0_upload.outputs.artifact-id }}
-          github-token: ${{ github.token }}
-          repository: ${{ github.repository }}
-          run-id: ${{ github.run_id }}
-          path: fe09-t3s2b0-readback
+          name: frontend-fe09-t3s2b0-transport-${{ github.run_id }}-attempt-${{ github.run_attempt }}
+          path: fe09-t3s2b0-transport/
+          retention-days: 30
+          if-no-files-found: error
       - name: Independently rehash original B0 members and reject fake rolling HIL
         if: steps.fe09_t3s2b0.outcome == 'success'
         shell: bash
@@ -2485,7 +2558,8 @@ jobs:
           path: fe09-t3s2b1a/
           retention-days: 30
           if-no-files-found: error
-      - name: Witness exact t3s2b1a upload in the pinned downloader REST list
+      - name: Save and admit the exact T3S2B1A original ZIP
+        id: fe09_t3s2b1a_readback
         if: steps.fe09_t3s2b1a.outcome == 'success'
         shell: bash
         env:
@@ -2494,20 +2568,21 @@ jobs:
           RUN_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: |
           set -euo pipefail
-          python3 tests/validation/frontend_evolution/fe09_same_run_artifact_visibility.py \
+          python3 tests/validation/frontend_evolution/fe09_same_run_artifact_download.py \
+            --stage t3s2b1a --repository "$GITHUB_REPOSITORY" \
             --artifact-id "$ARTIFACT_ID" --run-id "$GITHUB_RUN_ID" \
             --artifact-name "frontend-fe09-t3s2b1a-immutable-root-$GITHUB_RUN_ID-attempt-$GITHUB_RUN_ATTEMPT" \
             --run-attempt "$GITHUB_RUN_ATTEMPT" --run-head-sha "$RUN_HEAD_SHA" \
-            --execution-source "$GITHUB_SHA"
-      - name: Download original same-run four-member root Artifact
-        if: steps.fe09_t3s2b1a.outcome == 'success'
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+            --execution-source "$GITHUB_SHA" \
+            --output fe09-t3s2b1a-readback --evidence fe09-t3s2b1a-transport
+      - name: Retain T3S2B1A original ZIP or failed prefix and bounded transport record
+        if: always() && (steps.fe09_t3s2b1a_readback.outcome == 'success' || steps.fe09_t3s2b1a_readback.outcome == 'failure')
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          artifact-ids: ${{ steps.fe09_t3s2b1a_upload.outputs.artifact-id }}
-          github-token: ${{ github.token }}
-          repository: ${{ github.repository }}
-          run-id: ${{ github.run_id }}
-          path: fe09-t3s2b1a-readback
+          name: frontend-fe09-t3s2b1a-transport-${{ github.run_id }}-attempt-${{ github.run_attempt }}
+          path: fe09-t3s2b1a-transport/
+          retention-days: 30
+          if-no-files-found: error
       - name: Independently rehash root receipt, reject fake rolling or powerloss authority
         if: steps.fe09_t3s2b1a.outcome == 'success'
         shell: bash
@@ -2572,6 +2647,7 @@ jobs:
           python3 tests/validation/frontend_evolution/fe09_b2s3_t3s2b1bf0_seq17_qualification.py \
             --verify --output fe09-t3s2b1bf0 --execution-source "$GITHUB_SHA"
       - name: Retain original 17th-frame negative first-party source evidence
+        id: fe09_t3s2b1bf0_upload
         if: always() && (steps.fe09_t3s2b1bf0.outcome == 'success' || steps.fe09_t3s2b1bf0.outcome == 'failure')
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
@@ -2579,12 +2655,31 @@ jobs:
           path: fe09-t3s2b1bf0/
           retention-days: 30
           if-no-files-found: error
-      - name: Download exact same-run F0 original source Artifact
+      - name: Save and admit the exact F0 original ZIP
+        id: fe09_t3s2b1bf0_readback
         if: steps.fe09_t3s2b1bf0.outcome == 'success'
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ARTIFACT_ID: ${{ steps.fe09_t3s2b1bf0_upload.outputs.artifact-id }}
+          RUN_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          python3 tests/validation/frontend_evolution/fe09_same_run_artifact_download.py \
+            --stage f0 --repository "$GITHUB_REPOSITORY" \
+            --artifact-id "$ARTIFACT_ID" --run-id "$GITHUB_RUN_ID" \
+            --artifact-name "frontend-fe09-t3s2b1bf0-seq17-$GITHUB_RUN_ID" \
+            --run-attempt "$GITHUB_RUN_ATTEMPT" --run-head-sha "$RUN_HEAD_SHA" \
+            --execution-source "$GITHUB_SHA" \
+            --output fe09-t3s2b1bf0-readback --evidence fe09-t3s2b1bf0-transport
+      - name: Retain F0 original ZIP or failed prefix and bounded transport record
+        if: always() && (steps.fe09_t3s2b1bf0_readback.outcome == 'success' || steps.fe09_t3s2b1bf0_readback.outcome == 'failure')
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: frontend-fe09-t3s2b1bf0-seq17-${{ github.run_id }}
-          path: fe09-t3s2b1bf0-readback
+          name: frontend-fe09-t3s2b1bf0-transport-${{ github.run_id }}-attempt-${{ github.run_attempt }}
+          path: fe09-t3s2b1bf0-transport/
+          retention-days: 30
+          if-no-files-found: error
       - name: Independently rehash F0 original negative result and forbid rolling promotion
         if: steps.fe09_t3s2b1bf0.outcome == 'success'
         shell: bash
@@ -2659,7 +2754,8 @@ jobs:
           path: fe09-t3s2b1ba0/
           retention-days: 30
           if-no-files-found: error
-      - name: Witness exact fe09_t3s2b1ba0 upload before mandatory storage readback
+      - name: Save and admit the exact BA0 original ZIP
+        id: fe09_t3s2b1ba0_readback
         if: steps.fe09_t3s2b1ba0.outcome == 'success'
         shell: bash
         env:
@@ -2668,20 +2764,21 @@ jobs:
           RUN_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: |
           set -euo pipefail
-          python3 tests/validation/frontend_evolution/fe09_same_run_artifact_visibility.py \
+          python3 tests/validation/frontend_evolution/fe09_same_run_artifact_download.py \
+            --stage ba0 --repository "$GITHUB_REPOSITORY" \
             --artifact-id "$ARTIFACT_ID" --run-id "$GITHUB_RUN_ID" \
             --artifact-name "frontend-fe09-t3s2b1ba0-finite-$GITHUB_RUN_ID-attempt-$GITHUB_RUN_ATTEMPT" \
             --run-attempt "$GITHUB_RUN_ATTEMPT" --run-head-sha "$RUN_HEAD_SHA" \
-            --execution-source "$GITHUB_SHA"
-      - name: Download exact same-run original finite source Artifact
-        if: steps.fe09_t3s2b1ba0.outcome == 'success'
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+            --execution-source "$GITHUB_SHA" \
+            --output fe09-t3s2b1ba0-readback --evidence fe09-t3s2b1ba0-transport
+      - name: Retain BA0 original ZIP or failed prefix and bounded transport record
+        if: always() && (steps.fe09_t3s2b1ba0_readback.outcome == 'success' || steps.fe09_t3s2b1ba0_readback.outcome == 'failure')
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          artifact-ids: ${{ steps.fe09_t3s2b1ba0_upload.outputs.artifact-id }}
-          github-token: ${{ github.token }}
-          repository: ${{ github.repository }}
-          run-id: ${{ github.run_id }}
-          path: fe09-t3s2b1ba0-readback
+          name: frontend-fe09-t3s2b1ba0-transport-${{ github.run_id }}-attempt-${{ github.run_attempt }}
+          path: fe09-t3s2b1ba0-transport/
+          retention-days: 30
+          if-no-files-found: error
       - name: Independently verify A0 member SHA256, no prune and zero HIL authority
         if: steps.fe09_t3s2b1ba0.outcome == 'success'
         shell: bash
@@ -2755,7 +2852,8 @@ jobs:
           path: fe09-t3s2b1ba1/
           retention-days: 30
           if-no-files-found: error
-      - name: Witness exact A1 upload in the pinned downloader REST list
+      - name: Save and admit the exact BA1 original ZIP
+        id: fe09_a1_readback
         if: steps.fe09_t3s2b1ba1.outcome == 'success'
         shell: bash
         env:
@@ -2764,20 +2862,21 @@ jobs:
           RUN_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: |
           set -euo pipefail
-          python3 tests/validation/frontend_evolution/fe09_same_run_artifact_visibility.py \
+          python3 tests/validation/frontend_evolution/fe09_same_run_artifact_download.py \
+            --stage ba1 --repository "$GITHUB_REPOSITORY" \
             --artifact-id "$ARTIFACT_ID" --run-id "$GITHUB_RUN_ID" \
             --artifact-name "frontend-fe09-t3s2b1ba1-anchor-$GITHUB_RUN_ID" \
             --run-attempt "$GITHUB_RUN_ATTEMPT" --run-head-sha "$RUN_HEAD_SHA" \
-            --execution-source "$GITHUB_SHA" --a1-archive-ready
-      - name: Download exact same-run original A1 Artifact
-        if: steps.fe09_t3s2b1ba1.outcome == 'success'
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+            --execution-source "$GITHUB_SHA" \
+            --output fe09-t3s2b1ba1-readback --evidence fe09-t3s2b1ba1-transport
+      - name: Retain BA1 original ZIP or failed prefix and bounded transport record
+        if: always() && (steps.fe09_a1_readback.outcome == 'success' || steps.fe09_a1_readback.outcome == 'failure')
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          artifact-ids: ${{ steps.fe09_a1_upload.outputs.artifact-id }}
-          github-token: ${{ github.token }}
-          repository: ${{ github.repository }}
-          run-id: ${{ github.run_id }}
-          path: fe09-t3s2b1ba1-readback
+          name: frontend-fe09-t3s2b1ba1-transport-${{ github.run_id }}-attempt-${{ github.run_attempt }}
+          path: fe09-t3s2b1ba1-transport/
+          retention-days: 30
+          if-no-files-found: error
       - name: Independently verify current-source original executions and resealed negatives
         if: steps.fe09_t3s2b1ba1.outcome == 'success'
         shell: bash
@@ -2844,27 +2943,31 @@ jobs:
           path: fe09-t3s2b1ba2/
           retention-days: 30
           if-no-files-found: error
-      - name: Require the exact current upload identity
+      - name: Save and admit the exact BA2 original ZIP for mandatory readback
+        id: fe09_a2f0_readback
         if: steps.fe09_a2f0.outcome == 'success'
         shell: bash
         env:
+          GH_TOKEN: ${{ github.token }}
           ARTIFACT_ID: ${{ steps.fe09_a2f0_upload.outputs.artifact-id }}
+          RUN_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: |
           set -euo pipefail
-          python3 - <<'PY'
-          import os
-          import re
-          value = os.environ["ARTIFACT_ID"]
-          assert re.fullmatch(r"[1-9][0-9]{0,18}", value)
-          assert int(value) < 2 ** 63
-          print("FE09_A2_EXACT_UPLOAD_ID", value)
-          PY
-      - name: Download the exact current A2 Artifact by upload ID
-        if: steps.fe09_a2f0.outcome == 'success'
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+          python3 tests/validation/frontend_evolution/fe09_same_run_artifact_download.py \
+            --stage ba2 --repository "$GITHUB_REPOSITORY" \
+            --artifact-id "$ARTIFACT_ID" --run-id "$GITHUB_RUN_ID" \
+            --artifact-name "frontend-fe09-t3s2b1ba2-retirement-$GITHUB_RUN_ID" \
+            --run-attempt "$GITHUB_RUN_ATTEMPT" --run-head-sha "$RUN_HEAD_SHA" \
+            --execution-source "$GITHUB_SHA" \
+            --output fe09-t3s2b1ba2-readback --evidence fe09-t3s2b1ba2-transport
+      - name: Retain BA2 original ZIP or failed prefix and bounded transport record
+        if: always() && (steps.fe09_a2f0_readback.outcome == 'success' || steps.fe09_a2f0_readback.outcome == 'failure')
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          artifact-ids: ${{ steps.fe09_a2f0_upload.outputs.artifact-id }}
-          path: fe09-t3s2b1ba2-readback
+          name: frontend-fe09-t3s2b1ba2-transport-${{ github.run_id }}-attempt-${{ github.run_attempt }}
+          path: fe09-t3s2b1ba2-transport/
+          if-no-files-found: error
+          retention-days: 30
       - name: Independently verify A2 raw executions, member hashes and resealed negatives
         if: steps.fe09_a2f0.outcome == 'success'
         shell: bash
@@ -2956,8 +3059,14 @@ jobs:
           python3 tests/validation/frontend_evolution/test_speech_spatial.py
           python3 tests/validation/frontend_evolution/test_speech_source_stage_budget.py
           mkdir fe-speech
-          sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends ffmpeg
+          # FFmpeg needs the runner's Ubuntu archive, not unrelated vendor feeds.
+          # Keep its existing Signed-By/security policy and do not edit host sources.
+          test -s /etc/apt/sources.list.d/ubuntu.sources
+          sha256sum /etc/apt/sources.list.d/ubuntu.sources
+          sudo apt-get -o Dir::Etc::sourcelist=/etc/apt/sources.list.d/ubuntu.sources \
+            -o Dir::Etc::sourceparts=- update -qq
+          sudo apt-get -o Dir::Etc::sourcelist=/etc/apt/sources.list.d/ubuntu.sources \
+            -o Dir::Etc::sourceparts=- install -y --no-install-recommends ffmpeg
           python3 tests/validation/frontend_evolution/speech_pinned_snapshot.py --self-test
           # Cache failure is retained separately. Only the original admitted
           # official archive may recover it; old acoustic scores are never used.
@@ -3034,6 +3143,8 @@ jobs:
         with:
           persist-credentials: false
       - name: Qualify admitted speech and fixed spatial weights
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           sudo apt-get update -qq
@@ -3061,7 +3172,15 @@ jobs:
             > fe-spatial/toolchain/execution.log 2>&1
           echo 'ARM_LINK_AND_QEMU_PASS' >> fe-spatial/toolchain/execution.log
           python3 tests/validation/frontend_evolution/speech_spatial_weights.py --self-test
-          python3 tests/validation/frontend_evolution/speech_source.py --speaker-offset 8 --output fe-spatial/source
+          # Reuse only original offset-8 source bytes from successful protected main.
+          # GitHub calls share a 600s deadline; the supervised source worker
+          # bounds the whole stage to 1800s. No old scores/roles are substituted.
+          python3 tests/validation/frontend_evolution/speech_pinned_snapshot.py \
+            --profile spatial-offset8-v1 --acquire \
+            --zip fe-spatial/protected-original-source.zip \
+            --output fe-spatial/source --transfer fe-spatial/source-transfer.json \
+            --cache-failure fe-spatial/source-cache-failure.json \
+            --execution-source "$GITHUB_SHA"
           python3 tests/validation/frontend_evolution/speech_spatial_weights.py \
             --source fe-spatial/source --output fe-spatial/effects --execution-source "$GITHUB_SHA"
           python3 tests/validation/frontend_evolution/speech_spatial_weights.py \

@@ -4,6 +4,7 @@
 set -eu
 
 python3 tests/validation/frontend_evolution/test_contracts.py
+python3 -B tests/validation/frontend_evolution/test_dechorate_rir_gap.py
 python3 scripts/ci_impact.py --self-test
 python3 tests/validation/test_aec_source_paths.py
 python3 tests/validation/test_aec_optimizer_source_roles.py
@@ -72,11 +73,13 @@ python3 tests/validation/frontend_evolution/fe09_b2s3_t3s2b1ba1_anchor_root_qual
 python3 tests/validation/frontend_evolution/fe09_b2s3_t3s2b1ba2_finite_retirement_qualification.py --self-test
 python3 tests/validation/frontend_evolution/fe09_t3s3_f0_call_resource_qualification.py --self-test
 python3 tests/validation/frontend_evolution/test_fe09_same_run_artifact_visibility.py
+python3 tests/validation/frontend_evolution/test_fe09_same_run_artifact_download.py
 python3 tests/validation/frontend_evolution/test_fe09_t2f0_archive_readiness.py
 python3 tests/validation/frontend_evolution/test_fe09_t2a_archive_readiness.py
 python3 tests/validation/frontend_evolution/test_speech_download_retry.py
 python3 tests/validation/frontend_evolution/test_speech_source_stage_budget.py
 python3 tests/validation/frontend_evolution/test_speech_source_recovery.py
+python3 tests/validation/frontend_evolution/test_spatial_source_cache.py
 python3 tests/validation/frontend_evolution/speech_pinned_snapshot.py --self-test
 python3 tests/validation/frontend_evolution/test_fe09_b3_f0_deadline_r1.py
 # R2 T1 verifies the separately preregistered 2/4-file source identity, never

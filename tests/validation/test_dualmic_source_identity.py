@@ -53,17 +53,17 @@ class SourceIdentityTests(unittest.TestCase):
             admission.verify_build(version or self.version, revision or self.revision, root=self.root)
 
     def test_all_reviewed_versions_require_their_own_exact_source(self):
-        for version in ("2.3.63", "2.3.64", "2.3.65"):
+        for version in ("2.3.63", "2.3.64", "2.3.65", "2.3.66"):
             self.migrate_fixture(version)
             result = admission.verify_build(version, self.revision, root=self.root)
             self.assertEqual(result["public_source_members"], 56)
             self.assertFalse(result["historical_result_inherited"])
-            for other in ("2.3.63", "2.3.64", "2.3.65"):
+            for other in ("2.3.63", "2.3.64", "2.3.65", "2.3.66"):
                 if other != version:
                     self.reject(other)
 
     def test_unknown_or_missing_version_rejected(self):
-        for version in ("2.3.62", "2.3.66", "3.0.0", "2.3.64-rc", "2.3.65-rc", None, True):
+        for version in ("2.3.62", "2.3.67", "3.0.0", "2.3.64-rc", "2.3.65-rc", "2.3.66-rc", None, True):
             with self.subTest(version=version), self.assertRaisesRegex(admission.Rejected, "unregistered"):
                 admission.verify_build(version, self.revision, root=self.root)
 

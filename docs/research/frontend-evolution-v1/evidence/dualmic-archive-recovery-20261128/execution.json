@@ -1,0 +1,33 @@
+{
+  "DSP_executed": false,
+  "archive_bytes": 474165229,
+  "archive_sha256": "a3ab7823fdcd7586c3b72eb214b5536dcfb7531fdf0b1611d49e1575a29b2c3d",
+  "baseline_sha": "21448956f65916577d13082e9dc58f275f8fbb70",
+  "ci_impact_self_test": "PASS",
+  "contract": "https://github.com/jiying2007/audio-pipeline/issues/968",
+  "execution_type": "local-original-archive-recovery-readback",
+  "exit_code": 0,
+  "limitations": [
+    "Original Actions artifact remains required as exact ZIP bytes; no re-packed replacement.",
+    "Synthetic test doubles validate transport failures only; original readback is recorded separately.",
+    "This local result is not an exact-head GitHub Verify result."
+  ],
+  "models_executed": false,
+  "new_acoustic_experiment": false,
+  "offline_control_tests": {
+    "archive_recovery": 14,
+    "original_metadata": 4,
+    "original_zip_source": 7
+  },
+  "receipt": {
+    "bytes": 1639,
+    "path": "recovery.json",
+    "sha256": "82e99e2e665a59937218e133b34a8f23d14b1f5e9b2224f2230c64650a100f4c"
+  },
+  "schema_version": 1,
+  "tool": {
+    "bytes": 7283,
+    "path": "tests/validation/frontend_evolution/dualmic_archive_recovery.py",
+    "sha256": "b01e9d376411a2130c90ff5337c373928f30a97b01c5ac40ba9318ff06a5aa95"
+  }
+}

@@ -121,6 +121,28 @@ near-only 的 raw 与 clean 精确相同，所以原 canonical 函数可能给�
 的已知 interference 投影衰减是描述性分解，**不是纯远端 ERLE**；不设置 `echo_audio`
 来伪装纯回声真值。不根据任一个指标更好而隐藏另一个。
 
+### 精确相关性 helper 只在 CI 构建
+
+原 canonical 的全整数 lag 搜索由独立 `validation/tools/render_corr_exact.c` 执行；原 Python
+loader 在冷进程第一次收到非空相关输入时会自动调用本机 C 编译器。本研究禁止这条自动编译
+路径，也不改动旧 loader/engine 的 bytes 或默认行为。AP portable 包必须在 GitHub Actions
+中按原 flags 构建并封存 `lib/librender_corr_exact.so`、源/loader/编译命令/二进制 SHA 与工程证据。
+新 F05 控制闭包显式加入原 C 文件，不能仅靠枚举已导入的 `.py` 声称覆盖评分源码。
+
+run 和独立 verify 都先核验保留 bundle，再显式载入其中的库；不先从传入原 bundle 载入后
+再搬移。新 guarded callable 在原 native lock 内逐次核验 binder 所有的真实 CDLL/function/
+state 身份及原 C/loader/binary 哈希，状态丢失或改变立即失败，没有本地编译回退。
+进程必须以干净的动态加载环境启动；入口拒绝 `LD_PRELOAD`、`LD_AUDIT`、`LD_LIBRARY_PATH`
+污染和已存在的自动编译状态，不靠事后清空子进程环境来假装父 Python 已净化。
+
+评分仍调用原 `exact_score`：原 C 找全整数最佳 lag，原 Python `normalized_corr(stride=4)`
+重算最终值，并保持原 native/canonical 差值 `1e-10` 检查。不换成 engine 的历史稀疏 lag 搜索，
+也不换成暴力 Python oracle。主 SI-SDR、辅助数学、128 次调用与预算都不变。
+
+run 保留原测量的数学 helper 宿主/系统库观察。独立 verify 另记读者本次载入的库、原 loader
+身份和宿主观察，前后各一次；不能沿用原测量机器的身份冒充当前读者。该过程允许明确记录的
+只读 `ldd` 与 Git 身份查询，不能笼统声称零子进程。
+
 ## 4. 二进制、宿主、源码和执行预算
 
 先由独立 AP portable 工程入口在 GitHub Actions 从干净、准确公开 source 构建并封存
@@ -140,11 +162,12 @@ bundle revision 必须与本次实际公开冻结的 harness revision 一致。�
 | 新输入构造与回读 | 总 wall 120 s；0 解码器、0 音频处理器调用 |
 | 固定矩阵、回执和哈希收尾 | 总 wall 600 s；128 次音频调用、单进程顺序执行、0 重试 |
 | 单次处理器 | wall 30 s；失败立即停止，保存前缀 |
-| 独立读者 | 总 wall 600 s；0 解码器、0 音频处理器调用 |
+| 独立读者 | 总 wall 600 s；0 解码器、0 SDK 音频处理器、0 编译器调用；可执行已封存数学 helper |
 | 总输出 | 最多 4000 文件、1 GiB；128 输出 1767.36 s，不能扩例 |
 | 工程回执复制 | 复用 AP 原上限：512 文件、64 MiB；仍包含在总输出上限内 |
 
 源码控制闭包绑定计划、执行器、既有 source-only 控制、实际一方导入、AP 工程控制和 authority。
+另外显式绑定原精确相关性 C 源、loader 和 engine；运行证据绑定 CI helper 二进制及无编译加载状态。
 真实执行前当前文件必须与准确 Git revision 一致，完成后复核；输出保存同一控制源码快照。
 原始大归档和 source receipt 重验，不重新下载或解码。来源准备中的旧角色及其 10 文件
 闭包仍按原 a058 revision 校验，不能因后续研究修改旧锁。
@@ -171,7 +194,8 @@ continuity 七文件，并验证顺序 128 次处理耗时之和不超过记录�
 
 独立 `verify` 重新校验归档、source receipt、输入合成 bytes、命令、帧连续性和两组评分。
 它会进行确定性合成重构与数学评分，**不运行被测处理器或解码器**，也不重新执行宿主工程
-测试；旧实际处理输出是评分输入。保存原执行宿主观察，不把读者机器当成原计时宿主。
+测试或任何 C/C++ 编译；辅助相关性使用已封存的 native 数学 helper，不能称纯 Python 回读。
+旧实际处理输出是评分输入。保存原执行宿主观察，另记本次数学评分宿主，不把读者机器当成原计时宿主。
 
 本次不覆盖人工听评、ASR/WER、KWS、真实 RIR、机器人自噪、移动/时钟漂移、物理通道映射、
 目标 SSC305 算力或新的房间。它补充已准备新原句的有限整链证据，不单独完成长期平台的

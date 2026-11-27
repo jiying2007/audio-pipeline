@@ -4,6 +4,7 @@
     "Revalidate original archive/source receipt and all 32 full PCM inputs; no old56 substitution",
     "Exact fixed 64-input/128-output schedule and source/timing/configuration readback",
     "Before every call enforce equal render/capture length, explicit profile, no tuning flags and fixed source latency declaration",
+    "Before secondary scoring explicitly bind the CI-precompiled exact-correlation helper; bind C source, original loader and binary identities; any missing/dirty/prior-compiler state fails without local compilation or fallback",
     "Complete original source support survives the common primary mask; no target-correlated delay selection",
     "Retain full raw inputs, output PCM, per-frame telemetry, command, per-call wall/returncode, primary and secondary values",
     "Preserve negative and null measurements; completion requires all128 successful calls and identities/continuity/budgets, not acoustic benefit",
@@ -77,6 +78,24 @@
     "promotion_allowed": false,
     "secondary": "retain unchanged dualmic_profile_support.validation_semantics full-case canonical results including existing bounded target-correlation alignment +/-3ms and quality projections",
     "secondary_diagnostic_lag_search": "Unchanged canonical render/interference max_abs_corr diagnostics also search +/-100ms; these diagnostics never select primary delays or sources.",
+    "secondary_native_transport": {
+      "build_location": "github-actions-only",
+      "bundle_path_key": "render_corr",
+      "bundle_relative_file": "lib/librender_corr_exact.so",
+      "guard_rule": "Every score holds the original native lock, checks exact binder-owned CDLL/function/state identity and source/loader/binary hashes before and after original exact_score; missing or changed state fails without compilation.",
+      "implicit_compile_fallback_allowed": false,
+      "loading_rule": "Bind only the retained verified bundle, on a fresh clean Python host; reject LD_PRELOAD/LD_AUDIT/LD_LIBRARY_PATH pollution and any prior automatic-compiler state.",
+      "local_compilation_allowed": false,
+      "math_unchanged": "Original C integer-lag search and original exact_score final Python normalized_corr(stride=4), including native/canonical tolerance 1e-10, remain unchanged.",
+      "readback_rule": "Independent reader may execute the same already-compiled native mathematical score helper; it invokes zero SDK audio processors, zero decoders and zero C/C++ compilers.",
+      "scoring_factory": "ap_current_ci.build_bound_max_abs_corr",
+      "search_id": "exact-all-integer-lags-stride4-v1",
+      "source_files_sha256": {
+        "validation/tools/render_corr_exact.c": "19cbf9af3b3e36c5ca88546b4a6ab091af0292cbb2bffd69ac121eda70be90ac",
+        "validation/tools/render_corr_exact.py": "0a2f720e5b1eb29f7f4174bcadc8bca0d88bc5d0e34b9b19337c13d683127a81",
+        "validation/tools/run_validation_engine.py": "9082b061e7e46aa1c48c82c0ec845524110e01e910aa51e5b83c2c9d9594789a"
+      }
+    },
     "secondary_render_interference_maxcorr_radius_ms": 100,
     "secondary_target_lag_search": "existing canonical method only, explicitly reported; never used to choose primary delay, source, profile or candidate",
     "secondary_target_refinement_ms": 3,

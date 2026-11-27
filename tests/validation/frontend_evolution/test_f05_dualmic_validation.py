@@ -223,7 +223,9 @@ class ValidationTests(unittest.TestCase):
             Path(command[-1]).write_bytes(bytes(320))
             Path(command[command.index('--metrics-jsonl')+1]).write_text(json.dumps(trace_row())+'\n')
             return subprocess.CompletedProcess(command,0,'tiny fake process\n','')
-        semantics = f.execution_semantics(self.root/'replay',environment)
+        guarded = lambda a,b,rate: 0.0
+        semantics = f.execution_semantics(self.root/'replay',environment,guarded)
+        self.assertIs(semantics.evaluation.max_abs_corr,guarded)
         with mock.patch.object(f.subprocess,'run',side_effect=fake_run):
             result = semantics.evaluation.invoke(Path('/no-real-processor'),case,path,self.root/'unused')
         self.assertEqual(len(observed),1)
@@ -253,6 +255,77 @@ class ValidationTests(unittest.TestCase):
         for key,value in [('processor_sha256','3'*64),('algorithmic_latency_samples',{'call':159,'assistant':160}),
                           ('implicit_default_equals_call',False),('source_revision','b'*40)]:
             with self.subTest(key=key),self.assertRaises(ValueError): f.check_engineering({**record,key:value},bundle,revision)
+
+    def test_ci_native_transport_source_and_no_fallback_are_frozen(self):
+        native = self.plan['measurement']['secondary_native_transport']
+        self.assertEqual(native['source_files_sha256'],f.CORRELATION_FILES)
+        self.assertIn('validation/tools/render_corr_exact.c',f.CORRELATION_FILES)
+        for key,value in [('local_compilation_allowed',True),('implicit_compile_fallback_allowed',True),
+                          ('scoring_factory','engine.max_abs_corr'),('search_id','legacy-sparse')]:
+            changed = copy.deepcopy(self.plan)
+            changed['measurement']['secondary_native_transport'][key] = value
+            with self.subTest(key=key),self.assertRaises(ValueError): f.validate_plan(changed)
+
+    def test_precompiled_binding_injects_guard_and_records_all_source_hashes(self):
+        # Private metadata-only test double: these bytes are not an ELF and are
+        # never loaded. Public AP bundle verification cannot admit this object.
+        bundle_root = self.root/'bundle'; (bundle_root/'lib').mkdir(parents=True)
+        binary = bundle_root/'lib/librender_corr_exact.so'; binary.write_bytes(b'TINY-NOT-ELF')
+        digest = f.source.file_hash(binary)
+        bundle = {'manifest':{'code_revision':'a'*40,'paths':{'render_corr':'lib/librender_corr_exact.so'},
+                              'files':{'lib/librender_corr_exact.so':digest}}}
+        binding = {'schema_version':1,'status':'BOUND_PREBUILT_VALIDATION_HELPER','code_revision':'a'*40,
+            'search_id':'exact-all-integer-lags-stride4-v1','library':'lib/librender_corr_exact.so',
+            'binary_sha256':digest,'source_sha256':f.CORRELATION_FILES['validation/tools/render_corr_exact.c'],
+            'loader_sha256':f.CORRELATION_FILES['validation/tools/render_corr_exact.py'],
+            'engine_sha256':f.CORRELATION_FILES['validation/tools/run_validation_engine.py'],
+            'compiler':'TINY_NOT_A_COMPILER','abi':'TINY_METADATA_ONLY','local_compilation':False}
+        guarded = mock.Mock(return_value=0.5)
+        api = types.SimpleNamespace(bind_render_corr_native=mock.Mock(return_value=binding),
+                                    build_bound_max_abs_corr=mock.Mock(return_value=guarded))
+        with mock.patch.object(f.run_validation.render_corr_exact,'_load_native',side_effect=AssertionError('compiler path forbidden')):
+            record, callback = f.precompiled_scoring(bundle_root,bundle,self.plan,api)
+            semantics = f.execution_semantics(self.root/'unused',{},callback)
+            self.assertEqual(semantics.evaluation.max_abs_corr([1],[2],16000),0.5)
+        api.bind_render_corr_native.assert_called_once_with(bundle_root,module=f.run_validation.render_corr_exact)
+        api.build_bound_max_abs_corr.assert_called_once_with(bundle_root,f.engine.normalized_corr,
+                                                             module=f.run_validation.render_corr_exact)
+        guarded.assert_called_once()
+        self.assertEqual(record['source_files_sha256'],f.CORRELATION_FILES)
+        self.assertEqual(record['binary_sha256'],digest)
+        self.assertEqual(record['local_c_compilations'],0)
+        self.assertFalse(record['implicit_compile_fallback_allowed'])
+
+    def test_precompiled_missing_binary_or_dirty_state_fails_without_fallback(self):
+        bundle_root = self.root/'bundle'; (bundle_root/'lib').mkdir(parents=True)
+        binary = bundle_root/'lib/librender_corr_exact.so'; binary.write_bytes(b'TINY-NOT-ELF')
+        digest = f.source.file_hash(binary)
+        bundle = {'manifest':{'paths':{'render_corr':'lib/librender_corr_exact.so'},
+                              'files':{'lib/librender_corr_exact.so':digest}}}
+        api = types.SimpleNamespace(bind_render_corr_native=mock.Mock(side_effect=ValueError('prior automatic compiler state')),
+                                    build_bound_max_abs_corr=mock.Mock())
+        with mock.patch.object(f.run_validation.render_corr_exact,'_load_native',side_effect=AssertionError('compiler fallback forbidden')):
+            with self.assertRaisesRegex(ValueError,'prior automatic'): f.precompiled_scoring(bundle_root,bundle,self.plan,api)
+            api.build_bound_max_abs_corr.assert_not_called()
+            binary.write_bytes(b'TINY-ALTERED')
+            api.bind_render_corr_native.reset_mock()
+            with self.assertRaisesRegex(ValueError,'binary drift'): f.precompiled_scoring(bundle_root,bundle,self.plan,api)
+            api.bind_render_corr_native.assert_not_called()
+
+    def test_measurement_math_host_matches_engineering_not_process_id_or_library_copy_path(self):
+        # A transport fixture only; the real AP normalizer owns actual ldd schema.
+        normalize = lambda row: {'host':row['host'],'libraries':row['libraries']}
+        api = types.SimpleNamespace(normalize_render_corr_runtime=normalize)
+        engineering = {'runtime_identity':{'render_corr':{'host':'HOST_A','libraries':{'libm':'a'*64},'path':'/original'}}}
+        runtime = {'loader_environment':'CLEAN_AT_START_AND_NOW','pid':123,
+            'parent_library_mappings':{'tiny':'opaque-not-real-maps'},
+            'runtime_identity':{'host':'HOST_A','libraries':{'libm':'a'*64},'path':'/copied'}}
+        f.check_math_runtime(runtime,engineering,api)
+        for changed in ({**runtime,'loader_environment':'POLLUTED'},
+                        {**runtime,'pid':False},
+                        {**runtime,'runtime_identity':{'host':'HOST_B','libraries':{'libm':'a'*64}}},
+                        {**runtime,'runtime_identity':{'host':'HOST_A','libraries':{'libm':'b'*64}}}):
+            with self.assertRaises(ValueError): f.check_math_runtime(changed,engineering,api)
 
     def test_replay_has_exact_128_cases_seven_files_and_consistent_sequential_time(self):
         cases = self.replay()

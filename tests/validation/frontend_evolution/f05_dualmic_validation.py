@@ -40,6 +40,11 @@ BASE = '5dc7176e0dde61944ba141952af7a9d8978a61f7'
 COMPONENTS = ('mic_audio', 'render_audio', 'clean_near_audio', 'interference_audio')
 FAILURE_PREFIXES = ('failure.json','failed-report.json','report-before-failure.json',
                     'artifact-manifest-before-failure.json')
+CORRELATION_FILES = {
+    'validation/tools/render_corr_exact.c':'19cbf9af3b3e36c5ca88546b4a6ab091af0292cbb2bffd69ac121eda70be90ac',
+    'validation/tools/render_corr_exact.py':'0a2f720e5b1eb29f7f4174bcadc8bca0d88bc5d0e34b9b19337c13d683127a81',
+    'validation/tools/run_validation_engine.py':'9082b061e7e46aa1c48c82c0ec845524110e01e910aa51e5b83c2c9d9594789a',
+}
 
 
 def write_json(path: Path, record) -> None:
@@ -135,6 +140,13 @@ def validate_plan(plan: dict) -> None:
             processor['default_pipeline_only'] is True and processor['metadata_queries_during_matrix'] == 0, 'processor scope drift')
     require(processor['source_declared_algorithmic_latency_ms'] == {'raw':0,'call':10,'assistant':10}, 'declared source latency drift')
     require(processor['engineering_copy_bound'] == {'files':512,'bytes':67108864}, 'AP engineering copy bound drift')
+    native = measurement['secondary_native_transport']
+    require(native['search_id'] == 'exact-all-integer-lags-stride4-v1' and
+            native['source_files_sha256'] == CORRELATION_FILES and
+            native['bundle_path_key'] == 'render_corr' and native['bundle_relative_file'] == 'lib/librender_corr_exact.so' and
+            native['build_location'] == 'github-actions-only' and native['local_compilation_allowed'] is False and
+            native['implicit_compile_fallback_allowed'] is False and
+            native['scoring_factory'] == 'ap_current_ci.build_bound_max_abs_corr', 'precompiled exact-correlation method drift')
     expected = dict(generator_wall_seconds=120, matrix_wall_seconds=600, independent_readback_wall_seconds=600,
                     processor_case_wall_seconds=30, planned_audio_processor_calls=128, maximum_audio_processor_calls=128,
                     automatic_retries=0, parameter_searches=0, parallel_processors=1, base_inputs=64,
@@ -175,6 +187,7 @@ def code_identity(revision: str, *, require_head: bool = True) -> dict:
                                    'tests/validation/frontend_evolution/f05_dualmic_validation.py',
                                    'tests/validation/frontend_evolution/test_f05_dualmic_validation.py'}
     names.update(ap.CONTROL_FILES)
+    names.update(CORRELATION_FILES)  # The canonical native score helper is a separate C source file.
     # Close all actual first-party imports, including the AP bundle helper's
     # dependencies, instead of omitting a transitive evaluator/identity module.
     for module in tuple(sys.modules.values()):
@@ -558,14 +571,54 @@ def replay_layout(root: Path, cases: list[dict], matrix_seconds: float | None = 
     return total
 
 
-def execution_semantics(retain_root: Path, environment: dict):
+def precompiled_scoring(bundle_root: Path, bundle: dict, plan: dict, ap):
+    """Load the CI helper explicitly, never the old automatic compiler path."""
+    native = plan['measurement']['secondary_native_transport']
+    for name,digest in CORRELATION_FILES.items():
+        require(source.file_hash(ROOT/name) == digest, 'canonical correlation source/loader drift: ' + name)
+    module = run_validation.render_corr_exact
+    require(Path(module.__file__).resolve() == ROOT/'validation/tools/render_corr_exact.py' and
+            module.SEARCH_ID == native['search_id'], 'wrong loaded canonical correlation module')
+    relative = bundle['manifest']['paths'][native['bundle_path_key']]
+    require(relative == native['bundle_relative_file'], 'wrong precompiled correlation artifact path')
+    binary = source.safe_local(bundle_root/relative)
+    require(source.file_hash(binary) == bundle['manifest']['files'][relative], 'precompiled correlation binary drift')
+    binding = ap.bind_render_corr_native(bundle_root, module=module)
+    require(isinstance(binding,dict) and finite(binding) and type(binding.get('schema_version')) is int and
+            binding['schema_version'] == 1 and binding['status'] == 'BOUND_PREBUILT_VALIDATION_HELPER' and
+            binding['code_revision'] == bundle['manifest']['code_revision'] and binding['search_id'] == native['search_id'] and
+            binding['library'] == relative and binding['binary_sha256'] == source.file_hash(binary) and
+            binding['source_sha256'] == CORRELATION_FILES['validation/tools/render_corr_exact.c'] and
+            binding['loader_sha256'] == CORRELATION_FILES['validation/tools/render_corr_exact.py'] and
+            binding['engine_sha256'] == CORRELATION_FILES['validation/tools/run_validation_engine.py'] and
+            binding['compiler'] and binding['abi'] and binding['local_compilation'] is False,
+            'invalid precompiled correlation binding')
+    guarded = ap.build_bound_max_abs_corr(bundle_root, engine.normalized_corr, module=module)
+    require(callable(guarded), 'missing guarded precompiled correlation scorer')
+    record = {'search_id':native['search_id'], 'source_files_sha256':CORRELATION_FILES,
+              'bundle_relative_file':relative, 'binary_sha256':source.file_hash(binary),
+              'binding':binding, 'local_c_compilations':0, 'implicit_compile_fallback_allowed':False}
+    return record, guarded
+
+
+def check_math_runtime(runtime: dict, engineering: dict, ap) -> None:
+    require(runtime['loader_environment'] == 'CLEAN_AT_START_AND_NOW' and
+            type(runtime['pid']) is int and runtime['pid'] > 0 and runtime['parent_library_mappings'],
+            'invalid math helper parent-process observation')
+    require(ap.normalize_render_corr_runtime(runtime['runtime_identity']) ==
+            ap.normalize_render_corr_runtime(engineering['runtime_identity']['render_corr']),
+            'measurement math helper host/libraries differ from selected engineering')
+
+
+def execution_semantics(retain_root: Path, environment: dict, max_abs_corr):
     """Bind actual invocation to the same environment used for host identity."""
     semantics = support.validation_semantics()
     def clean_run(command, **kwargs):
         require('env' not in kwargs, 'unexpected processor environment override')
         return subprocess.run(command, env=environment, **kwargs)
     return replace(semantics, evaluation=replace(semantics.evaluation,
-        invoke=support.build_invoke(semantics.evaluation.invoke, retain_root=retain_root, run_command=clean_run)))
+        invoke=support.build_invoke(semantics.evaluation.invoke, retain_root=retain_root, run_command=clean_run),
+        max_abs_corr=max_abs_corr))
 
 
 def run_matrix(archive: Path, corpus_path: Path, bundle_root: Path, engineering_receipt: Path | None,
@@ -587,6 +640,11 @@ def run_matrix(archive: Path, corpus_path: Path, bundle_root: Path, engineering_
         shutil.copy2(ROOT/name, destination)
         require(source.file_hash(destination) == digest, 'source snapshot copy mismatch')
     processor = retained_bundle['paths']['processor']
+    # Load only the retained copy. No library from the caller's input bundle is
+    # loaded first, and no canonical score can fall back to host compilation.
+    correlation, guarded_corr = precompiled_scoring(output/'bundle', retained_bundle, plan, ap)
+    math_runtime = ap.render_corr_runtime_identity(output/'bundle', module=run_validation.render_corr_exact)
+    check_math_runtime(math_runtime,host['engineering'],ap)
     report = {'schema_version':1, 'study_id':STUDY, 'status':'INCOMPLETE', 'harness_revision':controls['commit'],
         'processor_revision':bundle['manifest']['code_revision'], 'controls':controls, 'plan_sha256':source.file_hash(PLAN),
         'data_use':plan['data_use'], 'source_receipt_sha256':SOURCE_RECEIPT,
@@ -600,12 +658,15 @@ def run_matrix(archive: Path, corpus_path: Path, bundle_root: Path, engineering_
         'automatic_retries':0, 'parameter_searches':0, 'primary_target_lag_searches':0,
         'secondary_target_refinement_ms':3, 'secondary_alignment_method':'existing-canonical-bounded-correlation',
         'secondary_render_interference_maxcorr_radius_ms':100,
+        'secondary_native_correlation':correlation, 'local_c_compilations':0,
+        'math_runtime_identity':math_runtime, 'math_runtime_observations':1,
+        'math_runtime_observation_method':'read-only-ldd-and-proc-self-environ-maps',
         'shipping_authority':False, 'promotion_allowed':False, 'quality_decision':plan['quality_decision'],
         'not_run':plan['not_run']}
     check_execution_paths(report, retained_bundle)
     write_json(output/'progress.json', report)
     environment = ap.execution_environment()
-    semantics = execution_semantics(output/'replay', environment)
+    semantics = execution_semantics(output/'replay', environment, guarded_corr)
     require(support.PROCESS_TIMEOUT_SECONDS == plan['budgets']['processor_case_wall_seconds'], 'existing invocation timeout drift')
     for case in corpus['cases']:
         require(time.monotonic()-started < 600 and report['processor_calls_attempted'] < 128, 'matrix budget/call limit')
@@ -628,6 +689,11 @@ def run_matrix(archive: Path, corpus_path: Path, bundle_root: Path, engineering_
     require(report['total_output_samples'] == plan['budgets']['total_output_samples'], 'output duration budget mismatch')
     require(ap.require_host_engineering(output/'bundle', used_receipt)['runtime_identity'] == host['runtime_identity'], 'host/runtime changed during measurement')
     require(ap.verify_bundle(output/'bundle')['manifest'] == bundle['manifest'], 'processor bundle changed')
+    require(precompiled_scoring(output/'bundle', retained_bundle, plan, ap)[0] == correlation, 'native correlation binding changed during measurement')
+    report['math_runtime_identity_after'] = ap.render_corr_runtime_identity(output/'bundle', module=run_validation.render_corr_exact)
+    report['math_runtime_observations'] = 2
+    check_math_runtime(report['math_runtime_identity_after'],host['engineering'],ap)
+    require(report['math_runtime_identity_after'] == math_runtime, 'math helper runtime changed during measurement')
     require(code_identity(controls['commit']) == controls, 'harness changed during measurement')
     require(file_manifest(output/'input', plan) == file_manifest(corpus_path.parent, plan), 'retained input changed during measurement')
     source.check_archive(archive, plan['source']['archive'])
@@ -671,7 +737,7 @@ def verify_measurement(archive: Path, output: Path, plan: dict, revision: str) -
             'measurement process/budget mismatch')
     require(report['processor_calls_attempted'] == report['processor_calls_completed'] == len(report['cases']) == 128 and
             report['metadata_queries_during_matrix'] == report['automatic_retries'] == report['parameter_searches'] ==
-            report['primary_target_lag_searches'] == 0, 'non-frozen call/search counts')
+            report['primary_target_lag_searches'] == report['local_c_compilations'] == 0, 'non-frozen call/search/compile counts')
     require(report['data_use'] == plan['data_use'] and report['not_run'] == plan['not_run'] and
             report['source_receipt_sha256'] == SOURCE_RECEIPT and report['source_archive_sha256'] == plan['source']['archive']['sha256'] and
             report['shipping_authority'] is False and report['promotion_allowed'] is False and
@@ -697,13 +763,21 @@ def verify_measurement(archive: Path, output: Path, plan: dict, revision: str) -
     check_engineering(engineering, bundle, revision)
     require(ap.normalize_runtime(engineering['runtime_identity']) == ap.normalize_runtime(report['runtime_identity']) and
             engineering['default_tuning'] == report['default_tuning'], 'recorded host/default tuning drift')
+    correlation, guarded_corr = precompiled_scoring(output/'bundle', bundle, plan, ap)
+    require(correlation == report['secondary_native_correlation'], 'recorded native correlation binding drift')
+    require(report['math_runtime_observations'] == 2 and
+            report['math_runtime_observation_method'] == 'read-only-ldd-and-proc-self-environ-maps' and
+            report['math_runtime_identity'] == report['math_runtime_identity_after'],
+            'recorded measurement math runtime changed')
+    check_math_runtime(report['math_runtime_identity'],engineering,ap)
+    reader_math_runtime = ap.render_corr_runtime_identity(output/'bundle', module=run_validation.render_corr_exact)
     corpus = verify_corpus(archive, output/'input/corpus.json', plan, controls)
     require(source.file_hash(output/'input/corpus.json') == report['corpus_sha256'], 'retained corpus identity changed')
     require(replay_layout(output, corpus['cases'], report['matrix_wall_seconds']) == report['processor_wall_seconds_sum'], 'sequential timing readback changed')
     semantics = support.validation_semantics()
     def no_processor(_processor, case, _corpus_path, _temporary):
         return retained_case(output, report, case)
-    evaluation = replace(semantics.evaluation, invoke=no_processor)
+    evaluation = replace(semantics.evaluation, invoke=no_processor, max_abs_corr=guarded_corr)
     measured = [semantics.evaluate_case(Path('unused-no-processor'), output/'input/corpus.json', case, evaluation)
                 for case in corpus['cases']]
     require(measured == report['cases'] and finite(measured), 'canonical secondary readback changed')
@@ -712,6 +786,9 @@ def verify_measurement(archive: Path, output: Path, plan: dict, revision: str) -
     require(secondary_summary(corpus, measured) == report['secondary_canonical_summary'], 'canonical secondary summary changed')
     total = sum(case['dimensions']['samples_per_channel'] for case in corpus['cases'])
     require(total == report['total_output_samples'] == 28277760 and report['source_original_samples'] == 5241680, 'coverage/duration drift')
+    require(precompiled_scoring(output/'bundle', bundle, plan, ap)[0] == correlation, 'native correlation binding changed during readback')
+    reader_math_runtime_after = ap.render_corr_runtime_identity(output/'bundle', module=run_validation.render_corr_exact)
+    require(reader_math_runtime_after == reader_math_runtime, 'reader math helper runtime changed')
     require(code_identity(revision, require_head=False) == controls, 'reader control drift')
     elapsed = time.monotonic()-started
     require(elapsed <= 600, 'independent readback wall budget exceeded')
@@ -720,6 +797,10 @@ def verify_measurement(archive: Path, output: Path, plan: dict, revision: str) -
             'artifact_manifest_sha256':source.file_hash(output/'artifact-manifest.json'),
             'cases':128, 'original_utterances':32, 'source_speakers':8, 'source_original_seconds':327.605,
             'output_seconds':total/RATE, 'processor_invocations':0, 'decoder_invocations':0,
+            'local_c_compilations':0, 'secondary_native_correlation':correlation,
+            'reader_math_runtime_identity':reader_math_runtime, 'reader_math_runtime_identity_after':reader_math_runtime_after,
+            'math_runtime_observations':2, 'runtime_observation_method':'read-only-ldd-and-proc-self-environ-maps',
+            'subprocess_policy':'Git identity and read-only ldd observations allowed; no SDK, codec or compiler execution',
             'renderer_reconstruction':True, 'primary_target_lag_searches':0, 'secondary_target_refinement_ms':3,
             'secondary_render_interference_maxcorr_radius_ms':100, 'elapsed_seconds':elapsed,
             'quality_decision':plan['quality_decision'], 'promotion_allowed':False}

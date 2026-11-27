@@ -122,3 +122,16 @@ python3 -B tests/validation/frontend_evolution/test_webrtc_aec3_reference.py
 这些是来源、selector、传输、复制/打包和失败边界测试，不下载/编译外部参考库，
 不执行语音 DSP，也不生成真实 binary 的工程 PASS。
 重编仅通过新增 Actions job；六例语音对照不接入本 job，也不因 workflow 修改重跑历史候选。
+
+## 首次实际 CI 的共享库枚举失败
+
+[run 46043193599](https://github.com/jiying2007/audio-pipeline/actions/runs/46043193599)
+对应 head `1f5b6d0e0cbf18c10471a8629f26baa712e38199`。scope 成功，只有 AEC3 job
+执行，全部历史 DSP 与 D8 archive jobs 均跳过。工程步骤在收集共享库身份时失败：
+原 `*.so*` 枚举把 Meson 的 `libwebrtc-audio-processing-2.so.1.p/` 对象目录纳入文件
+读取，触发 `IsADirectoryError`；失败前缀保存在 artifact `15220518270`。
+该轮没有工程 PASS，也没有开始六例语音对照。
+
+后继修复只要求枚举项同时为普通文件且不是符号链接，保留实际版本共享库并排除
+对象目录。tiny 回归复现该目录形态以及仅有对象目录时的拒绝路径；不改源码归档、
+编译/音频预算、算法配置或工程验收标准。修复后的实际结果仍须由新 head 的 Actions 产生。

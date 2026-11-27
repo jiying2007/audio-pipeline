@@ -298,6 +298,18 @@ class SourceTests(unittest.TestCase):
                 source.run_logged(["must-not-run"], self.home / "log", {}, 0)
             launch.assert_not_called()
 
+    def test_meson_object_directory_is_not_a_shared_library(self):
+        build = self.home / "meson"
+        objects = build / "libwebrtc-audio-processing-2.so.1.p"
+        objects.mkdir(parents=True)
+        (objects / "tiny.o").write_bytes(b"synthetic object-path fixture")
+        with self.assertRaisesRegex(ValueError, "missing built"):
+            source.built_shared_libraries(build)
+        library = build / "libwebrtc-audio-processing-2.so.1"
+        library.write_bytes(b"synthetic regular-file fixture; never compiled")
+        (build / "libwebrtc-audio-processing-2.so").symlink_to(library)
+        self.assertEqual(source.built_shared_libraries(build), [library])
+
     def test_timeout_terminates_full_process_group(self):
         process = mock.Mock(pid=12345)
         process.wait.side_effect = [subprocess.TimeoutExpired("tiny-fixture", 1), 0]

@@ -279,6 +279,14 @@ def run_logged(command: list, path: Path, env: dict, deadline: float) -> int:
             raise ValueError("build wall-time budget exhausted; process group terminated")
 
 
+def built_shared_libraries(binary: Path) -> list:
+    # Meson also creates libNAME.so.VERSION.p/ for objects; it is not a library.
+    libraries = sorted(p for p in binary.rglob("libwebrtc-audio-processing-2.so*")
+                       if not p.is_symlink() and p.is_file())
+    require(libraries, "missing built WebRTC reference library")
+    return libraries
+
+
 def build(prepared: Path, build_dir: Path, meson: str, ninja: str) -> dict:
     started = time.monotonic()
     plan = build_plan(prepared, build_dir, meson)
@@ -317,8 +325,7 @@ def build(prepared: Path, build_dir: Path, meson: str, ninja: str) -> dict:
         require(deadline > time.monotonic(), "build wall-time budget exhausted")
         libs = subprocess.check_output([tools["pkg_config"]["path"], "--libs", pc_module], env=pc_env,
                                       timeout=min(10, deadline - time.monotonic())).decode().strip()
-        libraries = sorted(p for p in Path(plan["meson_build_dir"]).rglob("libwebrtc-audio-processing-2.so*") if not p.is_symlink())
-        require(libraries, "missing built WebRTC reference library")
+        libraries = built_shared_libraries(Path(plan["meson_build_dir"]))
         result["link"] = {"pkgconfig_dir": str(pc_dir), "pkgconfig_module": pc_module,
                           "pkgconfig_sha256": sha256((pc_dir / (pc_module + ".pc")).read_bytes()),
                           "cflags": shlex.split(cflags), "libs": shlex.split(libs),

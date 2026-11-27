@@ -29,7 +29,18 @@ T2F0_PREFIX = "frontend-fe09-s3-t2-f0-render-feasibility-"
 T2C0_PREFIX = "frontend-fe09-s3-t2c0-owner-fallback-"
 T3S0_PREFIX = "frontend-fe09-t3s0-compiled-resource-"
 T2B0_PREFIX = "frontend-fe09-s3-t2b-b0-capture-only-bf-"
-ATTEMPT_PREFIXES = (T2B0_PREFIX, T3S0_PREFIX, T3S1_PREFIX, T2A_PREFIX, ROOT_PREFIX, T2F0_PREFIX, T2C0_PREFIX)
+# Five observed upload-success/immediate-name-lookup failures on 2026-11-28.
+# These join the existing exact-attempt REST guard; its finite budget and
+# identity/byte/expiry/source predicates below remain unchanged.
+READBACK_PARITY_PREFIXES = (
+    "frontend-fe09-b2s1-private-queue-",
+    "frontend-fe09-b2s2-private-apd-",
+    "frontend-fe09-s3-t1-source-wrap-",
+    "frontend-fe09-t3s2b0-fbs1-index-",
+    "frontend-fe09-t3s2b1ba0-finite-",
+)
+ATTEMPT_PREFIXES = (T2B0_PREFIX, T3S0_PREFIX, T3S1_PREFIX, T2A_PREFIX, ROOT_PREFIX,
+                    T2F0_PREFIX, T2C0_PREFIX, *READBACK_PARITY_PREFIXES)
 REST_PREFIXES = (A1_PREFIX, *ATTEMPT_PREFIXES)
 # A1's new 100-row REST response has its own finite metadata cap. Existing
 # single-entity/run metadata stays at 64 KiB; scientific files are unaffected.

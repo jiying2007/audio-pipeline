@@ -82,9 +82,9 @@ python3 tests/validation/frontend_evolution/test_fe09_b3_f0_deadline_r1.py
 # R2 T1 verifies the separately preregistered 2/4-file source identity, never
 # runs B3/F0 DSP nor inherits its historical R1 scientific verdict.
 python3 tests/validation/frontend_evolution/fe09_b3_f0_r2_source_admission.py --self-test
-# R6 preserves old source gates and their rejection of newer versions. Its
+# R11 preserves old source gates and their rejection of newer versions. Its
 # source-only registration never turns historical results into current results.
-python3 tests/validation/frontend_evolution/fe09_b3_f0_r10_source_admission.py --check-current
+python3 tests/validation/frontend_evolution/fe09_b3_f0_r11_source_admission.py --check-current
 # R2 T2 executor source audit only: both derivations retain byte-exact R1
 # scientific functions and immutable resource/error budgets; NO DSP is run.
 # Source-only T3 verifier: runs original immutable T2 on frozen R2 and
@@ -145,7 +145,23 @@ python3 tests/validation/frontend_evolution/fe09_b3_f0_deadline_r10_qualificatio
 python3 tests/validation/frontend_evolution/fe09_t3s3_f0_call_resource_r10_qualification.py --self-test
 python3 tests/validation/frontend_evolution/test_fe09_runtime_2365_routes.py
 python3 tests/validation/frontend_evolution/test_fe09_r10_source_entries.py --self-test
+# R11 adds exact validation-maintenance identities; all R10 checks stay intact.
+python3 tests/validation/frontend_evolution/fe09_b3_f0_r11_source_admission.py --self-test
+python3 tests/validation/frontend_evolution/fe09_dualmic_r11_derivation_contract.py --self-test
+python3 tests/validation/frontend_evolution/fe09_dualmic_r11_derivation_contract.py --method-self-test
+python3 tests/validation/frontend_evolution/fe09_b3_f0_deadline_r11_qualification.py --self-test
+python3 tests/validation/frontend_evolution/fe09_t3s3_f0_call_resource_r11_qualification.py --self-test
+python3 tests/validation/frontend_evolution/test_fe09_validation_2366_routes.py
+python3 tests/validation/frontend_evolution/test_fe09_r11_source_entries.py --self-test
 source_version=$(sed -n 's/^project(audio_pipeline VERSION \([^ ]*\) LANGUAGES C)$/\1/p' CMakeLists.txt)
+# R11_SELECTION_F1_A3_BEGIN
+if [ "$source_version" = 2.3.66 ]; then
+  f1_source=tests/validation/frontend_evolution/fe09_f1_r8_source_bridge.py
+  f1_build=tests/validation/frontend_evolution/fe09_f1_r8_build.py
+  a3_static=tests/validation/frontend_evolution/fe09_a3_r7_static_build.py
+  f1_output=f1-r8-t1
+  a3_output=a3-r7-t1
+else
 # R10_SELECTION_F1_A3_BEGIN
 if [ "$source_version" = 2.3.65 ]; then
   f1_source=tests/validation/frontend_evolution/fe09_f1_r7_source_bridge.py
@@ -193,12 +209,18 @@ else
   exit 2
 fi
 # R10_SELECTION_F1_A3_END
-# The preparation tree remains 2.3.64. Exercise actual committed entry paths
-# automatically once the separately reviewed 2.3.65 source is present.
-if [ "$source_version" = 2.3.65 ]; then
+fi
+# R11_SELECTION_F1_A3_END
+# Real committed source-only entry checks; no collector or compiler execution.
+if [ "$source_version" = 2.3.65 ] || [ "$source_version" = 2.3.66 ]; then
   execution_source=$(git -c "safe.directory=$PWD" rev-parse HEAD)
-  python3 tests/validation/frontend_evolution/test_fe09_r10_source_entries.py \
-    --check-integration --execution-source "$execution_source"
+  if [ "$source_version" = 2.3.66 ]; then
+    python3 tests/validation/frontend_evolution/test_fe09_r11_source_entries.py \
+      --check-integration --execution-source "$execution_source"
+  else
+    python3 tests/validation/frontend_evolution/test_fe09_r10_source_entries.py \
+      --check-integration --execution-source "$execution_source"
+  fi
 fi
 # F1-R2-T0 reconciles source identities only; no F1 cohort or provider request.
 python3 tests/validation/frontend_evolution/test_fe09_f1_r2_source_bridge.py

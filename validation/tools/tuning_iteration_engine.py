@@ -802,7 +802,7 @@ def load_reusable_baseline_report(
     if str(report.get("source_revision", "")).lower() != current_source_revision(repo_root):
         raise ValueError(f"reusable baseline source revision drift: {report_path}")
     expected = {
-        "authority_sha256": sha256_file(repo_root / "validation/authority.json"),
+        "authority_sha256": sha256_file(repo_root / "validation/research-authority.json"),
         "dataset_lock_sha256": sha256_file(dataset_lock),
         "corpus_sha256": sha256_file(corpus),
         "policy_sha256": sha256_file(policy),
@@ -1123,7 +1123,7 @@ def self_test() -> None:
             "corpus_id": "baseline-reuse-self-test",
             "source_revision": current_source_revision(repo_root),
             "bindings": {
-                "authority_sha256": sha256_file(repo_root / "validation/authority.json"),
+                "authority_sha256": sha256_file(repo_root / "validation/research-authority.json"),
                 "dataset_lock_sha256": sha256_file(dataset_lock),
                 "corpus_sha256": sha256_file(corpus),
                 "policy_sha256": sha256_file(policy),

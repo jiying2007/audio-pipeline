@@ -12,6 +12,8 @@
 
 ## 双/四麦历史研究接续
 
+[D1/D2 封存原件恢复](research/frontend-evolution-v1/DUALMIC_ARCHIVE_RECOVERY.zh-CN.md)提供固定原 ZIP 的离线校验入口，复用历史 reader，独立记录恢复结果；不依赖仍存活的 Actions 元数据，也不重跑原算法或改写旧结论。
+
 [C4 软件资格与缺口清单](research/frontend-evolution-v1/C4_SOFTWARE_GAP_INVENTORY_20261020.md) 顶部记录已核实的阶段收口，并保留原始盘点：A1 非零左锚点根、v2.3.56 Runtime/CI 六项修复、无损证据运输，以及 A2-F0 固定前缀退休与外部锚定的 hosted 进程恢复已完成。B3-F0 [#837](https://github.com/jiying2007/audio-pipeline/issues/837) 已完成固定 C4/16kHz 实际 CALL 的 Render PRESENT/ABSENT/重入功能组合；[T3-S3-F0 资源测量](research/frontend-evolution-v1/FE09_T3S3_F0_RESOURCE_PREREGISTRATION_20261024/README.md) 需取得自身独立主线原件与门禁后才能作为有限测量完成。连续滚动、整机冷启动、完整线程栈/设备资源和公共 C4 SDK 仍须分别推进。当前任务以 [研究总索引 #657](https://github.com/jiying2007/audio-pipeline/issues/657) 及具体子任务的最新收口记录为准；历史预注册的待完成状态不覆盖后续 completed 子任务，也不等于父计划已完成。
 
 ## 按角色阅读

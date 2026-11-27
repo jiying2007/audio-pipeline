@@ -3,7 +3,7 @@
 
 The metric/evaluation implementation lives in run_validation_engine.py. This
 entrypoint owns corpus-tier authority so every workflow and local invocation
-uses validation/authority.json as the single source of truth.
+uses validation/research-authority.json as the single source of truth.
 """
 
 from __future__ import annotations
@@ -17,7 +17,7 @@ from typing import Any, Callable
 import render_corr_exact
 import run_validation_engine as engine
 import stage_profile_support
-from authority import corpus_tiers, load_authority, tier_spec
+from authority import corpus_tiers, load_authority, load_authority_snapshot, tier_spec
 
 def canonical_evaluation_semantics() -> engine.EvaluationSemantics:
     """Build canonical evaluator extensions without mutating engine globals."""
@@ -185,7 +185,7 @@ def main(semantics: ValidationSemantics | None = None) -> int:
         if getattr(args, name) is None:
             parser.error(f"--{name.replace('_', '-')} is required")
 
-    authority = load_authority()
+    authority, authority_sha256 = load_authority_snapshot()
     corpus = json.loads(args.corpus.read_text(encoding="utf-8"))
     policy = json.loads(args.policy.read_text(encoding="utf-8"))
     validate_corpus_shape(corpus, authority)
@@ -219,7 +219,7 @@ def main(semantics: ValidationSemantics | None = None) -> int:
         "policy_id": policy.get("policy_id"),
         "source_revision": engine.load_revision(args.source_revision),
         "bindings": {
-            "authority_sha256": engine.sha256_file(Path("validation/authority.json")),
+            "authority_sha256": authority_sha256,
             "dataset_lock_sha256": engine.sha256_file(args.dataset_lock),
             "corpus_sha256": engine.sha256_file(args.corpus),
             "policy_sha256": engine.sha256_file(args.policy),

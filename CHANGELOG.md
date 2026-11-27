@@ -1,3 +1,17 @@
+# 2.3.66
+
+- Research validation: bind each report to the exact bytes of the research
+  authority loaded for that run, and require the same authority identity when
+  reusing a tuning baseline. Custom authority paths and byte changes are covered
+  by independent negative controls; historical v1 evidence remains unchanged.
+- Validation replay: materialize canonical PCM, preserve role-separated originals
+  and byte hashes, and replay the captured canonical invocation. Malformed inputs,
+  mismatched corpus identity, overwritten evidence and processor failures are
+  rejected. Tiny WAV/raw and same-basename regressions cover the repair.
+- Register exact 2.3.66 research reader identities for the version change.
+  Public DSP C/H sources, scientific thresholds and historical results are
+  unchanged; source registration does not inherit an earlier measurement.
+
 # 2.3.65
 
 - Fail Runtime startup with `AP_ESTATE` when pthread attribute initialization fails, restore stopped state, and never silently discard a requested worker stack size.

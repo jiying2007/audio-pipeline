@@ -12,6 +12,18 @@ canonical 失败复现修复为 [PR #970](https://github.com/jiying2007/audio-pi
 当前研究 authority 见 [RESEARCH_ONLY_EXECUTION.md](../../RESEARCH_ONLY_EXECUTION.md)；
 商业发布、历史产品认证和固定 72 小时 soak 不是研究前置条件。
 
+### 本轮已执行的三个不同边界
+
+| 入口 | 实际材料和执行 | 可以据此回答的问题 |
+| --- | --- | --- |
+| [AEC3/APM 参考结果](WEBRTC_AEC3_RESULT_20261128.zh-CN.md) | 固定源码真实构建、宿主工程复验、6 个已披露案例的 12 次新执行和独立回读 | 该 post-BF mono 边界的远端抑制与双讲保持取舍；不替换默认实现 |
+| [实测 RIR 结果](DECHORATE_RIR_GAP_20261128/README.zh-CN.md) | 原 12 对象、1 个房间、11 个相关状态，22 个固定通道视图；一次测量与独立复算 | 冻结一阶模型族的有限支撑覆盖限制；不把缺口归为纯混响或算法损失 |
+| [F05 来源准备合同](F05_SPEECH_SOURCE_V1.zh-CN.md) | 完整原 dev-clean 归档、32 原 FLAC 与完整 PCM 共 327.605 秒、8 个可追溯适配窗；实际 codec-free 回读 | 新来源字节、格式、范围和数据角色成立；该来源合同没有授权声学运行 |
+
+方法与科学结果都绑定各自实际公开执行源码，后续仓库集成不能替换其身份。
+工程集成、运输失败、最终 PR/main 门禁的可变状态统一由 [#968](https://github.com/jiying2007/audio-pipeline/issues/968)
+登记；来源准备、描述性诊断和算法晋级不是同一种完成状态。
+
 ## 1. 从一个已冻结问题开始
 
 每项新实验先记录实际 base/head、单一假设、输入及角色、处理链、指标和时间窗、接受/停止
@@ -56,6 +68,15 @@ commit/tree、归档与材料化文件 hash、许可证/notices、所选执行�
 设备与测量，不是所有研究都必须执行的商业门槛。已查看的 test-root 不因换目录、切窗、
 重采样或新增模型而转成 development。既有 FE04 两对已披露语音、空间投影及循环拼接，
 也不会变成新的 holdout。
+
+本轮 [F05 材料与曝光审计](F05_READINESS_20261128/README.zh-CN.md)核对了原119文件、
+16会话、68 WAV；56种文件SHA不等于56位独立说话人。两个严格WAV reader拒绝的原件
+另有显式header衍生件，只改block_align字段而PCM不变；原件与拒绝事实仍保留。
+随后独立的F05来源合同按已冻结排除表选出下一组8位说话人，取得32个完整原句。
+它们维持 `reserved-validation-visible-scope-separated / NOT_BLIND`；未命中可见曝光扫描
+不是全局未曝光证明。完整源句327.605秒与适配片段32秒分别记账，两处跨句片段有逐段跨度。
+新声学使用必须有另行冻结的合同，并继续禁止训练、优化选择与自动晋级；不能改旧56例工具
+的source lock或把新材料改名送入旧 `regression` 准入。
 
 ## 3. 已有仿真和压力覆盖：按问题选择入口
 
@@ -104,6 +125,29 @@ python3 tests/validation/frontend_evolution/array_qualification.py --self-test
 [quality.yml](../../../.github/workflows/quality.yml)。仿真首版已经覆盖同步、路径、非线性及
 多通道的各自工程边界；目前缺的是独立真实输入与这些因素的物理联合验证，而非另一个
 通用 generator。后续新增压力只针对已证明的具体覆盖缺口，先固定单一变化和预算。
+
+### 实测 RIR 对现有模型的独立约束
+
+[FE-SIM-RIR-SUPPORT-GAP-V1](DECHORATE_RIR_GAP_V1.zh-CN.md)已经从固定原 SOFA `Data.IR`
+完成一次实际诊断及独立复算。它使用原 48 kHz、48,000 样点记录，不做重采样、幅度归一化、
+噪声扣除或参数拟合。原 loader 检查55条RIR的有限性，只计冻结的前两通道共22条相关视图。
+在原房间长边5.965 m、声明声速343 m/s及原线性插值支撑下，1677样点是保守的一阶模型支撑窗。
+允许整体窗位置取能量最大值后，未覆盖有限记录能量下界为0.975639%～32.336418%，中位2.348868%。
+
+这是对有限支撑的限制：连续区间已经比实际七条稀疏路径更宽松，缺口较小也不证明七路径能拟合。
+该数字不是全模型误差、纯混响份额或处理音质损失；换能器、测量链与噪声均可能贡献能量。
+材料来自一个物理房间的11相关状态，不能计算为11个独立房间。绝对物理t0未知，原RoomDescription、
+温度/体积占位字段的问题已记录，不以模型生成的EchoTimings标注反过来证明模型。
+完整22行、图与原件身份见[实际结果](DECHORATE_RIR_GAP_20261128/README.zh-CN.md)。
+
+原结果应在公开冻结源码 `a058b02582962875ac10e6bb42b928c46c405213` 检出中回读：
+
+```sh
+python3 -B tests/validation/frontend_evolution/dechorate_rir_gap.py verify \
+  --output /absolute/rir-evidence/sealed
+```
+
+此回读不会执行产品DSP；不能改窗长、换数据或重新拟合后仍称为同一冻结实验。
 
 ## 4. 同一评分权威与失败复现
 
@@ -206,8 +250,11 @@ python3 tests/validation/frontend_evolution/webrtc_aec3_reference.py verify --ou
 完整结果、失败保留、数据与计时边界、原件 SHA256 见
 [本轮真实结果](WEBRTC_AEC3_RESULT_20261128.zh-CN.md)。
 AEC3 远端抑制与双讲保真呈现明显取舍；本轮保持诊断参考，不替换默认算法、不产生晋级或实机结论。
-方法集成 [#970](https://github.com/jiying2007/audio-pipeline/pull/970) 与研究集成
-[#971](https://github.com/jiying2007/audio-pipeline/pull/971) 各以实际受保护 merge/main 记录为准。
+方法集成 [#970](https://github.com/jiying2007/audio-pipeline/pull/970)、运输与资料修复
+[#972](https://github.com/jiying2007/audio-pipeline/pull/972)和科研最终集成
+[#973](https://github.com/jiying2007/audio-pipeline/pull/973)各以实际受保护 merge/main 记录为准。
+AEC3的原实现/测量分支[#971](https://github.com/jiying2007/audio-pipeline/pull/971)作为独立来源保留，
+最终整合不得重写其实际819849ee测量身份或借用此前head的绿灯。
 
 ## 6. 原始 ZIP 长期恢复与证据保全
 
@@ -258,10 +305,14 @@ I025–I040、#962 和 S003 已终止机制链继续保持原结论；新 AEC3 �
 [Speex 参考](SPEEXDSP_AEC_REFERENCE.md)、SOF FIR、BF/AEC 顺序及已做阶段诊断均直接复用，
 不再以“补基线”为名重复旧声学批次。
 
-下一阶段需要增加的是与明确研究问题相匹配的证据：合法且独立的新说话人/房间/设备输入，
+未完成项按实际前提分别登记。新说话人整链验证、由负结果提出的单一结构假设，以及针对实测
+RIR差距的新模型合同，属于可继续推进的内部科研任务；未执行就记为 `NOT_RUN`，不能归为缺设备。
+本轮已取得合法固定新语音原件，仍需要另行冻结对应科学使用、比较对象、预算与评分范围。
+
 真实双麦/四麦校准和方向误差、实测同步/route/采样钟分布、扬声器非线性及路径联合变化，
-以及 SSC305 对应编译器/系统/路由上的实际资源测量。已有合成分项覆盖不能证明这些联合
-物理因素已测过；没有独立数据准入或实际 DUT 的项目继续为 `NOT_RUN`/`BLOCKED`。
+以及SSC305对应编译器/系统/路由上的实际资源测量，需要各自具体的原始事实、设备或记录。
+只有明确了所缺条件的项目才记 `BLOCKED` 及具体原因。已有合成分项覆盖不能证明这些联合
+物理因素已测过；设备录音公开可见也不能补全缺失的授权、会话、几何或时钟真值。
 CALL 质量与 ASSISTANT 的 ASR/KWS 也需各自固定任务、目标及数据合同，不能用几条 SI-SDR
 改善代替识别、听评或交互结论。
 

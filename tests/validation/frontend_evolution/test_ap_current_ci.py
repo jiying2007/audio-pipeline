@@ -213,11 +213,16 @@ class SelectorTests(unittest.TestCase):
         stripped = current.replace(context, ap.VERIFY_RESEARCH_PLAIN.encode())
         self.assertEqual(ap.strip_exact(stripped, ap.VERIFY_LINES), ap.git_bytes(ap.REFERENCE, path))
         for before in (stripped, ap.git_bytes(ap.MAIN_REFERENCE, path), ap.git_bytes(ap.REFERENCE, path),
-                       ap.git_bytes(ap.VERIFY_GIT_CONTEXT_FAILED_REVISION, path)):
+                       ap.git_bytes(ap.VERIFY_GIT_CONTEXT_FAILED_REVISION, path),
+                       ap.git_bytes(ap.VERIFY_GIT_HOST_CONTEXT_FAILED_REVISION, path)):
             with self.subTest(predecessor=ap.sha256(before)):
                 self.assert_flags(ap.select("pull_request", "", {path: (before, current)}, self.current), False, False)
         for changed in (
-                current.replace(b"${{ github.workspace }}", b"'*'", 1),
+                current.replace(b'GIT_CONFIG_VALUE_0="$ap_verify_workspace"', b'GIT_CONFIG_VALUE_0="*"', 1),
+                current.replace(b'            test -n "${GITHUB_WORKSPACE:-}"\n', b"", 1),
+                current.replace(b'            case "$GITHUB_WORKSPACE" in /*) ;; *) exit 2 ;; esac\n', b"", 1),
+                current.replace(b'            test "$ap_verify_workspace" = "$(pwd -P)"\n', b"", 1),
+                current.replace(b'$(cd "$GITHUB_WORKSPACE" && pwd -P)', b'${{ github.workspace }}', 1),
                 current.replace(b"GIT_CONFIG_COUNT=1", b"GIT_CONFIG_COUNT=2", 1),
                 current.replace(b"GIT_CONFIG_KEY_0=safe.directory", b"GIT_CONFIG_KEY_0=safe.bareRepository", 1),
                 current.replace(b"      - name: Validate test-intelligence and assurance tools", b"      - name: Another step", 1),
@@ -233,9 +238,21 @@ class SelectorTests(unittest.TestCase):
         path = ap.previous.VERIFY_WORKFLOW
         current = (ap.ROOT / path).read_bytes()
         stripped = current.replace(ap.VERIFY_RESEARCH_SCOPED.encode(), ap.VERIFY_RESEARCH_PLAIN.encode())
-        for previous in (stripped, ap.git_bytes(ap.VERIFY_GIT_CONTEXT_FAILED_REVISION, path)):
+        for previous in (stripped, ap.git_bytes(ap.VERIFY_GIT_CONTEXT_FAILED_REVISION, path),
+                         ap.git_bytes(ap.VERIFY_GIT_HOST_CONTEXT_FAILED_REVISION, path)):
             with self.subTest(), self.assertRaisesRegex(ValueError, "EXACT_VERIFY_TINY_CONTEXT"):
                 ap.select("pull_request", "", {path: (current, previous)}, self.current)
+
+    def test_host_context_predecessor_must_be_exact_public_failure_bytes(self):
+        path = ap.previous.VERIFY_WORKFLOW
+        current = (ap.ROOT / path).read_bytes()
+        old = ap.git_bytes(ap.VERIFY_GIT_HOST_CONTEXT_FAILED_REVISION, path)
+        self.assertEqual(old.count(ap.VERIFY_RESEARCH_HOST_SCOPED.encode()), 1)
+        changed = old.replace(b"      - name: Validate test-intelligence and assurance tools",
+                              b"      - name: Another step", 1)
+        self.assertNotEqual(changed, old)
+        with self.assertRaisesRegex(ValueError, "UNREGISTERED_HOST_CONTEXT_GIT_PREDECESSOR"):
+            ap.select("pull_request", "", {path: (changed, current)}, self.current)
 
     def test_metadata_does_not_replace_actual_workflow(self):
         changes = self.initial()
@@ -636,7 +653,7 @@ class PrecompiledCorrelationTests(unittest.TestCase):
 class VerifyGitIsolationTests(unittest.TestCase):
     """Real POSIX shell/Git metadata; timeout stubs never execute a research test."""
 
-    def run_shell_fixture(self, fail_command=None, wrong_workspace=False):
+    def run_shell_fixture(self, fail_command=None, workspace_kind="same", legacy_host_context=False):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
             log = root / "observations.jsonl"
@@ -663,9 +680,12 @@ class VerifyGitIsolationTests(unittest.TestCase):
             timeout.chmod(0o755)
             # The actual five command bytes remain intact in the workflow;
             # only the test runner's timeout executable is this declared stub.
-            workspace = str(root / "wrong-workspace") if wrong_workspace else str(ap.ROOT)
-            shell = "\n".join(line[10:] for line in ap.VERIFY_RESEARCH_SHELL.splitlines())
-            shell = shell.replace("${{ github.workspace }}", workspace)
+            # This declared host path is deliberately different from the real
+            # checkout. Only the old expression-based block consumes it.
+            host_workspace = str(root / "host-workspace")
+            source = ap.VERIFY_RESEARCH_HOST_SHELL if legacy_host_context else ap.VERIFY_RESEARCH_SHELL
+            shell = "\n".join(line[10:] for line in source.splitlines())
+            shell = shell.replace("${{ github.workspace }}", host_workspace)
             script = root / "fixture.sh"
             quoted_python = "'" + sys.executable.replace("'", "'\\''") + "'"
             quoted_probe = "'" + str(probe).replace("'", "'\\''") + "'"
@@ -676,6 +696,23 @@ class VerifyGitIsolationTests(unittest.TestCase):
                                PYTHONDONTWRITEBYTECODE="1", AP_TEST_LOG=str(log), AP_TEST_WORKSPACE=str(ap.ROOT),
                                GIT_TEST_ASSUME_DIFFERENT_OWNER="1", GIT_CONFIG_GLOBAL="/dev/null",
                                GIT_CONFIG_SYSTEM="/dev/null", GIT_CONFIG_NOSYSTEM="1")
+            environment.pop("GITHUB_WORKSPACE", None)
+            if workspace_kind == "same":
+                environment["GITHUB_WORKSPACE"] = str(ap.ROOT)
+            elif workspace_kind == "symlink":
+                alias = root / "checkout-alias"
+                alias.symlink_to(ap.ROOT, target_is_directory=True)
+                environment["GITHUB_WORKSPACE"] = str(alias)
+            elif workspace_kind == "wrong":
+                environment["GITHUB_WORKSPACE"] = str(root)
+            elif workspace_kind == "nonexistent":
+                environment["GITHUB_WORKSPACE"] = str(root / "missing-workspace")
+            elif workspace_kind == "relative":
+                environment["GITHUB_WORKSPACE"] = "."
+            elif workspace_kind == "empty":
+                environment["GITHUB_WORKSPACE"] = ""
+            else:
+                self.assertEqual(workspace_kind, "missing")
             if fail_command:
                 environment["AP_TEST_FAIL_COMMAND"] = fail_command
             result = subprocess.run(["/bin/sh", "-e", str(script)], cwd=ap.ROOT, env=environment,
@@ -700,10 +737,30 @@ class VerifyGitIsolationTests(unittest.TestCase):
                 self.assertEqual(len(observations), index + 2)
                 self.assertNotIn("after-research", [row["phase"] for row in observations])
 
+    def test_container_workspace_succeeds_where_frozen_host_context_fails(self):
+        legacy, old_observations = self.run_shell_fixture(legacy_host_context=True)
+        self.assertEqual(legacy.returncode, 128)
+        self.assertIn(b"detected dubious ownership", legacy.stderr)
+        self.assertEqual([row["phase"] for row in old_observations], ["before-docs-r11"])
+        current, observations = self.run_shell_fixture()
+        self.assertEqual(current.returncode, 0, current.stderr.decode())
+        self.assertEqual(len(observations), 7)
+        self.assertTrue(all(row["git_env"]["GIT_CONFIG_VALUE_0"] == str(ap.ROOT)
+                            for row in observations[1:-1]))
+
     def test_exact_workspace_preflight_failure_cannot_reach_any_tiny(self):
-        result, observations = self.run_shell_fixture(wrong_workspace=True)
-        self.assertNotEqual(result.returncode, 0)
-        self.assertEqual([row["phase"] for row in observations], ["before-docs-r11"])
+        for kind in ("wrong", "nonexistent", "relative", "empty", "missing"):
+            with self.subTest(workspace_kind=kind):
+                result, observations = self.run_shell_fixture(workspace_kind=kind)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertEqual([row["phase"] for row in observations], ["before-docs-r11"])
+
+    def test_workspace_physical_alias_is_reduced_to_exact_checkout(self):
+        result, observations = self.run_shell_fixture(workspace_kind="symlink")
+        self.assertEqual(result.returncode, 0, result.stderr.decode())
+        self.assertEqual(len(observations), 7)
+        self.assertTrue(all(row["git_env"]["GIT_CONFIG_VALUE_0"] == str(ap.ROOT)
+                            for row in observations[1:-1]))
 
     def test_historical_git_reader_still_refuses_step_wide_external_context(self):
         import fe09_f1_r8_source_bridge as historical

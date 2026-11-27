@@ -263,9 +263,25 @@ docs/R11 source entry 实际返回
 原因是整个 step 的 `GIT_CONFIG_COUNT` 也传给了旧 reader；原 reader 正确拒绝
 外来 Git context，不能为使 CI 通过而改变这一历史边界。
 
-本次 CI 后继撤去 step-wide env，只在一个精确 POSIX subshell 内设置
-`GIT_CONFIG_COUNT=1`、`GIT_CONFIG_KEY_0=safe.directory` 和
-`GIT_CONFIG_VALUE_0=${{ github.workspace }}`。该 subshell 只包含原 baseline
+第二个后继 `e118014a` 已隔离 step-wide env。其
+[Verify 46067567684 / fast-code 140736568595](https://github.com/jiying2007/audio-pipeline/actions/runs/46067567684/job/140736568595)
+在 2026-11-27 21:04:35 UTC 实际通过原 R11 source-only 自测，随后于
+21:06:28 UTC 在五条 tiny 之前的 `cat-file` 返回 128。此次原日志完整保留：
+inline `${{ github.workspace }}` 展开为 `/home/runner/work/audio-pipeline/audio-pipeline`，
+Git 实际拒绝的仓库却是容器路径 `/__w/audio-pipeline/audio-pipeline`。
+这是已观测的两条路径不一致，不能归因为新 tiny 或历史 R11 失败。
+原日志 434,227 B，SHA256 为
+`e28bc88d07f11bd9d3f6de1b1ef6cbfe604582ddbe934abba1652946103078f6`。
+日志中的实际 Actions merge `5d21dfd54e2cfb3e10a9e5ece4a7bf2181d532d0`
+也已只读取回；它与公开 e118 的 tree 都是
+`fc4bb6edd9dcbd889cb608dd9c5c7ef5a1a9dee6`，两者源码 delta 为 0 B。
+
+本次 CI 后继仍只使用同一精确 POSIX subshell。先要求运行时
+`GITHUB_WORKSPACE` 非空且为绝对目录，用 `cd "$GITHUB_WORKSPACE" && pwd -P`
+取得它的物理路径，并验证等于当前 `pwd -P`。任一步失败都在 Git 与 tiny
+调用之前结束。随后只设置 `GIT_CONFIG_COUNT=1`、
+`GIT_CONFIG_KEY_0=safe.directory` 和 `GIT_CONFIG_VALUE_0=上述物理路径`，
+不再把 host context 表达式嵌入容器命令。该 subshell 再执行原 baseline
 `git cat-file -e` 前检，以及以下五条原样 `timeout 60s python3 -B` 命令：
 
 1. `test_webrtc_aec3_source.py`
@@ -280,13 +296,16 @@ docs/R11 source entry 实际返回
 export；不使用 `*`，不写全局/仓库配置、不增加 fetch 或重试。
 
 AP selector 只归一化这个双侧锚定的精确五命令 block；接收历史 main/c7/plain
-形态与实际公开 637 的旧 step-wide 前驱。移位、漏项、重复、额外 key、通配及
-回退到宽环境或无环境形态均拒绝。移除这个 wrapper 与既有两条 AP/F05 tiny
+形态、实际公开 637 的旧 step-wide 前驱，以及逐字匹配公开 e118 的旧 host
+context 前驱。移位、漏项、重复、缺少路径验证、额外 key、通配及回退到旧
+host context、宽环境或无环境形态均拒绝。移除这个 wrapper 与既有两条 AP/F05 tiny
 增量后，**整个 Verify 文件必须逐字等于公开 c7**，不开放其它位置的改写。
 
 本地仅做纯 metadata 与真实 POSIX shell 环境 fixture：原 R8 Git 构造器仍拒绝
 注入的外部 context，subshell 前后均保持 clean，五个位置逐一非零时均停止，
-错误 workspace 的真实 Git 前检在任何 tiny 前拒绝。fixture 中的 timeout 是
+相同实际 Git 所有权条件下旧 host context 返回 128、新容器 workspace 成功。
+空、缺失、相对、不存在及另一实际目录的 workspace 均不能进入 tiny；指向
+同一 checkout 的符号链接只会得到已验证的唯一物理目录。fixture 中的 timeout 是
 明确标注的命令记录 stub，没有执行旧大套、C 编译、SDK 或真实数据。
 
 同头 637 的独立 Frontend Research run `46065975163`、AP job `140731320058`

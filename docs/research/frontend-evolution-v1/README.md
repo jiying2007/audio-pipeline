@@ -1,5 +1,7 @@
 # Frontend Evolution v1 / 双麦与四麦开放研究
 
+[F05 新八说话人双麦实际结果与独立回读](F05_DUALMIC_VALIDATION_20261128/README.zh-CN.md)
+
 [当前 AP 可搬移工程包：源码身份、双麦帧与宿主复验](AP_CURRENT_PORTABLE_V1.zh-CN.md)
 
 [F05 新八说话人双麦整链验证合同（128 例，尚未执行）](F05_DUALMIC_VALIDATION_V1.zh-CN.md)

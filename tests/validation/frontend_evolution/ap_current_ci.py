@@ -74,6 +74,7 @@ VERIFY_LINES = (
 VERIFY_GIT_CONTEXT_OLD = '      - name: Validate test-intelligence and assurance tools\n        run: |\n'
 VERIFY_GIT_CONTEXT_WIDE = "      - name: Validate test-intelligence and assurance tools\n        env:\n          GIT_CONFIG_COUNT: '1'\n          GIT_CONFIG_KEY_0: safe.directory\n          GIT_CONFIG_VALUE_0: ${{ github.workspace }}\n        run: |\n          git -c core.fsmonitor=false cat-file -e 21448956f65916577d13082e9dc58f275f8fbb70:.github/workflows/frontend-research.yml\n"
 VERIFY_GIT_CONTEXT_FAILED_REVISION = "637643753166dee42efd325bed76b7fd8e7237c4"
+VERIFY_GIT_HOST_CONTEXT_FAILED_REVISION = "e118014a0f2294e84e1a6753dccef661c2cd3699"
 VERIFY_RESEARCH_COMMANDS = (
     "          timeout 60s python3 -B tests/validation/frontend_evolution/test_webrtc_aec3_source.py\n",
     "          timeout 60s python3 -B tests/validation/frontend_evolution/test_webrtc_aec3_ci.py\n",
@@ -81,7 +82,7 @@ VERIFY_RESEARCH_COMMANDS = (
 ) + VERIFY_LINES
 VERIFY_RESEARCH_BEFORE = "          timeout 60s python3 -B tests/validation/frontend_evolution/test_f05_speech_source.py\n"
 VERIFY_RESEARCH_AFTER = "          python3 scripts/flaky_guard.py --self-test\n"
-VERIFY_RESEARCH_SHELL = (
+VERIFY_RESEARCH_HOST_SHELL = (
     "          (\n"
     "            export GIT_CONFIG_COUNT=1\n"
     "            export GIT_CONFIG_KEY_0=safe.directory\n"
@@ -89,8 +90,21 @@ VERIFY_RESEARCH_SHELL = (
     "          git -c core.fsmonitor=false cat-file -e 21448956f65916577d13082e9dc58f275f8fbb70:.github/workflows/frontend-research.yml\n"
     + "".join(VERIFY_RESEARCH_COMMANDS) + "          )\n"
 )
+VERIFY_RESEARCH_SHELL = (
+    "          (\n"
+    '            test -n "${GITHUB_WORKSPACE:-}"\n'
+    '            case "$GITHUB_WORKSPACE" in /*) ;; *) exit 2 ;; esac\n'
+    '            ap_verify_workspace="$(cd "$GITHUB_WORKSPACE" && pwd -P)"\n'
+    '            test "$ap_verify_workspace" = "$(pwd -P)"\n'
+    "            export GIT_CONFIG_COUNT=1\n"
+    "            export GIT_CONFIG_KEY_0=safe.directory\n"
+    '            export GIT_CONFIG_VALUE_0="$ap_verify_workspace"\n'
+    "          git -c core.fsmonitor=false cat-file -e 21448956f65916577d13082e9dc58f275f8fbb70:.github/workflows/frontend-research.yml\n"
+    + "".join(VERIFY_RESEARCH_COMMANDS) + "          )\n"
+)
 VERIFY_RESEARCH_PLAIN = VERIFY_RESEARCH_BEFORE + "".join(VERIFY_RESEARCH_COMMANDS) + VERIFY_RESEARCH_AFTER
 VERIFY_RESEARCH_SCOPED = VERIFY_RESEARCH_BEFORE + VERIFY_RESEARCH_SHELL + VERIFY_RESEARCH_AFTER
+VERIFY_RESEARCH_HOST_SCOPED = VERIFY_RESEARCH_BEFORE + VERIFY_RESEARCH_HOST_SHELL + VERIFY_RESEARCH_AFTER
 TEST_VIEW_OLD = "        cls.current = (ci.ROOT / ci.WORKFLOW).read_text()\n"
 TEST_VIEW_NEW = ("        from ap_current_ci import predecessor_workflow\n"
                  "        cls.current = predecessor_workflow((ci.ROOT / ci.WORKFLOW).read_text())\n")
@@ -227,6 +241,10 @@ def normalize_verify_context(data: bytes, current: bool) -> bytes:
         require(data == git_bytes(VERIFY_GIT_CONTEXT_FAILED_REVISION, previous.VERIFY_WORKFLOW),
                 "AP_UNREGISTERED_STEP_WIDE_GIT_PREDECESSOR")
         text = text.replace(VERIFY_GIT_CONTEXT_WIDE, VERIFY_GIT_CONTEXT_OLD)
+    elif VERIFY_RESEARCH_HOST_SCOPED in text:
+        require(data == git_bytes(VERIFY_GIT_HOST_CONTEXT_FAILED_REVISION, previous.VERIFY_WORKFLOW),
+                "AP_UNREGISTERED_HOST_CONTEXT_GIT_PREDECESSOR")
+        text = text.replace(VERIFY_RESEARCH_HOST_SCOPED, VERIFY_RESEARCH_PLAIN)
     elif VERIFY_RESEARCH_SCOPED in text:
         require(text.count(VERIFY_RESEARCH_SCOPED) == 1, "AP_DUPLICATE_VERIFY_TINY_CONTEXT")
         text = text.replace(VERIFY_RESEARCH_SCOPED, VERIFY_RESEARCH_PLAIN)

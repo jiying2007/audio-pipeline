@@ -141,9 +141,13 @@ jobs:
           timeout 60s python3 -B tests/validation/frontend_evolution/test_dualmic_archive_recovery.py
           timeout 60s python3 -B tests/validation/frontend_evolution/test_f05_speech_source.py
           (
+            test -n "${GITHUB_WORKSPACE:-}"
+            case "$GITHUB_WORKSPACE" in /*) ;; *) exit 2 ;; esac
+            ap_verify_workspace="$(cd "$GITHUB_WORKSPACE" && pwd -P)"
+            test "$ap_verify_workspace" = "$(pwd -P)"
             export GIT_CONFIG_COUNT=1
             export GIT_CONFIG_KEY_0=safe.directory
-            export GIT_CONFIG_VALUE_0="${{ github.workspace }}"
+            export GIT_CONFIG_VALUE_0="$ap_verify_workspace"
           git -c core.fsmonitor=false cat-file -e 21448956f65916577d13082e9dc58f275f8fbb70:.github/workflows/frontend-research.yml
           timeout 60s python3 -B tests/validation/frontend_evolution/test_webrtc_aec3_source.py
           timeout 60s python3 -B tests/validation/frontend_evolution/test_webrtc_aec3_ci.py

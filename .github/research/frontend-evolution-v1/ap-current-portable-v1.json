@@ -1,0 +1,879 @@
+{
+  "schema_version": 1,
+  "experiment_id": "FE-AP-CURRENT-PORTABLE-V1",
+  "hypothesis": "Preserve the actual public research-source AP processor and build identity for one independently specified F05 128-case validation; prove source/binary/config/runtime identity and finite engineering transport without changing DSP or running real speech.",
+  "publication_before_actual_build_required": true,
+  "candidate_budget": 0,
+  "promotion_allowed": false,
+  "training_allowed": false,
+  "real_speech_allowed": false,
+  "physical_target_measurement": false,
+  "source": {
+    "actual_execution_revision": "Explicit --expected-head must be the clean checked-out 40-character publicly frozen research commit; do not label it as a main-built binary.",
+    "main_dsp_reference": "4eec2329be9f2138c7ac73e8dd59026f3dc0a3ba",
+    "main_reference_files_sha256": {
+      "CMakeLists.txt": "00932a8ca9759d018fdfde9758bf1b70e841e4092d4dcb2a5a35056d5e30fc44",
+      "LICENSE": "0aee055cfaeb1546d14c8f6aac152c5c13d67fa3ef387a119df08b89dfcf836b",
+      "cmake/AudioPipelineConfig.cmake.in": "87264a18cc625d2dc0df16e3171dec45bb3f073ed3359f6803b4c3da03b341a8",
+      "cmake/audio-pipeline-runtime.pc.in": "016ba80e037c426beb2772acbc7b516a8581bcd22ccc9f3d212c5dc3434fced0",
+      "cmake/audio-pipeline.pc.in": "dd6c29948ab7d0cc48541b453d4c82ca1e9062d5a9e6e60f6ee2a3539bacaa54",
+      "cmake/audio_pipeline_build.h.in": "af9214bfbdf1f6c0afdba3a7b6dfa9bcd08f276f872a7e57c32a3c4dad9de3bc",
+      "cmake/toolchains/aarch64-linux-gnu.cmake": "78b5ee1b59f74201f10131f44a72c82ff6f440c2044231aa0f0241fe6810a955",
+      "cmake/toolchains/arm-linux-gnueabihf.cmake": "97a301d411199597a733a803d7329a493eb3859e95f823affd57ebcddfcb37cb",
+      "examples/build_info.c": "86610750e2963b6c4b52a5072d9c4de132eb7d57db7d916a80f652beae33d1ee",
+      "examples/process_pcm.c": "534163d0ca9b5fa3a1d8ceb309d34270b47ead8f80deed6215e781f9e010111b",
+      "include/audio_pipeline/audio_diag.h": "d0f0b8126b444699d39d3f17872fae05734920a7f7fa48d17bf1d32ea4539549",
+      "include/audio_pipeline/audio_modules.h": "720c23ab8444f0b22741b4958500bb6e1e5cf8b729df6c668e5d1253539c88f7",
+      "include/audio_pipeline/audio_pipeline.h": "45fe8efa9984660957c0a75390d64d93c9a4756a741ef4a0629ed984bedd4a66",
+      "include/audio_pipeline/audio_runtime.h": "4d300b4e94691cd1a4a63544867724e1c77e9b4a2824d380e884f5739e358680",
+      "include/audio_pipeline/audio_types.h": "277c3d83dc8254712485dae5bf28033fd4b92ef166b67be6eaa89bff341b4666",
+      "src/activity/ap_activity.c": "93aefd08d37e175faef1c954a09f038884fb827b2ec0ece1b066b3b942256855",
+      "src/activity/ap_activity.h": "50c7070a09c8a9be4e38b6c9afb8731e56633eb7f6254764ed979ecd1fcd69d2",
+      "src/aec/ap_aec.h": "407dfaa993f9644d6b38eaf99556413acd394097deec33bc3a4d9fae28dec555",
+      "src/aec/ap_aec_mdf.c": "b98a9f9b1ff0bd5c2ddb87dde650a7c426a3331eb26c29c6e3057a067c887b48",
+      "src/aec/ap_aec_nlms.c": "fd9b3f84163481ef729a68ecd8e5b214a6de494f977350edf2e6d9d81cd9c87e",
+      "src/ap_build_info.c": "c69871911344fa2f5fc755a51da8bf7c55da54b6953a873c665fe407ac6d8bf6",
+      "src/ap_limits.h": "2d81e5b8e25370abc0c2f2d45ddc88ee813f09d1ceba2ab1a2aeb5220138d044",
+      "src/ap_numeric.h": "9618b16ded6ca6960de8b9c431a2fef5dfb37a0f7529888a15cacecc6409a28e",
+      "src/arch/ap_kernels.h": "f8e4a460f3a54f7114ffdc53bd139a83b3bc458a6bc0f9806bb03cd58553416f",
+      "src/arch/arm_neon/ap_kernels_neon.c": "79b0797554d4822bb99bc3384ae0c7f521ab2d3804db560bc7e99ca46700967c",
+      "src/arch/scalar/ap_kernels_scalar.c": "94ee574c5343d42591e71a56b568cfc860517497734046a94770ed87a40b3a72",
+      "src/core/ap_pipeline.c": "5fb2dd9fe98d28c5ffdb12ab69ed7a27e71c3f4501afd097d4c5a25375dd8f20",
+      "src/core/ap_pipeline_internal.h": "c540f5db1619757452ad482f91f2eacd65662c91a1ed85bd7053815d0bcf8b3c",
+      "src/core/ap_pipeline_query.c": "6b7f8746213aa57a242ab74b8cb37b552c34f844ff16baf8100329bb37017387",
+      "src/dsp/ap_dsp.h": "1be20dd26ee1a567e122cf642f69450c0b636ffe345533d6d6d650c7cb89cdad",
+      "src/dsp/ap_fft.c": "c87c2b8ecafa14f33eff09d48fbc42d98419a04f14844a6a2e837544a3ff7c73",
+      "src/dsp/ap_internal.h": "8a2179375d8107a629c2611210ca48013e1f54d2a08ee4d50dad675cd2b6abfd",
+      "src/enhance/ap_agc.c": "9499f4576b574125506a4ef63fd3eec18c1fc912674c772c34bf887457045066",
+      "src/enhance/ap_enhance.h": "22e3760204b05c04fbbda3f4fa1df79ccd127dad276c4b10ba3e9ebe1ee55cdf",
+      "src/enhance/ap_noise_tracker.c": "bbf619e1c6ec1ac31237eda3a8806034f9a07188e0dfc76cae661c9b1c109fd5",
+      "src/enhance/ap_noise_tracker.h": "4972cc673605865ae5b704b90587ff649e295f9e6d586f460550392b793ce1eb",
+      "src/enhance/ap_ns.c": "92e35db7f13269d52ae9b01b5b5b830813940e1397b40ca6fdf659fa9dc78e3b",
+      "src/enhance/ap_res.c": "a868dd4f52dd400dd1aeea6b8526160daa422cbed1bd083b145ae6d7ba7d0bc9",
+      "src/enhance/ap_vad.c": "a96423638e286c2c0705d8aea7a114eb8fafd3c96c75322c62fa0b0d14791f73",
+      "src/enhance/ap_window.c": "afd9014c235b96febf63a14007bd65b486ab80cc164162c6d64cbb993ca67eff",
+      "src/enhance/ap_window.h": "f387a3dfc09c93feea9461079f8775ff407a5572412cb6eb83c6141af2b817ca",
+      "src/frontend/ap_beamformer.c": "4e6370504effc76ff3334ecb08e7d1ad2deb408586fa5165d997ae965f244246",
+      "src/frontend/ap_frontend.h": "d64b615d9496811690bcd2c9928065e8270b3bdf4a9ae6fc756cb5dd4e566854",
+      "src/frontend/ap_hpf.c": "666ee25f5acf78e8d6fde1e8636b4e4efc7e55f9c3116c08fbe61f92c4fc1e81",
+      "src/frontend/ap_resampler.c": "5bf5e725dfdc516d82dce145b93ef881b1348bae17d2bd04130e7feb15834aff",
+      "src/frontend/ap_resampler.h": "9ae3569a8cf5b0d2245a8f384da64051153b835c800ecf76269a349fa90a5104",
+      "src/modules/ap_activity_module.c": "fe6cc5ef38c30168b4d71f7fbd3e66757ca97b1d97a5a821fbace64d3c0070bb",
+      "src/modules/ap_aec_module.c": "793510353edb3094ddd529c91a7dc8d81e1e9ea8c8e500fb936d3bc50b25ec6d",
+      "src/modules/ap_agc_module.c": "bfd7360f80644e4909b411a2268977e51727670260ea9e82c865852f54550ee8",
+      "src/modules/ap_beamformer_module.c": "62e7a2a363c40cf191f5a7ae7369f7ca1962a078f9d8279d8410dbd630030d41",
+      "src/modules/ap_hpf_module.c": "1f6031817b44625f2649454f4974f43345b0d2bb08c9988cfb5c2658c06f98aa",
+      "src/modules/ap_ns_module.c": "c2306d1a1e47fdfe3027882ed6287f686a8c2fa7d1ad3fe59868b04884eca1a8",
+      "src/modules/ap_res_module.c": "b710e0344f5258edad987f72ccc8af629c5edb43fb66d77076e70f3d9655760f",
+      "src/modules/ap_resampler_module.c": "554c5bb3f5baefb0859cc66a6b0dc8eb4b0a73f59f36660cc9f22b2929b615be",
+      "src/modules/ap_sync_module.c": "fc7182567337b924c2b27bb3e07bf39282a7df7a572c69278bb54211a9a05427",
+      "src/modules/ap_vad_module.c": "6eecd280cdf777ba53218ac32c6cf484a3fdb50e75b93358f798b19b3122f534",
+      "src/platform/linux/ap_runtime.c": "d6fe4ce3170c6968f8521235d65778a5105240d7ce2834ff5ec2f995027414fb",
+      "src/sync/ap_sync.c": "6580e9c482d01020f82acfb83dce37eeb7254cd25936a6a72d1da9a8739de6c1",
+      "src/sync/ap_sync.h": "e855c8a517d7030be90ca4190cad75e84f8764fc35cebef9032cc001b7b47630"
+    },
+    "main_reference_file_count": 59,
+    "source_snapshot_bytes": 349879,
+    "git_status_must_be_clean_before_and_after": true,
+    "build_source_revision_override_allowed": false
+  },
+  "build": {
+    "host": "GitHub Actions Ubuntu 24.04 Linux x86_64 only; no local compiler execution",
+    "compiler": "Installed GNU C compiler; resolve, hash, version and -dumpmachine recorded before/after. No compiler or package download.",
+    "generator": "Unix Makefiles",
+    "targets": [
+      "ap_process_pcm",
+      "ap_build_info_dump"
+    ],
+    "parallelism": 2,
+    "cmake_options": {
+      "CMAKE_BUILD_TYPE": "Release",
+      "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+      "AP_BUILD_PIPELINE": "ON",
+      "AP_BUILD_EXAMPLES": "ON",
+      "AP_BUILD_TESTS": "OFF",
+      "AP_BUILD_BENCH": "OFF",
+      "AP_BUILD_ALSA_EXAMPLE": "OFF",
+      "AP_BUILD_FUZZ": "OFF",
+      "AP_STRICT_WARNINGS": "ON",
+      "AP_ENABLE_FAST_MATH": "OFF",
+      "AP_ENABLE_BF_DIRECTION_TRACKING": "ON",
+      "AP_ENABLE_LINUX_RUNTIME": "ON",
+      "AP_AEC_BACKEND": "MDF",
+      "AP_NS_ESTIMATOR": "EMA",
+      "AP_SIMD_BACKEND": "SCALAR",
+      "AP_RESAMPLER_MODE": "BANDLIMITED",
+      "AP_MODULES": "RESAMPLER,HPF,BF,SYNC,ACTIVITY,AEC,RES,NS,AGC,VAD",
+      "AP_BUILD_MAX_IO_RATE_HZ": "48000",
+      "AP_BUILD_MAX_INTERNAL_RATE_HZ": "16000",
+      "AP_BUILD_MAX_MIC_CHANNELS": "2",
+      "AP_BUILD_MAX_DELAY_MS": "300",
+      "AP_BUILD_MAX_AEC_TAIL_MS": "120",
+      "AP_RUNTIME_QUEUE_DEPTH": "8"
+    },
+    "source_unchanged_after_build": true,
+    "relocation": "Copy both binaries and full evidence, rename the original build directory, then run all engineering from the bundle. Reject absolute RPATH/RUNPATH and any dependency resolving into original build/source.",
+    "system_libraries": "Do not redistribute libc/libm/loader. Record actual shared dependency name/resolved path/SHA, ELF identity and available system package license notices; a new host requires its own real engineering receipt.",
+    "first_party_license": "Archive unmodified repository LICENSE with the source snapshot."
+  },
+  "engineering": {
+    "profiles": [
+      "call",
+      "assistant"
+    ],
+    "modes": [
+      "capture-only",
+      "full-zero-render"
+    ],
+    "sample_rate_hz": 16000,
+    "mic_channels": 2,
+    "render_channels": 1,
+    "frame_samples": 160,
+    "output_channels": 1,
+    "strict_capture_frames": true,
+    "wrapper_requires_render_sample_count_equal_capture_frames": true,
+    "legacy_render_behavior": "The unchanged CLI can zero-pad a short render. The engineering/scientific adapter rejects this before invocation; do not claim a CLI behavior change.",
+    "algorithmic_latency_ms": {
+      "call": 10,
+      "assistant": 10
+    },
+    "algorithmic_latency_samples": {
+      "call": 160,
+      "assistant": 160
+    },
+    "latency_authority": "ap_pipeline_algorithmic_latency_ms: NS contributes AP_FRAME_MS=10; 16k-to-16k resampler contributes zero. Every trace row including first must equal 10ms. This is source-declared buffering metadata, not physical delay or HPF/BF phase calibration.",
+    "lag_search_allowed": false,
+    "impulse_peak_alignment_test_allowed": false,
+    "default_tuning_queries": [
+      "--profile call --print-default-tuning",
+      "--profile assistant --print-default-tuning",
+      "--print-default-tuning"
+    ],
+    "default_tuning_fields": [
+      "aec_mu",
+      "ns_floor",
+      "agc_target_dbfs",
+      "limiter_dbfs"
+    ],
+    "implicit_default_must_equal_call": true,
+    "positive_audio_cases": [
+      "four_frames_zero",
+      "twenty_frames_fixed_impulse",
+      "twenty_frames_fixed_two_channel_signal",
+      "repeat_same_signal",
+      "eight_frame_prefix",
+      "same_prefix_different_future"
+    ],
+    "negative_cases": [
+      "strict_partial_capture_frame",
+      "odd_s16_capture_byte",
+      "incomplete_two_channel_group",
+      "invalid_profile",
+      "invalid_channel_count",
+      "wrapper_refuses_short_render_before_execution",
+      "wrapper_refuses_existing_output_or_path_alias"
+    ],
+    "empty_case": "Zero frames succeed with empty output/trace; no acoustic qualification is inferred.",
+    "output_checks": [
+      "exact expected mono byte count",
+      "all consecutive frame indices starting zero",
+      "exact trace count",
+      "finite numerical fields",
+      "every algorithmic_latency_ms equals frozen10",
+      "repeat output and trace byte identity",
+      "unchanged output/trace prefix despite changed future",
+      "binary and dependency SHA unchanged before/after"
+    ],
+    "store": "Every attempted command is written before launch; actual start/finish UTC, monotonic elapsed, exit/timeout, stdout/stderr, inputs, outputs, complete traces and hashes are preserved. Timeouts kill the process group; negative actual partial artifacts remain explicitly classified.",
+    "success_status": "PASS_ENGINEERING_ONLY"
+  },
+  "budget": {
+    "ci_wall_seconds": 600,
+    "configure_wall_seconds": 90,
+    "build_wall_seconds": 240,
+    "engineering_wall_seconds": 60,
+    "requested_synthetic_capture_audio_seconds": 5,
+    "engineering_audio_process_invocations_max": 48,
+    "automatic_retries": 0,
+    "package_bytes_max": 67108864,
+    "package_files_max": 512,
+    "engineering_single_process_wall_seconds": 10,
+    "engineering_metadata_queries_max": 4,
+    "build_identity_queries_max": 1
+  },
+  "bundle": {
+    "kind": "AP_CURRENT_PORTABLE_V1",
+    "schema_version": 1,
+    "status": "PASS_ENGINEERING_ONLY",
+    "paths": {
+      "processor": "bin/ap_process_pcm",
+      "build_info": "bin/ap_build_info_dump",
+      "build_receipt": "build/build-receipt.json",
+      "engineering": "engineering/engineering.json"
+    },
+    "manifest": "Complete relative path SHA256 map excludes only bundle.json itself; no duplicate paths, traversal, symlinks, hardlinks, special files, undeclared extra files or missing entries.",
+    "runtime_identity_helper": "Reuse unchanged webrtc_aec3_ci.runtime_identity and record its exact committed source/dependency closure.",
+    "new_host": "CI report remains preserved; engineering --bundle --output creates a new bounded actual report on Debian13 or another compatible Linux host. Read-only require_host_engineering compares current dependency names/hashes/host with the selected receipt, never copies CI host identity into a new host claim.",
+    "interfaces": {
+      "verify_bundle": "dict {manifest, build, engineering, paths}; paths contains resolved processor/build_info/build_receipt/engineering Path objects. No binary execution.",
+      "require_host_engineering": "dict {engineering, receipt, runtime_identity}; optional explicit receipt; validates actual runtime using read-only ldd and hashes. No DSP.",
+      "verify_engineering": "verify_engineering(root, receipt) -> validated engineering dict, read-only source/binary/report/trace/hash verification without current-host ldd or DSP. require_host_engineering additionally checks actual current runtime."
+    }
+  },
+  "workflow": {
+    "name": "Frontend Research",
+    "new_job": "ap-current-portable",
+    "predecessor_public_revision": "819849ee3ed6b269b8417ef8700eecfcf29f7958",
+    "predecessor_workflow_sha256": "99b75e18c580baa36612cb904f146a85559cc19fb5309eb2939f715074e0237f",
+    "historical_and_aec3_job_bytes_unchanged": true,
+    "old_D1_D8_selection_on_new_experiment": "all false",
+    "aec3_selection_on_new_experiment": "true when the actual base-to-head range introduces or changes registered AEC3 method/build/admission files; mandatory together with AP for initial c7-based mixed integration. An explicit AP-only manual dispatch is separate.",
+    "new_selector": "New explicit integration scope validates actual complete workflow, exact reviewed c7 carryover bytes and declared AP/F05 additions before selecting jobs. Remove only exact AP wiring to delegate pure legacy AEC3 selection, without changing webrtc_aec3_ci.py. Initial mixed AEC3+AP introduction must select both engineering jobs; all D1-D8 remain false. Existing AEC3 tiny tests may read an exact restored predecessor view, but new tests must cover the full actual workflow, the real 64-path c7 diff plus new AP/F05 additions, both mandatory jobs, and hidden mutation/unknown-path rejection.",
+    "manual_choice": "ap-current-portable",
+    "trigger_core_paths": [
+      "tests/validation/frontend_evolution/ap_current_ci.py",
+      "tests/validation/frontend_evolution/test_ap_current_ci.py",
+      ".github/research/frontend-evolution-v1/ap-current-portable-v1.json",
+      "docs/research/frontend-evolution-v1/AP_CURRENT_PORTABLE_V1.zh-CN.md",
+      "tests/validation/frontend_evolution/f05_dualmic_validation.py",
+      "tests/validation/frontend_evolution/test_f05_dualmic_validation.py",
+      ".github/research/frontend-evolution-v1/f05-dualmic-validation-v1.json",
+      "docs/research/frontend-evolution-v1/F05_DUALMIC_VALIDATION_V1.zh-CN.md"
+    ],
+    "support_only": "Exact new F05/AEC3/RIR result files and registered navigation/tiny-test lines may accompany the new scope; metadata alone never triggers audio/engineering. Existing legacy science or DSP edits must refuse rather than fall through.",
+    "reviewed_integration": {
+      "base_main": "4eec2329be9f2138c7ac73e8dd59026f3dc0a3ba",
+      "public_revision": "c7baccb8f72cda26128f3ff2bee772a382853d1f",
+      "public_tree": "12040f9cdfee19d4435110feb559f951d00e6fbf",
+      "file_count": 64,
+      "files": {
+        ".github/research/evidence-index.json": {
+          "sha256": "07f2af9609cac86020acc916099575aeff19f1b7caf0091d0fbc7be1ed67e458",
+          "size_bytes": 37179,
+          "role": "exact_reviewed_F08_or_S2A_carryover_no_engineering_trigger",
+          "base_sha256": "8ac8d9a13e0b15a586033b3c03c6dea8bf49b15c4bc91a43b592a9bd59f2bf93",
+          "change": "M"
+        },
+        ".github/research/frontend-evolution-v1/dechorate-rir-gap-v1.json": {
+          "sha256": "7f11a622a856dde9b2e9c8465eb767cb34e1ce6c184e33d52b686fb3a3dbc0dc",
+          "size_bytes": 14224,
+          "role": "reviewed_RIR_or_F05_source_method_no_AP_or_AEC3_execution_by_itself",
+          "base_sha256": null,
+          "change": "A"
+        },
+        ".github/research/frontend-evolution-v1/f05-speech-source-v1.json": {
+          "sha256": "cde46538288219a077927eada139fea62c2bc156fa9bd478626aae139e0db4d3",
+          "size_bytes": 6244,
+          "role": "reviewed_RIR_or_F05_source_method_no_AP_or_AEC3_execution_by_itself",
+          "base_sha256": null,
+          "change": "A"
+        },
+        ".github/research/frontend-evolution-v1/sources.json": {
+          "sha256": "7157247564c95505c73bbc3ce68451d9cc6f4957749079c5b83c71079ccd73cd",
+          "size_bytes": 11666,
+          "role": "reviewed_AEC3_method_requires_AEC3_engineering_on_introduction",
+          "base_sha256": "314193013366c4d6fdf33cdeb732cf66cc790fe937529f65d28d16133b2540d4",
+          "change": "M"
+        },
+        ".github/research/frontend-evolution-v1/webrtc-aec3-admission.json": {
+          "sha256": "bbfac3eb206814e005b8a60cab177045fb11998c3ef0ce20d014edabc8bb23f2",
+          "size_bytes": 2696,
+          "role": "reviewed_AEC3_method_requires_AEC3_engineering_on_introduction",
+          "base_sha256": null,
+          "change": "A"
+        },
+        ".github/research/frontend-evolution-v1/webrtc-aec3-reference-v1.json": {
+          "sha256": "667847601ae3709cded97d86989f8b65066d01363a1adfa40db1f2be4a522617",
+          "size_bytes": 10660,
+          "role": "reviewed_AEC3_method_requires_AEC3_engineering_on_introduction",
+          "base_sha256": null,
+          "change": "A"
+        },
+        ".github/research/frontend-evolution-v1/webrtc-aec3-source-lock.json": {
+          "sha256": "30b1106eaceef3ef6e9261e418d877c6c249c1e4cb36687eb1eec9a60e7a2af1",
+          "size_bytes": 8729,
+          "role": "reviewed_AEC3_method_requires_AEC3_engineering_on_introduction",
+          "base_sha256": null,
+          "change": "A"
+        },
+        ".github/scripts/verify-docs-gate.sh": {
+          "sha256": "1b571c24805dba5f5decc3a1d89b6b02aa70d112f20c53191736132718dce86a",
+          "size_bytes": 19587,
+          "role": "exact_reviewed_tiny_wiring_with_only_declared_new_test_lines",
+          "base_sha256": "8e89bfb4fae91ad12054bc2fc6c1fe0c8927972ad07dd4d1bd1227cdebb3af11",
+          "change": "M"
+        },
+        ".github/workflows/frontend-research.yml": {
+          "sha256": "99b75e18c580baa36612cb904f146a85559cc19fb5309eb2939f715074e0237f",
+          "size_bytes": 45212,
+          "role": "frontend_wiring_exact_base_for_new_AP_extension",
+          "base_sha256": "d5dc866941cd9ca3cbae5a6dc5297b97115e903ca59573dd0a5a6c790a9e313f",
+          "change": "M"
+        },
+        ".github/workflows/quality.yml": {
+          "sha256": "2d91a0cae3b2438892cbc0bf336886d15943a7da7cbb10368b76c63425481cce",
+          "size_bytes": 195578,
+          "role": "exact_reviewed_F08_or_S2A_carryover_no_engineering_trigger",
+          "base_sha256": "f0ce64e4871116038e97af5b2708e5f1c0fadcb75fb1fa0ca3a6417ac88685f1",
+          "change": "M"
+        },
+        ".github/workflows/verify.yml": {
+          "sha256": "c4bc629a6cc87164f8bcacaf251cbabf55ac588b16c01eb448df8ad122c1e392",
+          "size_bytes": 16190,
+          "role": "exact_reviewed_tiny_wiring_with_only_declared_new_test_lines",
+          "base_sha256": "6eb04a8a571495eb5857db7d9319f391d603d0a99f18cba3a94128a64ab3ee15",
+          "change": "M"
+        },
+        "docs/README.zh-CN.md": {
+          "sha256": "05b67ec1c83a378eddc0be1e683962f2fe455141c4087b6bea8dd263d8538f64",
+          "size_bytes": 9034,
+          "role": "exact_reviewed_navigation_with_only_declared_new_entries",
+          "base_sha256": "b792e4d021465ea72f550f37844a1ec1016423cb5aed9d20c85ff3e24e7dd2e0",
+          "change": "M"
+        },
+        "docs/research/frontend-evolution-v1/CI_S2A_ARTIFACT_READBACK_20261128.zh-CN.md": {
+          "sha256": "5a28f240e022e4966e5643673bf1ebe6b4506ee9c0c9d88e0e65a284cfb35783",
+          "size_bytes": 4246,
+          "role": "exact_reviewed_F08_or_S2A_carryover_no_engineering_trigger",
+          "base_sha256": null,
+          "change": "A"
+        },
+        "docs/research/frontend-evolution-v1/DECHORATE_RIR_GAP_20261128/README.zh-CN.md": {
+          "sha256": "04babda2552a6a0bac4cc92edcf5017b6d0acd7c543f8b58f299c3d839753d33",
+          "size_bytes": 4523,
+          "role": "exact_reviewed_result_or_documentation_no_engineering_trigger",
+          "base_sha256": null,
+          "change": "A"
+        },
+        "docs/research/frontend-evolution-v1/DECHORATE_RIR_GAP_20261128/RESULT.zh-CN.md": {
+          "sha256": "8215d893031de6e03af66009ba799486247bb4cd063742716c5119a8945832d6",
+          "size_bytes": 6441,
+          "role": "exact_reviewed_result_or_documentation_no_engineering_trigger",
+          "base_sha256": null,
+          "change": "A"
+        },
+        "docs/research/frontend-evolution-v1/DECHORATE_RIR_GAP_20261128/archive-identity.json": {
+          "sha256": "03cf5a071b08b9ea09b60916351f0975a0ae853f6182e1fc66d2f6b4926801cc",
+          "size_bytes": 2081,
+          "role": "exact_reviewed_result_or_documentation_no_engineering_trigger",
+          "base_sha256": null,
+          "change": "A"
+        },
+        "docs/research/frontend-evolution-v1/DECHORATE_RIR_GAP_20261128/figure/plot-data.json": {
+          "sha256": "e35ddc9057001ec6ef877b1d43835a4d5017772d2ab60af9ad48240a0b0c8db9",
+          "size_bytes": 4254,
+          "role": "exact_reviewed_result_or_documentation_no_engineering_trigger",
+          "base_sha256": null,
+          "change": "A"
+        },
+        "docs/research/frontend-evolution-v1/DECHORATE_RIR_GAP_20261128/figure/plot_rir_support_gap.py": {
+          "sha256": "dbc69a962c3e471df251bc6737a8dee06527e2ff0b4138875ee161f579944817",
+          "size_bytes": 5005,
+          "role": "exact_reviewed_result_or_documentation_no_engineering_trigger",
+          "base_sha256": null,
+          "change": "A"
+        },
+        "docs/research/frontend-evolution-v1/DECHORATE_RIR_GAP_20261128/figure/rir-support-gap.svg": {
+          "sha256": "ac958f7d52e6cb7151bcee312232c5ad27a5cd25c14877df549ce4f099738f61",
+          "size_bytes": 107644,
+          "role": "exact_reviewed_result_or_documentation_no_engineering_trigger",
+          "base_sha256": null,
+          "change": "A"
+        },
+        "docs/research/frontend-evolution-v1/DECHORATE_RIR_GAP_20261128/independent-receipt.json": {
+          "sha256": "7aed9f4895e25c756f6e37ae41760dfb94e89d09bd3074d0dd0304f7f6af7ebb",
+          "size_bytes": 880,
+          "role": "exact_reviewed_result_or_documentation_no_engineering_trigger",
+          "base_sha256": null,
+          "change": "A"
+        },
+        "docs/research/frontend-evolution-v1/DECHORATE_RIR_GAP_20261128/result.json": {
+          "sha256": "1c2bfa4ae417c76c37f0b14851b72e541bff447e08129addae0ed67c72ba29c2",
+          "size_bytes": 80381,
+          "role": "exact_reviewed_result_or_documentation_no_engineering_trigger",
+          "base_sha256": null,
+          "change": "A"
+        },
+        "docs/research/frontend-evolution-v1/DECHORATE_RIR_GAP_20261128/scientific-summary.json": {
+          "sha256": "d9783dd06662027b3c910634a2cd304246eb3d37cc064367f0f4e54ed55ba2d8",
+          "size_bytes": 41151,
+          "role": "exact_reviewed_result_or_documentation_no_engineering_trigger",
+          "base_sha256": null,
+          "change": "A"
+        },
+        "docs/research/frontend-evolution-v1/DECHORATE_RIR_GAP_V1.zh-CN.md": {
+          "sha256": "cc27793b62a601626abdcd6af7085ef44fc0dcba0b79cb638d8cfb81d618206d",
+          "size_bytes": 8374,
+          "role": "exact_reviewed_result_or_documentation_no_engineering_trigger",
+          "base_sha256": null,
+          "change": "A"
+        },
+        "docs/research/frontend-evolution-v1/F05_READINESS_20261128/PORTABLE_READBACK.zh-CN.md": {
+          "sha256": "44ca68a12bf1198f8b5d9305af67cde8103fd7244a24b038f5df9a0637fb7903",
+          "size_bytes": 1782,
+          "role": "exact_reviewed_result_or_documentation_no_engineering_trigger",
+          "base_sha256": null,
+          "change": "A"
+        },
+        "docs/research/frontend-evolution-v1/F05_READINESS_20261128/README.zh-CN.md": {
+          "sha256": "23c5ee604ab082d7c0de5fd1dde43fbe79f058b8a4e7622916cf4bd0bf008358",
+          "size_bytes": 14184,
+          "role": "exact_reviewed_result_or_documentation_no_engineering_trigger",
+          "base_sha256": null,
+          "change": "A"
+        },
+        "docs/research/frontend-evolution-v1/F05_READINESS_20261128/delivery-receipt.json": {
+          "sha256": "90df67b106409bf7b8d375c2a3424601855c6ea0fd2de50659c0d8304b950618",
+          "size_bytes": 510,
+          "role": "exact_reviewed_result_or_documentation_no_engineering_trigger",
+          "base_sha256": null,
+          "change": "A"
+        },
+        "docs/research/frontend-evolution-v1/F05_READINESS_20261128/portability-receipt.json": {
+          "sha256": "987ca3581b5f1175325490420efa37ed2c0b48e34f878572af3363769bc83853",
+          "size_bytes": 557,
+          "role": "exact_reviewed_result_or_documentation_no_engineering_trigger",
+          "base_sha256": null,
+          "change": "A"
+        },
+        "docs/research/frontend-evolution-v1/F05_READINESS_20261128/summary.json": {
+          "sha256": "05b31a592aa7f5507478e32f67fd8e14d1eb406e46ab5bc573132a394cd68235",
+          "size_bytes": 6114,
+          "role": "exact_reviewed_result_or_documentation_no_engineering_trigger",
+          "base_sha256": null,
+          "change": "A"
+        },
+        "docs/research/frontend-evolution-v1/F05_SPEECH_SOURCE_20261128.zh-CN.md": {
+          "sha256": "cddcf9804323f852a70200c2e765aacfce36178c7c93f299108bcdd8f24d26de",
+          "size_bytes": 6526,
+          "role": "exact_reviewed_result_or_documentation_no_engineering_trigger",
+          "base_sha256": null,
+          "change": "A"
+        },
+        "docs/research/frontend-evolution-v1/F05_SPEECH_SOURCE_V1.zh-CN.md": {
+          "sha256": "68ec581dfd27429fa8d8cc8a18653b6ef8e31a5ad815f4f8aa09ce7fd1a3c9fc",
+          "size_bytes": 8845,
+          "role": "exact_reviewed_result_or_documentation_no_engineering_trigger",
+          "base_sha256": null,
+          "change": "A"
+        },
+        "docs/research/frontend-evolution-v1/LONG_TERM_RESEARCH_PLATFORM.zh-CN.md": {
+          "sha256": "ba3d4502f71241a822b57194b8a620caeb3764bc18bb536a655481a1d7effd97",
+          "size_bytes": 26634,
+          "role": "exact_reviewed_navigation_with_only_declared_new_entries",
+          "base_sha256": null,
+          "change": "A"
+        },
+        "docs/research/frontend-evolution-v1/README.md": {
+          "sha256": "0d4a4c273209b756ba143adf1e7c853a25454d1050aca65a505dd5d431ff75f6",
+          "size_bytes": 42680,
+          "role": "exact_reviewed_navigation_with_only_declared_new_entries",
+          "base_sha256": "1de4bef3033e56b20bd9f86d9ec7632f2382a054d5a0ee5959f0e7cb42b60be4",
+          "change": "M"
+        },
+        "docs/research/frontend-evolution-v1/WEBRTC_AEC3_ADAPTER.zh-CN.md": {
+          "sha256": "000025399b41dbc3d253d65fb5fbc68db99b845a18acdd23273fd3c6e0d7b3a7",
+          "size_bytes": 8772,
+          "role": "exact_reviewed_result_or_documentation_no_engineering_trigger",
+          "base_sha256": null,
+          "change": "A"
+        },
+        "docs/research/frontend-evolution-v1/WEBRTC_AEC3_CI.zh-CN.md": {
+          "sha256": "6f250857d9f38497cc09b6814390179aadf3affbd1e107ac8c512826a416ee5f",
+          "size_bytes": 8400,
+          "role": "exact_reviewed_result_or_documentation_no_engineering_trigger",
+          "base_sha256": null,
+          "change": "A"
+        },
+        "docs/research/frontend-evolution-v1/WEBRTC_AEC3_INDEPENDENT_REVIEW_20261128.json": {
+          "sha256": "7fd3775b6f3cd3d9ef622f5fc0fc526f7c463e54e7c69fd83994f9a9f2f4a74b",
+          "size_bytes": 52985,
+          "role": "exact_reviewed_result_or_documentation_no_engineering_trigger",
+          "base_sha256": null,
+          "change": "A"
+        },
+        "docs/research/frontend-evolution-v1/WEBRTC_AEC3_REFERENCE.zh-CN.md": {
+          "sha256": "e4eef15cd46480c2e9b98adee1d76b2bdf638eae425fa64fb83880156325c856",
+          "size_bytes": 9126,
+          "role": "exact_reviewed_result_or_documentation_no_engineering_trigger",
+          "base_sha256": null,
+          "change": "A"
+        },
+        "docs/research/frontend-evolution-v1/WEBRTC_AEC3_RESULT_20261128.json": {
+          "sha256": "cbc06c59be86fd56203d57eaf8596ee1b3d88a997dd89fb16c53f8623ed4b6be",
+          "size_bytes": 45946,
+          "role": "exact_reviewed_result_or_documentation_no_engineering_trigger",
+          "base_sha256": null,
+          "change": "A"
+        },
+        "docs/research/frontend-evolution-v1/WEBRTC_AEC3_RESULT_20261128.zh-CN.md": {
+          "sha256": "d0133f28a5c74d2374e2f07c1d4dea265b29e03884cddabb5c32364ed337ad2d",
+          "size_bytes": 9850,
+          "role": "exact_reviewed_result_or_documentation_no_engineering_trigger",
+          "base_sha256": null,
+          "change": "A"
+        },
+        "docs/research/frontend-evolution-v1/WEBRTC_AEC3_SOURCE.zh-CN.md": {
+          "sha256": "63a6c2b455dbe5e2612ec0330dbe7e45fc96b182f812c9ed8dfa45aba2196116",
+          "size_bytes": 10549,
+          "role": "exact_reviewed_result_or_documentation_no_engineering_trigger",
+          "base_sha256": null,
+          "change": "A"
+        },
+        "docs/research/frontend-evolution-v1/WEBRTC_AEC3_SOURCE_CONFIGURE_20261128.json": {
+          "sha256": "58b7255db112537d20e16ca7bffea878cecbdccf32ce173618b7d57c51b4c09e",
+          "size_bytes": 3028,
+          "role": "exact_reviewed_result_or_documentation_no_engineering_trigger",
+          "base_sha256": null,
+          "change": "A"
+        },
+        "docs/research/frontend-evolution-v1/evidence/f05-speech-source-20261128/execution-receipt.json": {
+          "sha256": "ef8b7c3ee7f3aa2da79b39c148447219178f11b715a2ed20e7370d5cdcdc5153",
+          "size_bytes": 1177,
+          "role": "exact_reviewed_result_or_documentation_no_engineering_trigger",
+          "base_sha256": null,
+          "change": "A"
+        },
+        "docs/research/frontend-evolution-v1/evidence/f05-speech-source-20261128/execution-start.json": {
+          "sha256": "0c76ae519d2112ed89e00cfb479a0ba8fc792339d3395899f1999a0b8b25b21b",
+          "size_bytes": 1024,
+          "role": "exact_reviewed_result_or_documentation_no_engineering_trigger",
+          "base_sha256": null,
+          "change": "A"
+        },
+        "docs/research/frontend-evolution-v1/evidence/f05-speech-source-20261128/execution-stderr.log": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size_bytes": 0,
+          "role": "exact_reviewed_result_or_documentation_no_engineering_trigger",
+          "base_sha256": null,
+          "change": "A"
+        },
+        "docs/research/frontend-evolution-v1/evidence/f05-speech-source-20261128/execution-stdout.log": {
+          "sha256": "5fc6ce88a0f9b975dc0f455664d62f17bf1c0481bd077e09870535b7d8bdcd81",
+          "size_bytes": 96,
+          "role": "exact_reviewed_result_or_documentation_no_engineering_trigger",
+          "base_sha256": null,
+          "change": "A"
+        },
+        "docs/research/frontend-evolution-v1/evidence/f05-speech-source-20261128/independent-readback-receipt.json": {
+          "sha256": "00496dc864275cc2da3671ff2a13980e1477b1797ee9f384116f62510001e493",
+          "size_bytes": 936,
+          "role": "exact_reviewed_result_or_documentation_no_engineering_trigger",
+          "base_sha256": null,
+          "change": "A"
+        },
+        "docs/research/frontend-evolution-v1/evidence/f05-speech-source-20261128/independent-readback-stderr.log": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size_bytes": 0,
+          "role": "exact_reviewed_result_or_documentation_no_engineering_trigger",
+          "base_sha256": null,
+          "change": "A"
+        },
+        "docs/research/frontend-evolution-v1/evidence/f05-speech-source-20261128/independent-readback-stdout.log": {
+          "sha256": "a9c4c84b7336dcfefaf876172c30fe9b311a3f72def97264ebae8535b6c6268a",
+          "size_bytes": 93,
+          "role": "exact_reviewed_result_or_documentation_no_engineering_trigger",
+          "base_sha256": null,
+          "change": "A"
+        },
+        "docs/research/frontend-evolution-v1/evidence/f05-speech-source-20261128/package-receipt.json": {
+          "sha256": "ea0396558da4aa6de650cc6e1f6e9a50c0815a9dd31d179743f16851b55b7254",
+          "size_bytes": 910,
+          "role": "exact_reviewed_result_or_documentation_no_engineering_trigger",
+          "base_sha256": null,
+          "change": "A"
+        },
+        "docs/research/frontend-evolution-v1/evidence/f05-speech-source-20261128/source-receipt.json": {
+          "sha256": "35fb4797cf67d004ae1646d61b7905a85bf376f7abbd031d4b3d58531ca57e5c",
+          "size_bytes": 59707,
+          "role": "exact_reviewed_result_or_documentation_no_engineering_trigger",
+          "base_sha256": null,
+          "change": "A"
+        },
+        "docs/research/frontend-evolution-v1/evidence/f05-speech-source-20261128/source-summary.json": {
+          "sha256": "059370014d1805180040acad6fd1b9e0de06bc0fcd0583a0ae7dcc05f127241e",
+          "size_bytes": 30866,
+          "role": "exact_reviewed_result_or_documentation_no_engineering_trigger",
+          "base_sha256": null,
+          "change": "A"
+        },
+        "tests/validation/frontend_evolution/dechorate_rir_gap.py": {
+          "sha256": "6badee0629e3fab0a91c4a567d403c54b92d9ebf398ba6f713d3dc68ec6e7696",
+          "size_bytes": 20939,
+          "role": "reviewed_RIR_or_F05_source_method_no_AP_or_AEC3_execution_by_itself",
+          "base_sha256": null,
+          "change": "A"
+        },
+        "tests/validation/frontend_evolution/f05_speech_source.py": {
+          "sha256": "1a05b0bf35e57b13cc505e2d2f842f131099361c1dad13dffa9024d5454fc620",
+          "size_bytes": 32291,
+          "role": "reviewed_RIR_or_F05_source_method_no_AP_or_AEC3_execution_by_itself",
+          "base_sha256": null,
+          "change": "A"
+        },
+        "tests/validation/frontend_evolution/fe09_same_run_artifact_visibility.py": {
+          "sha256": "80faa9731e4fd2437813ceb5847bda47b8dc7f6d671a43c6583b13dc3bb0ef9f",
+          "size_bytes": 31628,
+          "role": "exact_reviewed_F08_or_S2A_carryover_no_engineering_trigger",
+          "base_sha256": "e326a8ca6ffb5f15eaaf0d0422f63fe35cf2e539bd19e93efe1bd2bbe0eee0d7",
+          "change": "M"
+        },
+        "tests/validation/frontend_evolution/test_dechorate_rir_gap.py": {
+          "sha256": "ad0f96e663960286f654b63e0e22d5ae03689820aef361f4f93408dc951d3f80",
+          "size_bytes": 8810,
+          "role": "reviewed_RIR_or_F05_source_method_no_AP_or_AEC3_execution_by_itself",
+          "base_sha256": null,
+          "change": "A"
+        },
+        "tests/validation/frontend_evolution/test_f05_speech_source.py": {
+          "sha256": "080dcb7f0c74039515e4c5a481a11b8d8b8d3c959f68c385d9ecfc085860dbed",
+          "size_bytes": 17972,
+          "role": "reviewed_RIR_or_F05_source_method_no_AP_or_AEC3_execution_by_itself",
+          "base_sha256": null,
+          "change": "A"
+        },
+        "tests/validation/frontend_evolution/test_fe09_same_run_artifact_visibility.py": {
+          "sha256": "99c4300ef6c018ee89bd6e5e18679b94882c947b69b41a3cf398a9dc3204f135",
+          "size_bytes": 61186,
+          "role": "exact_reviewed_F08_or_S2A_carryover_no_engineering_trigger",
+          "base_sha256": "841cf81e0c07a9d9d0531cf77ff110021079747d324481e49f6f65cec97e3413",
+          "change": "M"
+        },
+        "tests/validation/frontend_evolution/test_webrtc_aec3_adapter.py": {
+          "sha256": "1c885fe9d4bbffeff29f6d2849531b2830c76e51cbcbb478a3690dd5cd9690a8",
+          "size_bytes": 22068,
+          "role": "reviewed_AEC3_method_requires_AEC3_engineering_on_introduction",
+          "base_sha256": null,
+          "change": "A"
+        },
+        "tests/validation/frontend_evolution/test_webrtc_aec3_ci.py": {
+          "sha256": "5a3a8d062eafc8d63a4aa06589a1693309e94514b6de068406273d18e7e9123a",
+          "size_bytes": 17306,
+          "role": "reviewed_AEC3_method_requires_AEC3_engineering_on_introduction",
+          "base_sha256": null,
+          "change": "A"
+        },
+        "tests/validation/frontend_evolution/test_webrtc_aec3_reference.py": {
+          "sha256": "e614c67d1c02e9e4efed899d3c80d197848702580e7bb9f992e81805ef91a0e4",
+          "size_bytes": 16418,
+          "role": "reviewed_AEC3_method_requires_AEC3_engineering_on_introduction",
+          "base_sha256": null,
+          "change": "A"
+        },
+        "tests/validation/frontend_evolution/test_webrtc_aec3_source.py": {
+          "sha256": "1ec9891a9fbf29741c1282865cf4236083decf845eb7523c9c7318653f4e3e9f",
+          "size_bytes": 16314,
+          "role": "reviewed_AEC3_method_requires_AEC3_engineering_on_introduction",
+          "base_sha256": null,
+          "change": "A"
+        },
+        "tests/validation/frontend_evolution/webrtc_aec3_ci.py": {
+          "sha256": "db29f43be30ecd7f3433f699fb8d8b01ec53e53656f1a179b1ec7dd90d8d11d5",
+          "size_bytes": 28124,
+          "role": "reviewed_AEC3_method_requires_AEC3_engineering_on_introduction",
+          "base_sha256": null,
+          "change": "A"
+        },
+        "tests/validation/frontend_evolution/webrtc_aec3_reference.py": {
+          "sha256": "a20a13eef2cd6644ab9618a959c86294ebb2b0d29f5f7ac4549e5af5e76ba897",
+          "size_bytes": 40047,
+          "role": "reviewed_AEC3_method_requires_AEC3_engineering_on_introduction",
+          "base_sha256": null,
+          "change": "A"
+        },
+        "tests/validation/frontend_evolution/webrtc_aec3_runner.cc": {
+          "sha256": "3f09c6aa8122916c06e61d11dcc45a0780ba315928471f6b43e78c7160a2c278",
+          "size_bytes": 21703,
+          "role": "reviewed_AEC3_method_requires_AEC3_engineering_on_introduction",
+          "base_sha256": null,
+          "change": "A"
+        },
+        "tests/validation/frontend_evolution/webrtc_aec3_source.py": {
+          "sha256": "511d941fe7a3f8580c90497da50d6f71680c8f39e66e23f43a6e7e0dda5171d6",
+          "size_bytes": 21628,
+          "role": "reviewed_AEC3_method_requires_AEC3_engineering_on_introduction",
+          "base_sha256": null,
+          "change": "A"
+        }
+      },
+      "boundary": "Only the actual BASE_SHA-to-HEAD changed paths are checked. Every fixed carryover must match its recorded old-to-new SHA transition; unchanged files already merged into a newer main are irrelevant. A later-base rollback to a registered older quality.yml is rejected. No open-ended prefix or workflow allowlist."
+    },
+    "required_selection_examples": [
+      {
+        "change": "actual 64-path c7 integration plus new AP and F05 validation method/wiring",
+        "ap": "true",
+        "webrtc": "true",
+        "all_historical": "false"
+      },
+      {
+        "change": "new AP/F05 validation method after existing AEC3 method is unchanged on base",
+        "ap": "true",
+        "webrtc": "false",
+        "all_historical": "false"
+      },
+      {
+        "change": "only frozen registered result/metadata paths",
+        "ap": "false",
+        "webrtc": "false",
+        "all_historical": "false"
+      },
+      {
+        "change": "unknown old science, source DSP, unrelated workflow, or changed supposedly fixed carryover",
+        "result": "REFUSE_NO_FALLTHROUGH"
+      }
+    ],
+    "reviewed_transport": {
+      "base_main": "4eec2329be9f2138c7ac73e8dd59026f3dc0a3ba",
+      "public_revision": "38e1a85d0d41ded8fa44b4f278f1a3d39a599274",
+      "public_tree": "295fc9740449319a152ae602e0c80f8e612bf4e5",
+      "files": {
+        ".github/research/evidence-index.json": {
+          "base_sha256": "8ac8d9a13e0b15a586033b3c03c6dea8bf49b15c4bc91a43b592a9bd59f2bf93",
+          "sha256": "07f2af9609cac86020acc916099575aeff19f1b7caf0091d0fbc7be1ed67e458",
+          "size_bytes": 37179,
+          "change": "M",
+          "role": "exact_reviewed_transport_or_F08_carryover_no_engineering_trigger"
+        },
+        ".github/scripts/verify-docs-gate.sh": {
+          "base_sha256": "8e89bfb4fae91ad12054bc2fc6c1fe0c8927972ad07dd4d1bd1227cdebb3af11",
+          "sha256": "52d8c3d75102b49b8473b2f4abd8cd90fdb3761405b0790bb524791995aa3e63",
+          "size_bytes": 19598,
+          "change": "M",
+          "role": "exact_reviewed_transport_or_F08_carryover_no_engineering_trigger"
+        },
+        ".github/workflows/quality.yml": {
+          "base_sha256": "f0ce64e4871116038e97af5b2708e5f1c0fadcb75fb1fa0ca3a6417ac88685f1",
+          "sha256": "a015d0bfa752de39aa222ea567d3e5c88cc7b12993d297f82ee6316b6c54d245",
+          "size_bytes": 196387,
+          "change": "M",
+          "role": "exact_reviewed_transport_or_F08_carryover_no_engineering_trigger"
+        },
+        "docs/research/frontend-evolution-v1/CI_B2S2_BA2_ARCHIVE_READBACK_20261128.zh-CN.md": {
+          "base_sha256": null,
+          "sha256": "2a5ad7dfad137792d526c8bce3b391bd5ac5a7f3b3bff8141e9ed400298c3fac",
+          "size_bytes": 9640,
+          "change": "A",
+          "role": "exact_reviewed_transport_or_F08_carryover_no_engineering_trigger"
+        },
+        "docs/research/frontend-evolution-v1/CI_S2A_ARTIFACT_READBACK_20261128.zh-CN.md": {
+          "base_sha256": null,
+          "sha256": "5a28f240e022e4966e5643673bf1ebe6b4506ee9c0c9d88e0e65a284cfb35783",
+          "size_bytes": 4246,
+          "change": "A",
+          "role": "exact_reviewed_transport_or_F08_carryover_no_engineering_trigger"
+        },
+        "docs/research/frontend-evolution-v1/F05_READINESS_20261128/PORTABLE_READBACK.zh-CN.md": {
+          "base_sha256": null,
+          "sha256": "44ca68a12bf1198f8b5d9305af67cde8103fd7244a24b038f5df9a0637fb7903",
+          "size_bytes": 1782,
+          "change": "A",
+          "role": "exact_reviewed_transport_or_F08_carryover_no_engineering_trigger"
+        },
+        "docs/research/frontend-evolution-v1/F05_READINESS_20261128/README.zh-CN.md": {
+          "base_sha256": null,
+          "sha256": "23c5ee604ab082d7c0de5fd1dde43fbe79f058b8a4e7622916cf4bd0bf008358",
+          "size_bytes": 14184,
+          "change": "A",
+          "role": "exact_reviewed_transport_or_F08_carryover_no_engineering_trigger"
+        },
+        "docs/research/frontend-evolution-v1/F05_READINESS_20261128/delivery-receipt.json": {
+          "base_sha256": null,
+          "sha256": "90df67b106409bf7b8d375c2a3424601855c6ea0fd2de50659c0d8304b950618",
+          "size_bytes": 510,
+          "change": "A",
+          "role": "exact_reviewed_transport_or_F08_carryover_no_engineering_trigger"
+        },
+        "docs/research/frontend-evolution-v1/F05_READINESS_20261128/portability-receipt.json": {
+          "base_sha256": null,
+          "sha256": "987ca3581b5f1175325490420efa37ed2c0b48e34f878572af3363769bc83853",
+          "size_bytes": 557,
+          "change": "A",
+          "role": "exact_reviewed_transport_or_F08_carryover_no_engineering_trigger"
+        },
+        "docs/research/frontend-evolution-v1/F05_READINESS_20261128/summary.json": {
+          "base_sha256": null,
+          "sha256": "05b31a592aa7f5507478e32f67fd8e14d1eb406e46ab5bc573132a394cd68235",
+          "size_bytes": 6114,
+          "change": "A",
+          "role": "exact_reviewed_transport_or_F08_carryover_no_engineering_trigger"
+        },
+        "tests/validation/frontend_evolution/fe09_same_run_artifact_download.py": {
+          "base_sha256": null,
+          "sha256": "38c6f3ffddcfb855a688e9a3624e128ccd32cb4fce76b0a55eeb554c34eb8a52",
+          "size_bytes": 23222,
+          "change": "A",
+          "role": "exact_reviewed_transport_or_F08_carryover_no_engineering_trigger"
+        },
+        "tests/validation/frontend_evolution/fe09_same_run_artifact_visibility.py": {
+          "base_sha256": "e326a8ca6ffb5f15eaaf0d0422f63fe35cf2e539bd19e93efe1bd2bbe0eee0d7",
+          "sha256": "80faa9731e4fd2437813ceb5847bda47b8dc7f6d671a43c6583b13dc3bb0ef9f",
+          "size_bytes": 31628,
+          "change": "M",
+          "role": "exact_reviewed_transport_or_F08_carryover_no_engineering_trigger"
+        },
+        "tests/validation/frontend_evolution/test_fe09_same_run_artifact_download.py": {
+          "base_sha256": null,
+          "sha256": "b0384675b8ece9a66bdf76d19be459fa3b3d14d77da8f40961364ce62927364c",
+          "size_bytes": 27255,
+          "change": "A",
+          "role": "exact_reviewed_transport_or_F08_carryover_no_engineering_trigger"
+        },
+        "tests/validation/frontend_evolution/test_fe09_same_run_artifact_visibility.py": {
+          "base_sha256": "841cf81e0c07a9d9d0531cf77ff110021079747d324481e49f6f65cec97e3413",
+          "sha256": "7663aa15b9a181782d34aabcb774d086c08876ca927687462b7ddef3771b1315",
+          "size_bytes": 62453,
+          "change": "M",
+          "role": "exact_reviewed_transport_or_F08_carryover_no_engineering_trigger"
+        }
+      },
+      "boundary": "Fallback exact transition registry only if these already-reviewed changes remain in the actual PR diff before #972 merges. Prefer protected merge #972 first; no transport-only change triggers AP/AEC3."
+    },
+    "selection_base": "Use actual GitHub BASE_SHA for changed paths and old bytes; immutable c7 and 38e1a85d registries are evidence, not a replacement comparison base.",
+    "reviewed_transport_followup": {
+      "public_parent": "38e1a85d0d41ded8fa44b4f278f1a3d39a599274",
+      "public_revision": "c3894ed2dd54e6ff81d32f80211e98a3cbf16e73",
+      "public_tree": "bddb14e2f66d7f5c12d0a9d228c9baa6ea40d290",
+      "files": {
+        ".github/workflows/quality.yml": {
+          "base_sha256": "a015d0bfa752de39aa222ea567d3e5c88cc7b12993d297f82ee6316b6c54d245",
+          "main_base_sha256": "f0ce64e4871116038e97af5b2708e5f1c0fadcb75fb1fa0ca3a6417ac88685f1",
+          "sha256": "f3b79c9af8536fd376a12cf0a33d2bcf97180bb2a591ff564d57189fed1d5361",
+          "size_bytes": 196879,
+          "role": "exact_reviewed_APT_source_transport_no_engineering_trigger"
+        },
+        "docs/research/frontend-evolution-v1/CI_SPEECH_UBUNTU_SOURCE_20261128.zh-CN.md": {
+          "base_sha256": null,
+          "main_base_sha256": null,
+          "sha256": "94fdf40ec7ddaaba7cd367027ead735179eeeeea8203285d80314c5fc6ede5e8",
+          "size_bytes": 3230,
+          "role": "exact_reviewed_APT_source_transport_no_engineering_trigger"
+        }
+      },
+      "boundary": "Only exact 38e1a85d-to-c3894ed2 transitions, or their documented 4eec-to-38e1a85d-to-c3894ed2 composition, are admitted. The actual Actions BASE_SHA still supplies old bytes; no reverse transition or generic quality edit is allowed. APT source selection changes no audio or experiment budget."
+    },
+    "predecessor_identity_authority": "The module pins public 819849ee and SHA99b75e18 independently of this plan, and compares restored complete bytes to that actual Git blob. Editing this plan and old jobs together must fail.",
+    "reviewed_ref_retention": {
+      "public_parent": "c3894ed2dd54e6ff81d32f80211e98a3cbf16e73",
+      "public_revision": "23d3a51ac28a094d7effed31ec52526d4282d7eb",
+      "public_tree": "f4c4f563eb7d4e0d90f1ff0304f5d03e42f94900",
+      "files": {
+        ".github/research/evidence-index.json": {
+          "base_sha256": "07f2af9609cac86020acc916099575aeff19f1b7caf0091d0fbc7be1ed67e458",
+          "main_base_sha256": "8ac8d9a13e0b15a586033b3c03c6dea8bf49b15c4bc91a43b592a9bd59f2bf93",
+          "sha256": "5541242e06aaa125dfc8c9238b54362a6c84a6f190c38814ce25176466e12e61",
+          "size_bytes": 38777,
+          "role": "exact_reviewed_retained_source_custody_no_engineering_trigger"
+        },
+        "docs/research/frontend-evolution-v1/PLATFORM_SOURCE_CUSTODY_20261128.zh-CN.md": {
+          "base_sha256": null,
+          "main_base_sha256": null,
+          "sha256": "e495e3b1da444f990bb883fa1c47d91eb7fc3a7efadfff9484f1e3905c39e251",
+          "size_bytes": 1897,
+          "role": "exact_reviewed_retained_source_custody_no_engineering_trigger"
+        }
+      },
+      "boundary": "Only the two published source-custody additions and accompanying exact document, composed with the already-reviewed 4eec-to-F08 retained registry, are allowed. Existing 84 objects, candidate sets, policy and gc_eligible/auto_gc semantics are unchanged. Neither path triggers engineering. Reverse or arbitrary registry changes refuse."
+    }
+  },
+  "failure_policy": "Preserve every actual failed prefix and log. No retry, compiler fallback, parameter/lag search or false success manifest. Late identity, budget or packaging failure changes the admissible status to FAIL and renames already-created tar/manifest/receipt to explicit before-failure names without discarding their bytes. Upload both original failed archives and reports. The 600s process alarm and 60s engineering alarm include source admission/readback; the outer 630s timeout is cleanup-only grace."
+}

@@ -41,6 +41,14 @@ on:
       - '.github/research/frontend-evolution-v1/webrtc-aec3-*.json'
       - '.github/research/frontend-evolution-v1/sources.json'
       - 'docs/research/frontend-evolution-v1/WEBRTC_AEC3*'
+      - 'tests/validation/frontend_evolution/ap_current_ci.py'
+      - 'tests/validation/frontend_evolution/test_ap_current_ci.py'
+      - '.github/research/frontend-evolution-v1/ap-current-portable-v1.json'
+      - 'docs/research/frontend-evolution-v1/AP_CURRENT_PORTABLE_V1.zh-CN.md'
+      - 'tests/validation/frontend_evolution/f05_dualmic_validation.py'
+      - 'tests/validation/frontend_evolution/test_f05_dualmic_validation.py'
+      - '.github/research/frontend-evolution-v1/f05-dualmic-validation-v1.json'
+      - 'docs/research/frontend-evolution-v1/F05_DUALMIC_VALIDATION_V1.zh-CN.md'
       - '.github/workflows/frontend-research.yml'
   push:
     branches: [main]
@@ -83,13 +91,21 @@ on:
       - '.github/research/frontend-evolution-v1/webrtc-aec3-*.json'
       - '.github/research/frontend-evolution-v1/sources.json'
       - 'docs/research/frontend-evolution-v1/WEBRTC_AEC3*'
+      - 'tests/validation/frontend_evolution/ap_current_ci.py'
+      - 'tests/validation/frontend_evolution/test_ap_current_ci.py'
+      - '.github/research/frontend-evolution-v1/ap-current-portable-v1.json'
+      - 'docs/research/frontend-evolution-v1/AP_CURRENT_PORTABLE_V1.zh-CN.md'
+      - 'tests/validation/frontend_evolution/f05_dualmic_validation.py'
+      - 'tests/validation/frontend_evolution/test_f05_dualmic_validation.py'
+      - '.github/research/frontend-evolution-v1/f05-dualmic-validation-v1.json'
+      - 'docs/research/frontend-evolution-v1/F05_DUALMIC_VALIDATION_V1.zh-CN.md'
       - '.github/workflows/frontend-research.yml'
   workflow_dispatch:
     inputs:
       experiment:
         description: D8 validates the closed NO_ADVANCE archive only; it never runs DSP
         type: choice
-        options: [dualmic-stages-d1, dualmic-zero-d3-input, dualmic-zero-d3, dualmic-window-d4, dualmic-target-gate-d5, dualmic-gain-ramp-d6, dualmic-upstream-d7, dualmic-broadside-output-d8, webrtc-aec3-engineering]
+        options: [dualmic-stages-d1, dualmic-zero-d3-input, dualmic-zero-d3, dualmic-window-d4, dualmic-target-gate-d5, dualmic-gain-ramp-d6, dualmic-upstream-d7, dualmic-broadside-output-d8, webrtc-aec3-engineering, ap-current-portable]
         default: dualmic-stages-d1
         required: true
 
@@ -116,6 +132,7 @@ jobs:
       d8: ${{ steps.select.outputs.d8 }}
       d8_archive: ${{ steps.select.outputs.d8_archive }}
       webrtc: ${{ steps.select.outputs.webrtc }}
+      ap: ${{ steps.select.outputs.ap }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
@@ -131,6 +148,13 @@ jobs:
         run: |
           set -euo pipefail
           python3 - <<'PY'
+          # AP_CURRENT_OUTER_SELECTOR_BEGIN
+          import sys
+          sys.path.insert(0, 'tests/validation/frontend_evolution')
+          from ap_current_ci import select_workflow as select_ap_workflow
+          if select_ap_workflow():
+              raise SystemExit(0)
+          # AP_CURRENT_OUTER_SELECTOR_END
           # AEC3_OUTER_SELECTOR_BEGIN
           import sys
           sys.path.insert(0, 'tests/validation/frontend_evolution')
@@ -850,6 +874,41 @@ jobs:
             ${{ runner.temp }}/ap-webrtc-aec3/logs/
             ${{ runner.temp }}/ap-webrtc-aec3/failed-build-evidence/
             ${{ runner.temp }}/ap-webrtc-aec3/bundle/
+          include-hidden-files: true
+          retention-days: 90
+          if-no-files-found: error
+
+  ap-current-portable:
+    name: Current AP portable engineering (synthetic transport only)
+    needs: scope
+    if: needs.scope.outputs.ap == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    env:
+      EXECUTION_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Preserve actual current source binaries and bounded engineering evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          timeout --signal=KILL 630s python3 -B \
+            tests/validation/frontend_evolution/ap_current_ci.py run \
+            --expected-head "$EXECUTION_SHA" --output "$RUNNER_TEMP/ap-current-portable"
+      - name: Preserve the portable bundle or actual failed prefix
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: frontend-research-ap-current-portable-${{ github.run_id }}-attempt-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/ap-current-portable/ap-current-portable*.tar.gz
+            ${{ runner.temp }}/ap-current-portable/ci-receipt*.json
+            ${{ runner.temp }}/ap-current-portable/bundle/
           include-hidden-files: true
           retention-days: 90
           if-no-files-found: error

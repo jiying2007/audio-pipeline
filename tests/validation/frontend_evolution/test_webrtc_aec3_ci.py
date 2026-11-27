@@ -20,7 +20,8 @@ class SelectorTests(unittest.TestCase):
     def setUpClass(cls):
         # Genuine Git object, not a second maintained copy of the old workflow.
         cls.frozen = ci.git("show", ci.BASELINE + ":" + ci.WORKFLOW)
-        cls.current = (ci.ROOT / ci.WORKFLOW).read_text()
+        from ap_current_ci import predecessor_workflow
+        cls.current = predecessor_workflow((ci.ROOT / ci.WORKFLOW).read_text())
 
     def select(self, paths, prior=None, current=None):
         return ci.select("pull_request", "", paths, current or self.current,

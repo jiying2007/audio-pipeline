@@ -143,6 +143,8 @@ jobs:
           timeout 60s python3 -B tests/validation/frontend_evolution/test_webrtc_aec3_source.py
           timeout 60s python3 -B tests/validation/frontend_evolution/test_webrtc_aec3_ci.py
           timeout 60s python3 -B tests/validation/frontend_evolution/test_webrtc_aec3_reference.py
+          timeout 60s python3 -B tests/validation/frontend_evolution/test_ap_current_ci.py
+          timeout 60s python3 -B tests/validation/frontend_evolution/test_f05_dualmic_validation.py
           python3 scripts/flaky_guard.py --self-test
           python3 scripts/test_history.py --self-test
           python3 scripts/validation_reproducer.py --self-test

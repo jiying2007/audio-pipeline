@@ -213,6 +213,41 @@
       "superseded_by": "pr:933",
       "gc_eligible": false,
       "auto_gc": false
+    },
+    {
+      "branch": "research/aec3-platform-20261128",
+      "head_sha": "cbddb82cb849e9fa454227f1995efb07ad4a7bf5",
+      "status": "ACCEPTED",
+      "evidence": [
+        "issue:968",
+        "parent-issue:657:active",
+        "source-pr:971",
+        "integration-pr:973:pending",
+        "execution-source:819849ee3ed6b269b8417ef8700eecfcf29f7958",
+        "engineering-run:46043812502:attempt:1",
+        "engineering-artifact:15220044392",
+        "result-sha256:2f65de94d7d8de636fc4dc82e2d20c0990c29e005a06958a2d1dbe08a083f60d",
+        "decision:accepted-as-retained-descriptive-reference-source-only;no-acoustic-promotion-or-main-qualification;preserve-original-success-and-failure-lineage"
+      ],
+      "gc_eligible": false,
+      "auto_gc": false
+    },
+    {
+      "branch": "research/source-simulation-preparation-20261128",
+      "head_sha": null,
+      "status": "ACTIVE",
+      "evidence": [
+        "issue:968",
+        "parent-issue:657:active",
+        "integration-pr:973:pending",
+        "observed-live-head:c7baccb8f72cda26128f3ff2bee772a382853d1f",
+        "rir-and-source-execution:a058b02582962875ac10e6bb42b928c46c405213",
+        "rir-result-sha256:1c2bfa4ae417c76c37f0b14851b72e541bff447e08129addae0ed67c72ba29c2",
+        "source-receipt-sha256:35fb4797cf67d004ae1646d61b7905a85bf376f7abbd031d4b3d58531ca57e5c",
+        "decision:retain-moving-integration-source-and-its-frozen-experiment-ancestors;null-head-is-explicit-moving-custody-not-an-unobserved-exact-head;no-gc-or-quality-qualification"
+      ],
+      "gc_eligible": false,
+      "auto_gc": false
     }
   ]
 }

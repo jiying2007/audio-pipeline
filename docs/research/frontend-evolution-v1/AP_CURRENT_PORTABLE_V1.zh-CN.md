@@ -9,9 +9,11 @@
 执行有限合成工程检查；不消费新真实语音、不选择算法、参数或延迟，
 不产生声学通过、模型晋级、设备测量或产品认证。
 
-方法发布并通过工程 CI 前，实际构建状态为 **NOT_RUN**。随后以实际
-`ci-receipt.json`、`bundle.json` 和工程报告为准，不把本文或离线 tiny
-测试当作真实二进制执行证据。真实 F05 128 例必须另按其公开冻结合同执行。
+首个公开方法 `83fa46c3` 已实际完成配置、两 AP 程序与数学 helper 编译，
+随后在首次依赖观察失败，尚未进入工程 fixture 或真实 F05 语音。
+下述依赖观察后继方法在重新公开并执行前仍为 **NOT_RUN**；原失败不改写。
+以实际 `ci-receipt.json`、`bundle.json` 和工程报告为准，不把本文或离线 tiny
+测试当作成功二进制执行证据。真实 F05 128 例必须另按其公开冻结合同执行。
 
 ## 源码身份与编译边界
 
@@ -30,8 +32,9 @@ MDF / EMA / bandlimited、完整模块、双麦及资源上限逐项写入合同
 不设置 `AP_BUILD_SOURCE_REVISION` 覆盖值。
 
 两程序静态链接本项目库，系统 `libc/libm/loader` 不重分发。
-使用现有、原字节不变的 `webrtc_aec3_ci.runtime_identity` 观察实际动态
-依赖，记录 SONAME、解析路径、SHA 和 OS/kernel/machine；可获得的系统
+AP 专属观察器保留原始 ldd 输出，再使用原字节不变的
+`webrtc_aec3_ci.parse_libraries` 严格解析普通动态依赖；旧 AEC3 observer
+完整保留。记录 SONAME、解析路径、SHA 和 OS/kernel/machine；可获得的系统
 包 copyright 文件单独保存。源码闭包包括实际加载的 AP helper、tiny
 测试、合同、workflow、AEC3 observer/source helper 与 contracts。
 
@@ -85,6 +88,47 @@ AP 工程；读者宿主与原测量宿主分别记录。`verify_render_corr_run
 纯 metadata 校验，要求已保存 mappings 恰好覆盖全部 ldd 依赖及一个 helper，
 逐项核 SHA/设备/inode，不要求旧绝对路径在读者机器上存在。
 
+### 首次工程失败后的有限依赖观察修复
+
+公开 `83fa46c3c3a5477782ca8cf24293a498fac90367` 的 run `46063199632`、
+attempt 1、job `140722236813` 在配置与两个编译步骤成功后，首次依赖观察
+报 `invalid or duplicate runtime dependency`。原失败 ZIP 为 353,220 B，
+SHA256 `48600cbf37d257439a735ab3b8b66e97a20683c785b4219e592dc4d5d123a61a`。
+当时未保全 ldd stdout/stderr，**不能断言原 CI 的具体失败行**。
+
+随后只读检查原 ELF 字节及明确标注的同字节可执行副本，本地观察到 helper
+为 ELF64/x86_64 的 `ET_DYN` 共享对象、零 `DT_NEEDED`，ldd 返回 0，
+输出仅为一个 TAB 前缀的 `statically linked` 行。旧严格 parser 对该行
+可复现同一错误；两个 SDK 的普通 libm/libc/loader 依赖仍通过原 parser。
+这不是完全静态库，也不证明未知 CI 行或假设的 loader alias 问题。
+
+后继只为精确原 C/loader/engine 绑定的 `render_corr` 允许这个情形：
+直接对封存 ELF 的有界 header、program/section、dynamic 与 dynsym 表读字节，
+要求 ELF64 little-endian、x86_64、`ET_DYN`、唯一且一致的 dynamic 表、零
+`DT_NEEDED`，并拒绝任何强 undefined symbol。仅允许实际观察到的四个 CRT
+weak UND 名称；唯一 global 定义必须是 `ap_validation_max_abs_corr`。
+ldd 同时必须 exit 0、stderr 为空、stdout 恰为 `\tstatically linked\n`。
+未知、重复、warning、未找到依赖、混合输出或非零退出仍拒绝，SDK 空依赖仍拒绝。
+
+空集不是单独准入。helper 稳定 identity 增加 `dependency_free_elf`，绑定
+实际库 SHA 与上述事实；build/binding 使用同一证明，独立 reader 从包内
+真实 ELF 重新计算。原数学运行库 reader 必须匹配这个已验证 binding；
+即使外部依赖为空，helper 自己的真实 `/proc/self/maps` 路径、设备、inode
+和 SHA 仍不可缺失。清空原依赖与 mapping、仅重封外围 manifest 不能获得准入。
+
+每次 ldd 在解析**之前**把命令、工具/库 SHA、退出/超时与 base64
+stdout/stderr 写入并 flush 原始 JSONL。正常观察和普通解析失败完整保留原流；
+若合计超过 64 KiB，每流最多读取 65,537 B，另记实际总字节数并明确
+`output_complete=false`，立即 FAIL。这个有界失败前缀不能称为完整原流。
+parsed 记录另绑定每项原始路径、实际解析路径及 SHA，读者不解析旧宿主路径。
+build 与 engineering 各只新增一个
+`runtime-observations.jsonl`；失败前缀同样保留。所有公开观察入口同时把
+原 JSONL flush 到 stderr，F05 执行/独立读回的外层命令必须原样封存该日志，
+不会写入已封存 bundle。带 ASLR 地址的 raw 记录与稳定 identity 分列，
+不拿随机地址作首尾一致性依据。字节检查、ldd 和哈希共享原单次 10 s，
+没有额外 readelf 子进程；512 文件、64 MiB、60/600 s、42 次 AP 音频、
+8 次数学调用和零重试预算全部不变。
+
 ## 固定工程检查及延迟含义
 
 固定 `call/assistant` × `capture-only/full-zero-render` 四组，16 kHz、
@@ -135,8 +179,10 @@ CI 内部总墙钟 600 s；configure 90 s、compile 240 s、engineering
 | `lib/librender_corr_exact.so` | 原 canonical 相关性数学 helper；不链接产品 DSP |
 | `source/` | 59 个 main 相同原件及方法控制闭包 |
 | `build/build-receipt.json` | 实际工具、源码、配置、命令、ELF 与依赖身份 |
+| `build/runtime-observations.jsonl` | 原 ldd stdout/stderr、命令、返回值及分列的稳定身份 |
 | `engineering/engineering.json` | CI 宿主的完整实际合成工程报告 |
 | `engineering/render-corr-checks.json` | 四个短数学检查、源码/库绑定及真实父进程映射 |
+| `engineering/runtime-observations.jsonl` | 本次工程全部原 ldd 观察，含 helper 装载前后 |
 | `licenses/` | 本项目许可及可获得的已安装系统包版权说明 |
 
 成功报告只能写 `PASS_ENGINEERING_ONLY`。归档生成后重新逐成员读取并

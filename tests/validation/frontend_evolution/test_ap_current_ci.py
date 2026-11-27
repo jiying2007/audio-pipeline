@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Offline AP scope/transport negative tests. No C compile or DSP is executed."""
 import ast
+import base64
+import io
 import json
 import os
 from pathlib import Path
@@ -597,6 +599,252 @@ class PrecompiledCorrelationTests(unittest.TestCase):
                 value["helper_library_path"] = "relative/" + ap.PATHS["render_corr"]
             with self.subTest(mutation=mutation), self.assertRaises(ValueError):
                 ap.verify_render_corr_runtime(value, binding)
+
+
+class RuntimeObservationTests(unittest.TestCase):
+    """Metadata-only ELF fixtures, never an executable or measured CI result."""
+
+    @staticmethod
+    def elf_fixture():
+        data = bytearray(1024)
+        ap.struct.pack_into("<16sHHIQQQIHHHHHH", data, 0, b"\x7fELF\x02\x01\x01" + bytes(9),
+                            3, 62, 1, 0, 64, 768, 0, 64, 56, 1, 64, 4, 0)
+        ap.struct.pack_into("<IIQQQQQQ", data, 64, 2, 6, 128, 0x1080, 0x1080, 96, 96, 8)
+        names = bytearray(b"\0")
+        symbols = [(0, 0, 0, 0, 0, 0)]
+        for name in sorted(ap.CRT_WEAK_UNDEFINED):
+            symbols.append((len(names), 0x20, 0, 0, 0, 0))
+            names.extend(name.encode() + b"\0")
+        symbols.append((len(names), 0x12, 0, 1, 0x2000, 1))
+        names.extend(ap.CORR_ABI["symbol"].encode() + b"\0")
+        data[256:256 + len(names)] = names
+        for index, entry in enumerate(((5, 0x1100), (10, len(names)), (6, 0x11c0), (11, 24), (0, 0), (0, 0))):
+            ap.struct.pack_into("<qQ", data, 128 + index * 16, *entry)
+        for index, symbol in enumerate(symbols):
+            ap.struct.pack_into("<IBBHQQ", data, 448 + index * 24, *symbol)
+        sections = [(0,) * 10, (0, 6, 0, 0x1080, 128, 96, 2, 0, 8, 16),
+                    (0, 3, 0, 0x1100, 256, len(names), 0, 0, 1, 0),
+                    (0, 11, 0, 0x11c0, 448, len(symbols) * 24, 2, 1, 8, 24)]
+        for index, section in enumerate(sections):
+            ap.struct.pack_into("<IIQQQQIIQQ", data, 768 + index * 64, *section)
+        return bytes(data)
+
+    @staticmethod
+    def raw(stdout=ap.STATIC_LDD_STDOUT, stderr=b"", code=0):
+        return {"returncode": code, "timed_out": False, "output_complete": True,
+                "stdout_original_bytes": len(stdout), "stderr_original_bytes": len(stderr),
+                "stdout_base64": base64.b64encode(stdout).decode(), "stderr_base64": base64.b64encode(stderr).decode()}
+
+    @classmethod
+    def empty_runtime_fixture(cls):
+        proof = ap.helper_elf_proof(cls.elf_fixture())
+        helper = "/old-host/bundle/" + ap.PATHS["render_corr"]
+        value = {"runtime_identity": {"system": "Linux", "machine": "x86_64", "release": "schema-fixture",
+                  "os_release_sha256": "4" * 64, "libraries": {}, "library_names": {}, "dependency_free_elf": proof},
+                 "helper_library_path": helper, "pid": 1, "loader_environment": "CLEAN_AT_START_AND_NOW",
+                 "parent_library_mappings": {helper: {"sha256": proof["binary_sha256"], "inode": 1, "device": [0, 1]}}}
+        binding = {"library": ap.PATHS["render_corr"], "binary_sha256": proof["binary_sha256"], "dependency_free_elf": proof}
+        return value, binding
+
+    def test_bounded_elf_proof_reads_bytes_without_subprocess_or_cdll(self):
+        with mock.patch.object(ap.subprocess, "Popen", side_effect=AssertionError("no process")), \
+                mock.patch.object(ap.ctypes, "CDLL", side_effect=AssertionError("no native load")):
+            value = ap.helper_elf_proof(self.elf_fixture())
+            ap.validate_helper_proof(value, ap.sha256(self.elf_fixture()))
+            self.assertEqual(value["dt_needed"], [])
+            self.assertEqual(set(value["weak_undefined_symbols"]), ap.CRT_WEAK_UNDEFINED)
+
+    def test_helper_proof_rejects_needed_strong_unknown_weak_and_invalid_tables(self):
+        for mutation in ("needed", "strong", "unknown-weak", "class", "type", "machine", "ph-range", "sh-range",
+                         "dynamic-mismatch", "dynamic-address", "unterminated", "dynsym-range", "dynstr-range",
+                         "symbol-pointer", "string-pointer", "string-size"):
+            data = bytearray(self.elf_fixture())
+            if mutation == "needed":
+                ap.struct.pack_into("<qQ", data, 192, 1, 1)
+            elif mutation == "strong":
+                data[448 + 24 + 4] = 0x10
+            elif mutation == "unknown-weak":
+                data[257] = ord("X")
+            elif mutation == "class":
+                data[4] = 1
+            elif mutation == "type":
+                ap.struct.pack_into("<H", data, 16, 2)
+            elif mutation == "machine":
+                ap.struct.pack_into("<H", data, 18, 183)
+            elif mutation == "ph-range":
+                ap.struct.pack_into("<Q", data, 32, 1024)
+            elif mutation == "sh-range":
+                ap.struct.pack_into("<Q", data, 40, 1024)
+            elif mutation == "dynamic-mismatch":
+                ap.struct.pack_into("<Q", data, 64 + 32, 48)
+            elif mutation == "dynamic-address":
+                ap.struct.pack_into("<Q", data, 64 + 16, 0xdead)
+            elif mutation == "unterminated":
+                ap.struct.pack_into("<qQ", data, 208, 5, 256)
+            elif mutation == "dynsym-range":
+                ap.struct.pack_into("<Q", data, 768 + 3 * 64 + 24, 1000)
+            elif mutation == "dynstr-range":
+                ap.struct.pack_into("<Q", data, 768 + 2 * 64 + 32, 2000)
+            elif mutation == "string-pointer":
+                ap.struct.pack_into("<Q", data, 136, 0xdead)
+            elif mutation == "string-size":
+                ap.struct.pack_into("<Q", data, 152, 1)
+            else:
+                ap.struct.pack_into("<Q", data, 168, 0xdead)
+            with self.subTest(mutation=mutation), self.assertRaises(ValueError):
+                ap.helper_elf_proof(bytes(data))
+
+    def test_only_exact_helper_static_ldd_line_can_take_exception(self):
+        with tempfile.TemporaryDirectory() as temp:
+            path = Path(temp) / "librender_corr_exact.so"
+            path.write_bytes(self.elf_fixture())
+            good = ap.runtime_from_observation(path, "render_corr", self.raw())
+            self.assertEqual(good["libraries"], {})
+            ap.normalize_render_corr_runtime(good)
+            with self.assertRaises(ValueError):
+                ap.runtime_from_observation(path, "processor", self.raw())
+            bad = [self.raw(code=1), self.raw(stderr=b"warning\n"), self.raw(b"statically linked\n"),
+                   self.raw(ap.STATIC_LDD_STDOUT + b"unknown\n"), self.raw(ap.STATIC_LDD_STDOUT * 2),
+                   self.raw(b"libmissing.so => not found\n"), self.raw(b""),
+                   self.raw(b"libx.so => /tmp/x (0x1)\nlibx.so => /tmp/x (0x2)\n")]
+            for record in bad:
+                with self.subTest(record=record), self.assertRaises(ValueError):
+                    ap.runtime_from_observation(path, "render_corr", record)
+            data = bytearray(path.read_bytes())
+            ap.struct.pack_into("<qQ", data, 192, 1, 1)
+            path.write_bytes(data)
+            with self.assertRaisesRegex(ValueError, "DT_NEEDED"):
+                ap.runtime_from_observation(path, "render_corr", self.raw())
+
+    def test_empty_dependency_reader_requires_verified_proof_and_helper_mapping(self):
+        value, binding = self.empty_runtime_fixture()
+        with mock.patch.object(ap.subprocess, "Popen", side_effect=AssertionError("no process")), \
+                mock.patch.object(ap.ctypes, "CDLL", side_effect=AssertionError("no native load")):
+            self.assertEqual(ap.verify_render_corr_runtime(value, binding)["libraries"], {})
+            for mutation in ("drop-proof", "wrong-sha", "drop-helper", "unproven-binding", "wrong-weak"):
+                row, bound = json.loads(json.dumps(value)), json.loads(json.dumps(binding))
+                if mutation == "drop-proof":
+                    del row["runtime_identity"]["dependency_free_elf"]
+                elif mutation == "wrong-sha":
+                    row["runtime_identity"]["dependency_free_elf"]["binary_sha256"] = "0" * 64
+                elif mutation == "drop-helper":
+                    row["parent_library_mappings"].clear()
+                elif mutation == "unproven-binding":
+                    del bound["dependency_free_elf"]
+                else:
+                    row["runtime_identity"]["dependency_free_elf"]["weak_undefined_symbols"].append("unknown")
+                with self.subTest(mutation=mutation), self.assertRaises(ValueError):
+                    ap.verify_render_corr_runtime(row, bound)
+            grouped = {key: value["runtime_identity"] for key in ap.ELF_KEYS}
+            with self.assertRaisesRegex(ValueError, "SDK runtime"):
+                ap.normalize_runtime(grouped)
+
+    def test_raw_ldd_is_flushed_before_parse_failure(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            helper = root / "librender_corr_exact.so"
+            helper.write_bytes(self.elf_fixture())
+            def launch(command, **kwargs):
+                kwargs["stdout"].write(b"unknown line\n")
+                kwargs["stderr"].write(b"original warning\n")
+                return types.SimpleNamespace(wait=lambda **kw: 0)
+            stream = io.StringIO()
+            with mock.patch.object(ap.subprocess, "Popen", side_effect=launch), mock.patch.object(ap.sys, "stderr", stream), \
+                    ap.runtime_observation_log(root / "runtime.jsonl"):
+                with self.assertRaisesRegex(ValueError, "stderr"):
+                    ap.observe_runtime(helper, "render_corr")
+                # The descriptor is still open: data must already be flushed.
+                lines = (root / "runtime.jsonl").read_text().splitlines()
+                self.assertEqual(len(lines), 1)
+                raw = json.loads(lines[0])
+                self.assertEqual(base64.b64decode(raw["stdout_base64"]), b"unknown line\n")
+                self.assertEqual(base64.b64decode(raw["stderr_base64"]), b"original warning\n")
+                self.assertEqual(raw["command"][1], str(helper))
+                self.assertEqual(raw["returncode"], 0)
+                self.assertEqual(stream.getvalue(), lines[0] + "\n")
+
+    def test_aslr_raw_logs_are_separate_from_stable_runtime_identity(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            binary, library = root / "ap_process_pcm", root / "libschema.so"
+            binary.write_bytes(b"not executed: SDK name metadata fixture")
+            library.write_bytes(b"not loaded: library metadata fixture")
+            counter = [0]
+            def launch(command, **kwargs):
+                counter[0] += 1
+                kwargs["stdout"].write(("libschema.so => " + str(library) + " (0x" + str(counter[0]) + ")\n").encode())
+                return types.SimpleNamespace(wait=lambda **kw: 0)
+            with mock.patch.object(ap.subprocess, "Popen", side_effect=launch), mock.patch.object(ap.sys, "stderr", io.StringIO()), \
+                    ap.runtime_observation_log(root / "runtime.jsonl"):
+                before = ap.observe_runtime(binary, "processor")
+                after = ap.observe_runtime(binary, "processor")
+            rows = [json.loads(line) for line in (root / "runtime.jsonl").read_text().splitlines()]
+            self.assertEqual(before, after)
+            self.assertNotEqual(rows[0]["stdout_base64"], rows[2]["stdout_base64"])
+            self.assertEqual(len(rows), 4)
+
+    def test_oversized_raw_output_retains_explicit_bounded_failure_prefix(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            helper = root / "librender_corr_exact.so"
+            helper.write_bytes(self.elf_fixture())
+            def launch(command, **kwargs):
+                kwargs["stdout"].write(b"x" * 70000)
+                return types.SimpleNamespace(wait=lambda **kw: 0)
+            with mock.patch.object(ap.subprocess, "Popen", side_effect=launch), mock.patch.object(ap.sys, "stderr", io.StringIO()), \
+                    ap.runtime_observation_log(root / "runtime.jsonl"):
+                with self.assertRaisesRegex(ValueError, "overflow"):
+                    ap.observe_runtime(helper, "render_corr")
+            rows = [json.loads(line) for line in (root / "runtime.jsonl").read_text().splitlines()]
+            self.assertEqual(len(rows), 1)
+            self.assertFalse(rows[0]["output_complete"])
+            self.assertEqual(rows[0]["stdout_original_bytes"], 70000)
+            self.assertEqual(len(base64.b64decode(rows[0]["stdout_base64"])), 65537)
+
+    def test_runtime_journal_rechecks_actual_helper_bytes_without_execution(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root, old = Path(temp), Path("/old-host/bundle")
+            paths = {key: root / Path(name).name for key, name in ap.PATHS.items() if key in ap.ELF_KEYS}
+            for path in paths.values():
+                path.write_bytes(self.elf_fixture())
+            empty, binding = self.empty_runtime_fixture()
+            dynamic = dict(empty["runtime_identity"], libraries={"/old/lib.so": "1" * 64}, library_names={"lib.so": "/old/lib.so"})
+            del dynamic["dependency_free_elf"]
+            identity = {"processor": dynamic, "build_info": dynamic, "render_corr": empty["runtime_identity"]}
+            records = []
+            for index, key in enumerate(ap.ELF_KEYS * 2):
+                raw = dict(self.raw(stdout=ap.STATIC_LDD_STDOUT if key == "render_corr" else b"lib.so => /old/lib.so (0x123)\n"),
+                           event="AP_RUNTIME_RAW_LDD", observation=index + 1, key=key, elapsed_seconds=0.01,
+                           command=["/old/bin/ldd", str(old / ap.PATHS[key])], tool_sha256="2" * 64,
+                           binary_sha256=ap.sha256(paths[key].read_bytes()))
+                resolution = {} if key == "render_corr" else {"lib.so": {"raw_path": "/old/lib.so", "resolved_path": "/old/lib.so", "sha256": "1" * 64}}
+                records += [raw, {"event": "AP_RUNTIME_IDENTITY", "observation": index + 1, "key": key,
+                                  "identity": identity[key], "library_resolution": resolution}]
+            journal = root / "runtime.jsonl"
+            def save():
+                journal.write_text("".join(json.dumps(record) + "\n" for record in records))
+            save()
+            with mock.patch.object(ap.subprocess, "Popen", side_effect=AssertionError("no process")), \
+                    mock.patch.object(ap.ctypes, "CDLL", side_effect=AssertionError("no native load")):
+                ap.verify_runtime_journal(journal, identity, old, paths, "build")
+                original_raw = records[0]["stdout_base64"]
+                records[0]["stdout_base64"] = base64.b64encode(b"lib.so => /bad/lib.so (0x123)\n").decode()
+                save()
+                with self.assertRaisesRegex(ValueError, "raw/resolved"):
+                    ap.verify_runtime_journal(journal, identity, old, paths, "build")
+                records[0]["stdout_base64"] = original_raw
+                save()
+                data = bytearray(paths["render_corr"].read_bytes())
+                ap.struct.pack_into("<qQ", data, 192, 1, 1)
+                paths["render_corr"].write_bytes(data)
+                digest = ap.sha256(data)
+                identity["render_corr"]["dependency_free_elf"]["binary_sha256"] = digest
+                for raw in records[::2]:
+                    if raw["key"] == "render_corr":
+                        raw["binary_sha256"] = digest
+                save()
+                with self.assertRaisesRegex(ValueError, "DT_NEEDED"):
+                    ap.verify_runtime_journal(journal, identity, old, paths, "build")
 
 
 if __name__ == "__main__":

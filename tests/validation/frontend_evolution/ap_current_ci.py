@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import argparse
 import array
+import base64
 from contextlib import contextmanager
 import ctypes
 from datetime import datetime, timezone
@@ -18,14 +19,17 @@ import importlib
 import json
 import math
 import os
+import platform
 from pathlib import Path, PurePosixPath
 import re
 import shutil
 import signal
 import stat
+import struct
 import subprocess
 import sys
 import tarfile
+import tempfile
 import time
 
 import webrtc_aec3_ci as previous
@@ -99,6 +103,10 @@ CORR_ABI = {"symbol": "ap_validation_max_abs_corr", "result": "double",
             "arguments": ["const int16_t*", "size_t", "const int16_t*", "size_t", "int", "int*"],
             "sizes_bytes": {"int16_t": 2, "size_t": 8, "int": 4, "double": 8}}
 _RENDER_BINDINGS = {}
+_RUNTIME_JOURNALS = []
+_RUNTIME_SEQUENCE = 0
+STATIC_LDD_STDOUT = b"\tstatically linked\n"
+CRT_WEAK_UNDEFINED = {"__cxa_finalize", "_ITM_registerTMCloneTable", "_ITM_deregisterTMCloneTable", "__gmon_start__"}
 LATENCY_MS = {"call": 10, "assistant": 10}
 LATENCY_SAMPLES = {"call": 160, "assistant": 160}
 TRACE_KEYS = {"frame", "algorithmic_latency_ms", "vad_probability", "vad_active",
@@ -379,30 +387,273 @@ def build_info(data: bytes, revision: str) -> dict:
     return result
 
 
+def helper_elf_proof(data: bytes) -> dict:
+    """Inspect only the bounded, unstripped ELF64 helper; never load or run it.
+
+    Both the program dynamic segment and its section must agree. Reading the
+    actual dynsym prevents an empty DT_NEEDED set from hiding strong symbols
+    supplied accidentally by the parent Python process.
+    """
+    require(64 <= len(data) <= 1024 * 1024 and data[:7] == b"\x7fELF\x02\x01\x01",
+            "helper proof requires bounded ELF64 little-endian bytes")
+    header = struct.unpack_from("<16sHHIQQQIHHHHHH", data)
+    require(header[1:4] == (3, 62, 1) and header[8] == 64 and header[9] == 56 and header[11] == 64
+            and 0 < header[10] <= 128 and 0 < header[12] <= 4096,
+            "helper proof requires ordinary x86_64 ET_DYN tables")
+    def region(offset, size):
+        require(0 <= offset <= len(data) and 0 <= size <= len(data) - offset, "ELF table outside preserved bytes")
+        return data[offset:offset + size]
+    region(header[5], header[9] * header[10])
+    region(header[6], header[11] * header[12])
+    programs = [struct.unpack_from("<IIQQQQQQ", data, header[5] + 56 * index) for index in range(header[10])]
+    sections = [struct.unpack_from("<IIQQQQIIQQ", data, header[6] + 64 * index) for index in range(header[12])]
+    dynamic = [row for row in programs if row[0] == 2]
+    dynamic_sections = [row for row in sections if row[1] == 6]
+    symbols = [row for row in sections if row[1] == 11]
+    require(len(dynamic) == len(dynamic_sections) == len(symbols) == 1, "missing or ambiguous ELF helper tables")
+    segment, section, sym = dynamic[0], dynamic_sections[0], symbols[0]
+    require((segment[2], segment[3], segment[5]) == (section[4], section[3], section[5]) and section[9] == 16
+            and 16 <= segment[5] <= 65536 and segment[5] % 16 == 0, "ELF dynamic segment/section disagree")
+    entries = list(struct.iter_unpack("<qQ", region(segment[2], segment[5])))
+    nulls = [index for index, row in enumerate(entries) if row[0] == 0]
+    require(nulls and all(row == (0, 0) for row in entries[nulls[0]:]), "unterminated ELF dynamic table")
+    entries = entries[:nulls[0]]
+    require(not any(tag == 1 for tag, value in entries), "helper has DT_NEEDED; empty runtime forbidden")
+    require(sym[9] == 24 and 24 <= sym[5] <= 65536 and sym[5] % 24 == 0 and sym[6] < len(sections),
+            "invalid ELF dynsym table")
+    strings = sections[sym[6]]
+    require(strings[1] == 3 and 0 < strings[5] <= 65536, "invalid ELF dynstr table")
+    for tag, expected in ((6, sym[3]), (11, 24), (5, strings[3]), (10, strings[5])):
+        require([value for name, value in entries if name == tag] == [expected],
+                "ELF dynamic symbol/string pointer/size disagree")
+    names = region(strings[4], strings[5])
+    weak, global_defined = [], []
+    for index, row in enumerate(struct.iter_unpack("<IBBHQQ", region(sym[4], sym[5]))):
+        offset, info, other, shndx, address, size = row
+        require(offset < len(names) and names.find(b"\0", offset) >= 0, "ELF symbol name outside dynstr")
+        name = names[offset:names.index(b"\0", offset)].decode("ascii")
+        if index == 0:
+            require(row == (0, 0, 0, 0, 0, 0), "ELF null symbol changed")
+            continue
+        if shndx == 0:
+            require(info >> 4 == 2 and name in CRT_WEAK_UNDEFINED, "strong or unknown undefined helper symbol")
+            weak.append(name)
+        elif info >> 4 == 1:
+            require(info & 15 == 2 and other == 0, "unexpected global helper symbol kind")
+            global_defined.append(name)
+    require(len(weak) == len(set(weak)) and global_defined == [CORR_ABI["symbol"]],
+            "helper dynamic symbol closure changed")
+    return {"schema_version": 1, "scope": "RENDER_CORR_EXACT_ET_DYN_NO_NEEDED", "binary_sha256": sha256(data),
+            "elf_class": 64, "byte_order": "little", "elf_type": "ET_DYN", "machine": "EM_X86_64",
+            "dt_needed": [], "strong_undefined_symbols": [], "weak_undefined_symbols": sorted(weak),
+            "global_defined_symbols": global_defined, "ldd_returncode": 0,
+            "ldd_stdout": STATIC_LDD_STDOUT.decode(), "ldd_stderr": ""}
+
+
+def validate_helper_proof(proof: dict, digest: str) -> None:
+    expected = {"schema_version": 1, "scope": "RENDER_CORR_EXACT_ET_DYN_NO_NEEDED", "binary_sha256": digest,
+                "elf_class": 64, "byte_order": "little", "elf_type": "ET_DYN", "machine": "EM_X86_64",
+                "dt_needed": [], "strong_undefined_symbols": [], "weak_undefined_symbols": proof.get("weak_undefined_symbols"),
+                "global_defined_symbols": [CORR_ABI["symbol"]], "ldd_returncode": 0,
+                "ldd_stdout": STATIC_LDD_STDOUT.decode(), "ldd_stderr": ""}
+    weak = proof.get("weak_undefined_symbols")
+    require(hex_digest(digest, 64) and proof == expected
+            and all(type(proof.get(name)) is int for name in ("schema_version", "elf_class", "ldd_returncode"))
+            and isinstance(weak, list)
+            and all(isinstance(name, str) for name in weak) and weak == sorted(set(weak))
+            and set(weak) <= CRT_WEAK_UNDEFINED, "invalid dependency-free helper proof")
+
+
+@contextmanager
+def runtime_observation_log(path: Path):
+    """One append-only file per owned stage; read-only callers retain stderr."""
+    require(not path.exists() and not path.is_symlink(), "fresh runtime journal required")
+    journal = {"path": path, "handle": None}
+    _RUNTIME_JOURNALS.append(journal)
+    try:
+        yield
+    finally:
+        require(_RUNTIME_JOURNALS.pop() is journal, "runtime journal nesting changed")
+        if journal["handle"] is not None:
+            journal["handle"].close()
+
+
+def preserve_runtime_observation(record: dict) -> None:
+    line = json.dumps(record, sort_keys=True, allow_nan=False) + "\n"
+    if _RUNTIME_JOURNALS:
+        journal = _RUNTIME_JOURNALS[-1]
+        if journal["handle"] is None:
+            journal["handle"] = journal["path"].open("x", encoding="utf-8")
+        journal["handle"].write(line)
+        journal["handle"].flush()
+    # Explicit APIs do not write to a sealed bundle. The invoking command must
+    # preserve this original stderr stream, also when parsing subsequently fails.
+    sys.stderr.write(line)
+    sys.stderr.flush()
+
+
+def runtime_from_observation(binary: Path, key: str, raw: dict, resolution: dict = None) -> dict:
+    require(type(raw["returncode"]) is int and raw["returncode"] == 0 and raw["timed_out"] is False
+            and raw["output_complete"] is True, "ldd observation failed/overflow; original bounded output preserved")
+    stdout = base64.b64decode(raw["stdout_base64"], validate=True)
+    stderr = base64.b64decode(raw["stderr_base64"], validate=True)
+    require(len(stdout) + len(stderr) <= 65536 and not stderr, "unexpected ldd stderr/output bound; preserved")
+    proof = None
+    if key == "render_corr" and stdout == STATIC_LDD_STDOUT:
+        proof = helper_elf_proof(binary.read_bytes())
+        parsed = {}
+    else:
+        parsed = previous.parse_libraries(stdout.decode("utf-8"))
+    names, libraries = {}, {}
+    for name, raw_path in parsed.items():
+        path = Path(raw_path).resolve(strict=True)
+        require(path.is_file() and path.stat().st_size <= 128 * 1024 * 1024, "invalid runtime library")
+        names[name], libraries[str(path)] = str(path), sha256(path.read_bytes())
+        if resolution is not None:
+            resolution[name] = {"raw_path": raw_path, "resolved_path": str(path), "sha256": libraries[str(path)]}
+    result = {"system": platform.system(), "machine": platform.machine(), "release": platform.release(),
+              "os_release_sha256": sha256(Path("/etc/os-release").read_bytes()), "libraries": libraries, "library_names": names}
+    if proof is not None:
+        result["dependency_free_elf"] = proof
+    return result
+
+
+def observe_runtime(binary: Path, key: str) -> dict:
+    global _RUNTIME_SEQUENCE
+    require(key in ELF_KEYS and binary.name == Path(PATHS[key]).name, "unexpected AP runtime subject")
+    started = time.monotonic()
+    deadline = started + 10
+    environment = execution_environment()
+    located = shutil.which("ldd", path=environment.get("PATH"))
+    require(located is not None, "actual ldd tool missing")
+    tool = Path(located).resolve(strict=True)
+    require(tool.is_absolute() and tool.is_file(), "actual ldd tool missing")
+    _RUNTIME_SEQUENCE += 1
+    raw = {"event": "AP_RUNTIME_RAW_LDD", "observation": _RUNTIME_SEQUENCE, "key": key,
+           "command": [str(tool), str(binary)], "binary_sha256": sha256(binary.read_bytes()),
+           "tool_sha256": sha256(tool.read_bytes()), "started_utc": datetime.now(timezone.utc).isoformat()}
+    stdout, stderr, code, timed_out, sizes = b"", b"", None, False, (0, 0)
+    try:
+        # Temporary descriptors preserve partial output even if the enclosing
+        # 60/600s alarm interrupts wait(); they add no sealed package files.
+        with tempfile.TemporaryFile() as out, tempfile.TemporaryFile() as err:
+            try:
+                with wall_guard(deadline):
+                    process = subprocess.Popen(raw["command"], stdout=out, stderr=err,
+                                               env=environment, start_new_session=True)
+                    try:
+                        code = process.wait(timeout=max(0.001, deadline - time.monotonic()))
+                    except (subprocess.TimeoutExpired, TimeoutError):
+                        timed_out = True
+                        try:
+                            os.killpg(process.pid, signal.SIGKILL)
+                        except ProcessLookupError:
+                            pass
+                        code = process.wait(timeout=5)
+            finally:
+                out.seek(0)
+                err.seek(0)
+                sizes = (os.fstat(out.fileno()).st_size, os.fstat(err.fileno()).st_size)
+                stdout, stderr = out.read(65537), err.read(65537)
+    finally:
+        raw.update(returncode=code, timed_out=timed_out, elapsed_seconds=time.monotonic() - started,
+                   stdout_base64=base64.b64encode(stdout).decode(), stderr_base64=base64.b64encode(stderr).decode(),
+                   stdout_original_bytes=sizes[0], stderr_original_bytes=sizes[1],
+                   output_complete=(sizes == (len(stdout), len(stderr)) and sum(sizes) <= 65536))
+        preserve_runtime_observation(raw)
+    with wall_guard(deadline):
+        resolution = {}
+        identity = runtime_from_observation(binary, key, raw, resolution)
+        require(sha256(binary.read_bytes()) == raw["binary_sha256"], "runtime subject changed during observation")
+        preserve_runtime_observation({"event": "AP_RUNTIME_IDENTITY", "observation": raw["observation"],
+                                      "key": key, "identity": identity, "library_resolution": resolution})
+    return identity
+
+
 def runtime_identity(paths: dict) -> dict:
-    return {name: previous.runtime_identity(paths[name], execution_environment())
-            for name in ELF_KEYS}
+    return {name: observe_runtime(paths[name], name) for name in ELF_KEYS}
 
 
 def normalize_runtime(value: dict) -> dict:
     result = {}
     require(set(value) == set(ELF_KEYS), "missing processor or validation-helper runtime identity")
     for binary in ELF_KEYS:
+        if binary != "render_corr":
+            require(value[binary]["libraries"] and "dependency_free_elf" not in value[binary],
+                    "SDK runtime must retain its nonempty strict dependency observation")
         result[binary] = normalize_render_corr_runtime(value[binary])
     return result
 
 
+def verify_runtime_journal(path: Path, identity: dict, original_bundle: Path, paths: dict,
+                           stage: str, tool: dict = None) -> None:
+    """Read original raw logs without ldd, current-host path resolution or load."""
+    data = path.read_bytes()
+    require(data.endswith(b"\n") and len(data) <= 2 * 1024 * 1024, "invalid runtime journal size/termination")
+    records = [json_value(line) for line in data.splitlines()]
+    require(len(records) % 2 == 0 and 12 <= len(records) <= 32, "incomplete runtime observation journal")
+    keys, identifiers = [], set()
+    for raw, parsed in zip(records[::2], records[1::2]):
+        key = raw["key"]
+        require(key in ELF_KEYS and raw["event"] == "AP_RUNTIME_RAW_LDD" and parsed["event"] == "AP_RUNTIME_IDENTITY"
+                and type(raw["observation"]) is int and raw["observation"] > 0 and raw["observation"] not in identifiers
+                and parsed["observation"] == raw["observation"] and parsed["key"] == key,
+                "runtime raw/identity journal pairing changed")
+        identifiers.add(raw["observation"])
+        keys.append(key)
+        require(type(raw["returncode"]) is int and raw["returncode"] == 0 and raw["timed_out"] is False
+                and raw["output_complete"] is True and type(raw["elapsed_seconds"]) in (int, float)
+                and 0 <= raw["elapsed_seconds"] <= 10 and hex_digest(raw["tool_sha256"], 64)
+                and len(raw["command"]) == 2 and Path(raw["command"][0]).is_absolute()
+                and Path(raw["command"][0]).name == "ldd"
+                and raw["command"][1] == str(original_bundle / PATHS[key]), "invalid preserved ldd invocation")
+        if tool is not None:
+            require(raw["command"][0] == tool["path"] and raw["tool_sha256"] == tool["sha256"], "ldd tool identity changed")
+        digest = sha256(paths[key].read_bytes())
+        require(raw["binary_sha256"] == digest and parsed["identity"] == identity[key], "runtime journal source/identity mismatch")
+        stdout, stderr = (base64.b64decode(raw[name], validate=True) for name in ("stdout_base64", "stderr_base64"))
+        require(len(stdout) + len(stderr) <= 65536 and not stderr
+                and raw["stdout_original_bytes"] == len(stdout) and raw["stderr_original_bytes"] == len(stderr),
+                "unexpected preserved ldd output")
+        if not identity[key]["libraries"]:
+            require(key == "render_corr" and stdout == STATIC_LDD_STDOUT
+                    and parsed["library_resolution"] == {}
+                    and identity[key]["dependency_free_elf"] == helper_elf_proof(paths[key].read_bytes()),
+                    "empty dependency exception lacks original ELF/ldd proof")
+        else:
+            original_paths = previous.parse_libraries(stdout.decode("utf-8"))
+            require(set(original_paths) == set(identity[key]["library_names"]),
+                    "preserved ldd names disagree with runtime identity")
+            expected_resolution = {name: {"raw_path": original_paths[name], "resolved_path": path,
+                                          "sha256": identity[key]["libraries"][path]}
+                                   for name, path in identity[key]["library_names"].items()}
+            require(parsed["library_resolution"] == expected_resolution,
+                    "raw/resolved library observation disagrees with original ldd or stable identity")
+    require(keys[:3] == list(ELF_KEYS) and keys[-3:] == list(ELF_KEYS), "missing before/after runtime observations")
+    if stage == "build":
+        require(len(keys) == 6, "build observation count changed")
+    else:
+        require(stage == "engineering" and keys[3:-3] in (["render_corr"], ["render_corr", "render_corr"]),
+                "engineering helper observation count changed")
+
+
 def normalize_render_corr_runtime(row: dict) -> dict:
     """Normalize one actual ldd observation, without asserting host equivalence."""
-    require(set(row) == {"system", "machine", "release", "os_release_sha256", "libraries", "library_names"},
+    empty = not row["libraries"]
+    fields = {"system", "machine", "release", "os_release_sha256", "libraries", "library_names"}
+    require(set(row) == fields | ({"dependency_free_elf"} if empty else set()),
             "incomplete runtime identity")
     require(row["system"] == "Linux" and row["machine"] == "x86_64"
             and hex_digest(row["os_release_sha256"], 64), "unsupported runtime host")
     libraries = {name: row["libraries"][path] for name, path in row["library_names"].items()}
-    require(libraries and all(hex_digest(item, 64) for item in libraries.values())
+    require(all(hex_digest(item, 64) for item in libraries.values())
             and set(row["libraries"]) == set(row["library_names"].values()), "invalid runtime library identity")
-    return {"system": row["system"], "machine": row["machine"], "release": row["release"],
-            "os_release_sha256": row["os_release_sha256"], "libraries": libraries}
+    result = {"system": row["system"], "machine": row["machine"], "release": row["release"],
+              "os_release_sha256": row["os_release_sha256"], "libraries": libraries}
+    if empty:
+        validate_helper_proof(row["dependency_free_elf"], row["dependency_free_elf"]["binary_sha256"])
+        result["dependency_free_elf"] = row["dependency_free_elf"]
+    return result
 
 
 def controls(revision: str) -> dict:
@@ -527,7 +778,9 @@ def bind_verified_render_corr(root: Path, build: dict, paths: dict, module=None)
             check_bound_state(module, entry)
             return dict(binding)
         require(module not in _RENDER_BINDINGS, "previously bound canonical state was cleared; no fallback is allowed")
-        runtime = previous.runtime_identity(path, execution_environment())
+        runtime = observe_runtime(path, "render_corr")
+        require(runtime.get("dependency_free_elf") == binding.get("dependency_free_elf"),
+                "live helper dependency proof differs from verified build")
         library = ctypes.CDLL(str(path))
         function = library.ap_validation_max_abs_corr
         function.restype = ctypes.c_double
@@ -545,11 +798,15 @@ def bind_verified_render_corr(root: Path, build: dict, paths: dict, module=None)
 
 def render_binding(build: dict) -> dict:
     helper = build["render_correlation"]
-    return {"schema_version": 1, "status": "BOUND_PREBUILT_VALIDATION_HELPER", "code_revision": build["source_revision"],
+    result = {"schema_version": 1, "status": "BOUND_PREBUILT_VALIDATION_HELPER", "code_revision": build["source_revision"],
                "search_id": "exact-all-integer-lags-stride4-v1", "library": PATHS["render_corr"],
                "binary_sha256": helper["binary_sha256"], "source_sha256": CORR_PINS[CORR_SOURCE],
                "loader_sha256": CORR_PINS[CORR_LOADER], "engine_sha256": CORR_PINS[CORR_ENGINE],
                "compiler": helper["compiler"], "abi": CORR_ABI, "local_compilation": False}
+    if "dependency_free_elf" in helper:
+        validate_helper_proof(helper["dependency_free_elf"], helper["binary_sha256"])
+        result["dependency_free_elf"] = helper["dependency_free_elf"]
+    return result
 
 
 def bind_render_corr_native(root: Path, module=None) -> dict:
@@ -582,7 +839,7 @@ def bound_math_runtime(module) -> dict:
         require(module in _RENDER_BINDINGS, "helper must be explicitly bound first")
         entry = _RENDER_BINDINGS[module]
         check_bound_state(module, entry)
-        actual = previous.runtime_identity(entry["path"], execution_environment())
+        actual = observe_runtime(entry["path"], "render_corr")
         require(actual == entry["runtime"], "math dependency identity changed after explicit load")
         return {"runtime_identity": actual, "parent_library_mappings": mapped_library_identity(entry["path"], actual),
                 "helper_library_path": str(entry["path"]), "pid": os.getpid(),
@@ -597,6 +854,10 @@ def render_corr_runtime_identity(root: Path, module=None) -> dict:
 def verify_render_corr_runtime(observed: dict, binding: dict, original_bundle: Path = None) -> dict:
     """Pure stored-observation closure check; no current-host existence checks."""
     normalized = normalize_render_corr_runtime(observed["runtime_identity"])
+    proof = observed["runtime_identity"].get("dependency_free_elf")
+    require(proof == binding.get("dependency_free_elf"), "math empty-dependency proof differs from verified helper binding")
+    if proof is not None:
+        validate_helper_proof(proof, binding["binary_sha256"])
     require(observed["loader_environment"] == "CLEAN_AT_START_AND_NOW"
             and type(observed["pid"]) is int and observed["pid"] > 0, "math host observation mismatch")
     helper_path = observed["helper_library_path"]
@@ -886,6 +1147,8 @@ def semantic_engineering(root: Path, receipt: Path, binding: dict) -> dict:
     require(old_folder.is_absolute(), "missing original command directory")
     old_bundle = Path(report["bundle_directory"])
     require(old_bundle.is_absolute(), "missing original engineering bundle directory")
+    verify_runtime_journal(folder / "runtime-observations.jsonl", report["runtime_identity"], old_bundle,
+                           {key: root / PATHS[key] for key in ELF_KEYS}, "engineering")
     verify_render_corr_runtime(helper_checks["actual_math_runtime"], helper_checks["binding"], old_bundle)
     executable = {key: Path(report["executables"][key]) for key in ("processor", "build_info")}
     require(all(path == old_bundle / PATHS[key] for key, path in executable.items()),
@@ -957,7 +1220,7 @@ def engineering(root: Path, output: Path, initial: bool = False) -> dict:
     deadline = started + 60
     preexisting = output.exists() or output.is_symlink()
     try:
-        with wall_guard(deadline):
+        with wall_guard(deadline), runtime_observation_log(output / "runtime-observations.jsonl"):
             return engineering_impl(root, output, initial, started, deadline)
     except Exception as exc:
         # This also covers expiration at context exit after the inner function
@@ -1126,6 +1389,15 @@ def verify_build(root: Path) -> tuple:
             "clean source or relocation check absent")
     require(build["runtime_identity"] == build["runtime_identity_after_relocation"], "relocation changed host dependencies")
     normalize_runtime(build["runtime_identity"])
+    proof = build["runtime_identity"]["render_corr"].get("dependency_free_elf")
+    require(proof == helper.get("dependency_free_elf"), "build helper dependency proof mismatch")
+    if proof is not None:
+        require(proof == helper_elf_proof(paths["render_corr"].read_bytes()),
+                "preserved helper ELF does not substantiate empty runtime")
+    original_bundle = Path(build["original_bundle_directory"])
+    require(original_bundle.is_absolute(), "missing original build bundle directory")
+    verify_runtime_journal(root / "build/runtime-observations.jsonl", build["runtime_identity"], original_bundle,
+                           paths, "build", build["tools"]["ldd"])
     require(set(build["elf_observations"]) == set(ELF_KEYS), "missing actual ELF observations")
     for key, row in build["elf_observations"].items():
         folder = root / "build/elf" / key
@@ -1261,7 +1533,7 @@ def run(expected: str, output: Path) -> dict:
     deadline = started + 600
     preexisting = output.exists() or output.is_symlink()
     try:
-        with wall_guard(deadline):
+        with wall_guard(deadline), runtime_observation_log(output / "bundle/build/runtime-observations.jsonl"):
             return run_impl(expected, output, started, deadline)
     except Exception as exc:
         receipt = output / "ci-receipt.json"
@@ -1399,9 +1671,12 @@ def run_impl(expected: str, output: Path, started: float, deadline: float) -> di
                  "generator": "Unix Makefiles", "parallelism": 2, "runtime_identity": before_runtime,
                  "elf_observations": elf_observations,
                  "runtime_identity_after_relocation": after_runtime, "original_build_directory": str(build_dir),
+                 "original_bundle_directory": str(bundle),
                  "original_source_directory": str(ROOT),
                  "original_build_directory_renamed": True, "absolute_rpath_present": False,
                  "source_status_before": status_before, "source_status_after": status_after, "system_notices": notices}
+        if "dependency_free_elf" in before_runtime["render_corr"]:
+            built["render_correlation"]["dependency_free_elf"] = before_runtime["render_corr"]["dependency_free_elf"]
         write_json(paths["build_receipt"], built)
         require(deadline - time.monotonic() >= 60, "insufficient remaining CI budget for fixed engineering")
         engineering(bundle, bundle / "engineering", initial=True)

@@ -214,7 +214,7 @@
       "engineering": "engineering/engineering.json"
     },
     "manifest": "Complete relative path SHA256 map excludes only bundle.json itself; no duplicate paths, traversal, symlinks, hardlinks, special files, undeclared extra files or missing entries.",
-    "runtime_identity_helper": "Reuse unchanged webrtc_aec3_ci.runtime_identity and record its exact committed source/dependency closure.",
+    "runtime_identity_helper": "AP-only original-output observer uses the unchanged webrtc_aec3_ci.parse_libraries for every ordinary dependency set. Only the exact canonical render_corr ET_DYN helper may use the bounded zero-DT_NEEDED exception below. The old AEC3 module/observer and SDK nonempty dependency requirement remain unchanged.",
     "new_host": "CI report remains preserved; engineering --bundle --output creates a new bounded actual report on Debian13 or another compatible Linux host. Read-only require_host_engineering compares current dependency names/hashes/host with the selected receipt, never copies CI host identity into a new host claim.",
     "interfaces": {
       "verify_bundle": "dict {manifest, build, engineering, paths}; paths contains resolved processor/build_info/build_receipt/engineering Path objects. No binary execution.",
@@ -946,6 +946,22 @@
     "canonical_score": "Call the unmodified exact_score and original engine.normalized_corr(stride=4); retain its 1e-10 native/canonical agreement requirement. The bounded Python oracle is restricted to four synthetic helper checks, never real data or scientific search.",
     "loader_policy": "Under the original non-reentrant _NATIVE_LOCK, accept only initial None/_NATIVE_TEMP=None or this binder-owned identical state/CDLL/function/path/SHA. Reject any automatic compilation, cleared/replaced state or compiler fallback before exact_score.",
     "parent_process": "Require fresh Linux Python with no LD_PRELOAD/LD_AUDIT/LD_LIBRARY_PATH at exec-time (/proc/self/environ) or now; never pop variables to claim a clean parent. Compare the actually mapped library/dependency path, inode, device and SHA to ldd identities.",
-    "independent_reader": "verify_bundle/verify_engineering remain no-execution byte/math readback. Explicit bind+guarded max_abs_corr may load the preserved .so for canonical scoring with no C compiler, SDK processor or decoder calls; report the reader math host separately from original measurement host."
+    "independent_reader": "verify_bundle/verify_engineering remain no-execution byte/math readback. Explicit bind+guarded max_abs_corr may load the preserved .so for canonical scoring with no C compiler, SDK processor or decoder calls; report the reader math host separately from original measurement host.",
+    "dependency_free_observation_followup": {
+      "failed_public_revision": "83fa46c3c3a5477782ca8cf24293a498fac90367",
+      "failed_run_id": 46063199632,
+      "failed_attempt": 1,
+      "failed_job_id": 140722236813,
+      "failed_original_zip_sha256": "48600cbf37d257439a735ab3b8b66e97a20683c785b4219e592dc4d5d123a61a",
+      "failed_original_zip_bytes": 353220,
+      "historical_observation_limit": "The original CI ldd stdout/stderr were not preserved. Its exact failing line is unknown. On preserved byte-identical ELF copies, later local read-only inspection reproduced the same parser error for the helper with ldd exit 0 and a single tab-prefixed statically linked line. This is not a claim about unrecorded CI output.",
+      "exception_scope": "render_corr only; original C/loader/engine pins and helper binary hash must match the verified bundle. Do not accept empty SDK dependencies or absolute-loader alias guesses.",
+      "elf_required": "Read the actual preserved bytes, bounded to 1 MiB: ELF64 little-endian x86_64 ET_DYN; ordinary bounded header/program/section tables; matching unique PT_DYNAMIC/SHT_DYNAMIC offsets/address/size, zero DT_NEEDED; bounded unique SHT_DYNSYM and dynstr with matching DT_SYMTAB/SYMENT/STRTAB/STRSZ; no strong undefined symbol; only the four named CRT weak undefined symbols may be ignored; unique global defined function ap_validation_max_abs_corr.",
+      "allowed_weak_undefined": ["_ITM_deregisterTMCloneTable", "_ITM_registerTMCloneTable", "__cxa_finalize", "__gmon_start__"],
+      "ldd_required": "Exit code 0, no stderr, and stdout bytes exactly TAB + statically linked + LF. Reject added, duplicate, warning, unresolved, nonzero, or unknown lines. Every non-exception uses the unchanged strict parser.",
+      "stable_proof": "Only an empty render_corr identity adds dependency_free_elf. Bind its SHA and ELF/ldd facts to render_correlation/build and stable native binding. verify_build and the raw-journal reader recompute the proof from the actual preserved ELF; shared math readback requires exactly that verified binding proof plus the helper's own actual process mapping. An empty dict without proof is invalid.",
+      "original_output_preservation": "Before parsing, append and flush command, tool/binary SHA, start/time/returncode/timeout and base64 stdout/stderr. Normal observations and ordinary parse failures retain both streams losslessly. If combined output exceeds 64 KiB, retain at most 65537 bytes per stream plus actual original byte counts, mark output_complete=false and fail immediately; this is an explicit incomplete failure prefix, never a complete raw observation or success. Save one runtime-observations.jsonl in build and one in engineering; always also emit JSONL to stderr. Public read-only/scoring callers must retain the complete command stderr outside sealed bundles. Parsed records also bind each original raw library path to its actually resolved path and SHA. ASLR-containing raw logs stay separate from stable before/after identity.",
+      "budgets_unchanged": "One existing 10 s total observation deadline includes ldd, byte inspection and hashing; no readelf subprocess is added to this observation. The two extra journal files retain package 512 files/64 MiB, engineering 60 s and CI 600 s. No SDK calls, helper math calls or retries are added. Only a new publicly frozen source may execute; the failed 83fa attempt remains failed."
+    }
   }
 }

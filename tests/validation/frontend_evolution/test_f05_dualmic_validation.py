@@ -267,7 +267,7 @@ class ValidationTests(unittest.TestCase):
 
     def test_failure_prefix_and_bool_returncode_cannot_be_resealed(self):
         cases = self.replay()
-        for name in ('failure.json','failed-report.json'):
+        for name in f.FAILURE_PREFIXES:
             path = self.root/name; path.write_text('{}')
             with self.assertRaises(ValueError): f.replay_layout(self.root,cases,40)
             path.unlink()
@@ -292,15 +292,27 @@ class ValidationTests(unittest.TestCase):
         f.disjoint_output(self.root/'other',[original])
 
     def test_late_failure_invalidates_success_keeps_prefix(self):
-        f.write_json(self.root/'report.json',{'status':f.STATUS})
-        (self.root/'artifact-manifest.json').write_text('{}')
+        report_bytes = b'{"status": "MEASUREMENT_COMPLETE_DESCRIPTIVE_ONLY", "actual": 0.25}\n\n'
+        manifest_bytes = b'{ "schema_version": 1, "files": {} }\n'
+        (self.root/'report.json').write_bytes(report_bytes)
+        (self.root/'artifact-manifest.json').write_bytes(manifest_bytes)
         (self.root/'prefix.pcm').write_bytes(b'tiny-not-audio')
         f.fail_output(self.root,TimeoutError('late sealing'),'run',f.time.monotonic())
         self.assertFalse((self.root/'report.json').exists())
         self.assertFalse((self.root/'artifact-manifest.json').exists())
+        self.assertEqual((self.root/'report-before-failure.json').read_bytes(),report_bytes)
+        self.assertEqual((self.root/'artifact-manifest-before-failure.json').read_bytes(),manifest_bytes)
         self.assertEqual(f.load_json(self.root/'failed-report.json')['status'],'FAIL_MEASUREMENT_INTEGRITY')
+        self.assertEqual(f.load_json(self.root/'failed-report.json')['original_report_sha256'],f.sha256(report_bytes))
         self.assertEqual((self.root/'prefix.pcm').read_bytes(),b'tiny-not-audio')
         self.assertEqual(f.load_json(self.root/'failure.json')['automatic_retries'],0)
+        # Restoring apparent success and dropping explicit FAIL markers must not
+        # hide the original late failure retained in the same evidence directory.
+        (self.root/'report.json').write_bytes(report_bytes)
+        (self.root/'artifact-manifest.json').write_bytes(manifest_bytes)
+        (self.root/'failure.json').unlink(); (self.root/'failed-report.json').unlink()
+        with self.assertRaisesRegex(ValueError,'failure prefix'):
+            f.replay_layout(self.root,[],1)
 
 
 if __name__ == '__main__':

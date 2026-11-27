@@ -38,6 +38,8 @@ SOURCE_RECEIPT = '35fb4797cf67d004ae1646d61b7905a85bf376f7abbd031d4b3d58531ca57e
 SOURCE_REVISION = 'a058b02582962875ac10e6bb42b928c46c405213'
 BASE = '5dc7176e0dde61944ba141952af7a9d8978a61f7'
 COMPONENTS = ('mic_audio', 'render_audio', 'clean_near_audio', 'interference_audio')
+FAILURE_PREFIXES = ('failure.json','failed-report.json','report-before-failure.json',
+                    'artifact-manifest-before-failure.json')
 
 
 def write_json(path: Path, record) -> None:
@@ -533,7 +535,7 @@ def retained_case(root: Path, report: dict, case: dict):
 
 
 def replay_layout(root: Path, cases: list[dict], matrix_seconds: float | None = None) -> float:
-    require(not (root/'failure.json').exists() and not (root/'failed-report.json').exists(), 'failure prefix cannot become a successful measurement')
+    require(not any((root/name).exists() for name in FAILURE_PREFIXES), 'failure prefix cannot become a successful measurement')
     directory = root/'replay'
     children = list(directory.iterdir())
     require(all(path.is_dir() and not path.is_symlink() for path in children) and
@@ -659,7 +661,7 @@ def verify_measurement(archive: Path, output: Path, plan: dict, revision: str) -
     started = time.monotonic()
     output = source.safe_local(output)
     report, phase = load_json(output/'report.json'), load_json(output/'execution-phase.json')
-    require(not (output/'failure.json').exists() and not (output/'failed-report.json').exists(), 'failure prefix cannot pass readback')
+    require(not any((output/name).exists() for name in FAILURE_PREFIXES), 'failure prefix cannot pass readback')
     require(report['schema_version'] == 1 and report['study_id'] == STUDY and report['status'] == STATUS and
             report['harness_revision'] == report['processor_revision'] == revision and finite(report), 'measurement completion/identity drift')
     require(phase['status'] == 'COMPLETE' and type(phase['returncode']) is int and phase['returncode'] == 0 and phase['processor_calls'] == 128 and
@@ -725,13 +727,25 @@ def verify_measurement(archive: Path, output: Path, plan: dict, revision: str) -
 
 def fail_output(output: Path, error: BaseException, command: str, started: float) -> None:
     report_path = output/'report.json'
+    original_report = None
     if report_path.is_file() and not report_path.is_symlink():
-        report = load_json(report_path)
+        original_report = output/'report-before-failure.json'
+        require(not original_report.exists(), 'prior failure report must never be overwritten')
+        report_path.rename(original_report)
+    manifest_path = output/'artifact-manifest.json'
+    if manifest_path.is_file() and not manifest_path.is_symlink():
+        preserved = output/'artifact-manifest-before-failure.json'
+        require(not preserved.exists(), 'prior failure manifest must never be overwritten')
+        manifest_path.rename(preserved)
+    if original_report is not None:
+        try:
+            report = load_json(original_report)
+        except (ValueError, UnicodeError):
+            report = {}
         report['status'] = 'FAIL_MEASUREMENT_INTEGRITY'
         report['failure'] = type(error).__name__ + ': ' + str(error)
+        report['original_report_sha256'] = source.file_hash(original_report)
         write_json(output/'failed-report.json', report)
-        report_path.unlink()
-    (output/'artifact-manifest.json').unlink(missing_ok=True)
     record = {'schema_version':1, 'study_id':STUDY, 'status':'FAIL_METHOD_OR_EXECUTION', 'command':command,
               'error':type(error).__name__ + ': ' + str(error), 'elapsed_seconds':time.monotonic()-started,
               'automatic_retries':0, 'promotion_allowed':False}

@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import copy
+import hashlib
 import json
 from pathlib import Path
 from typing import Any
@@ -25,10 +26,20 @@ REQUIRED_TIER_FLAGS = {
 }
 
 
-def load_authority(path: Path = DEFAULT_AUTHORITY) -> dict[str, Any]:
-    authority = json.loads(path.read_text(encoding="utf-8"))
+def load_authority_snapshot(path: Path = DEFAULT_AUTHORITY) -> tuple[dict[str, Any], str]:
+    """Validate and identify the same input bytes, including custom paths.
+
+    Keep the digest from this read rather than reopening the path after an
+    experiment: a later file change must not relabel the authority it used.
+    """
+    raw = path.read_bytes()
+    authority = json.loads(raw.decode("utf-8"))
     validate_authority(authority)
-    return authority
+    return authority, hashlib.sha256(raw).hexdigest()
+
+
+def load_authority(path: Path = DEFAULT_AUTHORITY) -> dict[str, Any]:
+    return load_authority_snapshot(path)[0]
 
 
 def validate_authority(authority: dict[str, Any]) -> None:

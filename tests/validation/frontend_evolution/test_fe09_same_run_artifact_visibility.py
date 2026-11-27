@@ -1028,5 +1028,86 @@ class T2C0SnapshotRestartTests(A1SnapshotRestartTests):
     NAME = T2C0AttemptVisibilityTests.NAME
 
 
+class ObservedReadbackParityTests(unittest.TestCase):
+    """Exercise the actual five missing transport paths without running DSP."""
+    def fixture(self, prefix):
+        fixture = A1RestListVisibilityTests()
+        fixture.NAME = prefix + str(RUN) + "-attempt-2"
+        return fixture
+
+    def test_each_observed_stage_waits_for_exact_list_identity(self):
+        for prefix in policy.READBACK_PARITY_PREFIXES:
+            with self.subTest(prefix=prefix):
+                f = self.fixture(prefix)
+                self.assertEqual(f.check([f.response(f.run_record()),
+                    f.listing([]), f.listing()]), (3, DIGEST))
+                self.assertEqual(f.paused, [2])
+                self.assertEqual(len(f.opened), 3)
+                self.assertEqual(f.opened[-1], (f.LIST_URL + "1", 10))
+
+    def test_run_only_names_wrong_attempt_and_unknown_prefix_fail_before_network(self):
+        for prefix in policy.READBACK_PARITY_PREFIXES:
+            for name in (prefix + str(RUN), prefix + str(RUN) + "-attempt-1",
+                         prefix + str(RUN + 1) + "-attempt-2",
+                         prefix + str(RUN) + "-attempt-2-spoof"):
+                with self.subTest(name=name), self.assertRaises(policy.NotAdmitted):
+                    policy.check_visibility(REPO, RUN, ARTIFACT, name,
+                        "fake-test-only-token", run_attempt=2,
+                        run_head_sha="b" * 40, execution_source="c" * 40,
+                        opener=Mock(side_effect=AssertionError("network forbidden")))
+        with self.assertRaises(policy.NotAdmitted):
+            policy.checked_args(REPO, RUN, ARTIFACT,
+                "frontend-fe09-unapproved-12345-attempt-2", "fake", run_attempt=2)
+
+    def test_observed_identity_conflict_never_becomes_a_retry(self):
+        mutations = (
+            lambda a: a.update(id=ARTIFACT + 1),
+            lambda a: a.update(name="different-artifact"),
+            lambda a: a.update(expired=True),
+            lambda a: a.update(digest="bad"),
+            lambda a: a.update(created_at="2026-10-22T05:59:59Z"),
+            lambda a: a["workflow_run"].update(head_sha="d" * 40),
+            lambda a: a["workflow_run"].update(repository_id=999),
+        )
+        for prefix in policy.READBACK_PARITY_PREFIXES:
+            for mutate in mutations:
+                f = self.fixture(prefix)
+                artifact = f.artifact(); mutate(artifact)
+                with self.subTest(prefix=prefix), self.assertRaises(policy.NotAdmitted):
+                    f.check([f.response(f.run_record()), f.listing([artifact], total=2)])
+                self.assertEqual(len(f.opened), 2)
+                self.assertEqual(f.paused, [])
+
+    def test_absence_keeps_shared_eight_request_ceiling(self):
+        for prefix in policy.READBACK_PARITY_PREFIXES:
+            f = self.fixture(prefix)
+            with self.subTest(prefix=prefix), self.assertRaisesRegex(
+                    policy.NotAdmitted, "NOT_VISIBLE"):
+                f.check([f.response(f.run_record())] + [f.listing([])] * 7)
+            self.assertEqual(len(f.opened), 8)
+            self.assertEqual(f.paused, [2] * 6)
+
+    def test_five_workflow_paths_keep_success_gate_and_independent_readback(self):
+        quality = (Path(__file__).resolve().parents[3] /
+                   ".github/workflows/quality.yml").read_text()
+        steps = ("fe09_b2s1", "fe09_b2s2", "fe09_t1", "fe09_t3s2b0", "fe09_t3s2b1ba0")
+        for step, prefix in zip(steps, policy.READBACK_PARITY_PREFIXES):
+            with self.subTest(step=step):
+                start = quality.index("        id: " + step + "_upload\n")
+                guard = quality.index("Witness exact " + step + " upload", start)
+                download = quality.index("uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131", guard)
+                independent = quality.index("      - name: Independently", download)
+                block = quality[start:independent]
+                self.assertIn(prefix + "${{ github.run_id }}-attempt-${{ github.run_attempt }}", block)
+                self.assertIn('if: steps.' + step + ".outcome == 'success'", block)
+                self.assertIn('artifact-ids: ${{ steps.' + step + '_upload.outputs.artifact-id }}', block)
+                self.assertIn('github-token: ${{ github.token }}', block)
+                self.assertIn('run-id: ${{ github.run_id }}', block)
+                self.assertIn('--execution-source "$GITHUB_SHA"', block)
+                self.assertIn('retention-days: 30', block)
+                self.assertNotIn('continue-on-error:', block)
+                self.assertNotIn('overwrite:', block)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

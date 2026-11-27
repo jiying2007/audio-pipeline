@@ -19,6 +19,7 @@ import re
 from pathlib import Path
 import subprocess
 import tempfile
+import types
 
 import fe09_major_migration_preflight_r2b0 as major
 import fe09_r2b2_runtime_recorder_preflight_s0 as recorder
@@ -36,10 +37,9 @@ AUDIT_2_3_59_PATHS = frozenset({
     "include/audio_pipeline/audio_runtime.h", "src/platform/linux/ap_runtime.c",
 })
 
-# Registrations are intentionally in this separately protected-main qualifier,
-# not in either source candidate PR. Every byte of the post-v2.3.56 current
-# CMake/runtime sources and the forward delta is pre-registered, but the
-# registration does NOT promote the untested shipping implementation.
+# Historical entries remain the separately reviewed registrations. R11 binds
+# the retained 2.3.66 proposal before protected merge; every CMake/runtime byte
+# and the forward delta is explicit. Registration grants no measurement result.
 FORWARD_MAINTENANCE = {
     "2.3.57": {
         "blobs": {
@@ -122,6 +122,7 @@ FORWARD_MAINTENANCE = {
  'patch': 'fe09_maintenance_forward_2_3_64_r9.patch.b64',
  'patch_blob': 'da483fe655bdf9bca61efe25bd79364bfffaba1f'},
     "2.3.65": {'blobs': {'CMakeLists.txt': 'e585febf1181327a0072dc1cef11890789dc1d8c', 'docs/API_CONTRACT.md': 'f45a474321af1406ed6d5b6b9df2f43317e6f3c2', 'include/audio_pipeline/audio_runtime.h': 'ad72e40b5b343aee4589ee50dfd07fe1a85e0ea9', 'src/core/ap_pipeline.c': '9bbd0fd15fcec7b9624f5bc69b550db91e789167', 'src/frontend/ap_beamformer.c': 'cb9f5c3a0f8d2c910eff62e9599f866b444de3c3', 'src/platform/linux/ap_runtime.c': 'c8e4edfd0ac398b7830ba4d849e2c756a87c61f2'}, 'patch': 'fe09_maintenance_forward_2_3_65.patch.b64', 'patch_blob': '47f55e3659d9501e50f457dabe31cff8c421849b'},
+    "2.3.66": {'blobs': {'CMakeLists.txt': '692a93ce37da7daf8548190467eb69dca2769105', 'docs/API_CONTRACT.md': 'f45a474321af1406ed6d5b6b9df2f43317e6f3c2', 'include/audio_pipeline/audio_runtime.h': 'ad72e40b5b343aee4589ee50dfd07fe1a85e0ea9', 'src/core/ap_pipeline.c': '9bbd0fd15fcec7b9624f5bc69b550db91e789167', 'src/frontend/ap_beamformer.c': 'cb9f5c3a0f8d2c910eff62e9599f866b444de3c3', 'src/platform/linux/ap_runtime.c': 'c8e4edfd0ac398b7830ba4d849e2c756a87c61f2'}, 'patch': 'fe09_maintenance_forward_2_3_66.patch.b64', 'patch_blob': 'a90186817cfa13ec3af25c092cde1c32623536c9'},
 }
 
 
@@ -162,7 +163,7 @@ DUALMIC_2_3_62_PATHS = AUDIT_2_3_59_PATHS | {"src/frontend/ap_beamformer.c", "sr
 
 
 def current_registered_paths(version: str) -> frozenset[str]:
-    if version in ("2.3.62", "2.3.63", "2.3.64", "2.3.64-r9", "2.3.65"):
+    if version in ("2.3.62", "2.3.63", "2.3.64", "2.3.64-r9", "2.3.65", "2.3.66"):
         return frozenset(DUALMIC_2_3_62_PATHS)
     return AUDIT_2_3_59_PATHS if version in ("2.3.59", "2.3.60", "2.3.61") else frozenset(CHANGED)
 
@@ -201,7 +202,7 @@ def check_forward_patch_scope(version: str, patch: bytes, destination: Path) -> 
     need(version in FORWARD_MAINTENANCE, "UNREGISTERED_FORWARD_MAINTENANCE_VERSION")
     expected = (AUDIT_2_3_59_PATHS if version in ("2.3.59", "2.3.60", "2.3.61") else
                 frozenset({"CMakeLists.txt", "src/platform/linux/ap_runtime.c"}))
-    if version in ("2.3.62", "2.3.63", "2.3.64", "2.3.64-r9", "2.3.65"):
+    if version in ("2.3.62", "2.3.63", "2.3.64", "2.3.64-r9", "2.3.65", "2.3.66"):
         expected = frozenset(DUALMIC_2_3_62_PATHS)
     inventory = subprocess.run(["git", "apply", "--numstat", "-"],
                                input=patch, cwd=destination, capture_output=True,
@@ -216,8 +217,12 @@ ARCHIVED_R8_REGISTRY = 'docs/research/frontend-evolution-v1/DUALMIC_2364_SOURCE_
 ARCHIVED_R8_REGISTRY_BLOB = 'f267b7feae2dd2d070438329b810c7b2a54ba30f'
 
 
+R10_REGISTRY = 'docs/research/frontend-evolution-v1/VALIDATION_2366_SOURCE_R11_20261128/R10_RUNTIME_MAINTENANCE_REBIND.py'
+R10_REGISTRY_BLOB = 'e5477d8cd8701def20e54bc4be258b7e2656296f'
+
+
 def preserved_forward_registry() -> None:
-    # Exact old nine registrations and the earlier eight-entry snapshot remain pinned.
+    # Preserve the exact ten R10 registrations and both earlier snapshots.
     raw = raw_file(ROOT / 'docs/research/frontend-evolution-v1/RUNTIME_2365_SOURCE_R10_20261116/R9_RUNTIME_MAINTENANCE_REBIND.py')
     need(major.git_blob(raw) == '99541f5c79e82fb230dddec9f9ec07d3ba7e30b4', "R10_HISTORICAL_REGISTRY_CHANGED")
     old8raw = raw_file(ROOT / ARCHIVED_R8_REGISTRY)
@@ -231,9 +236,15 @@ def preserved_forward_registry() -> None:
     old, old8 = registry_value(raw), registry_value(old8raw)
     need(len(old8) == 8 and set(old) == set(old8) | {"2.3.64-r9"} and
          all(old[key] == value for key, value in old8.items()), "R10_R8_REGISTRY_CHAIN_CHANGED")
-    need(len(old) == 9 and set(FORWARD_MAINTENANCE) == set(old) | {"2.3.65"} and
-         all(FORWARD_MAINTENANCE[key] == value for key, value in old.items()),
+    raw10 = raw_file(ROOT / R10_REGISTRY)
+    need(major.git_blob(raw10) == R10_REGISTRY_BLOB, "R11_HISTORICAL_REGISTRY_CHANGED")
+    old10 = registry_value(raw10)
+    need(len(old) == 9 and set(old10) == set(old) | {"2.3.65"} and
+         all(old10[key] == value for key, value in old.items()),
          "R10_PREVIOUS_REGISTRATIONS_CHANGED")
+    need(len(old10) == 10 and set(FORWARD_MAINTENANCE) == set(old10) | {"2.3.66"} and
+         all(FORWARD_MAINTENANCE[key] == value for key, value in old10.items()),
+         "R11_PREVIOUS_REGISTRATIONS_CHANGED")
 
 
 def registered_source_version(revision: str) -> str:
@@ -378,7 +389,15 @@ def self_test() -> None:
     item = policy(raw, patch)
     src = read_sources(ROOT, item)
     rejected = 0
-    audit_rejected = {"2.3.59": 0, "2.3.60": 0, "2.3.61": 0, "2.3.62": 0, "2.3.63": 0, "2.3.64": 0, "2.3.64-r9": 0, "2.3.65": 0}
+    preserved_r10_unknown_rejections = 0
+    # Execute only the pinned historical metadata checker. Its original
+    # registry and 2.3.66 rejection are not broadened by this new registry.
+    prior_raw = raw_file(ROOT / R10_REGISTRY)
+    need(major.git_blob(prior_raw) == R10_REGISTRY_BLOB, "R11_HISTORICAL_REGISTRY_CHANGED")
+    prior = types.ModuleType("r11_preserved_r10_registry")
+    prior.__file__ = str(HERE / "fe09_runtime_maintenance_rebind.py")
+    exec(compile(prior_raw, str(ROOT / R10_REGISTRY), "exec"), prior.__dict__)
+    audit_rejected = {"2.3.59": 0, "2.3.60": 0, "2.3.61": 0, "2.3.62": 0, "2.3.63": 0, "2.3.64": 0, "2.3.64-r9": 0, "2.3.65": 0, "2.3.66": 0}
 
     def reject(fn, reason: str | None = None, *, audit: str | None = None) -> None:
         nonlocal rejected, audit_rejected
@@ -491,6 +510,22 @@ def self_test() -> None:
                     reject(lambda bad=changed: check_current(bad, item),
                            "CURRENT_MAINTENANCE_SOURCE_DRIFT_" + path, audit=candidate_version)
                 next_version = "2.3." + str(int(registered_source_version(candidate_version).rsplit(".", 1)[1]) + 1)
+                if candidate_version == "2.3.65":
+                    # The new exact version-only source is now explicitly
+                    # registered. The old R10 checker must still reject it.
+                    need(prior.current_maintenance_version(candidate, item) == "2.3.65",
+                         "R11_PRESERVED_R10_POSITIVE_FAILED")
+                    new_version = {**candidate, "CMakeLists.txt": candidate["CMakeLists.txt"].replace(
+                        "VERSION 2.3.65", "VERSION 2.3.66", 1)}
+                    try:
+                        prior.current_maintenance_version(new_version, item)
+                    except prior.RebindError as error:
+                        need(str(error) == "UNREGISTERED_FORWARD_MAINTENANCE_VERSION",
+                             "R11_PRESERVED_R10_REJECTION_CHANGED")
+                        preserved_r10_unknown_rejections += 1
+                    else:
+                        raise RebindError("R11_PRESERVED_R10_ACCEPTED_NEW_VERSION")
+                    next_version = "2.3.67"
                 changed = {**candidate, "CMakeLists.txt": candidate["CMakeLists.txt"].replace(
                     "VERSION " + registered_source_version(candidate_version), "VERSION " + next_version, 1)}
                 # A version-only edit never borrows another registered full source.
@@ -524,6 +559,8 @@ def self_test() -> None:
                        "REGISTERED_FORWARD_PATCH_SCOPE_DRIFT", audit=candidate_version)
                 reject(lambda: check_forward_patch_scope(candidate_version, b"invalid patch\n", case_root),
                        "REGISTERED_FORWARD_INVENTORY_INVALID", audit=candidate_version)
+    need(preserved_r10_unknown_rejections == 1, "R11_PRESERVED_R10_NEGATIVE_INCOMPLETE")
+    need(audit_rejected["2.3.66"] == 14, "VALIDATION_2_3_66_NEGATIVES_INCOMPLETE")
     need(rejected == 16, "MAINTENANCE_NEGATIVES_INCOMPLETE")
     need(audit_rejected["2.3.59"] == 12, "AUDIT_2_3_59_NEGATIVES_INCOMPLETE")
     need(audit_rejected["2.3.60"] == 12, "IO_2_3_60_NEGATIVES_INCOMPLETE")
@@ -534,7 +571,7 @@ def self_test() -> None:
     need(audit_rejected["2.3.64-r9"] == 14, "DUALMIC_2_3_64_R9_NEGATIVES_INCOMPLETE")
     need(audit_rejected["2.3.65"] == 14, "RUNTIME_2_3_65_NEGATIVES_INCOMPLETE")
     print("FE09_EXACT_MAINTENANCE_REBIND_SELF_TEST_PASS negatives=16 "
-          "audit2359_negatives=12 io2360_negatives=12 pcm2361_negatives=12 dualmic2362_negatives=14 dualmic2363_negatives=14 dualmic2364_negatives=14 dualmic2364r9_negatives=14 runtime2365_negatives=14 preregistered=10")
+          "audit2359_negatives=12 io2360_negatives=12 pcm2361_negatives=12 dualmic2362_negatives=14 dualmic2363_negatives=14 dualmic2364_negatives=14 dualmic2364r9_negatives=14 runtime2365_negatives=14 validation2366_negatives=14 preserved_r10_unknown=1 preregistered=11")
 
 
 def main() -> None:

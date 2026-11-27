@@ -124,6 +124,24 @@ jobs, invalid metadata and the actual command-line receipt/exit behavior.
 
 Acoustic validation writes its report before enforcement. On failure, `scripts/validation_reproducer.py` packages exact failed inputs, case JSON, metrics/failure data and executable reproduction instructions.
 
+Original files are kept under `original/<input-role>/`, so equal mic/render/reference
+basenames cannot overwrite each other. WAV uses canonical `stage_audio` to produce
+S16LE; the local `case.json` references processor-ready PCM, while `source-case.json`
+keeps the original case. `input-manifest.json` records original and decoded SHA-256,
+geometry, corpus/report identities, and exact bundled canonical engine/stage-profile
+sources. Replay checks the bundled file hashes and calls that canonical invocation,
+including its existing profile/control semantics.
+
+Run `PROCESSOR=/absolute/path/ap_process_pcm sh <case-dir>/reproduce.sh` from any
+directory; canonical output names are `out.pcm` and `metrics.jsonl`. Python 3.8+ is
+required (`PYTHON` may select the interpreter). `--processor` immediately replays
+and retains its log/exit status; a processor failure makes packaging return nonzero
+while preserving the evidence. Destinations must be empty. Missing/malformed inputs,
+truncated or incompatible WAV, and unsafe/duplicate case IDs fail explicitly; partial
+directories from such failures are not complete replay packages. The existing CI
+`--self-test` uses 10 ms synthetic engineering fixtures for byte/command equivalence,
+role isolation, relocation and negative exit behavior, not acoustic quality evidence.
+
 ## Flaky and historical-regression policy
 
 Nightly `flaky-sentinel` replays the deterministic suite 100 times. A mixed pass/fail sequence is `FLAKY_SUSPECT`; failures are not silently retried into a pass.

@@ -1,0 +1,842 @@
+{
+  "acoustic_runs": 0,
+  "adapter_windows": [
+    {
+      "crosses_original_utterances": true,
+      "file": "windows/speaker-2412.s16",
+      "frames": 64000,
+      "seconds": 4.0,
+      "sha256": "be7eb69e346f829c4c471196f7dfe817aea3f45fd5ad1eb1a73739c7f44216cd",
+      "source_spans": [
+        {
+          "member": "LibriSpeech/dev-clean/2412/153947/2412-153947-0000.flac",
+          "range_convention": "zero-based-half-open",
+          "source_frames": [
+            0,
+            40800
+          ],
+          "window_frames": [
+            0,
+            40800
+          ]
+        },
+        {
+          "member": "LibriSpeech/dev-clean/2412/153947/2412-153947-0001.flac",
+          "range_convention": "zero-based-half-open",
+          "source_frames": [
+            0,
+            23200
+          ],
+          "window_frames": [
+            40800,
+            64000
+          ]
+        }
+      ],
+      "speaker": 2412
+    },
+    {
+      "crosses_original_utterances": false,
+      "file": "windows/speaker-2428.s16",
+      "frames": 64000,
+      "seconds": 4.0,
+      "sha256": "1b75006cfe2ad189546f367a066a6316083a80e77657f73980a5dcd0d6b9fae4",
+      "source_spans": [
+        {
+          "member": "LibriSpeech/dev-clean/2428/83699/2428-83699-0000.flac",
+          "range_convention": "zero-based-half-open",
+          "source_frames": [
+            0,
+            64000
+          ],
+          "window_frames": [
+            0,
+            64000
+          ]
+        }
+      ],
+      "speaker": 2428
+    },
+    {
+      "crosses_original_utterances": false,
+      "file": "windows/speaker-2803.s16",
+      "frames": 64000,
+      "seconds": 4.0,
+      "sha256": "618b6a8c92120e34f630bb436b74a4352229579f5d9ac8cf9416f2de43323bb3",
+      "source_spans": [
+        {
+          "member": "LibriSpeech/dev-clean/2803/154320/2803-154320-0000.flac",
+          "range_convention": "zero-based-half-open",
+          "source_frames": [
+            0,
+            64000
+          ],
+          "window_frames": [
+            0,
+            64000
+          ]
+        }
+      ],
+      "speaker": 2803
+    },
+    {
+      "crosses_original_utterances": false,
+      "file": "windows/speaker-2902.s16",
+      "frames": 64000,
+      "seconds": 4.0,
+      "sha256": "ff827f40c5813da2ff0250ef66b25c9fb51942d5155cc0a7faa59150445968fa",
+      "source_spans": [
+        {
+          "member": "LibriSpeech/dev-clean/2902/9006/2902-9006-0000.flac",
+          "range_convention": "zero-based-half-open",
+          "source_frames": [
+            0,
+            64000
+          ],
+          "window_frames": [
+            0,
+            64000
+          ]
+        }
+      ],
+      "speaker": 2902
+    },
+    {
+      "crosses_original_utterances": true,
+      "file": "windows/speaker-3000.s16",
+      "frames": 64000,
+      "seconds": 4.0,
+      "sha256": "3e1bf5f4bf134cc289c7667ba47ad96801904d709571dd13459a83150e13b132",
+      "source_spans": [
+        {
+          "member": "LibriSpeech/dev-clean/3000/15664/3000-15664-0000.flac",
+          "range_convention": "zero-based-half-open",
+          "source_frames": [
+            0,
+            50080
+          ],
+          "window_frames": [
+            0,
+            50080
+          ]
+        },
+        {
+          "member": "LibriSpeech/dev-clean/3000/15664/3000-15664-0001.flac",
+          "range_convention": "zero-based-half-open",
+          "source_frames": [
+            0,
+            13920
+          ],
+          "window_frames": [
+            50080,
+            64000
+          ]
+        }
+      ],
+      "speaker": 3000
+    },
+    {
+      "crosses_original_utterances": false,
+      "file": "windows/speaker-3081.s16",
+      "frames": 64000,
+      "seconds": 4.0,
+      "sha256": "69dca7cbc1bfcd3cc13415c11877fcaddbdd5e4704822d6262f9133f98bce06d",
+      "source_spans": [
+        {
+          "member": "LibriSpeech/dev-clean/3081/166546/3081-166546-0000.flac",
+          "range_convention": "zero-based-half-open",
+          "source_frames": [
+            0,
+            64000
+          ],
+          "window_frames": [
+            0,
+            64000
+          ]
+        }
+      ],
+      "speaker": 3081
+    },
+    {
+      "crosses_original_utterances": false,
+      "file": "windows/speaker-3170.s16",
+      "frames": 64000,
+      "seconds": 4.0,
+      "sha256": "b0c8aa0ee1c35cdd1dbba29f299164af98cb4fe108b8c691243aeb6acf46e398",
+      "source_spans": [
+        {
+          "member": "LibriSpeech/dev-clean/3170/137482/3170-137482-0000.flac",
+          "range_convention": "zero-based-half-open",
+          "source_frames": [
+            0,
+            64000
+          ],
+          "window_frames": [
+            0,
+            64000
+          ]
+        }
+      ],
+      "speaker": 3170
+    },
+    {
+      "crosses_original_utterances": false,
+      "file": "windows/speaker-3536.s16",
+      "frames": 64000,
+      "seconds": 4.0,
+      "sha256": "2b062d598a2145c1bef880a0b5cdb273152efc218832adc1e2d96158c5ded7ae",
+      "source_spans": [
+        {
+          "member": "LibriSpeech/dev-clean/3536/8226/3536-8226-0000.flac",
+          "range_convention": "zero-based-half-open",
+          "source_frames": [
+            0,
+            64000
+          ],
+          "window_frames": [
+            0,
+            64000
+          ]
+        }
+      ],
+      "speaker": 3536
+    }
+  ],
+  "archive": {
+    "bytes": 337926286,
+    "official_md5": "42e2234ba48799c1f50f24a7926300a1",
+    "sha256": "76f87d090650617fca0cac8f88b9416e0ebf80350acb97b343a85fa903728ab3",
+    "url": "https://www.openslr.org/resources/12/dev-clean.tar.gz"
+  },
+  "automatic_retries": 0,
+  "complete_pcm_files": 32,
+  "complete_pcm_frames": 5241680,
+  "complete_pcm_seconds": 327.605,
+  "decode_wall_seconds": 2.1177712719982082,
+  "download_wall_seconds": 401.7685875949992,
+  "exposure_review": {
+    "equivalent_public_revision": "cbddb82cb849e9fa454227f1995efb07ad4a7bf5",
+    "equivalent_tree": "49e1c72263e55c8d018d6dd6ccc21f771e2f1ca5",
+    "excluded_speakers": [
+      84,
+      174,
+      251,
+      422,
+      652,
+      777,
+      1272,
+      1462,
+      1673,
+      1919,
+      1988,
+      1993,
+      2035,
+      2078,
+      2086,
+      2277
+    ],
+    "git_scan_scope_sha256": "c44df7a792ad30d409146749057411ed185d9acdabd413e995164b5ba9f844f3",
+    "limitations": [
+      "No-hit is not proof of non-exposure; indirect identifiers, missing or remote manifests, unsaved evaluations and unpublished use remain unresolved.",
+      "Any filename or declaration mention is conservatively excluded; a mention is not claimed as an actual execution.",
+      "SPEAKERS.TXT roster membership alone is not exposure.",
+      "All locally reachable refs were frozen at scan start; unobserved remote branches and deleted Git objects were not scanned.",
+      "The old development, validation, shadow and training roles remain unchanged; train-clean-5 is not relabeled."
+    ],
+    "metadata_source_revision": "ad7075464953162f21cd95a35e640032a4ca2634",
+    "readiness_summary_sha256": "05b31a592aa7f5507478e32f67fd8e14d1eb406e46ab5bc573132a394cd68235",
+    "scanned_files_sha256": "6d2dd4e082518a80dd008944af01756154b0a42e2101de830e10bd8c7a8b5d99",
+    "scope": "852 locally reachable commits; 4468 historical text blobs; local audit metadata and nested archives; 12638 text occurrences / 5802 distinct contents; one malformed historical JSON retained and filename-scanned",
+    "speaker_exposure_sha256": "ca2539feb0d0d92d9abfb4fb1b159d52caf67e3382a0648059b0fca1e3ea1ef3"
+  },
+  "finished_at_utc": "2026-11-27T19:06:48.179684+00:00",
+  "human_listening_sessions": 0,
+  "independent_readback_wall_seconds": 6.44030609299989,
+  "independent_receipt_sha256": "00496dc864275cc2da3671ff2a13980e1477b1797ee9f384116f62510001e493",
+  "maximum_decode_file_wall_seconds": 0.14039896699978271,
+  "not_completed_by_this_study": [
+    "new-speaker-dualmic-pipeline-comparison",
+    "real-array-or-new-room-validation",
+    "ASR/KWS",
+    "subjective-listening",
+    "physical-SSC305-measurement"
+  ],
+  "optimizer_selections": 0,
+  "original_flac_files": 32,
+  "originals": [
+    {
+      "channels": 1,
+      "flac_bytes": 44910,
+      "flac_file": "flac/2412-153947-0000.flac",
+      "flac_sha256": "7df48192953229959566fbd3bc837d240081b138d835e62f086b1030f1b1b28f",
+      "frames": 40800,
+      "member": "LibriSpeech/dev-clean/2412/153947/2412-153947-0000.flac",
+      "native_pcm_md5": "c592d4165c816736f5efc3e356e47d24",
+      "pcm_bytes": 81600,
+      "pcm_file": "pcm/2412-153947-0000.s16",
+      "pcm_sha256": "091f30d975b03297f01f698e1f2c29aa0e518d97e1882eebbd7a7afe1fc00213",
+      "sample_bits": 16,
+      "sample_rate_hz": 16000,
+      "seconds": 2.55,
+      "speaker": 2412,
+      "tail_samples_to_10ms": 0
+    },
+    {
+      "channels": 1,
+      "flac_bytes": 57650,
+      "flac_file": "flac/2412-153947-0001.flac",
+      "flac_sha256": "25b4704c36b62b347974f1cacdac362ee92288290127203e451d6888c0d6f57f",
+      "frames": 51600,
+      "member": "LibriSpeech/dev-clean/2412/153947/2412-153947-0001.flac",
+      "native_pcm_md5": "1ab8373368b9bec824be6937a1751f70",
+      "pcm_bytes": 103200,
+      "pcm_file": "pcm/2412-153947-0001.s16",
+      "pcm_sha256": "01f5e1f4ab9237ee61f8f1ad7128b9dcf4b6623c7deb12464b9c9b6c3782c6bf",
+      "sample_bits": 16,
+      "sample_rate_hz": 16000,
+      "seconds": 3.225,
+      "speaker": 2412,
+      "tail_samples_to_10ms": 80
+    },
+    {
+      "channels": 1,
+      "flac_bytes": 116498,
+      "flac_file": "flac/2412-153947-0002.flac",
+      "flac_sha256": "a2f3bab63a97de0797ed7b38cd22a5fefb8b230cf492aff0cdb910ba0a342827",
+      "frames": 105520,
+      "member": "LibriSpeech/dev-clean/2412/153947/2412-153947-0002.flac",
+      "native_pcm_md5": "a5163fd6f30661afd1c67544401c7521",
+      "pcm_bytes": 211040,
+      "pcm_file": "pcm/2412-153947-0002.s16",
+      "pcm_sha256": "69dacc664c13169689d548de2c1312dab6edb9ad622f54e6e17dac6ef05d7747",
+      "sample_bits": 16,
+      "sample_rate_hz": 16000,
+      "seconds": 6.595,
+      "speaker": 2412,
+      "tail_samples_to_10ms": 80
+    },
+    {
+      "channels": 1,
+      "flac_bytes": 161337,
+      "flac_file": "flac/2412-153947-0003.flac",
+      "flac_sha256": "4e8fb1e237d719b7ea121245ca262c896a428c1f10f30bf1fa046bb121c19fef",
+      "frames": 152240,
+      "member": "LibriSpeech/dev-clean/2412/153947/2412-153947-0003.flac",
+      "native_pcm_md5": "3511ce1feea60b99d8eda35832ec8783",
+      "pcm_bytes": 304480,
+      "pcm_file": "pcm/2412-153947-0003.s16",
+      "pcm_sha256": "3da7a461164d858bed0047aa06e148ad211467589f27327303a84e4372bab699",
+      "sample_bits": 16,
+      "sample_rate_hz": 16000,
+      "seconds": 9.515,
+      "speaker": 2412,
+      "tail_samples_to_10ms": 80
+    },
+    {
+      "channels": 1,
+      "flac_bytes": 227664,
+      "flac_file": "flac/2428-83699-0000.flac",
+      "flac_sha256": "dbdfe7afcc75aa9229e7f888a060a909931215062aa7a87a3c2adccb6af35d2a",
+      "frames": 212880,
+      "member": "LibriSpeech/dev-clean/2428/83699/2428-83699-0000.flac",
+      "native_pcm_md5": "32505edb0c32dd650f864ee96a2762cf",
+      "pcm_bytes": 425760,
+      "pcm_file": "pcm/2428-83699-0000.s16",
+      "pcm_sha256": "cf4e4ad77e3bcf019f1c580803c9debcf7fd931839dfec5996fb9053002e275d",
+      "sample_bits": 16,
+      "sample_rate_hz": 16000,
+      "seconds": 13.305,
+      "speaker": 2428,
+      "tail_samples_to_10ms": 80
+    },
+    {
+      "channels": 1,
+      "flac_bytes": 38661,
+      "flac_file": "flac/2428-83699-0001.flac",
+      "flac_sha256": "9fae10361c9efd93631407f833a5940914ed18906d2a41818ea7dc73f6ea2219",
+      "frames": 33120,
+      "member": "LibriSpeech/dev-clean/2428/83699/2428-83699-0001.flac",
+      "native_pcm_md5": "d7616747b2baf47aeb5b832bf1cf02b9",
+      "pcm_bytes": 66240,
+      "pcm_file": "pcm/2428-83699-0001.s16",
+      "pcm_sha256": "5d447713c0ebac8da1b27dc41a78af34b98f174bfcff3d04d78d711989830a98",
+      "sample_bits": 16,
+      "sample_rate_hz": 16000,
+      "seconds": 2.07,
+      "speaker": 2428,
+      "tail_samples_to_10ms": 0
+    },
+    {
+      "channels": 1,
+      "flac_bytes": 77497,
+      "flac_file": "flac/2428-83699-0002.flac",
+      "flac_sha256": "1cc0becc0a0b0bf091d41b3c6d7b2852338d96b0afa127808a9b17c61acf369b",
+      "frames": 68160,
+      "member": "LibriSpeech/dev-clean/2428/83699/2428-83699-0002.flac",
+      "native_pcm_md5": "85d01fce5830b01b4834d224c43e6581",
+      "pcm_bytes": 136320,
+      "pcm_file": "pcm/2428-83699-0002.s16",
+      "pcm_sha256": "2c07b2c8e15829cd534deec30c2a32dd6ad558a7bfe89195c3c9665143989020",
+      "sample_bits": 16,
+      "sample_rate_hz": 16000,
+      "seconds": 4.26,
+      "speaker": 2428,
+      "tail_samples_to_10ms": 0
+    },
+    {
+      "channels": 1,
+      "flac_bytes": 110692,
+      "flac_file": "flac/2428-83699-0003.flac",
+      "flac_sha256": "b21a68f5c0f122b2d17e11d848f91c6bf0788435999ca153b37973e7f8498869",
+      "frames": 100240,
+      "member": "LibriSpeech/dev-clean/2428/83699/2428-83699-0003.flac",
+      "native_pcm_md5": "a5fe0a7c8b68321c9397eaf4a018a957",
+      "pcm_bytes": 200480,
+      "pcm_file": "pcm/2428-83699-0003.s16",
+      "pcm_sha256": "385e0eb37d57f6944073481dc5cd3156b07fb636d59a98bc65e76c45a0686086",
+      "sample_bits": 16,
+      "sample_rate_hz": 16000,
+      "seconds": 6.265,
+      "speaker": 2428,
+      "tail_samples_to_10ms": 80
+    },
+    {
+      "channels": 1,
+      "flac_bytes": 182563,
+      "flac_file": "flac/2803-154320-0000.flac",
+      "flac_sha256": "c03cf32b36cc772a1448763e7856e53dbfa6b1679c2f4aeba20dd55d85953075",
+      "frames": 183680,
+      "member": "LibriSpeech/dev-clean/2803/154320/2803-154320-0000.flac",
+      "native_pcm_md5": "6dad5c4fb16ecb299710d4faa32f8cb6",
+      "pcm_bytes": 367360,
+      "pcm_file": "pcm/2803-154320-0000.s16",
+      "pcm_sha256": "e70fd29a59b37d5f8d36a2a33d428aaf31cac0c636214e4be1168c45ad9c184f",
+      "sample_bits": 16,
+      "sample_rate_hz": 16000,
+      "seconds": 11.48,
+      "speaker": 2803,
+      "tail_samples_to_10ms": 0
+    },
+    {
+      "channels": 1,
+      "flac_bytes": 244399,
+      "flac_file": "flac/2803-154320-0001.flac",
+      "flac_sha256": "93ff3d076434041277b1dab7f0eb0945087c3822c176ba9fa5c11927d23dad91",
+      "frames": 248960,
+      "member": "LibriSpeech/dev-clean/2803/154320/2803-154320-0001.flac",
+      "native_pcm_md5": "24dec778c2d15d72f71c0e2df18751b0",
+      "pcm_bytes": 497920,
+      "pcm_file": "pcm/2803-154320-0001.s16",
+      "pcm_sha256": "a4f4e1aec313bb765ec63548eac2cde50eab2adac7e5a6948dcac12255bd3f1b",
+      "sample_bits": 16,
+      "sample_rate_hz": 16000,
+      "seconds": 15.56,
+      "speaker": 2803,
+      "tail_samples_to_10ms": 0
+    },
+    {
+      "channels": 1,
+      "flac_bytes": 60683,
+      "flac_file": "flac/2803-154320-0002.flac",
+      "flac_sha256": "18b7cb1fb2b2e9c622ef11a93faa31cba576f061267a043382fe8cf462430131",
+      "frames": 56480,
+      "member": "LibriSpeech/dev-clean/2803/154320/2803-154320-0002.flac",
+      "native_pcm_md5": "58a212b2ba9f85db74d6fd91e0932ab2",
+      "pcm_bytes": 112960,
+      "pcm_file": "pcm/2803-154320-0002.s16",
+      "pcm_sha256": "4e9b9d0c6c4e931c82cc5a0d1e3df42391c665f3b483bd79df03caff5a451a94",
+      "sample_bits": 16,
+      "sample_rate_hz": 16000,
+      "seconds": 3.53,
+      "speaker": 2803,
+      "tail_samples_to_10ms": 0
+    },
+    {
+      "channels": 1,
+      "flac_bytes": 108863,
+      "flac_file": "flac/2803-154320-0003.flac",
+      "flac_sha256": "77533ec3398976db3699e8ba3104096f92d5d9d582162751cd3da60e187d8450",
+      "frames": 103600,
+      "member": "LibriSpeech/dev-clean/2803/154320/2803-154320-0003.flac",
+      "native_pcm_md5": "1f2aae7910e1301fff5b09c623a981a6",
+      "pcm_bytes": 207200,
+      "pcm_file": "pcm/2803-154320-0003.s16",
+      "pcm_sha256": "3398c68defb0073d2010f6b81605420a63445b54dc302f1579191c2473888d33",
+      "sample_bits": 16,
+      "sample_rate_hz": 16000,
+      "seconds": 6.475,
+      "speaker": 2803,
+      "tail_samples_to_10ms": 80
+    },
+    {
+      "channels": 1,
+      "flac_bytes": 94272,
+      "flac_file": "flac/2902-9006-0000.flac",
+      "flac_sha256": "649429153bb150bce8cc147b557d6a17cd9189fce47032279e4cc0f33596b8f5",
+      "frames": 76800,
+      "member": "LibriSpeech/dev-clean/2902/9006/2902-9006-0000.flac",
+      "native_pcm_md5": "e9291ce781d1e2547ca82cb4f767b051",
+      "pcm_bytes": 153600,
+      "pcm_file": "pcm/2902-9006-0000.s16",
+      "pcm_sha256": "f22f561f768e085602ce7a4bbb397397cbaf7c900783ed7abb864e7571473860",
+      "sample_bits": 16,
+      "sample_rate_hz": 16000,
+      "seconds": 4.8,
+      "speaker": 2902,
+      "tail_samples_to_10ms": 0
+    },
+    {
+      "channels": 1,
+      "flac_bytes": 427031,
+      "flac_file": "flac/2902-9006-0001.flac",
+      "flac_sha256": "092ce5b4c5af47b6acdd09ae8fea3966cbd8aafe774e3a38568c9adccd4c79b0",
+      "frames": 369120,
+      "member": "LibriSpeech/dev-clean/2902/9006/2902-9006-0001.flac",
+      "native_pcm_md5": "9b15dedeb2ee40e0a1ea23cd1e7675fa",
+      "pcm_bytes": 738240,
+      "pcm_file": "pcm/2902-9006-0001.s16",
+      "pcm_sha256": "15b6cc2abd3a1f3dfab66b2c0ef8265eb60ad0ab37fdce95653f8c5780993690",
+      "sample_bits": 16,
+      "sample_rate_hz": 16000,
+      "seconds": 23.07,
+      "speaker": 2902,
+      "tail_samples_to_10ms": 0
+    },
+    {
+      "channels": 1,
+      "flac_bytes": 219979,
+      "flac_file": "flac/2902-9006-0002.flac",
+      "flac_sha256": "14515713170404e20a8517bade2b6cf132dcad79b02e570ab3d60609c86d4e57",
+      "frames": 190000,
+      "member": "LibriSpeech/dev-clean/2902/9006/2902-9006-0002.flac",
+      "native_pcm_md5": "917af16e39d260179777ea7a68500bca",
+      "pcm_bytes": 380000,
+      "pcm_file": "pcm/2902-9006-0002.s16",
+      "pcm_sha256": "625e61b9b1956202746afa7a8a9a589d11e9fcd40d98baad05e3f942dfd7b429",
+      "sample_bits": 16,
+      "sample_rate_hz": 16000,
+      "seconds": 11.875,
+      "speaker": 2902,
+      "tail_samples_to_10ms": 80
+    },
+    {
+      "channels": 1,
+      "flac_bytes": 276122,
+      "flac_file": "flac/2902-9006-0003.flac",
+      "flac_sha256": "154f9c9b5c12d643dbc745bffae1058af0eac0e99fb0e509234d56155a69274e",
+      "frames": 236800,
+      "member": "LibriSpeech/dev-clean/2902/9006/2902-9006-0003.flac",
+      "native_pcm_md5": "d0e905cda4e7e8ffc03ccd2095bebbf0",
+      "pcm_bytes": 473600,
+      "pcm_file": "pcm/2902-9006-0003.s16",
+      "pcm_sha256": "9954fe2d9d40144ab9249f6418d06ee0c42a421924a70a4c2eaad185f43e6860",
+      "sample_bits": 16,
+      "sample_rate_hz": 16000,
+      "seconds": 14.8,
+      "speaker": 2902,
+      "tail_samples_to_10ms": 0
+    },
+    {
+      "channels": 1,
+      "flac_bytes": 57363,
+      "flac_file": "flac/3000-15664-0000.flac",
+      "flac_sha256": "9eeff067c5e377fb25bae2ef4ddf19a36d9f6edab9b9fd39352039fe327b56f3",
+      "frames": 50080,
+      "member": "LibriSpeech/dev-clean/3000/15664/3000-15664-0000.flac",
+      "native_pcm_md5": "347986c3a99ce0ca5e14fa788dd82d6d",
+      "pcm_bytes": 100160,
+      "pcm_file": "pcm/3000-15664-0000.s16",
+      "pcm_sha256": "66e2f8348888b74055eb2f2efb8122462545660eb2bb273d3cd34fcc15b8334c",
+      "sample_bits": 16,
+      "sample_rate_hz": 16000,
+      "seconds": 3.13,
+      "speaker": 3000,
+      "tail_samples_to_10ms": 0
+    },
+    {
+      "channels": 1,
+      "flac_bytes": 329128,
+      "flac_file": "flac/3000-15664-0001.flac",
+      "flac_sha256": "db69c748c206a158b8289b4cc8f45a32d6ac841ba0e1280bab752f816575eda1",
+      "frames": 333760,
+      "member": "LibriSpeech/dev-clean/3000/15664/3000-15664-0001.flac",
+      "native_pcm_md5": "baf7bdf45139e1079030b09f066e5d82",
+      "pcm_bytes": 667520,
+      "pcm_file": "pcm/3000-15664-0001.s16",
+      "pcm_sha256": "0c25457ec3edfc4dafe6d4d25b704b0d65abba99a4376839a8a424b3f14ceb36",
+      "sample_bits": 16,
+      "sample_rate_hz": 16000,
+      "seconds": 20.86,
+      "speaker": 3000,
+      "tail_samples_to_10ms": 0
+    },
+    {
+      "channels": 1,
+      "flac_bytes": 121800,
+      "flac_file": "flac/3000-15664-0002.flac",
+      "flac_sha256": "b0ab4266b79d8b4e2e0cf14847408e032f3a00ebc7d69958174f4005fbf50d77",
+      "frames": 114720,
+      "member": "LibriSpeech/dev-clean/3000/15664/3000-15664-0002.flac",
+      "native_pcm_md5": "03e83a2fa1f6496d712691dc3896aa85",
+      "pcm_bytes": 229440,
+      "pcm_file": "pcm/3000-15664-0002.s16",
+      "pcm_sha256": "01101677735752367793cba541d2c13b3e40eaeb9145894d41096ae9a03c3170",
+      "sample_bits": 16,
+      "sample_rate_hz": 16000,
+      "seconds": 7.17,
+      "speaker": 3000,
+      "tail_samples_to_10ms": 0
+    },
+    {
+      "channels": 1,
+      "flac_bytes": 62154,
+      "flac_file": "flac/3000-15664-0003.flac",
+      "flac_sha256": "8c8c0f6abc527b89e7e39a2deeea4432b325abc2ec41a8f84f7d97efa9215a07",
+      "frames": 74720,
+      "member": "LibriSpeech/dev-clean/3000/15664/3000-15664-0003.flac",
+      "native_pcm_md5": "937b24162643e5173381bc7db268f3fe",
+      "pcm_bytes": 149440,
+      "pcm_file": "pcm/3000-15664-0003.s16",
+      "pcm_sha256": "af6816720b08237ecbf8cf88c2b27dc7d932902c603370509c663c444a38b371",
+      "sample_bits": 16,
+      "sample_rate_hz": 16000,
+      "seconds": 4.67,
+      "speaker": 3000,
+      "tail_samples_to_10ms": 0
+    },
+    {
+      "channels": 1,
+      "flac_bytes": 174582,
+      "flac_file": "flac/3081-166546-0000.flac",
+      "flac_sha256": "a0a99c5c2f9da504669449e9f085f0963e75e4fe2968e69c9f8bb81538653e7a",
+      "frames": 168000,
+      "member": "LibriSpeech/dev-clean/3081/166546/3081-166546-0000.flac",
+      "native_pcm_md5": "13e6993c13d8a7380c63c46266aec277",
+      "pcm_bytes": 336000,
+      "pcm_file": "pcm/3081-166546-0000.s16",
+      "pcm_sha256": "7c0fd60e1c69cd784ae4756407596d06f59c41fe28c4688a9bd8ca1855691454",
+      "sample_bits": 16,
+      "sample_rate_hz": 16000,
+      "seconds": 10.5,
+      "speaker": 3081,
+      "tail_samples_to_10ms": 0
+    },
+    {
+      "channels": 1,
+      "flac_bytes": 164208,
+      "flac_file": "flac/3081-166546-0001.flac",
+      "flac_sha256": "1644649121b1dbf4421670b8d00e999b519635fd495e5767798824592a55310e",
+      "frames": 153920,
+      "member": "LibriSpeech/dev-clean/3081/166546/3081-166546-0001.flac",
+      "native_pcm_md5": "b2bd89da0638a8102a540b0ecb81accf",
+      "pcm_bytes": 307840,
+      "pcm_file": "pcm/3081-166546-0001.s16",
+      "pcm_sha256": "3632d9b1ac823ffbd368c9bb916b3e5bd162607ffc393652a9fbad8c4c8c1745",
+      "sample_bits": 16,
+      "sample_rate_hz": 16000,
+      "seconds": 9.62,
+      "speaker": 3081,
+      "tail_samples_to_10ms": 0
+    },
+    {
+      "channels": 1,
+      "flac_bytes": 58355,
+      "flac_file": "flac/3081-166546-0002.flac",
+      "flac_sha256": "488285126978166b7b780aab03fc9d0cba47622680780db27fade34e70383a7a",
+      "frames": 45280,
+      "member": "LibriSpeech/dev-clean/3081/166546/3081-166546-0002.flac",
+      "native_pcm_md5": "30b2b95dd0bcf019b02f7895bbe36087",
+      "pcm_bytes": 90560,
+      "pcm_file": "pcm/3081-166546-0002.s16",
+      "pcm_sha256": "155f77aa70cb4ddd9c549744b5c3862f56900d894105b8e4be7d3587ecb3545a",
+      "sample_bits": 16,
+      "sample_rate_hz": 16000,
+      "seconds": 2.83,
+      "speaker": 3081,
+      "tail_samples_to_10ms": 0
+    },
+    {
+      "channels": 1,
+      "flac_bytes": 82854,
+      "flac_file": "flac/3081-166546-0003.flac",
+      "flac_sha256": "3a907f5ce5e15d010b05959f51beb61a0023bfe57968e5bb6ba7599929eacfc7",
+      "frames": 66000,
+      "member": "LibriSpeech/dev-clean/3081/166546/3081-166546-0003.flac",
+      "native_pcm_md5": "4ade5c46fea4f3b65193222f1981e24a",
+      "pcm_bytes": 132000,
+      "pcm_file": "pcm/3081-166546-0003.s16",
+      "pcm_sha256": "a1e425342018caca4f6026ef5f53d3e0ea48becbdd936e4e179eacb58873dba7",
+      "sample_bits": 16,
+      "sample_rate_hz": 16000,
+      "seconds": 4.125,
+      "speaker": 3081,
+      "tail_samples_to_10ms": 80
+    },
+    {
+      "channels": 1,
+      "flac_bytes": 491651,
+      "flac_file": "flac/3170-137482-0000.flac",
+      "flac_sha256": "5eb5546f2f99a25ca0912ed95f4d4ba952772c67a424b94c1b25a85cc8aaa323",
+      "frames": 447840,
+      "member": "LibriSpeech/dev-clean/3170/137482/3170-137482-0000.flac",
+      "native_pcm_md5": "abb0c96221bac7f98114a2f4c7b0c7d5",
+      "pcm_bytes": 895680,
+      "pcm_file": "pcm/3170-137482-0000.s16",
+      "pcm_sha256": "adc4e61ceaf2ef2ff70f54b3389c96c86249ebd5976b0ef75682cf530864c205",
+      "sample_bits": 16,
+      "sample_rate_hz": 16000,
+      "seconds": 27.99,
+      "speaker": 3170,
+      "tail_samples_to_10ms": 0
+    },
+    {
+      "channels": 1,
+      "flac_bytes": 381205,
+      "flac_file": "flac/3170-137482-0001.flac",
+      "flac_sha256": "fdd6cb599b940f25ad13ca176a40fcda201babd6c7f604ebb3ff998a3209fc69",
+      "frames": 338720,
+      "member": "LibriSpeech/dev-clean/3170/137482/3170-137482-0001.flac",
+      "native_pcm_md5": "0700846852d236dab54639863cfccfe4",
+      "pcm_bytes": 677440,
+      "pcm_file": "pcm/3170-137482-0001.s16",
+      "pcm_sha256": "83ef2bfab8eeec974630e7f8640cd7aa404562f48ee6bde26e601f85ceea1b00",
+      "sample_bits": 16,
+      "sample_rate_hz": 16000,
+      "seconds": 21.17,
+      "speaker": 3170,
+      "tail_samples_to_10ms": 0
+    },
+    {
+      "channels": 1,
+      "flac_bytes": 368443,
+      "flac_file": "flac/3170-137482-0002.flac",
+      "flac_sha256": "e0af0e4aa47b6322a38ac5da679045d45b68b337a1e3ec9fb631da8a97c12911",
+      "frames": 316080,
+      "member": "LibriSpeech/dev-clean/3170/137482/3170-137482-0002.flac",
+      "native_pcm_md5": "5f97f7c707756d016deeb16fd684ba24",
+      "pcm_bytes": 632160,
+      "pcm_file": "pcm/3170-137482-0002.s16",
+      "pcm_sha256": "cd38f7c2587e2ef09062e5e7acbc48987b3b049945e5a0554d913e71d2acb3d0",
+      "sample_bits": 16,
+      "sample_rate_hz": 16000,
+      "seconds": 19.755,
+      "speaker": 3170,
+      "tail_samples_to_10ms": 80
+    },
+    {
+      "channels": 1,
+      "flac_bytes": 334924,
+      "flac_file": "flac/3170-137482-0003.flac",
+      "flac_sha256": "27322d6e2d8293fa33fbfd9e14d981e1edef711e83a118e764adcb927084edc0",
+      "frames": 309600,
+      "member": "LibriSpeech/dev-clean/3170/137482/3170-137482-0003.flac",
+      "native_pcm_md5": "774bfed9bae2f26b63ef9bf8ec23b9b8",
+      "pcm_bytes": 619200,
+      "pcm_file": "pcm/3170-137482-0003.s16",
+      "pcm_sha256": "eff4255ccc9e1489d758ee1e138295ab86335b01af457ee4dca95bc9620104fe",
+      "sample_bits": 16,
+      "sample_rate_hz": 16000,
+      "seconds": 19.35,
+      "speaker": 3170,
+      "tail_samples_to_10ms": 0
+    },
+    {
+      "channels": 1,
+      "flac_bytes": 190185,
+      "flac_file": "flac/3536-8226-0000.flac",
+      "flac_sha256": "18e2eb93889274f30f6898a9b380aafe16f570c33c21191d9d9129ebd016ac59",
+      "frames": 172080,
+      "member": "LibriSpeech/dev-clean/3536/8226/3536-8226-0000.flac",
+      "native_pcm_md5": "40a70670985b89d90aff2e4630a6663c",
+      "pcm_bytes": 344160,
+      "pcm_file": "pcm/3536-8226-0000.s16",
+      "pcm_sha256": "51f16cb74cb1d68ed47a5385d8d8487bd879105869dc0a3b9e21317c53b4ae7d",
+      "sample_bits": 16,
+      "sample_rate_hz": 16000,
+      "seconds": 10.755,
+      "speaker": 3536,
+      "tail_samples_to_10ms": 80
+    },
+    {
+      "channels": 1,
+      "flac_bytes": 152400,
+      "flac_file": "flac/3536-8226-0001.flac",
+      "flac_sha256": "8aff414ea7c8f908d88e99409597fcac7abe036e46663f6ad5e8b989f38bb087",
+      "frames": 142640,
+      "member": "LibriSpeech/dev-clean/3536/8226/3536-8226-0001.flac",
+      "native_pcm_md5": "f2c6a5ce0b63356ec705f2d97b6cdb69",
+      "pcm_bytes": 285280,
+      "pcm_file": "pcm/3536-8226-0001.s16",
+      "pcm_sha256": "e0ab69f7b2f9a8630ff0bb1b316c04e7ced5d2d60ff9da243bbf61ef75e2bcc4",
+      "sample_bits": 16,
+      "sample_rate_hz": 16000,
+      "seconds": 8.915,
+      "speaker": 3536,
+      "tail_samples_to_10ms": 80
+    },
+    {
+      "channels": 1,
+      "flac_bytes": 161649,
+      "flac_file": "flac/3536-8226-0002.flac",
+      "flac_sha256": "aa0febfcc0193ee24677e2c540b6826371e53e2821011db40ca5a1c9f082dba6",
+      "frames": 151200,
+      "member": "LibriSpeech/dev-clean/3536/8226/3536-8226-0002.flac",
+      "native_pcm_md5": "90157b907c819e754daab8a0ec6c0bc3",
+      "pcm_bytes": 302400,
+      "pcm_file": "pcm/3536-8226-0002.s16",
+      "pcm_sha256": "ca3f587934b02ad0934c8b4af1af068464a122127c63f205bb4e619b09821d6c",
+      "sample_bits": 16,
+      "sample_rate_hz": 16000,
+      "seconds": 9.45,
+      "speaker": 3536,
+      "tail_samples_to_10ms": 0
+    },
+    {
+      "channels": 1,
+      "flac_bytes": 146459,
+      "flac_file": "flac/3536-8226-0003.flac",
+      "flac_sha256": "57a3dd992341333c249a829f0e1f5431502db109908910fddc021ac9ac4adf99",
+      "frames": 127040,
+      "member": "LibriSpeech/dev-clean/3536/8226/3536-8226-0003.flac",
+      "native_pcm_md5": "6e295b5f17daf09edea8d8488b661278",
+      "pcm_bytes": 254080,
+      "pcm_file": "pcm/3536-8226-0003.s16",
+      "pcm_sha256": "15841cd4ed6e3d97549b6e68c33a35831e4fcb38b9eec984dbbd16d62a6b55f9",
+      "sample_bits": 16,
+      "sample_rate_hz": 16000,
+      "seconds": 7.94,
+      "speaker": 3536,
+      "tail_samples_to_10ms": 0
+    }
+  ],
+  "plan_sha256": "cde46538288219a077927eada139fea62c2bc156fa9bd478626aae139e0db4d3",
+  "prepare_wall_seconds": 14.91869319899888,
+  "rights_review": {
+    "code": "First-party preparation code uses the repository Apache-2.0 license; existing speech_source.flac_info semantics are reused unchanged.",
+    "data": "Exact OpenSLR-12 LibriSpeech dev-clean archive; retained original LICENSE.TXT specifies CC BY 4.0. This does not admit other corpora, weights or test sets.",
+    "dependencies": "Python standard library and an already installed FFmpeg decoder. Record actual executable SHA256, version and -L license output. No package installation or redistribution of the FFmpeg executable.",
+    "redistribution": "Preserve original notices and author/source/license attribution; disclose lossless decoding and any excerpt concatenation. No endorsement. No automatic audio publication.",
+    "weights": "None; no model is loaded or downloaded."
+  },
+  "role": {
+    "acoustic_execution_allowed_by_this_contract": false,
+    "blind_status": "NOT_BLIND",
+    "future_use": "Requires a separately preregistered acoustic contract; all new originals, full PCM and windows retain this reserved role.",
+    "name": "reserved-validation-visible-scope-separated",
+    "optimizer_selection_allowed": false,
+    "promotion_allowed": false,
+    "training_allowed": false,
+    "universal_independence_established": false
+  },
+  "schema_version": 1,
+  "source_receipt_sha256": "35fb4797cf67d004ae1646d61b7905a85bf376f7abbd031d4b3d58531ca57e5c",
+  "source_revision": "a058b02582962875ac10e6bb42b928c46c405213",
+  "source_tree": "e2b41d4a7f3678efa065dfabc09ea29ebc2c2071",
+  "started_at_utc": "2026-11-27T18:59:51.243574+00:00",
+  "status": "SOURCE_PREPARED_RESERVED_VALIDATION_NOT_BLIND",
+  "study_id": "F05-SPEECH-SOURCE-V1",
+  "total_wall_seconds": 416.9361176809998,
+  "training_runs": 0,
+  "unique_complete_pcm_sha256": 32,
+  "unique_flac_sha256": 32
+}

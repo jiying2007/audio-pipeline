@@ -1,0 +1,28 @@
+{
+  "status": "INDEPENDENT_READBACK_PASSED",
+  "command": [
+    "python3",
+    "-B",
+    "tests/validation/frontend_evolution/f05_speech_source.py",
+    "verify",
+    "--archive",
+    "/workspace/scratch/cd58842626bd/audit_checks/f05-source-20261128/dev-clean.tar.gz",
+    "--output",
+    "/workspace/scratch/cd58842626bd/audit_checks/f05-source-20261128/prepared",
+    "--code-revision",
+    "a058b02582962875ac10e6bb42b928c46c405213",
+    "--plan-sha256",
+    "cde46538288219a077927eada139fea62c2bc156fa9bd478626aae139e0db4d3"
+  ],
+  "source": "a058b02582962875ac10e6bb42b928c46c405213",
+  "started_at_utc": "2026-11-27T19:07:15.791653+00:00",
+  "finished_at_utc": "2026-11-27T19:07:22.231939+00:00",
+  "elapsed_seconds": 6.44030609299989,
+  "exit_code": 0,
+  "decoder_invocations": 0,
+  "acoustic_runs": 0,
+  "reader_result": {
+    "status": "VERIFIED_SOURCE_ONLY_NOT_ACOUSTIC_EVIDENCE",
+    "study_id": "F05-SPEECH-SOURCE-V1"
+  }
+}

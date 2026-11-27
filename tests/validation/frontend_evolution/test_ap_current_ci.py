@@ -125,9 +125,23 @@ class SelectorTests(unittest.TestCase):
     def test_reserved_results_only_are_support_before_any_measurement(self):
         changes = {name: (None, b"selector-only future result fixture; no measurement claim\n") for name in ap.RESULT_PATHS}
         self.assert_flags(ap.select("pull_request", "", changes, self.current), False, False)
-        before = (ap.ROOT / ap.NAVIGATION).read_bytes()
-        changes[ap.NAVIGATION] = (before, before + ap.NAVIGATION_ENTRIES[-1].encode())
-        self.assert_flags(ap.select("pull_request", "", changes, self.current), False, False)
+        current = (ap.ROOT / ap.NAVIGATION).read_bytes()
+        result_link = ap.NAVIGATION_ENTRIES[-1].encode()
+        self.assertLessEqual(current.count(result_link), 1)
+        unpublished = current.replace(result_link, b"")
+        # Construct the declared before-state explicitly even after the real
+        # result/navigation has been published. Production duplicate rejection
+        # remains unchanged and is exercised for both fixture premises.
+        for fixture in (unpublished, unpublished + result_link):
+            with self.subTest(already_published=result_link in fixture):
+                before = fixture.replace(result_link, b"")
+                self.assertNotIn(result_link, before)
+                after = before + result_link
+                changes[ap.NAVIGATION] = (before, after)
+                self.assert_flags(ap.select("pull_request", "", changes, self.current), False, False)
+                changes[ap.NAVIGATION] = (before, after + result_link)
+                with self.assertRaisesRegex(ValueError, "AP_DUPLICATE_SUPPORT_LINE"):
+                    ap.select("pull_request", "", changes, self.current)
 
     def test_reserved_results_do_not_hide_missing_engineering_in_initial_mix(self):
         changes = self.initial(True)

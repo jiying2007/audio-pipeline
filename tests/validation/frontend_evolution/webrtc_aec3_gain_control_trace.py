@@ -16,7 +16,8 @@ UPSTREAM_FIELDS = ("residual_power", "unbounded_residual_power", "nearend_spectr
                    "echo_spectrum", "cng_noise_spectrum", "selected_input_re", "selected_input_im")
 LOW_FIELDS = ("estimated_low_bits", "applied_low_bits")
 HIGH_FIELDS = ("estimated_high_bits", "applied_high_bits")
-FIELDS = {"kind", "block_index", "support", "forced", *CNG_FIELDS, *UPSTREAM_FIELDS,
+CNG_IMAGINARY = ("cng_low_im", "cng_high_im")
+FIELDS = {"kind", "block_index", "support", "forced", "cng_imaginary_endpoint_policy", *CNG_FIELDS, *UPSTREAM_FIELDS,
           *LOW_FIELDS, *HIGH_FIELDS}
 MUTABLE = {"forced", "applied_low_bits", "applied_high_bits"}
 
@@ -39,9 +40,12 @@ def validate_row(row, index, mode):
     forced = mode == "gain-unity" and support
     require(type(row["support"]) is bool and row["support"] == support and
             type(row["forced"]) is bool and row["forced"] == forced, "gain support/force drift")
+    require(row["cng_imaginary_endpoint_policy"] == gain.CNG_ENDPOINT_POLICY,
+            "unwritten CNG endpoint observation policy changed")
     for field in CNG_FIELDS + UPSTREAM_FIELDS + LOW_FIELDS:
         words = row[field]
-        require(type(words) is list and len(words) == 65, "trace vector cardinality: " + field)
+        expected_count = 63 if field in CNG_IMAGINARY else 65
+        require(type(words) is list and len(words) == expected_count, "trace vector cardinality: " + field)
         for word in words:
             binary32(word, field in LOW_FIELDS)
     for field in HIGH_FIELDS:
@@ -85,7 +89,8 @@ def parse_trace(data: bytes, samples: int, mode: str) -> dict:
 def compare_arms(neutral, intervention):
     require(neutral["selector"] == intervention["selector"], "selector or estimated gain changed")
     a, b = neutral["gain"], intervention["gain"]
-    require(len(a) == len(b) and len(a) in (2000, 4000), "paired gain block cardinality")
+    require(len(a) == len(b) == len(neutral["selector"]) == len(intervention["selector"]) and
+            len(a) in (2000, 4000), "paired gain/selector block cardinality")
     nonunity = 0
     for i, (left, right) in enumerate(zip(a, b)):
         validate_row(left, i, "gain-observe")
@@ -99,4 +104,5 @@ def compare_arms(neutral, intervention):
             "force coverage drift")
     return {"blocks": len(a), "forced_blocks": 451, "nonunity_support_blocks": nonunity,
             "upstream_and_cng_words_equal": True,
+            "cng_word_equality_scope": "all generator-written real and interior imaginary words; unwritten endpoint imaginary words not observed",
             "ola_history_equality_claimed": False, "promotion_allowed": False}

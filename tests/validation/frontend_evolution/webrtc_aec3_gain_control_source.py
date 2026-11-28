@@ -23,6 +23,13 @@ SELECTED_HASHES = {
     RUNNER: "2526a28f4b92a73489eec0c9c13ecbd5c26b72b4c68482b26b36beac0b8b56e8",
 }
 SUPPORT = (1525, 1976)
+CNG_ENDPOINT_POLICY = "DC_NYQUIST_IMAGINARY_UNWRITTEN_NOT_OBSERVED"
+CNG_ENDPOINT_SOURCE_HASHES = {
+    "comfort_noise_generator.cc": "3be1f80b734666a3fa7814db61c7d330d620eff03435fe49119ceb9171b686ab",
+    "fft_data.h": "4bbd66c35c4a565685c542c7e21790b64325a8935f6420571c2e536f78034ce9",
+    "aec3_fft.h": "a8b4cbcd58cee9956e992327230c77aadb409debc48d889ab063e1ad9e16c6f0",
+    "suppression_filter.cc": "e1a4d52f473f16e631229bffe05103efa135c2246f8ec51bb749ffde3b32ac00",
+}
 TRACE_KIND = "aec3_joint_gain_control"
 MODES = ("gain-observe", "gain-unity")
 APPLY = ("    suppression_filter_.ApplyGain(comfort_noise, high_band_comfort_noise, G,\n"
@@ -52,11 +59,13 @@ APPLIED = r"""    // Research-only intervention at the final synthesis arguments
         std::memcpy(&bits, &value, sizeof(bits));
         return static_cast<unsigned long>(bits);
       };
-      const auto write_words = [&](const char* key, const auto& values) {
-        if (std::fprintf(stderr, ",\"%s\":[", key) < 0)
+      const auto write_words = [&](const char* key, const auto& values,
+                                   size_t first = 0, size_t stop = 65) {
+        if (values.size() != 65 || first >= stop || stop > values.size() ||
+            std::fprintf(stderr, ",\"%s\":[", key) < 0)
           throw std::runtime_error("gain-control trace write failed");
-        for (size_t i = 0; i < values.size(); ++i) {
-          if (std::fprintf(stderr, "%s%lu", i ? "," : "",
+        for (size_t i = first; i < stop; ++i) {
+          if (std::fprintf(stderr, "%s%lu", i != first ? "," : "",
                            bits_of(values[i])) < 0)
             throw std::runtime_error("gain-control trace write failed");
         }
@@ -65,7 +74,9 @@ APPLIED = r"""    // Research-only intervention at the final synthesis arguments
       };
       if (std::fprintf(stderr,
               "{\"kind\":\"aec3_joint_gain_control\",\"block_index\":%zu,"
-              "\"support\":%s,\"forced\":%s,\"estimated_high_bits\":%lu,"
+              "\"support\":%s,\"forced\":%s,"
+              "\"cng_imaginary_endpoint_policy\":\"DC_NYQUIST_IMAGINARY_UNWRITTEN_NOT_OBSERVED\","
+              "\"estimated_high_bits\":%lu,"
               "\"applied_high_bits\":%lu",
               gain_block, gain_support ? "true" : "false",
               gain_forced ? "true" : "false",
@@ -74,9 +85,11 @@ APPLIED = r"""    // Research-only intervention at the final synthesis arguments
       write_words("estimated_low_bits", G);
       write_words("applied_low_bits", applied_gain);
       write_words("cng_low_re", comfort_noise[0].re);
-      write_words("cng_low_im", comfort_noise[0].im);
+      // GenerateComfortNoise never writes DC/Nyquist imaginary slots.
+      // Do not read or synthesize a value for these indeterminate words.
+      write_words("cng_low_im", comfort_noise[0].im, 1, 64);
       write_words("cng_high_re", high_band_comfort_noise[0].re);
-      write_words("cng_high_im", high_band_comfort_noise[0].im);
+      write_words("cng_high_im", high_band_comfort_noise[0].im, 1, 64);
       write_words("residual_power", R2[0]);
       write_words("unbounded_residual_power", R2_unbounded[0]);
       write_words("nearend_spectrum", nearend_spectrum[0]);
@@ -126,6 +139,7 @@ def transform(relative: str, selected: bytes) -> bytes:
         text = replace(text, "  if (!options.synthesis_selection.empty()) {\n", r"""  if (options.synthesis_selection == "gain-observe" || options.synthesis_selection == "gain-unity") {
     out << ",\"aec3_joint_gain_control\":{\"mode\":" << Quote(options.synthesis_selection)
         << ",\"support_blocks\":[1525,1976],\"block_samples\":64"
+        << ",\"cng_imaginary_endpoint_policy\":\"DC_NYQUIST_IMAGINARY_UNWRITTEN_NOT_OBSERVED\""
         << ",\"gain_controlled_cng_and_ola_may_change\":true,\"promotion_allowed\":false}";
   }
   if (!options.synthesis_selection.empty()) {
@@ -136,7 +150,27 @@ def transform(relative: str, selected: bytes) -> bytes:
     return text.encode("utf-8")
 
 
+def cng_endpoint_source_contract(prepared: Path) -> dict:
+    base = prepared / "source/webrtc/modules/audio_processing/aec3"
+    actual = {}
+    for name, expected in CNG_ENDPOINT_SOURCE_HASHES.items():
+        data = (base / name).read_bytes()
+        actual[name] = sha256(data)
+        require(actual[name] == expected, "CNG endpoint source identity mismatch: " + name)
+    generator = (base / "comfort_noise_generator.cc").read_text()
+    fft_data = (base / "fft_data.h").read_text()
+    fft = (base / "aec3_fft.h").read_text()
+    require("for (size_t k = 1; k < kFftLengthBy2; k++)" in generator and
+            "N_low->im[k] = N[k] * y;" in generator and
+            "N_high->im[k] = high_band_noise_level * y;" in generator and
+            "(*v)[0] = re[0];" in fft_data and "(*v)[1] = re[kFftLengthBy2];" in fft_data and
+            "(*v)[j++] = im[k];" in fft_data and "X.CopyToPackedArray(x);" in fft,
+            "pinned real-IFFT/generator endpoint contract")
+    return actual
+
+
 def _record(prepared: Path, evidence: Path, derived: Path | None, writing: bool) -> dict:
+    cng_source = cng_endpoint_source_contract(prepared)
     prior = predecessor.verify(prepared, evidence / "selection")
     old_manifest = json.loads((evidence / "selection/derived-files.json").read_text())
     expected_manifest = dict(old_manifest)
@@ -176,6 +210,7 @@ def _record(prepared: Path, evidence: Path, derived: Path | None, writing: bool)
             "changes": changes, "patch_sha256": sha256(patch),
             "derived_manifest_sha256": sha256(predecessor.pristine.encoded(expected_manifest)),
             "support_blocks": list(SUPPORT), "intervention": "joint-gain-controlled-suppression-cng-synthesis",
+            "cng_imaginary_endpoint_policy": CNG_ENDPOINT_POLICY, "cng_endpoint_source_sha256": cng_source,
             "ola_history_expected_to_diverge": True, "acoustic_measurement": "NOT_RUN",
             "promotion_allowed": False}
 

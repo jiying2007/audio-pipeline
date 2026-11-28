@@ -79,8 +79,10 @@ class GainControlTraceTests(unittest.TestCase):
         import webrtc_aec3_gain_control_source as s
         support = s.SUPPORT[0] <= index < s.SUPPORT[1]
         forced = mode == "gain-unity" and support
-        result = {key: [0] * 65 for key in t.CNG_FIELDS + t.UPSTREAM_FIELDS}
+        result = {key: [0] * (63 if key in t.CNG_IMAGINARY else 65)
+                  for key in t.CNG_FIELDS + t.UPSTREAM_FIELDS}
         result.update({"kind": s.TRACE_KIND, "block_index": index, "support": support,
+                       "cng_imaginary_endpoint_policy": s.CNG_ENDPOINT_POLICY,
                        "forced": forced, "estimated_low_bits": [0x3f000000] * 65,
                        "estimated_high_bits": 0x3f000000,
                        "applied_low_bits": [t.UNITY if forced else 0x3f000000] * 65,
@@ -122,14 +124,27 @@ class GainControlTraceTests(unittest.TestCase):
 
     def test_cng_and_estimator_fields_are_compared_as_raw_words(self):
         import webrtc_aec3_gain_control_trace as t
-        neutral = {"selector": [], "gain": [self.row(i, "gain-observe") for i in range(2000)]}
-        unity = {"selector": [], "gain": [self.row(i, "gain-unity") for i in range(2000)]}
+        selector = [{"block_index": i} for i in range(2000)]
+        neutral = {"selector": selector, "gain": [self.row(i, "gain-observe") for i in range(2000)]}
+        unity = {"selector": list(selector), "gain": [self.row(i, "gain-unity") for i in range(2000)]}
         self.assertEqual(t.compare_arms(neutral, unity)["nonunity_support_blocks"], 451)
         for field in ("cng_low_im", "cng_high_re", "residual_power", "selected_input_im"):
             unity["gain"][1525][field][0] = 0x80000000
             with self.assertRaises(ValueError):
                 t.compare_arms(neutral, unity)
             unity["gain"][1525][field][0] = 0
+
+    def test_unwritten_endpoint_slots_cannot_enter_trace(self):
+        import webrtc_aec3_gain_control_trace as t
+        for key in t.CNG_IMAGINARY:
+            row = self.row(1525, "gain-unity")
+            row[key] = [0] + row[key] + [0]
+            with self.assertRaises(ValueError):
+                t.validate_row(row, 1525, "gain-unity")
+        row = self.row(1525, "gain-unity")
+        row["cng_imaginary_endpoint_policy"] = "ZERO_FILLED"
+        with self.assertRaises(ValueError):
+            t.validate_row(row, 1525, "gain-unity")
 
     def test_duplicate_json_field_rejected(self):
         import webrtc_aec3_gain_control_trace as t

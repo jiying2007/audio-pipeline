@@ -64,6 +64,7 @@ def raw_observation(folder, mode, mic):
     else:
         require(meta["aec3_joint_gain_control"] ==
                 {"mode": mode, "support_blocks": [1525, 1976], "block_samples": 64,
+                 "cng_imaginary_endpoint_policy": source.CNG_ENDPOINT_POLICY,
                  "gain_controlled_cng_and_ola_may_change": True, "promotion_allowed": False},
                 "native gain control metadata drift")
         parsed = trace.parse_trace(raw, len(mic) // 2, mode)

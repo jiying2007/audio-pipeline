@@ -53,6 +53,11 @@ def inspect_structure(echo_remover: str, suppression_filter: str) -> dict:
     get_at = echo_remover.index(GET_GAIN)
     apply_at = echo_remover.index(APPLY_GAIN)
     require(cng_at < get_at < apply_at, "CNG -> gain estimate -> gain application order changed")
+    cng_end = echo_remover.find(");", cng_at) + 2
+    between_cng_and_apply = echo_remover[cng_end:apply_at]
+    require("comfort_noise" not in between_cng_and_apply and
+            "high_band_comfort_noise" not in between_cng_and_apply,
+            "generated CNG buffers are referenced or modified before ApplyGain")
     args = call_arguments(echo_remover, APPLY_GAIN)
     require(args == EXPECTED_APPLY_ARGS, "ApplyGain ordered argument contract changed")
     require("noise_gain[i] = 1.f - suppression_gain[i] * suppression_gain[i];" in suppression_filter,

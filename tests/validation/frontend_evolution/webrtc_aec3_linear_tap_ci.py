@@ -163,6 +163,8 @@ def job_text() -> str:
 
 def strip_workflow(text: str) -> str:
     """Strip only exact F07 wiring; existing readers still validate old bytes."""
+    from webrtc_aec3_selection_scope import strip_workflow as strip_selection_workflow
+    text = strip_selection_workflow(text)
     markers = (JOB_MARKER, SCOPE_BLOCK, OUTPUT_LINE, OPTION, TINY_STEP)
     if not any(marker in text for marker in markers):
         return text
@@ -199,6 +201,8 @@ def validate_ap_test_view(before: bytes, after: bytes) -> None:
 
 
 def strip_navigation(data: bytes) -> bytes:
+    from webrtc_aec3_selection_scope import strip_navigation as strip_selection_navigation
+    data = strip_selection_navigation(data)
     appendix = NAVIGATION_APPEND.encode()
     if appendix not in data:
         return data

@@ -1,0 +1,645 @@
+{
+  "authority": "User authorized continuation of frontend-evolution-v1 research; new bounded local-output-selection intervention with sequential stop.",
+  "base_revision": "9d2cfef495ac8e34d03a55538777c16010ac3b14",
+  "budget": {
+    "api_frames_total_max": 3200,
+    "capture_seconds_total_max": 32,
+    "ci_job_timeout_minutes": 22,
+    "ci_outer_wall_seconds": 1200,
+    "ci_speech_calls": 0,
+    "extra_acoustic_retries": 0,
+    "independent_readback_wall_seconds": 300,
+    "input_seconds_per_call": 16,
+    "internal_blocks_total_max": 8000,
+    "local_compiler_calls": 0,
+    "new_codec_calls": 0,
+    "parameter_candidates_max": 1,
+    "per_host_new_engineering_wall_seconds": 120,
+    "per_speech_call_wall_seconds": 30,
+    "speech_calls_total_max": 2,
+    "speech_conditional_candidate_calls_max": 1,
+    "speech_observe_calls": 1,
+    "speech_stage_wall_seconds": 300,
+    "training_runs": 0
+  },
+  "cases": [
+    {
+      "archived_aec3_final": {
+        "bytes": 512000,
+        "sha256": "4d7e6f8e264a893590de5749ce82b6dfacdd5e66389b31089c05f021f0a8bd71"
+      },
+      "case_id": "p1-ula4-70-fir33-none",
+      "event": "none",
+      "members": {
+        "ap.s16": {
+          "bytes": 512000,
+          "sha256": "2b47e333c66d1c8217f11c42f82abedcd62f5826042d98550128dbd7648f3863"
+        },
+        "echo.s16": {
+          "bytes": 512000,
+          "sha256": "9a9bb66ef0c3368f452f0a5158740b0269aca16ac29bd81f5ffca19aa6030fd9"
+        },
+        "input.s16": {
+          "bytes": 1024000,
+          "sha256": "e27cfc0b8c5d900a7ecfb6f1bdd44c236bc3301d78245d5aaa1fb08f6fc5b7be"
+        },
+        "speex.s16": {
+          "bytes": 512000,
+          "sha256": "dcac2b487267851dc1ff1632dbb6caaaae1ff1534fd9d20f0b47474be867671d"
+        },
+        "target.s16": {
+          "bytes": 512000,
+          "sha256": "983fabcfa721940d89a9e3876a02ef091074d45b63e4df0600707b2f44f6997a"
+        }
+      },
+      "pair": 1,
+      "prepared_inputs": {
+        "mic.pcm": {
+          "bytes": 512000,
+          "sha256": "c4ada57832f5bc9ae3009e9e096ae44f903ee4ff168bf20ea7a04b7babf98ed4"
+        },
+        "render.pcm": {
+          "bytes": 512000,
+          "sha256": "f0761b1cacf7b8e0c880c0e5f2c611c9d7abdfe6c5dfaba7b8f9c5ee0dcd613f"
+        }
+      },
+      "samples": 256000
+    }
+  ],
+  "closure": {
+    "complete_conditional_negative_is_valid_complete_scientific_stage": true,
+    "forbidden_claims": [
+      "candidate promoted",
+      "production defaults changed",
+      "SSC305 CPU/RSS/deadline/power/thermal qualified",
+      "real robot acoustics qualified",
+      "F05 independently confirms this candidate",
+      "all RES or AEC families rejected"
+    ],
+    "no_selector_exposure_is_valid_complete_scientific_stage": true,
+    "required": [
+      "independent method/patch review",
+      "raw evidence + independent readback",
+      "exact final PR checks and required summary",
+      "protected expected-head squash",
+      "fresh actual main applicable checks",
+      "durable evidence archive with receipts"
+    ]
+  },
+  "data_role": "DISCLOSED_DEVELOPMENT_DIAGNOSTIC_NOT_HOLDOUT",
+  "date": "2026-11-28",
+  "draft_open_items": [
+    "Bind and independently review the final exact new source-control list and implementation-byte hashes before public freeze.",
+    "Bind exact Actions run/attempt/artifact and current-host runtime receipts before scientific execution; no placeholder identity authorizes execution.",
+    "Draft status is not an execution receipt. Root must publish the reviewed immutable plan before observing any new trace."
+  ],
+  "draft_scope": "Independent method design only; not a public freeze, implementation approval, execution receipt or acoustic result.",
+  "engineering": {
+    "budget_status": "Confirmed before any new engineering execution: 6 accepted calls, 8 rejected requests, 20.08 requested seconds, 4.0 DSP seconds, 120 seconds wall.",
+    "checks": [
+      "no-option and observe final/tap byte equality",
+      "observe and force full linear equality",
+      "observe/force source_linear sequence equality",
+      "force trace applies E on every block; at least one synthetic source-Y branch is exercised",
+      "correct continuous block count and 2/3 block-per-frame pattern",
+      "common 0.2-second input prefix gives identical raw output prefix through sample 3200 and identical trace through block 49; no lookahead assumed beyond declared transport",
+      "same-input fresh-process repeat exact final/tap/trace excluding external timing",
+      "all invalid requests have zero DSP trace and no output creation",
+      "all observe/force gain bit vectors, high-band gain bits and current post-GetGain nearend flags identical block by block",
+      "raw trace remains within 16 MiB per process and no nonfinite/out-of-range gain observations"
+    ],
+    "historical_25_linear_calls": 0,
+    "historical_62_compatibility_calls": 0,
+    "negative_cases_max": 8,
+    "negative_cases_proposed": [
+      "empty new option",
+      "unknown new option value",
+      "duplicate new option",
+      "mode apm",
+      "mic_channels 2",
+      "factory-off",
+      "reset request",
+      "1601-frame input beyond 16-second bound"
+    ],
+    "negative_dsp_calls": 0,
+    "new_stage_only": true,
+    "process_calls_max": 14,
+    "pure_negative_tests": [
+      "451-support boundary includes both block 1525 and 1975",
+      "single false flag at either support boundary admits conditional arm; false at 1524 or 1976 does not",
+      "missing/duplicate/nonmonotonic block fails",
+      "bool pretending to be integer index fails",
+      "wrong forced/applied/source relationships fail",
+      "mismatched source/state sequence or linear hash fails",
+      "candidate present after no-exposure stop fails",
+      "target/echo/oracle activity cannot be runner input",
+      "forged or stale source/binary/runtime receipt fails",
+      "legacy input/output hash mismatch fails",
+      "gain bit vector not 65 values fails",
+      "gain bit integer bool/out-of-uint32/nonfinite-float fails",
+      "force gain/nearend witness mismatch fails"
+    ],
+    "rejected_requested_capture_samples": 257280,
+    "requested_capture_samples_including_rejected_inputs": 321280,
+    "requested_capture_seconds_including_rejected_inputs_max": 20.08,
+    "requested_input_accounting": "4.0 accepted + 7*0.01 short rejection inputs + 16.01 overlength input; rejected oversized input is not hidden from request budget.",
+    "speech_matrix_calls": 0,
+    "valid_calls": [
+      {
+        "mode": "no selection option",
+        "purpose": "unchanged-path control",
+        "seconds": 0.8
+      },
+      {
+        "mode": "observe",
+        "purpose": "trace neutrality relative to control",
+        "seconds": 0.8
+      },
+      {
+        "mode": "force-linear",
+        "purpose": "branch semantics and unchanged linear/state witness",
+        "seconds": 0.8
+      },
+      {
+        "mode": "observe",
+        "purpose": "first suffix of common 0.2-second prefix",
+        "seconds": 0.4
+      },
+      {
+        "mode": "observe",
+        "purpose": "second suffix of same common prefix",
+        "seconds": 0.4
+      },
+      {
+        "mode": "observe",
+        "purpose": "fresh-process deterministic repeat",
+        "seconds": 0.8
+      }
+    ],
+    "valid_processed_capture_samples": 64000,
+    "valid_processed_capture_seconds": 4.0,
+    "wall_seconds": 120
+  },
+  "execution_binding": {
+    "actions_run_attempt_artifact_api_sha256_bound": true,
+    "actual_host_runtime_libraries_bound_before_and_after": true,
+    "all_loaded_first_party_modules_hash_bound": true,
+    "binary_and_bundled_libraries_sha256_bound": true,
+    "exact_public_source_before_run_required": true,
+    "exclusive_outputs_and_once_only_invocation_witness": true,
+    "incomplete_result_policy": "Preserve all raw files, start witness and error; no success result/manifest if method incomplete.",
+    "native_metadata_must_bind_mode": true,
+    "plan_sha256_required": true,
+    "same_binary_both_modes_required": true,
+    "source_patch_and_pristine_preimages_bound": true
+  },
+  "experiment_id": "FE04-WEBRTC-AEC3-SYNTHESIS-SELECTION-V1",
+  "failure_policy": "Preserve first failures. No speech retries or changes of window, lag, metric, primary, acceptance direction, or budget after observing new trace/output. Engineering-only correction before science requires a public descendant source and fresh affected engineering. Scientific method failure requires stopping this identity and explicit subsequent registration.",
+  "hypothesis": "Default E/Y input selection at the final synthesis stage contributes to the previously disclosed p1-none double-before degradation; test only if Y is exposed within the exact synthesis support.",
+  "independent_confirmation": false,
+  "legacy_evidence": {
+    "f05_reserved_data_used": false,
+    "f07_execution_source": "3f50c1f3865c8bfc31846da4ea7f6d74565eb02d",
+    "f07_manifest_sha256": "7a819065295b5c202ed67645cd571873c683367565e218e68ee527bb470b5af2",
+    "f07_plan_path": ".github/research/frontend-evolution-v1/webrtc-aec3-linear-tap-v1.json",
+    "f07_plan_sha256": "b144f634e11df08569215903e3832f91dbeee5c3c609b19bcffba60de0cf6e6f",
+    "f07_result_sha256": "67892fc4124e720ea9f96a1eba20fc7993dc79ef19ea5792df4d09e81d1071cc",
+    "f07_scientific_archive_sha256": "bc201d938e8433e0fc85035467afafa85c8a12cb68303cfb2f53689ba260fd2a",
+    "final_s16": {
+      "bytes": 512000,
+      "sha256": "4d7e6f8e264a893590de5749ce82b6dfacdd5e66389b31089c05f021f0a8bd71"
+    },
+    "linear_f32": {
+      "bytes": 1024000,
+      "sha256": "6322eb3c71d9f4bab58fcf042bb04a0d917c2792130540498af559a6364882d9"
+    },
+    "mutations_allowed": false,
+    "old_six_case_matrix_reruns": 0,
+    "previous_failure_lineage_preserved": true
+  },
+  "metrics": {
+    "aligned_far_only": "canonical echo/output mean-square ratio in 19 fixed blocks of 1600 samples, retaining all block values and nulls",
+    "all_original_primary_case_common_span_preserved": true,
+    "all_original_primary_case_far_blocks_preserved": true,
+    "all_original_primary_case_near_windows_preserved": true,
+    "canonical_si_sdr": "speech_spatial.si_sdr_span (run_validation_engine), same normalized sample units and unchanged 1e-12 floor",
+    "comparison": "force-linear final versus observe final, each with exact fixed 128-sample delay; linear is a required unchanged upstream witness.",
+    "disposition": "DIAGNOSTIC_DIRECTION_ONLY_NO_PROMOTION",
+    "endpoint_events": "Retain all S16 endpoint and energy changes as outcomes; do not discard unfavorable cases or call counts proven internal clipping events.",
+    "far_block_samples": 1600,
+    "final_far_samples": [
+      192000,
+      222400
+    ],
+    "final_far_seconds": [
+      12,
+      13.9
+    ],
+    "float_tap_must_not_be_quantized_to_s16": true,
+    "near_phase_samples": {
+      "double-after": [
+        129600,
+        158400
+      ],
+      "double-before": [
+        97600,
+        126400
+      ],
+      "near-final": [
+        225600,
+        254400
+      ],
+      "near-initial": [
+        1600,
+        30400
+      ]
+    },
+    "near_phase_seconds": {
+      "double-after": [
+        8.1,
+        9.9
+      ],
+      "double-before": [
+        6.1,
+        7.9
+      ],
+      "near-final": [
+        14.1,
+        15.9
+      ],
+      "near-initial": [
+        0.1,
+        1.9
+      ]
+    },
+    "normalized_mse": "sum((target-output)^2) / sum(target^2), same fixed target/output windows and declared delays; no gain fitting; null if target energy <= canonical epsilon",
+    "old_six_case_results_not_recomputed_as_new_observations": true,
+    "raw_amplitude": "peak, RMS, exact endpoint count and finite range; endpoint counts describe exported saturation endpoints, not proven clipping events",
+    "unobserved_output_tail": "excluded identically; never zero filled"
+  },
+  "parameter_search_allowed": false,
+  "physical_target_measurement": false,
+  "primary": {
+    "case_id": "p1-ula4-70-fir33-none",
+    "disposition": "DIAGNOSTIC_DIRECTION_ONLY_NO_PROMOTION",
+    "effective_unique_conditions": 1,
+    "identifiability": {
+      "canonical_values_preserved": true,
+      "epsilon": 1e-12,
+      "not_identifiable_if": "Either view has projected_target_energy <= 1e-12 or nonfinite, or required canonical SI-SDR/NMSE is null",
+      "projected_target_energy": "Using the same fixed windows, normalized samples and summation order as canonical SI-SDR: alpha=sum(target*output)/sum(target^2); projected_target_energy=sum((alpha*target)^2)",
+      "reason": "The unchanged canonical epsilon formula returns a finite 0 dB for an all-zero estimate; that numerical result does not establish target information retention.",
+      "reported_fields": [
+        "reference_energy",
+        "output_energy",
+        "projected_target_energy",
+        "degenerate_projection"
+      ]
+    },
+    "no_new_numeric_acoustic_thresholds": true,
+    "other_windows_secondary": true,
+    "phase": "double-before",
+    "rule": {
+      "INCONCLUSIVE_MIXED_INDICATORS": "Finite identifiable indicators disagree in direction.",
+      "NOT_IDENTIFIABLE": "Either final view lacks finite canonical SI-SDR/NMSE or projected_target_energy <= 1e-12.",
+      "NOT_SUPPORTED_IN_DISCLOSED_WINDOW": "Candidate-minus-observe SI-SDR <= 0 AND candidate normalized MSE >= observe normalized MSE.",
+      "NO_SELECTOR_Y_EXPOSURE_IN_PRIMARY_SUPPORT": "Every observed source_linear is true for block indices 1525..1975 inclusive; stop without candidate execution.",
+      "SUPPORTED_IN_DISCLOSED_WINDOW": "Candidate-minus-observe SI-SDR > 0 AND candidate normalized MSE < observe normalized MSE; descriptive conditional causal support only."
+    },
+    "statistical_significance_claim": false,
+    "target_window_samples": [
+      97600,
+      126400
+    ]
+  },
+  "promotion_allowed": false,
+  "runner_contract": {
+    "allowed_values": [
+      "observe",
+      "force-linear"
+    ],
+    "input_path_roles": {
+      "echo.s16": "far-only scoring only, never passed to runner",
+      "mic.pcm": "algorithm input",
+      "render.pcm": "algorithm input",
+      "target.s16": "scoring only, never passed to runner"
+    },
+    "invalid_request_policy": "Reject before APM instance construction, DSP, and output-file creation; never silently fall back.",
+    "max_frames": 1600,
+    "no_extra_options_change_original_path": true,
+    "no_lag_search_or_output_normalization": true,
+    "no_oracle_time_schedule": true,
+    "option": "--aec3-synthesis-selection",
+    "requires": {
+      "aec3_export_mode": "factory-on",
+      "channel_map": [
+        0
+      ],
+      "frame_samples": 160,
+      "fresh_instances_per_process": 1,
+      "mic_channels": 1,
+      "mode": "aec3",
+      "render_channels": 1,
+      "reset_before_frame": null,
+      "sample_rate_hz": 16000
+    }
+  },
+  "schema_version": 1,
+  "sequence": [
+    {
+      "new_speech_calls": 0,
+      "requires": [
+        "Reviewed method and exact implementation controls publicly frozen before observing new trace",
+        "Exact old primary input and F07 output hashes verified without new SDK execution",
+        "Actions build and new finite engineering passed",
+        "Same-host finite engineering and runtime/binary identity passed",
+        "Fresh exclusive output paths and once-only invocation witness"
+      ],
+      "stage": "preflight"
+    },
+    {
+      "input_seconds": 16,
+      "mode": "observe",
+      "must_equal_legacy_bytes": [
+        "entire final S16 output",
+        "entire linear F32 output"
+      ],
+      "must_pass": [
+        "full 4000-row trace grammar and coverage",
+        "all original inputs unchanged before and after",
+        "source/binary/runtime unchanged before and after"
+      ],
+      "new_speech_calls": 1,
+      "on_failure": "STOP_METHOD_PRESERVE_OUTPUTS_NO_RETRY",
+      "stage": "observe"
+    },
+    {
+      "all_source_linear_true": {
+        "action": "STOP_NO_FORCE_LINEAR_EXECUTION",
+        "decision": "NO_SELECTOR_Y_EXPOSURE_IN_PRIMARY_SUPPORT",
+        "interpretation": "The local final-synthesis E/Y selector cannot affect the predefined primary window under this exact run. Do not generalize to refined/coarse selection, shared-state estimator routing, or all scenarios."
+      },
+      "any_source_linear_false": {
+        "action": "ADMIT_EXACTLY_ONE_FORCE_LINEAR_CALL",
+        "decision": "SELECTOR_Y_EXPOSURE_OBSERVED",
+        "interpretation": "Exposure only; not evidence that Y causes degradation or that E improves output."
+      },
+      "new_speech_calls": 0,
+      "stage": "support_gate",
+      "support_blocks_half_open": [
+        1525,
+        1976
+      ]
+    },
+    {
+      "input_seconds": 16,
+      "mode": "force-linear",
+      "new_speech_calls_max": 1,
+      "outcome": "Measure final-output effect with frozen existing scoring only; retain all positive/negative/null outcomes; no parameter search or extra cases.",
+      "precondition": "Support gate observed at least one source_linear=false",
+      "requires": [
+        "same exact source/binary/library/runtime as observe",
+        "identical full mic/render inputs",
+        "full linear F32 bytes equal observe and F07",
+        "full 4000-block source_linear sequence equal observe",
+        "same fixed final delay 128 and linear delay 64",
+        "all 4000 blocks gain_bits/high_bands_gain_bits/dominant_nearend_after_gain exactly equal observe"
+      ],
+      "stage": "conditional_force_linear"
+    },
+    {
+      "codec_calls": 0,
+      "compiler_calls": 0,
+      "ldd_calls": 0,
+      "native_metric_calls": 0,
+      "new_speech_calls": 0,
+      "requires": [
+        "Verify raw inputs, outputs, trace and whole manifest identity",
+        "Recompute support gate from full trace",
+        "Recompute every emitted metric from raw bytes independently",
+        "Preserve absent conditional arm explicitly NOT_RUN when stop branch taken",
+        "Preserve source/build/failure/invocation receipts"
+      ],
+      "sdk_calls": 0,
+      "stage": "independent_readback"
+    }
+  ],
+  "source": {
+    "adapted_variant_required": true,
+    "allowed_first_party_variant": "Generate a separately identified research adapter from frozen F07 runner; original runner/method/contract remain unchanged.",
+    "allowed_upstream_patch_paths": [
+      "webrtc/api/audio/echo_canceller3_config.h",
+      "webrtc/modules/audio_processing/aec3/echo_remover.cc"
+    ],
+    "build": "Free ordinary Linux GitHub Actions only, same fixed source/dependency/toolchain admission; no local C/C++ compilation.",
+    "compiler_definitions_unchanged": {
+      "DCHECK_ALWAYS_ON": "undefined",
+      "NDEBUG": "defined as in fixed distribution",
+      "WEBRTC_APM_DEBUG_DUMP": 0
+    },
+    "distribution_commit": "846fe90a289f58b7c9303a635142aa2c7caa93e5",
+    "distribution_version": "webrtc-audio-processing-2.1",
+    "no_debug_dump_for_observation": true,
+    "only_algorithmic_intervention": "Replace the final local Y_fft selector with source_linear || research_synthesis_selection.force_linear; do not modify the AecState getter or its state.",
+    "patch_rule": "Hash-check pristine preimages, apply exact-count deterministic replacements, retain pristine and adapted hashes and patch digest; no fuzzy patch or additional edits.",
+    "research_config": {
+      "research_synthesis_selection.force_linear": "bool, default false",
+      "research_synthesis_selection.observe": "bool, default false"
+    },
+    "source_anchors": [
+      {
+        "basis": "Empty initial buffer; each 80-sample subframe contributes contiguous capture samples to 64-sample blocks.",
+        "path": "webrtc/modules/audio_processing/aec3/frame_blocker.cc",
+        "sha256": "df5d580e8647244f1fd0161525e0a8999d26347bc9a6f60ec83595e4fa3d2f3f"
+      },
+      {
+        "basis": "Initial 64 zeros; sample stream is delayed 64 samples independently of 80-sample emission chunks.",
+        "path": "webrtc/modules/audio_processing/aec3/block_framer.cc",
+        "sha256": "466b9a68f9fed7a0a4943f6adb70dbf25f0c040d028dec49263c95f28acc7121"
+      },
+      {
+        "basis": "Two 80-sample capture subframes per 160-sample API frame; flush exactly one remaining 64-sample block when available.",
+        "path": "webrtc/modules/audio_processing/aec3/echo_canceller3.cc",
+        "sha256": "233174aa7938030c84746ca4644f4b4d47007e7d51f27da79413513ed4824502"
+      },
+      {
+        "basis": "Reverse-before-capture starts render before capture; default internal delay estimator calls EchoRemover on every processed capture block.",
+        "path": "webrtc/modules/audio_processing/aec3/block_processor.cc",
+        "sha256": "b20182757d8ff570292d1745822646aeb4520a3244bd17a8d193526de89433bf"
+      },
+      {
+        "basis": "counter starts at 0 and increments once per ProcessCapture; e_old/y_old hold prior raw block; only local Y_fft selector may be intervened.",
+        "path": "webrtc/modules/audio_processing/aec3/echo_remover.cc",
+        "sha256": "c17b624242ab5f2bfce16a0324fae81d22e175f2e7761b150b5ed665974bb4da"
+      },
+      {
+        "basis": "PaddedFft uses [previous_block,current_block] and sqrt-Hann windows.",
+        "path": "webrtc/modules/audio_processing/aec3/aec3_fft.cc",
+        "sha256": "d9e8a66686a707c665057aa1db08ac96377d8397e8ff36cec5e41ec003c332ed"
+      },
+      {
+        "basis": "z_k is IFFT_k first half plus IFFT_(k-1) second half; previous half is overwritten completely once per processed block.",
+        "path": "webrtc/modules/audio_processing/aec3/suppression_filter.cc",
+        "sha256": "e1a4d52f473f16e631229bffe05103efa135c2246f8ec51bb749ffde3b32ac00"
+      },
+      {
+        "basis": "UseLinearFilterOutput and UsableLinearEstimate both depend on the same filter-quality state; neither method is changed.",
+        "path": "webrtc/modules/audio_processing/aec3/aec_state.h",
+        "sha256": "3d7d8fb7e22f31501baa74ffe725246a61fdfeb8c6ade2924866958494a09978"
+      },
+      {
+        "basis": "Selector is adaptive-state dependent; no inference of its runtime value from elapsed time or F07 scores is allowed.",
+        "path": "webrtc/modules/audio_processing/aec3/aec_state.cc",
+        "sha256": "f3557baeec064d721630d1b99e454a2a776f0efddedf2fad2013dfec363dd9bd"
+      },
+      {
+        "basis": "Default fixed_capture_delay_samples=0 and use_external_delay_estimator=false. Only a separately named research config struct may be added.",
+        "path": "webrtc/api/audio/echo_canceller3_config.h",
+        "sha256": "6b94c6061644f3d55365dd79e6c26534296efd66b11b25f6d291338364429e75"
+      },
+      {
+        "basis": "Config copy/assignment and validation must preserve the separately added research fields; this file remains unmodified.",
+        "path": "webrtc/api/audio/echo_canceller3_config.cc",
+        "sha256": "b63312317d44b399c27c2fa5f2e953ff87ced155622344b88e45cea5cd807006"
+      }
+    ],
+    "unchanged_lock": ".github/research/frontend-evolution-v1/webrtc-aec3-source-lock.json",
+    "unchanged_modules": [
+      "subtractor",
+      "FormLinearFilterOutput refined/coarse selection and transitions",
+      "AEC state",
+      "UsableLinearEstimate",
+      "residual echo estimator",
+      "dominant nearend detector",
+      "suppression gain computation and history",
+      "comfort-noise generator",
+      "FFT/window/OLA",
+      "clamp and S16 conversion",
+      "delay controller",
+      "capture/render timing"
+    ]
+  },
+  "status": "PREREGISTRATION_DRAFT_NOT_EXECUTED",
+  "target_timing_authority": false,
+  "timezone": "Asia/Shanghai",
+  "timing_contract": {
+    "api_frame_index_for_block_k": "floor(((k+1)*64-1)/160)",
+    "api_frames": 1600,
+    "block_samples": 64,
+    "capture_block_k_input_span": "[64*k,64*(k+1))",
+    "common_target_span": [
+      0,
+      255872
+    ],
+    "fft_at_block_k": "sqrt-Hann-windowed [raw block k-1, raw block k], with zero old block at startup",
+    "final_signal_delay_samples": 128,
+    "first_frame_availability_ms": 10,
+    "first_frame_availability_samples": 160,
+    "input_samples": 256000,
+    "linear_signal_delay_samples": 64,
+    "offsets_are_source_derived_and_engineering_checked": true,
+    "primary_final_stream_span": [
+      97728,
+      126528
+    ],
+    "primary_selector_support_block_indices_half_open": [
+      1525,
+      1976
+    ],
+    "primary_selector_support_rows": 451,
+    "primary_synthesis_output_block_indices_half_open": [
+      1526,
+      1976
+    ],
+    "primary_target_block_indices_half_open": [
+      1525,
+      1975
+    ],
+    "primary_target_span": [
+      97600,
+      126400
+    ],
+    "processed_blocks": 4000,
+    "proof_scope": "This is exact support for the local synthesis E/Y selector, not a reconstruction of all adaptive-filter or gain history.",
+    "real_time_or_target_authority": false,
+    "speech_target_lag_search": false,
+    "subframe_samples": 80,
+    "support_reason": "Every target block q uses synthesis output z_(q+1), which depends on selector at q and q+1; include the first OLA predecessor and the final current synthesis block.",
+    "synthesis_z_k": "IFFT_(k-1)[64:128] times synthesis window second half plus IFFT_k[0:64] times first half; full old half overwritten each block",
+    "synthesis_z_k_final_stream_span": "[64*(k+1),64*(k+2)) due to initial 64-sample BlockFramer padding",
+    "synthesis_z_k_nominal_target_span": "[64*(k-1),64*k)",
+    "tail_padding": false,
+    "unexpected_count_or_delay_policy": "Stop method, preserve outputs, do not reindex or fit delay to speech."
+  },
+  "trace": {
+    "bit_conversion": "memcpy binary32 float to uint32, no aliasing cast, rounding, text-float conversion or numerical perturbation; require IEC559 binary32.",
+    "capture_output_unused_policy": "Never read uninitialized gain locals. A missing gain observation, null payload, missing trace, or capture_output_used=false causes scientific method rejection; preserve the raw failure.",
+    "capture_output_used_required": true,
+    "counter_basis": "Existing block_counter_ starts at 0 and increments at EchoRemoverImpl::ProcessCapture entry; expose block_counter_-1; no new DSP counter or reset.",
+    "dominant_nearend_after_gain_timing": "This is the current block state after GetGain. ResidualEchoEstimator::Estimate in the same block already consumed the earlier, pre-GetGain state; the two meanings must not be conflated.",
+    "exact_keys": [
+      "kind",
+      "block_index",
+      "source_linear",
+      "applied_linear",
+      "forced",
+      "capture_output_used",
+      "gain_bits",
+      "high_bands_gain_bits",
+      "dominant_nearend_after_gain"
+    ],
+    "expected_block_indices_half_open": [
+      0,
+      4000
+    ],
+    "expected_rows": 4000,
+    "force_linear_invariants": [
+      "applied_linear == true",
+      "forced == (not source_linear)",
+      "source_linear sequence exactly equals observe at all 4000 blocks",
+      "gain_bits exactly equal observe at every block",
+      "high_bands_gain_bits exactly equal observe at every block",
+      "dominant_nearend_after_gain exactly equal observe at every block"
+    ],
+    "forced_meaning": "An actual default-Y to applied-E substitution at this block, not merely force-linear mode enabled.",
+    "gain_validation": "Decode recorded bits and require finite G[0..64] and high_bands_gain in [0,1]. Do not replace, clip or normalize values.",
+    "kind": "aec3_synthesis_selection",
+    "observation_location": "After suppression_gain_.GetGain and before suppression_filter_.ApplyGain, with source_linear captured from the original local selector after aec_state_.Update.",
+    "observe_invariants": [
+      "applied_linear == source_linear",
+      "forced == false"
+    ],
+    "parse_policy": "Reject duplicate JSON keys, unknown fields, wrong types, malformed intended trace lines, missing/duplicate/out-of-order indices, reset/multiple instances, nonfinite numbers, false capture_output_used, and any row count mismatch. Preserve all raw stderr bytes.",
+    "secondary_observation_role": "Exact conditional-arm identity witnesses and retained material for a later separately registered hypothesis. No additional primary, parameter selection, automatic causal attribution, or change to the E/Y exposure gate.",
+    "secondary_summaries": {
+      "affects_support_gate_or_candidate_parameters": false,
+      "fields": [
+        "minimum_gain",
+        "maximum_gain",
+        "mean_squared_gain over all 451*65 decoded words with equal weight",
+        "dominant_nearend_after_gain true block count"
+      ],
+      "fixed_support_half_open": [
+        1525,
+        1976
+      ],
+      "gain_words": 29315,
+      "interpretation": "UNWEIGHTED_CONTROL_DESCRIPTION_NOT_ACOUSTIC_EFFECT_OR_CAUSAL_ATTRIBUTION"
+    },
+    "stderr_max_bytes_per_process": 16777216,
+    "transport": "One complete JSON object per stderr line; other upstream nontrace logs preserved separately.",
+    "types": {
+      "applied_linear": "bool",
+      "block_index": "integer excluding bool",
+      "capture_output_used": "bool",
+      "dominant_nearend_after_gain": "bool after GetGain update in this block",
+      "forced": "bool",
+      "gain_bits": "array of exactly 65 integers excluding bool, each in [0,4294967295], bit-preserving IEEE754 binary32 values",
+      "high_bands_gain_bits": "integer excluding bool in [0,4294967295], bit-preserving IEEE754 binary32 value",
+      "kind": "string equal to fixed kind",
+      "source_linear": "bool"
+    }
+  },
+  "tracker": "https://github.com/jiying2007/audio-pipeline/issues/977",
+  "training_allowed": false
+}

@@ -1,0 +1,200 @@
+{
+  "compiler_calls": 0,
+  "data_role": "DISCLOSED_DEVELOPMENT_DIAGNOSTIC_NOT_HOLDOUT",
+  "decision": "DIAGNOSTIC_DIRECTION_ONLY_NO_PROMOTION",
+  "decoder_calls": 0,
+  "experiment_id": "FE04-WEBRTC-AEC3-LINEAR-TAP-V1",
+  "files_verified": 3039,
+  "independent_confirmation": false,
+  "ldd_calls": 0,
+  "manifest_sha256": "7a819065295b5c202ed67645cd571873c683367565e218e68ee527bb470b5af2",
+  "metrics": "UNCHANGED_CANONICAL_PYTHON_SI_SDR_AND_DECLARED_ARITHMETIC",
+  "native_metric_calls": 0,
+  "plan_sha256": "b144f634e11df08569215903e3832f91dbeee5c3c609b19bcffba60de0cf6e6f",
+  "primary": {
+    "case_id": "p1-ula4-70-fir33-none",
+    "correlated_consistency_checks": [
+      {
+        "aligned_output_window_sha256": {
+          "final": "4c0c585d3e84456cc2443bdf9d2baedc931a9553717fb669f281678fe2ae89ab",
+          "linear": "66175af52bccfbbe18485f117411e9c2741523b8c8f6fee4009c02b8e08c147c"
+        },
+        "case_id": "p1-ula4-70-fir33-none",
+        "metrics": {
+          "final": {
+            "canonical_epsilon": 1e-12,
+            "degenerate_projection": false,
+            "estimate_energy": 0.015767031349241734,
+            "exact_float_identity": false,
+            "normalized_mse": 0.7812664693014378,
+            "output_energy": 0.015767031349241734,
+            "output_start": 97728,
+            "projected_target_energy": 0.003932996378698194,
+            "projection_identifiable": true,
+            "projection_scale": 0.16191928516369244,
+            "reference_energy": 0.1500121345743537,
+            "samples": 28800,
+            "si_sdr_db": -4.784093017112171,
+            "target_start": 97600
+          },
+          "linear": {
+            "canonical_epsilon": 1e-12,
+            "degenerate_projection": false,
+            "estimate_energy": 0.1514363701643945,
+            "exact_float_identity": false,
+            "normalized_mse": 0.02261223283614941,
+            "output_energy": 0.1514363701643945,
+            "output_start": 97664,
+            "projected_target_energy": 0.14805071453876037,
+            "projection_identifiable": true,
+            "projection_scale": 0.9934409515243925,
+            "reference_energy": 0.1500121345743537,
+            "samples": 28800,
+            "si_sdr_db": 16.407677261934893,
+            "target_start": 97600
+          }
+        },
+        "same_aligned_output_bytes_as_primary": true
+      },
+      {
+        "aligned_output_window_sha256": {
+          "final": "4c0c585d3e84456cc2443bdf9d2baedc931a9553717fb669f281678fe2ae89ab",
+          "linear": "66175af52bccfbbe18485f117411e9c2741523b8c8f6fee4009c02b8e08c147c"
+        },
+        "case_id": "p1-ula4-70-fir33-steer",
+        "metrics": {
+          "final": {
+            "canonical_epsilon": 1e-12,
+            "degenerate_projection": false,
+            "estimate_energy": 0.015767031349241734,
+            "exact_float_identity": false,
+            "normalized_mse": 0.7812664693014378,
+            "output_energy": 0.015767031349241734,
+            "output_start": 97728,
+            "projected_target_energy": 0.003932996378698194,
+            "projection_identifiable": true,
+            "projection_scale": 0.16191928516369244,
+            "reference_energy": 0.1500121345743537,
+            "samples": 28800,
+            "si_sdr_db": -4.784093017112171,
+            "target_start": 97600
+          },
+          "linear": {
+            "canonical_epsilon": 1e-12,
+            "degenerate_projection": false,
+            "estimate_energy": 0.1514363701643945,
+            "exact_float_identity": false,
+            "normalized_mse": 0.02261223283614941,
+            "output_energy": 0.1514363701643945,
+            "output_start": 97664,
+            "projected_target_energy": 0.14805071453876037,
+            "projection_identifiable": true,
+            "projection_scale": 0.9934409515243925,
+            "reference_energy": 0.1500121345743537,
+            "samples": 28800,
+            "si_sdr_db": 16.407677261934893,
+            "target_start": 97600
+          }
+        },
+        "same_aligned_output_bytes_as_primary": true
+      },
+      {
+        "aligned_output_window_sha256": {
+          "final": "4c0c585d3e84456cc2443bdf9d2baedc931a9553717fb669f281678fe2ae89ab",
+          "linear": "66175af52bccfbbe18485f117411e9c2741523b8c8f6fee4009c02b8e08c147c"
+        },
+        "case_id": "p1-ula4-70-fir33-path",
+        "metrics": {
+          "final": {
+            "canonical_epsilon": 1e-12,
+            "degenerate_projection": false,
+            "estimate_energy": 0.015767031349241734,
+            "exact_float_identity": false,
+            "normalized_mse": 0.7812664693014378,
+            "output_energy": 0.015767031349241734,
+            "output_start": 97728,
+            "projected_target_energy": 0.003932996378698194,
+            "projection_identifiable": true,
+            "projection_scale": 0.16191928516369244,
+            "reference_energy": 0.1500121345743537,
+            "samples": 28800,
+            "si_sdr_db": -4.784093017112171,
+            "target_start": 97600
+          },
+          "linear": {
+            "canonical_epsilon": 1e-12,
+            "degenerate_projection": false,
+            "estimate_energy": 0.1514363701643945,
+            "exact_float_identity": false,
+            "normalized_mse": 0.02261223283614941,
+            "output_energy": 0.1514363701643945,
+            "output_start": 97664,
+            "projected_target_energy": 0.14805071453876037,
+            "projection_identifiable": true,
+            "projection_scale": 0.9934409515243925,
+            "reference_energy": 0.1500121345743537,
+            "samples": 28800,
+            "si_sdr_db": 16.407677261934893,
+            "target_start": 97600
+          }
+        },
+        "same_aligned_output_bytes_as_primary": true
+      }
+    ],
+    "decision": "SUPPORTED_IN_DISCLOSED_WINDOW",
+    "effective_unique_conditions": 1,
+    "linear_minus_final": {
+      "normalized_mse": -0.7586542364652884,
+      "si_sdr_db": 21.191770279047063
+    },
+    "phase": "double-before",
+    "promotion_allowed": false,
+    "statistical_significance_claim": false,
+    "target_window_samples": [
+      97600,
+      126400
+    ],
+    "views": {
+      "final": {
+        "canonical_epsilon": 1e-12,
+        "degenerate_projection": false,
+        "estimate_energy": 0.015767031349241734,
+        "exact_float_identity": false,
+        "normalized_mse": 0.7812664693014378,
+        "output_energy": 0.015767031349241734,
+        "output_start": 97728,
+        "projected_target_energy": 0.003932996378698194,
+        "projection_identifiable": true,
+        "projection_scale": 0.16191928516369244,
+        "reference_energy": 0.1500121345743537,
+        "samples": 28800,
+        "si_sdr_db": -4.784093017112171,
+        "target_start": 97600
+      },
+      "linear": {
+        "canonical_epsilon": 1e-12,
+        "degenerate_projection": false,
+        "estimate_energy": 0.1514363701643945,
+        "exact_float_identity": false,
+        "normalized_mse": 0.02261223283614941,
+        "output_energy": 0.1514363701643945,
+        "output_start": 97664,
+        "projected_target_energy": 0.14805071453876037,
+        "projection_identifiable": true,
+        "projection_scale": 0.9934409515243925,
+        "reference_energy": 0.1500121345743537,
+        "samples": 28800,
+        "si_sdr_db": 16.407677261934893,
+        "target_start": 97600
+      }
+    }
+  },
+  "promotion_allowed": false,
+  "read_only_git_identity_checks": true,
+  "result_sha256": "67892fc4124e720ea9f96a1eba20fc7993dc79ef19ea5792df4d09e81d1071cc",
+  "schema_version": 1,
+  "sdk_calls": 0,
+  "source_revision": "3f50c1f3865c8bfc31846da4ea7f6d74565eb02d",
+  "status": "PASS_INDEPENDENT_READBACK",
+  "wall_seconds": 7.546279726000648
+}

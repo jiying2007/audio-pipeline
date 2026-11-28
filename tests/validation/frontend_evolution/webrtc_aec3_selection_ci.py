@@ -36,6 +36,8 @@ CONTROL_FILES = (
     REL + "test_webrtc_aec3_selection_source.py", REL + "webrtc_aec3_selection.py",
     REL + "test_webrtc_aec3_selection.py",
     REL + "webrtc_aec3_selection_scope.py", REL + "test_webrtc_aec3_selection_scope.py",
+    REL + "webrtc_aec3_gain_control_audit.py", REL + "test_webrtc_aec3_gain_control_audit.py",
+    ".github/research/frontend-evolution-v1/aec3-joint-gain-controlled-synthesis-v1.json",
     ".github/workflows/frontend-research.yml",
     ".github/research/frontend-evolution-v1/webrtc-aec3-synthesis-selection-v1.json",
     REL + "webrtc_aec3_runner.cc", REL + "webrtc_aec3_ci.py",
@@ -218,6 +220,15 @@ def run(expected: str, output: Path) -> dict:
             previous.download(spec, archives / spec["filename"], download_deadline)
         venv, environment = previous.tools_environment(work, logs, lock, deadline)
         source.preflight(archives, bundle / PATHS["pristine"])
+        from webrtc_aec3_gain_control_audit import audit_files
+        aec3_root = bundle / PATHS["pristine"] / "source/webrtc/modules/audio_processing/aec3"
+        mechanism_audit = audit_files(
+            aec3_root / "echo_remover.cc",
+            aec3_root / "suppression_filter.cc",
+            aec3_root / "suppression_filter.h",
+        )
+        source.write_json(bundle / "source-mechanism-audit.json", mechanism_audit)
+        report["source_mechanism_audit"] = mechanism_audit
         derived = work / "derived-source"
         selection.prepare(bundle / PATHS["pristine"], derived, bundle / "source-change")
         report["stages"].append("pristine-admission-and-exact-source-derivation")

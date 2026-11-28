@@ -164,6 +164,8 @@ class SelectorTests(unittest.TestCase):
         changes = {name: (None, b"selector-only future result fixture; no measurement claim\n") for name in ap.RESULT_PATHS}
         self.assert_flags(ap.select("pull_request", "", changes, self.current), False, False)
         current = (ap.ROOT / ap.NAVIGATION).read_bytes()
+        from webrtc_aec3_linear_tap_ci import strip_navigation
+        current = strip_navigation(current)
         result_link = ap.NAVIGATION_ENTRIES[-1].encode()
         self.assertLessEqual(current.count(result_link), 1)
         unpublished = current.replace(result_link, b"")

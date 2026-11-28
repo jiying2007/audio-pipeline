@@ -197,6 +197,8 @@ def digest_or_none(data):
 
 def predecessor_workflow(text: str) -> str:
     """Restore only the declared AP wiring, then prove the entire predecessor."""
+    from webrtc_aec3_linear_tap_ci import strip_workflow as strip_f07_workflow
+    text = strip_f07_workflow(text)
     declaration = plan()["workflow"]
     frozen = git_bytes(PREDECESSOR, WORKFLOW)
     require(declaration["predecessor_public_revision"] == PREDECESSOR
@@ -287,6 +289,10 @@ def validate_transition(path: str, before, after, configuration: dict) -> str:
         after = normalize_verify_context(after, current=True)
         before = normalize_verify_context(before, current=False)
     elif path == NAVIGATION:
+        from webrtc_aec3_linear_tap_ci import strip_navigation as strip_f07_navigation
+        after = strip_f07_navigation(after)
+        if before is not None:
+            before = strip_f07_navigation(before)
         after = strip_exact(after, NAVIGATION_ENTRIES)
         if before is not None:
             before = strip_exact(before, NAVIGATION_ENTRIES)

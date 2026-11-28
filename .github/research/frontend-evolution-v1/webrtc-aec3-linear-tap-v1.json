@@ -1,0 +1,546 @@
+{
+  "aec3_config": {
+    "agc1": false,
+    "agc2": false,
+    "echo_canceller": true,
+    "enforce_high_pass_filtering": false,
+    "hpf": false,
+    "includes_internal_residual_suppression": true,
+    "mobile_mode": false,
+    "ns": false
+  },
+  "archived_reference": {
+    "execution_source_revision": "819849ee3ed6b269b8417ef8700eecfcf29f7958",
+    "final_output_bytes_must_match": true,
+    "manifest_sha256": "9a44b195432148296429eb0107f137675de945fb756819f9e27da02ca03a16f6",
+    "new_execution": false,
+    "plan_sha256": "667847601ae3709cded97d86989f8b65066d01363a1adfa40db1f2be4a522617",
+    "result_sha256": "2f65de94d7d8de636fc4dc82e2d20c0990c29e005a06958a2d1dbe08a083f60d"
+  },
+  "arms": {
+    "final": {
+      "declared_delay_samples": 128,
+      "format": "S16_LE",
+      "new_execution": true,
+      "scoring_normalization_divisor": 32768
+    },
+    "linear": {
+      "adapter_second_scale_or_clip": false,
+      "declared_delay_samples": 64,
+      "format": "IEEE754_BINARY32_LITTLE_ENDIAN",
+      "new_execution": true,
+      "units": "normalized float32 [-1,1] returned by upstream GetLinearAecOutput",
+      "upstream_export_saturates_internal_float_s16": true
+    }
+  },
+  "audit_finding": "F07",
+  "authorization": "User next-stage complete implementation instruction on 2026-11-28; separate from closed #968",
+  "budget": {
+    "ci_job_timeout_minutes": 22,
+    "ci_outer_wall_seconds": 1200,
+    "ci_voice_matrix_executions": 0,
+    "extra_new_acoustic_retries": 0,
+    "independent_readback_sdk_calls": 0,
+    "independent_readback_wall_seconds": 300,
+    "input_seconds_per_case": 16,
+    "new_full_case_executions": 6,
+    "parameter_candidates": 1,
+    "per_case_wall_seconds": 30,
+    "processed_frames": 9600,
+    "total_capture_audio_seconds": 96,
+    "training_runs": 0,
+    "views_per_call": 2,
+    "wall_seconds": 300
+  },
+  "cases": [
+    {
+      "archived_aec3_final": {
+        "bytes": 512000,
+        "sha256": "8d31afcf35f6152c8c7e3fefdc436cde73fd01d5be555b3537fd24208142cc40"
+      },
+      "case_id": "p0-ula4-70-fir33-none",
+      "event": "none",
+      "members": {
+        "ap.s16": {
+          "bytes": 512000,
+          "sha256": "496edf5ae7719cdb7dde6aa79db20ec93f81a8103bd4c933387312b9f29c7292"
+        },
+        "echo.s16": {
+          "bytes": 512000,
+          "sha256": "c6885ec0f9a3ff7c8057bbe1599df2e0dacb19a65b3db3f27063e8737e33f2d6"
+        },
+        "input.s16": {
+          "bytes": 1024000,
+          "sha256": "31b71674b83c3c947b1ff4f4cb6daef8b09b6a78a0b6d0a4487f438a473173d4"
+        },
+        "speex.s16": {
+          "bytes": 512000,
+          "sha256": "abadc199bc4de462f814d3940226cbf7a0875a10301b927db407125135a9eba7"
+        },
+        "target.s16": {
+          "bytes": 512000,
+          "sha256": "b037ba05f2605732657ae545b5c4628cae4c59f40cca17acb61d203ec0b558ff"
+        }
+      },
+      "pair": 0,
+      "prepared_inputs": {
+        "mic.pcm": {
+          "bytes": 512000,
+          "sha256": "68ccd0da36f830855b2f04a0727e3071dbdbaedb590cb774f8c9ff6a37bbd7af"
+        },
+        "render.pcm": {
+          "bytes": 512000,
+          "sha256": "ae378748a8bbafea837f3832e0e5fa4ff22ecf281f502dc20372730436b7e2da"
+        }
+      },
+      "samples": 256000
+    },
+    {
+      "archived_aec3_final": {
+        "bytes": 512000,
+        "sha256": "e7c0640f9ba030f36b6beccf3f2c3fc1a90d4317e2649987314cebfbef3f7813"
+      },
+      "case_id": "p0-ula4-70-fir33-steer",
+      "event": "steer",
+      "members": {
+        "ap.s16": {
+          "bytes": 512000,
+          "sha256": "7412e4023fdf7473554bed08fd43b72bdea0f95d7d99ac576a4b4e10a1255f1e"
+        },
+        "echo.s16": {
+          "bytes": 512000,
+          "sha256": "d665f291b9be149256af4cc61607d7181f3842e117e79f7944cd45250620ac79"
+        },
+        "input.s16": {
+          "bytes": 1024000,
+          "sha256": "57a3226e3fbd6a0f18e880d2d49c98ee87d91391401a35fb5fe593e2fc0885a1"
+        },
+        "speex.s16": {
+          "bytes": 512000,
+          "sha256": "57e59d83685b15fedd8ab87db535c4ed65c41ab20e878026c0c775616ef42677"
+        },
+        "target.s16": {
+          "bytes": 512000,
+          "sha256": "ef787d82fbc4263c9b797478fae74923aadeabc9dc0a5f9a9cf5b725376b1cbd"
+        }
+      },
+      "pair": 0,
+      "prepared_inputs": {
+        "mic.pcm": {
+          "bytes": 512000,
+          "sha256": "6b95bb652620acdc826a4585c26d6139a3b8ce55653e3799f81dbb88e45c4b02"
+        },
+        "render.pcm": {
+          "bytes": 512000,
+          "sha256": "ae378748a8bbafea837f3832e0e5fa4ff22ecf281f502dc20372730436b7e2da"
+        }
+      },
+      "samples": 256000
+    },
+    {
+      "archived_aec3_final": {
+        "bytes": 512000,
+        "sha256": "56733b788d65961425c55254190a504862e920dadb150f103c6f28705f0a42eb"
+      },
+      "case_id": "p0-ula4-70-fir33-path",
+      "event": "path",
+      "members": {
+        "ap.s16": {
+          "bytes": 512000,
+          "sha256": "b589dbe47ece85a06296662526f965654f38e0486c26201bcfd4f6b4b19e7b84"
+        },
+        "echo.s16": {
+          "bytes": 512000,
+          "sha256": "1164db1db70942fa3201cdef01db5751cec9355297b10650ae5a1fc17bc147dd"
+        },
+        "input.s16": {
+          "bytes": 1024000,
+          "sha256": "ccf65691c9ee3e47cf7693eeb09d476b3c1e11a3e6f4040a3c074613b7c3452c"
+        },
+        "speex.s16": {
+          "bytes": 512000,
+          "sha256": "86dc48e60eb25905632e6d505d0733830490f64ce02b71320f666bb0ea89479d"
+        },
+        "target.s16": {
+          "bytes": 512000,
+          "sha256": "b037ba05f2605732657ae545b5c4628cae4c59f40cca17acb61d203ec0b558ff"
+        }
+      },
+      "pair": 0,
+      "prepared_inputs": {
+        "mic.pcm": {
+          "bytes": 512000,
+          "sha256": "0cd2cc965d63adda1fd0dca905e4b83da363578dd6d69570e1dbc60f4cd9b7c9"
+        },
+        "render.pcm": {
+          "bytes": 512000,
+          "sha256": "ae378748a8bbafea837f3832e0e5fa4ff22ecf281f502dc20372730436b7e2da"
+        }
+      },
+      "samples": 256000
+    },
+    {
+      "archived_aec3_final": {
+        "bytes": 512000,
+        "sha256": "4d7e6f8e264a893590de5749ce82b6dfacdd5e66389b31089c05f021f0a8bd71"
+      },
+      "case_id": "p1-ula4-70-fir33-none",
+      "event": "none",
+      "members": {
+        "ap.s16": {
+          "bytes": 512000,
+          "sha256": "2b47e333c66d1c8217f11c42f82abedcd62f5826042d98550128dbd7648f3863"
+        },
+        "echo.s16": {
+          "bytes": 512000,
+          "sha256": "9a9bb66ef0c3368f452f0a5158740b0269aca16ac29bd81f5ffca19aa6030fd9"
+        },
+        "input.s16": {
+          "bytes": 1024000,
+          "sha256": "e27cfc0b8c5d900a7ecfb6f1bdd44c236bc3301d78245d5aaa1fb08f6fc5b7be"
+        },
+        "speex.s16": {
+          "bytes": 512000,
+          "sha256": "dcac2b487267851dc1ff1632dbb6caaaae1ff1534fd9d20f0b47474be867671d"
+        },
+        "target.s16": {
+          "bytes": 512000,
+          "sha256": "983fabcfa721940d89a9e3876a02ef091074d45b63e4df0600707b2f44f6997a"
+        }
+      },
+      "pair": 1,
+      "prepared_inputs": {
+        "mic.pcm": {
+          "bytes": 512000,
+          "sha256": "c4ada57832f5bc9ae3009e9e096ae44f903ee4ff168bf20ea7a04b7babf98ed4"
+        },
+        "render.pcm": {
+          "bytes": 512000,
+          "sha256": "f0761b1cacf7b8e0c880c0e5f2c611c9d7abdfe6c5dfaba7b8f9c5ee0dcd613f"
+        }
+      },
+      "samples": 256000
+    },
+    {
+      "archived_aec3_final": {
+        "bytes": 512000,
+        "sha256": "68df9c8ba9416a1f51c762da0e89caf2a55affb85c45988bd0c6edd83ccd6fa9"
+      },
+      "case_id": "p1-ula4-70-fir33-steer",
+      "event": "steer",
+      "members": {
+        "ap.s16": {
+          "bytes": 512000,
+          "sha256": "679e797c20253ab845a9b52000e9749b88f4eed7e8838ab5466b12970ca09e22"
+        },
+        "echo.s16": {
+          "bytes": 512000,
+          "sha256": "1ffce794859b395681ffc22a8ff763682a3f927f72a4424c5e0b1675bddbfc9a"
+        },
+        "input.s16": {
+          "bytes": 1024000,
+          "sha256": "e792eba4eb2c4c053120aa6a8fc295a156633c218bbab1c27a335519f77578cf"
+        },
+        "speex.s16": {
+          "bytes": 512000,
+          "sha256": "2d9828e8062e1b20ebc10b4e274ae1ad1e58d7b3aede092291344b19916b43cd"
+        },
+        "target.s16": {
+          "bytes": 512000,
+          "sha256": "6f4e96f982663b53482f18c2eb66a76739d0dfff9a07f8e4e967058492263f59"
+        }
+      },
+      "pair": 1,
+      "prepared_inputs": {
+        "mic.pcm": {
+          "bytes": 512000,
+          "sha256": "eaf45bbefb0410c6525aa8a7b5a810259f957665767a8eb49aabc71cda382a1f"
+        },
+        "render.pcm": {
+          "bytes": 512000,
+          "sha256": "f0761b1cacf7b8e0c880c0e5f2c611c9d7abdfe6c5dfaba7b8f9c5ee0dcd613f"
+        }
+      },
+      "samples": 256000
+    },
+    {
+      "archived_aec3_final": {
+        "bytes": 512000,
+        "sha256": "1ba0d065aed206766a799e9ef870c569726e55822b7f2fa620d417381a1434a1"
+      },
+      "case_id": "p1-ula4-70-fir33-path",
+      "event": "path",
+      "members": {
+        "ap.s16": {
+          "bytes": 512000,
+          "sha256": "7756bb72ccf760b055f4f0c9d045e7a10afee9e229fd56b26d716cf5b4d29f29"
+        },
+        "echo.s16": {
+          "bytes": 512000,
+          "sha256": "9456593137f128bcc65780a7ef7ac557cd4e2bd5e795a594692bfa94cd59e4c4"
+        },
+        "input.s16": {
+          "bytes": 1024000,
+          "sha256": "c8e40524cce8d89205d9d47989d5406bad8af8e28b0a673eccecf91e60428dd2"
+        },
+        "speex.s16": {
+          "bytes": 512000,
+          "sha256": "81210bcfe9f251711350c3a3970fe88cd40cba9133d87dc1456fe2e639de98cb"
+        },
+        "target.s16": {
+          "bytes": 512000,
+          "sha256": "983fabcfa721940d89a9e3876a02ef091074d45b63e4df0600707b2f44f6997a"
+        }
+      },
+      "pair": 1,
+      "prepared_inputs": {
+        "mic.pcm": {
+          "bytes": 512000,
+          "sha256": "0072ad16b9402526ac779036ebe484faf041e1e06a874184575b95699f95f699"
+        },
+        "render.pcm": {
+          "bytes": 512000,
+          "sha256": "f0761b1cacf7b8e0c880c0e5f2c611c9d7abdfe6c5dfaba7b8f9c5ee0dcd613f"
+        }
+      },
+      "samples": 256000
+    }
+  ],
+  "channel_map": [
+    0
+  ],
+  "data_role": "DISCLOSED_DEVELOPMENT_DIAGNOSTIC_NOT_HOLDOUT",
+  "default_ap_dsp_changes": false,
+  "distribution_commit": "846fe90a289f58b7c9303a635142aa2c7caa93e5",
+  "distribution_version": "2.1",
+  "engineering": {
+    "combined_requested_capture_audio_seconds": 15.3699375,
+    "combined_subprocess_invocations": 87,
+    "compatibility": {
+      "implementation": "test_webrtc_aec3_adapter.py",
+      "maximum_capture_audio_seconds": 10,
+      "requested_capture_audio_seconds": 6.95,
+      "valid_and_invalid_invocations": 62,
+      "wall_seconds": 120
+    },
+    "compatibility_and_linear_are_separate_budgets": true,
+    "fresh_host_runtime_qualification_before_science": true,
+    "linear_observation": {
+      "accepted_capture_audio_seconds": 8.3,
+      "implementation": "test_webrtc_aec3_linear_tap_adapter.py",
+      "invalid_invocations": 12,
+      "invalid_invocations_rejected_before_dsp": true,
+      "maximum_capture_audio_seconds": 10,
+      "requested_capture_audio_seconds": 8.4199375,
+      "required_checks": [
+        "default-off/factory-off/factory-on final byte equivalence on impulse, chirp and mixed signals",
+        "linear F32LE units and exact source-derived delay on zero-render fixtures",
+        "deterministic replay",
+        "causal common-prefix invariance",
+        "reset matches fresh suffix state",
+        "strict CLI rejection before DSP",
+        "runtime and binary identities before and after"
+      ],
+      "subprocess_invocations": 25,
+      "valid_invocations": 13,
+      "wall_seconds": 120
+    },
+    "run_on_actions_before_science": true
+  },
+  "experiment_id": "FE04-WEBRTC-AEC3-LINEAR-TAP-V1",
+  "failure_policy": "Preserve failed stage evidence and stop. No speech reruns, metric/window/lag changes, old baseline replay or threshold relaxation after observing new speech outputs. Engineering-only implementation correction requires public revision and fresh affected engineering before any scientific execution.",
+  "hop_samples": 160,
+  "hypothesis": "On the single disclosed p1-none pre-event doubletalk condition, the AEC3 linear tap may retain more target-aligned near-speech information and lower target-normalized squared error than the final AEC3 output. This diagnoses the combined downstream path and does not isolate residual suppression alone.",
+  "implementation_base": "a70f94489423c54edbcbc11acaab47ee4485b6b9",
+  "independent_confirmation": false,
+  "input_layout": "input.s16 is alternating post-BF microphone, render; split by sample without changing bytes",
+  "issue": "https://github.com/jiying2007/audio-pipeline/issues/975",
+  "limits": [
+    "Six disclosed development cases from two material pairs; events are correlated, with only one unique primary condition",
+    "Post-BF mono with supplied direction and exact reference synchronization; synthetic linear echo paths",
+    "Linear tap and final output differ by combined downstream processing; no sole-RES causal attribution",
+    "Upstream tap export clips its internal FloatS16 representation to normalized [-1,1]; raw pre-clamp internal residual is not observed",
+    "Archived AP/Speex and prior AEC3 results keep their original source identities",
+    "F05 reserved data and old rejected candidates are excluded",
+    "Host timing is not SSC305 memory, power, real-time or acoustic qualification"
+  ],
+  "metrics": {
+    "aligned_far_only": "canonical echo/output mean-square ratio in 19 fixed blocks of 1600 samples, retaining all block values and nulls",
+    "canonical_si_sdr": "speech_spatial.si_sdr_span (run_validation_engine), same normalized sample units and unchanged 1e-12 floor",
+    "disposition": "DIAGNOSTIC_DIRECTION_ONLY_NO_PROMOTION",
+    "far_block_samples": 1600,
+    "final_far_samples": [
+      192000,
+      222400
+    ],
+    "final_far_seconds": [
+      12,
+      13.9
+    ],
+    "float_tap_must_not_be_quantized_to_s16": true,
+    "near_phase_samples": {
+      "double-after": [
+        129600,
+        158400
+      ],
+      "double-before": [
+        97600,
+        126400
+      ],
+      "near-final": [
+        225600,
+        254400
+      ],
+      "near-initial": [
+        1600,
+        30400
+      ]
+    },
+    "near_phase_seconds": {
+      "double-after": [
+        8.1,
+        9.9
+      ],
+      "double-before": [
+        6.1,
+        7.9
+      ],
+      "near-final": [
+        14.1,
+        15.9
+      ],
+      "near-initial": [
+        0.1,
+        1.9
+      ]
+    },
+    "normalized_mse": "sum((target-output)^2) / sum(target^2), same fixed target/output windows and declared delays; no gain fitting; null if target energy <= canonical epsilon",
+    "raw_amplitude": "peak, RMS, exact endpoint count and finite range; endpoint counts describe exported saturation endpoints, not proven clipping events",
+    "unobserved_output_tail": "excluded identically; never zero filled"
+  },
+  "mic_channels": 1,
+  "observation": {
+    "export_mode": "factory-on",
+    "factory_preserves_default_config_other_than_export": true,
+    "final_equivalence": "Exact bytes equal to archived AEC3 final for every fixed case; mismatch is engineering/method failure and stops the matrix without extra reference calls",
+    "final_path": "output.pcm",
+    "get_linear_after_each_capture": true,
+    "internal_filter_export_linear_aec_output": true,
+    "linear_path": "linear.f32",
+    "mode": "aec3",
+    "outer_export_linear_aec_output": true
+  },
+  "parameter_search_allowed": false,
+  "pre_execution_byte_only_receipts": {
+    "preflight.json": {
+      "bytes": 10125,
+      "sha256": "4ab116707350b812a01c80d3d65bcf536e9d61aab7901aae0dfe6296b3aa91b2"
+    },
+    "primary-window-byte-equivalence.json": {
+      "bytes": 10436,
+      "sha256": "059fae924f2e39e490896e2e58af523a3bd40249bf72a2a0c5dafd15c086dd67"
+    },
+    "six-case-inputs.json": {
+      "bytes": 21795,
+      "sha256": "98f249659ac404fa9ce960be633646430b743386ad8d3dad95af80d931ebfa9f"
+    }
+  },
+  "pre_registered_before_execution": true,
+  "predecessor": {
+    "archive_bytes": 10693447,
+    "archive_name": "speex-aec-main-original.zip",
+    "archive_sha256": "aa4961bae5d7eb0d3861ce04ed4c7c8408518f002b856e1f7f9cffa538bdad12",
+    "artifact_id": 12199497546,
+    "data_role": "DISCLOSED_DEVELOPMENT_DIAGNOSTIC_NOT_HOLDOUT",
+    "execution_source_revision": "e3672ffe16e4c9d42a100e7712b9bbd3d8338545",
+    "experiment_id": "FE04-SPEEXDSP-AEC-REFERENCE-V1",
+    "manifest_sha256": "f20333b58518549f10631d93d762ebc516c451c54cb015554fde5c6260452f37",
+    "run_id": 39274232480
+  },
+  "primary": {
+    "all_other_reported_windows_are_secondary": true,
+    "case_id": "p1-ula4-70-fir33-none",
+    "correlated_consistency_cases": [
+      "p1-ula4-70-fir33-steer",
+      "p1-ula4-70-fir33-path"
+    ],
+    "correlated_output_windows_must_be_byte_equal": true,
+    "effective_unique_conditions": 1,
+    "identifiability": {
+      "canonical_values_preserved": true,
+      "epsilon": 1e-12,
+      "not_identifiable_if": "Either view has projected_target_energy <= 1e-12 or nonfinite, or required canonical SI-SDR/NMSE is null",
+      "projected_target_energy": "Using the same fixed windows, normalized samples and summation order as canonical SI-SDR: alpha=sum(target*output)/sum(target^2); projected_target_energy=sum((alpha*target)^2)",
+      "reason": "The unchanged canonical epsilon formula returns a finite 0 dB for an all-zero estimate; that numerical result does not establish target information retention.",
+      "reported_fields": [
+        "reference_energy",
+        "output_energy",
+        "projected_target_energy",
+        "degenerate_projection"
+      ]
+    },
+    "independent_replicate_count_is_not_three": true,
+    "input_prefix_byte_identity_verified_before_tap_execution": true,
+    "on_consistency_failure": "STOP_METHOD_PRESERVE_OUTPUTS",
+    "phase": "double-before",
+    "rule": {
+      "INCONCLUSIVE_MIXED_INDICATORS": "finite indicators disagree in direction",
+      "NOT_IDENTIFIABLE": "either canonical SI-SDR or normalized MSE is null, or either projected_target_energy <= 1e-12/nonfinite",
+      "NOT_SUPPORTED_IN_DISCLOSED_WINDOW": "delta_si_sdr_db <= 0 AND linear_normalized_mse >= final_normalized_mse",
+      "SUPPORTED_IN_DISCLOSED_WINDOW": "delta_si_sdr_db > 0 AND linear_normalized_mse < final_normalized_mse"
+    },
+    "statistical_significance_claim": false,
+    "target_window_samples": [
+      97600,
+      126400
+    ]
+  },
+  "promotion_allowed": false,
+  "publication": {
+    "allowed_first_addition_files": [
+      "README.zh-CN.md",
+      "result.json",
+      "independent-readback.json"
+    ],
+    "result_directory": "docs/research/frontend-evolution-v1/WEBRTC_AEC3_LINEAR_TAP_20261128",
+    "results_do_not_rewrite_frozen_plan": true
+  },
+  "rate_hz": 16000,
+  "render_channels": 1,
+  "rights": {
+    "attribution": "Vassil Panayotov, Daniel Povey, Guoguo Chen, Sanjeev Khudanpur; recordings from LibriVox",
+    "data": "Existing admitted LibriSpeech/OpenSLR 12 CC BY 4.0 source and disclosed synthetic post-BF derivation; unchanged original ZIP and notices",
+    "data_source_url": "https://www.openslr.org/12/",
+    "external_code": "Separate fixed webrtc-aec3-admission.json; no broader data or training admission",
+    "license_url": "https://creativecommons.org/licenses/by/4.0/"
+  },
+  "schema_version": 1,
+  "source_id": "webrtc",
+  "source_lock_sha256": "30b1106eaceef3ef6e9261e418d877c6c249c1e4cb36687eb1eec9a60e7a2af1",
+  "status": "PREREGISTERED_NOT_EXECUTED",
+  "stream_contract": {
+    "implicit_padding": false,
+    "new_instance_per_case": true,
+    "normalization": false,
+    "oracle_alignment": false,
+    "reset_before_frame": null,
+    "reverse_before_capture": true,
+    "stream_delay_ms": 0
+  },
+  "target_timing_authority": false,
+  "timing_contract": {
+    "common_target_span": [
+      0,
+      255872
+    ],
+    "final_signal_delay_samples": 128,
+    "first_frame_availability_ms": 10,
+    "first_frame_availability_samples": 160,
+    "linear_signal_delay_samples": 64,
+    "offsets_are_source_derived_and_engineering_checked": true,
+    "real_time_or_target_authority": false,
+    "speech_target_lag_search": false,
+    "tail_padding": false
+  },
+  "training_allowed": false
+}

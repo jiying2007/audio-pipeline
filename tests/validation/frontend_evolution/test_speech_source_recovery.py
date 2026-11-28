@@ -545,5 +545,135 @@ class SourceRecoveryTests(unittest.TestCase):
         self.assertEqual(sentinel.read_bytes(), b"preserve")
 
 
+
+class RecentCacheTests(unittest.TestCase):
+    def run_metadata(self, **overrides):
+        from speech_source_recent_cache import REPO_ID, VERIFY_WORKFLOW_ID
+        result = {"id": 46106871621, "run_number": 3017, "workflow_id": VERIFY_WORKFLOW_ID,
+                  "path": ".github/workflows/verify.yml", "name": "Verify", "head_branch": "main",
+                  "event": "push", "status": "completed", "conclusion": "success",
+                  "head_sha": "497a5d6cc0330dd00cfcdd4b0d2ccad0c44a1466",
+                  "repository": {"id": REPO_ID}, "head_repository": {"id": REPO_ID}}
+        result.update(overrides)
+        return result
+
+    def artifact(self, **overrides):
+        from speech_source_recent_cache import REPO_ID
+        result = {"id": 15249685122, "name": "frontend-speech-46106871621",
+                  "size_in_bytes": 204419586, "expired": False,
+                  "digest": "sha256:377a6d0f0a743d0730afec054fcfcad456b6b893d2b8f9d755f8aa1be4b69828",
+                  "workflow_run": {"id": 46106871621, "head_branch": "main",
+                                   "head_sha": "497a5d6cc0330dd00cfcdd4b0d2ccad0c44a1466",
+                                   "repository_id": REPO_ID, "head_repository_id": REPO_ID}}
+        result.update(overrides)
+        return result
+
+    def discover(self, run=None, artifact=None, second_artifact=None):
+        import time
+        from speech_source_recent_cache import discover
+        run = self.run_metadata() if run is None else run
+        artifact = self.artifact() if artifact is None else artifact
+        api = mock.Mock(side_effect=[{"workflow_runs": [run]}, run,
+                                    {"total_count": 1, "artifacts": [artifact]},
+                                    artifact if second_artifact is None else second_artifact])
+        origin = discover(api, time.monotonic() + 30, "5" * 40, recovery.ORIGIN_VERIFY_RUN)
+        self.assertEqual(api.call_count, 4)
+        self.assertEqual(origin["artifact_id"], 15249685122)
+        self.assertTrue(all("/actions/" in call.args[0] for call in api.call_args_list))
+        return origin
+
+    def test_successor_metadata_is_bound(self):
+        self.assertEqual(self.discover()["zip_bytes"], 204419586)
+
+    def test_pr_fork_wrong_workflow_and_failed_run_rejected(self):
+        from speech_source_recent_cache import RecoveryError
+        for fields in ({"event": "pull_request"}, {"head_branch": "candidate"},
+                       {"repository": {"id": 1}}, {"head_repository": {"id": 1}},
+                       {"path": ".github/workflows/other.yml"}, {"conclusion": "failure"},
+                       {"status": "in_progress"}, {"head_sha": "0" * 40},
+                       {"id": True}, {"workflow_id": 1}):
+            with self.subTest(fields=fields), self.assertRaises(RecoveryError):
+                self.discover(run=self.run_metadata(**fields))
+
+    def test_bad_artifact_metadata_and_reread_drift_rejected(self):
+        from speech_source_recent_cache import MAX_ZIP_BYTES, RecoveryError
+        for fields in ({"expired": True}, {"digest": "sha256:" + "0"*64},
+                       {"name": "frontend-spatial-effects-46106871621"},
+                       {"size_in_bytes": MAX_ZIP_BYTES + 1},
+                       {"workflow_run": {"id": 1}}, {"id": True}):
+            with self.subTest(fields=fields), self.assertRaises(RecoveryError):
+                self.discover(artifact=self.artifact(**fields))
+        with self.assertRaises(RecoveryError):
+            self.discover(second_artifact=self.artifact(digest="sha256:" + "f"*64))
+
+    def test_missing_or_ambiguous_artifact_does_not_download(self):
+        import time
+        from speech_source_recent_cache import RecoveryError, discover
+        run = self.run_metadata()
+        for rows in ([], [self.artifact(), self.artifact()]):
+            api = mock.Mock(side_effect=[{"workflow_runs": [run]}, run,
+                                         {"total_count": len(rows), "artifacts": rows}])
+            with self.assertRaises(RecoveryError):
+                discover(api, time.monotonic()+30, "5"*40, recovery.ORIGIN_VERIFY_RUN)
+            self.assertEqual(api.call_count, 3)
+
+    def test_recent_zip_mismatch_rejected_before_source_verification(self):
+        import time
+        origin = self.discover()
+        with tempfile.TemporaryDirectory() as temp:
+            path = Path(temp)
+            archive, output, transfer, failure = (path / name for name in
+                                                   ("recent.zip", "source", "transfer.json", "failure.json"))
+            with archive.open("wb") as stream:
+                stream.truncate(origin["zip_bytes"])
+            failure.write_text("{}\n")
+            with mock.patch.object(recovery, "source_check") as check:
+                with self.assertRaisesRegex(recovery.AdmissionError, "ZIP_SHA256_CHANGED"):
+                    recovery.restore(archive, output, transfer, COMMIT, recent_origin=origin,
+                                     cache_failure=failure, recent_deadline=time.monotonic()+30)
+                check.assert_not_called()
+            self.assertFalse(output.exists())
+
+    def test_opt_in_only_after_unavailable_not_integrity_failure(self):
+        for code, expected in (("PINNED_CACHE_ARTIFACT_EXPIRED", True),
+                               ("PINNED_CACHE_ARTIFACT_IDENTITY_REJECTED", False)):
+            with self.subTest(code=code), tempfile.TemporaryDirectory() as temp:
+                path = Path(temp)
+                archive, output, transfer, failure = (path / name for name in
+                                                       ("cache.zip", "source", "transfer.json", "failure.json"))
+                with mock.patch.object(recovery, "restore_cache", side_effect=recovery.CacheFailure(code)), \
+                     mock.patch.object(recovery, "restore_recent_cache", return_value={"path": "recent"}) as recent, \
+                     mock.patch.object(recovery, "reacquire_official", side_effect=RuntimeError("official required")):
+                    if expected:
+                        self.assertEqual(recovery.acquire_source_worker(archive, output, transfer,
+                                                                        failure, COMMIT, allow_recent_recovery=True),
+                                         {"path": "recent"})
+                        recent.assert_called_once()
+                    else:
+                        with self.assertRaisesRegex(RuntimeError, "official required"):
+                            recovery.acquire_source_worker(archive, output, transfer, failure,
+                                                           COMMIT, allow_recent_recovery=True)
+                        recent.assert_not_called()
+                self.assertEqual(json.loads(failure.read_text())["reason_code"], code)
+
+    def test_recent_failure_preserves_negative_and_same_official_fallback(self):
+        with tempfile.TemporaryDirectory() as temp:
+            path = Path(temp)
+            archive, output, transfer, failure = (path / name for name in
+                                                   ("cache.zip", "source", "transfer.json", "failure.json"))
+            with mock.patch.object(recovery, "restore_cache",
+                                   side_effect=recovery.CacheFailure("PINNED_CACHE_ARTIFACT_UNAVAILABLE")), \
+                 mock.patch.object(recovery, "restore_recent_cache",
+                                   side_effect=ValueError("rejected bytes")), \
+                 mock.patch.object(recovery, "reacquire_official", side_effect=RuntimeError("official required")) as official:
+                with self.assertRaisesRegex(RuntimeError, "official required"):
+                    recovery.acquire_source_worker(archive, output, transfer, failure, COMMIT,
+                                                   allow_recent_recovery=True)
+                official.assert_called_once_with(output, transfer, COMMIT, cache_failure=failure)
+            self.assertEqual(json.loads(failure.read_text())["reason_code"], "PINNED_CACHE_ARTIFACT_UNAVAILABLE")
+            negative = json.loads(recovery.recent_failure_path(output).read_text())
+            self.assertEqual(negative["reason_code"], "RECENT_CACHE_SOURCE_OR_TRANSPORT_REJECTED")
+            self.assertFalse(negative["acoustic_validation_qualified"])
+
 if __name__ == "__main__":
     unittest.main()

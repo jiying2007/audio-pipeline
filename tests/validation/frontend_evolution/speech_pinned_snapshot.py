@@ -3,8 +3,8 @@
 
 This is an ORIGINAL DATA transport change only, never source substitution,
 an acoustic result, a threshold waiver, a synthetic corpus or hardware proof.
-The fixed predecessor ZIP digest and the already admitted source-check contract
-are independent fail-closed authority; this script copies no old scores.
+The fixed predecessor and bounded successor ZIP identities prove transport;
+the independent source-check contract admits original bytes, never old scores.
 """
 from __future__ import annotations
 
@@ -26,6 +26,7 @@ import speech_source
 import speech_source_stage_budget as stage_budget
 from speech_spatial import source_check
 import speech_source_cache_profiles as profiles
+import speech_source_recent_cache as recent_cache
 from contracts import ROOT
 
 ORIGIN_REPO = "jiying2007/audio-pipeline"
@@ -47,6 +48,9 @@ MAX_ZIP_MEMBER_BYTES = 65_000_000
 MAX_SOURCE_BYTES = 80_000_000
 ALLOWED_ORIGIN_SIZE = 204415056
 CACHE_BUDGET_SECONDS = 600
+RECENT_UNAVAILABLE = {"PINNED_CACHE_RUN_UNAVAILABLE", "PINNED_CACHE_ARTIFACT_UNAVAILABLE",
+                      "PINNED_CACHE_ARTIFACT_EXPIRED", "PINNED_CACHE_DOWNLOAD_UNAVAILABLE"}
+RECENT_FAILURE_NAME = "source-recent-cache-failure.json"
 
 def _settings(profile):
     if profile is not None:
@@ -215,8 +219,16 @@ def fresh_destinations(output: Path, transfer: Path) -> None:
 
 def publish_source(scratch: Path, output: Path, transfer: Path, commit: str,
                    *, zip_digest: str | None, original_downloaded: bool = False,
-                   cache_failure: Path | None = None, profile=None) -> dict:
+                   cache_failure: Path | None = None, profile=None,
+                   recent_origin=None, recent_deadline=None) -> dict:
     p = _settings(profile)
+    if recent_origin is not None:
+        recent_cache.validate_origin(recent_origin)
+        need(profile is None and zip_digest == recent_origin["zip_sha256"] and
+             cache_failure is not None and cache_failure.is_file() and not cache_failure.is_symlink() and
+             cache_failure.parent.resolve() == output.parent.resolve() and
+             0 < cache_failure.stat().st_size <= 4096 and recent_deadline is not None,
+             "RECENT_CACHE_PUBLICATION_IDENTITY_REJECTED")
     # The original independent contract, not transport success, admits bytes.
     source = check_source(scratch, **_options(profile))
     need(type(source) is dict and
@@ -267,6 +279,16 @@ def publish_source(scratch: Path, output: Path, transfer: Path, commit: str,
         "public_product_or_device_qualification": False,
         "verification_authority": "source-bytes-only-fresh-science-required"
     }
+    if recent_origin is not None:
+        record.update({"acquisition_path": "protected-main-source-recovery",
+                       "protected_source_main": recent_origin["main_sha"],
+                       "protected_source_verify_run_id": recent_origin["run_id"],
+                       "protected_source_release_run_id": None,
+                       "original_source_artifact_id": recent_origin["artifact_id"],
+                       "original_source_artifact_name": recent_origin["artifact_name"],
+                       "recent_protected_main_cache": recent_origin,
+                       "failed_original_pin_id": p.artifact_id})
+        need(time.monotonic() < recent_deadline, "RECENT_CACHE_DEADLINE")
     if profile is not None:
         record.update({'snapshot_profile':p.name, 'source_speaker_offset':p.offset,
             'source_id':p.source_id, 'source_admission_sha256':p.admission_sha256,
@@ -286,17 +308,27 @@ def publish_source(scratch: Path, output: Path, transfer: Path, commit: str,
     return record
 
 
-def restore(archive: Path, output: Path, transfer: Path, commit: str, *, profile=None) -> dict:
+def restore(archive: Path, output: Path, transfer: Path, commit: str, *, profile=None,
+            recent_origin=None, cache_failure=None, recent_deadline=None) -> dict:
     p = _settings(profile)
     strict_source_commit(commit)
     original_source_policy(**_options(profile))
     fresh_destinations(output, transfer)
+    if recent_origin is not None:
+        recent_cache.validate_origin(recent_origin)
+        need(profile is None and recent_origin["main_sha"] != commit and
+             recent_origin["run_id"] != p.verify_run and cache_failure is not None and
+             recent_deadline is not None and time.monotonic() < recent_deadline,
+             "RECENT_CACHE_RESTORE_SCOPE_REJECTED")
+    expected_size = (recent_origin["zip_bytes"] if recent_origin is not None else
+                     ALLOWED_ORIGIN_SIZE if profile is None else p.zip_bytes)
+    expected_digest = recent_origin["zip_sha256"] if recent_origin is not None else p.zip_sha256
     need(archive.is_file() and not archive.is_symlink() and
          archive.resolve() != output.resolve() and
-         archive.stat().st_size == (ALLOWED_ORIGIN_SIZE if profile is None else p.zip_bytes),
+         archive.stat().st_size == expected_size,
          "ARTIFACT_FILE_OR_SIZE_WRONG")
     zip_digest = sha256_file(archive)
-    need(zip_digest == p.zip_sha256,
+    need(zip_digest == expected_digest,
          "ORIGINAL_GITHUB_ARTIFACT_ZIP_SHA256_CHANGED")
     with tempfile.TemporaryDirectory(prefix=".verified-speech-", dir=output.parent) as temp:
         scratch = Path(temp) / "source"
@@ -325,6 +357,10 @@ def restore(archive: Path, output: Path, transfer: Path, commit: str, *, profile
                         need(count <= info.file_size, "SOURCE_ZIP_DECOMPRESS_OVERFLOW")
                         dst.write(block)
                 need(count == info.file_size, "SHORT_OR_CORRUPTED_SOURCE_MEMBER")
+        if recent_origin is not None:
+            return publish_source(scratch, output, transfer, commit, zip_digest=zip_digest,
+                                  cache_failure=cache_failure, recent_origin=recent_origin,
+                                  recent_deadline=recent_deadline)
         return publish_source(scratch, output, transfer, commit,
                               zip_digest=zip_digest)
 
@@ -553,8 +589,61 @@ def fresh_transport_destinations(archive: Path, output: Path, transfer: Path,
          "OVERLAPPING_SOURCE_TRANSPORT_DESTINATIONS")
 
 
+def restore_recent_cache(archive: Path, output: Path, transfer: Path,
+                         cache_failure: Path, commit: str, deadline: float) -> dict:
+    """Reuse only the source members, never the previous acoustic results."""
+    origin = recent_cache.discover(cache_api, deadline, commit, ORIGIN_VERIFY_RUN)
+    with archive.open("xb") as stream:
+        cache_api("/actions/artifacts/" + str(origin["artifact_id"]) + "/zip",
+                  deadline, "RECENT_DOWNLOAD", stream=stream)
+    return restore(archive, output, transfer, commit, recent_origin=origin,
+                   cache_failure=cache_failure, recent_deadline=deadline)
+
+
+def recent_failure_path(output):
+    return output.parent / RECENT_FAILURE_NAME
+
+
+def preserve_recent_failure(output, error, commit):
+    reason = (str(error) if isinstance(error, (recent_cache.RecoveryError, CacheFailure)) and
+              re.fullmatch("(?:RECENT|PINNED)_CACHE_[A-Z_]+", str(error)) else
+              "RECENT_CACHE_SOURCE_OR_TRANSPORT_REJECTED")
+    with recent_failure_path(output).open("x", encoding="utf-8") as stream:
+        json.dump({"schema_version": 1, "status": "RECENT_CACHE_UNAVAILABLE_OR_REJECTED",
+                   "reason_code": reason, "source_commit": commit,
+                   "source_substitution": False, "shipping_authority": False,
+                   "acoustic_validation_qualified": False}, stream,
+                  sort_keys=True, separators=(",", ":"), allow_nan=False)
+        stream.write("\n")
+
+
+def verify_recent_receipt(record, cache_failure, commit):
+    origin = recent_cache.validate_origin(record.get("recent_protected_main_cache"))
+    need(origin["main_sha"] != commit and origin["run_id"] != ORIGIN_VERIFY_RUN and
+         record.get("protected_source_main") == origin["main_sha"] and
+         record.get("protected_source_verify_run_id") == origin["run_id"] and
+         record.get("protected_source_release_run_id") is None and
+         record.get("original_source_artifact_id") == origin["artifact_id"] and
+         record.get("original_source_artifact_name") == origin["artifact_name"] and
+         record.get("original_source_artifact_zip_sha256") == origin["zip_sha256"] and
+         record.get("failed_original_pin_id") == ORIGIN_ARTIFACT and
+         record.get("independently_admitted_selected_sha256") == ADMITTED_SOURCE_SHA256 and
+         record.get("artifact_cache_identity_revalidated_this_run") is True and
+         record.get("original_full_archive_rehashed_this_run") is False and
+         record.get("previous_scientific_score_reused") is False and
+         record.get("current_acoustic_evaluation_completed") is False and
+         record.get("source_substitution") is False and
+         record.get("public_product_or_device_qualification") is False and
+         record.get("verification_authority") == "source-bytes-only-fresh-science-required" and
+         cache_failure.is_file() and not cache_failure.is_symlink() and
+         record.get("cache_failure_receipt_sha256") == sha256_file(cache_failure),
+         "RECENT_CACHE_TRANSFER_RECEIPT_IDENTITY_REJECTED")
+    return origin
+
+
 def acquire_source_worker(archive: Path, output: Path, transfer: Path,
-                          cache_failure: Path, commit: str, *, profile=None) -> dict:
+                          cache_failure: Path, commit: str, *, profile=None,
+                          allow_recent_recovery=False) -> dict:
     """Entire expensive stage, supervised once by acquire_source's parent.
 
     No nested process-group supervisor: gh and FFmpeg remain in this worker's
@@ -564,14 +653,32 @@ def acquire_source_worker(archive: Path, output: Path, transfer: Path,
     strict_source_commit(commit)
     original_source_policy(**_options(profile))
     fresh_transport_destinations(archive, output, transfer, cache_failure)
+    if allow_recent_recovery:
+        need(profile is None and not recent_failure_path(output).exists() and
+             not recent_failure_path(output).is_symlink() and
+             recent_failure_path(output).resolve() not in
+             {archive.resolve(), output.resolve(), transfer.resolve(), cache_failure.resolve()},
+             "RECENT_CACHE_SCOPE_OR_DESTINATION_REJECTED")
+    recent_eligible = False
     try:
         return restore_cache(archive, output, transfer, commit, **_options(profile))
     except Exception as error:
+        recent_eligible = (allow_recent_recovery and isinstance(error, CacheFailure) and
+                           str(error) in RECENT_UNAVAILABLE)
         preserve_cache_failure(cache_failure, error, commit, **_options(profile))
         # A partially published result must not be reused or overwritten.
         fresh_destinations(output, transfer)
     finally:
         archive.unlink(missing_ok=True)
+    if recent_eligible:
+        try:
+            return restore_recent_cache(archive, output, transfer, cache_failure, commit,
+                                        started + CACHE_BUDGET_SECONDS)
+        except Exception as error:
+            preserve_recent_failure(output, error, commit)
+            fresh_destinations(output, transfer)
+        finally:
+            archive.unlink(missing_ok=True)
     need(time.monotonic() - started < stage_budget.DEADLINE_SECONDS,
          "ORIGINAL_SOURCE_ACQUISITION_WALL_DEADLINE")
     # Only this dedicated worker mutates its environment. Public-source
@@ -595,7 +702,8 @@ def acquire_source_worker(archive: Path, output: Path, transfer: Path,
 
 
 def acquire_source(archive: Path, output: Path, transfer: Path,
-                   cache_failure: Path, commit: str, *, profile=None) -> dict:
+                   cache_failure: Path, commit: str, *, profile=None,
+                   allow_recent_recovery=False) -> dict:
     """Supervise cache + hash/extraction/readback + official source as one stage."""
     started = time.monotonic()
     strict_source_commit(commit)
@@ -610,6 +718,13 @@ def acquire_source(archive: Path, output: Path, transfer: Path,
                "--execution-source", commit]
     if profile is not None:
         command += ['--profile', p.name]
+    if allow_recent_recovery:
+        need(profile is None and not recent_failure_path(output).exists() and
+             not recent_failure_path(output).is_symlink() and
+             recent_failure_path(output).resolve() not in
+             {archive.resolve(), output.resolve(), transfer.resolve(), cache_failure.resolve()},
+             "RECENT_CACHE_SCOPE_OR_DESTINATION_REJECTED")
+        command.append("--recover-recent-protected-main")
     try:
         remaining = stage_budget.DEADLINE_SECONDS - (time.monotonic() - started)
         need(remaining > 0, "ORIGINAL_SOURCE_ACQUISITION_WALL_DEADLINE")
@@ -626,11 +741,14 @@ def acquire_source(archive: Path, output: Path, transfer: Path,
         need(type(record) is dict and record.get("source_commit") == commit and
              record.get("decision") == DECISION and
              record.get("acquisition_path") in
-                 ("protected-artifact-cache", "official-original-archive"),
+                 ("protected-artifact-cache", "official-original-archive", "protected-main-source-recovery"),
              "SOURCE_TRANSFER_RECEIPT_IDENTITY_REJECTED")
         if record["acquisition_path"] == "protected-artifact-cache":
             need(record.get("original_source_artifact_zip_sha256") ==
                  p.zip_sha256, "CACHE_TRANSFER_RECEIPT_IDENTITY_REJECTED")
+        elif record["acquisition_path"] == "protected-main-source-recovery":
+            need(allow_recent_recovery and profile is None, "RECENT_CACHE_NOT_AUTHORIZED")
+            verify_recent_receipt(record, cache_failure, commit)
         else:
             need(cache_failure.is_file() and not cache_failure.is_symlink() and
                  record.get("cache_failure_receipt_sha256") ==
@@ -755,6 +873,8 @@ def main() -> None:
     p.add_argument("--output", type=Path)
     p.add_argument("--transfer", type=Path)
     p.add_argument("--execution-source", default="")
+    p.add_argument("--recover-recent-protected-main", action="store_true",
+                   help="Allow one byte-only successor transport after expired/unavailable offset-0 pin")
     p.add_argument('--profile', choices=profiles.CHOICES,
                    help='Explicit closed source identity; omitted retains original offset-0 behavior')
     args = p.parse_args()
@@ -762,6 +882,9 @@ def main() -> None:
     preexisting_output = (args.output is not None and
                           (args.output.exists() or args.output.is_symlink()))
     try:
+        need(not args.recover_recent_protected_main or
+             (profile is None and (args.acquire or args.acquire_worker)),
+             "RECENT_CACHE_SCOPE_REJECTED")
         if args.self_test:
             self_test(**_options(profile))
             return
@@ -789,8 +912,11 @@ def main() -> None:
                 need(args.cache_failure is not None, "CACHE_FAILURE_RECEIPT_MISSING")
                 acquire = (acquire_source_worker if args.acquire_worker else
                            acquire_source)
+                options = _options(profile)
+                if args.recover_recent_protected_main:
+                    options["allow_recent_recovery"] = True
                 result = acquire(args.zip, args.output, args.transfer,
-                                 args.cache_failure, args.execution_source, **_options(profile))
+                                 args.cache_failure, args.execution_source, **options)
             else:
                 result = restore(args.zip, args.output, args.transfer,
                                  args.execution_source, **_options(profile))

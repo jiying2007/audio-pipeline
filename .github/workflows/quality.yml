@@ -3015,7 +3015,8 @@ jobs:
   frontend-speech:
     if: inputs.run_extended
     runs-on: ubuntu-24.04
-    # Try the exact protected cache (<=10m), then the same official archive,
+    # Try the pinned cache and one qualified successor within a shared <=10m,
+    # then the same official original archive,
     # within the original 30m source-stage budget; job total stays 45m.
     timeout-minutes: 45
     steps:
@@ -3068,10 +3069,11 @@ jobs:
           sudo apt-get -o Dir::Etc::sourcelist=/etc/apt/sources.list.d/ubuntu.sources \
             -o Dir::Etc::sourceparts=- install -y --no-install-recommends ffmpeg
           python3 tests/validation/frontend_evolution/speech_pinned_snapshot.py --self-test
+          python3 tests/validation/frontend_evolution/test_speech_source_recovery.py
           # Cache failure is retained separately. Only the original admitted
           # official archive may recover it; old acoustic scores are never used.
           python3 tests/validation/frontend_evolution/speech_pinned_snapshot.py \
-            --acquire --zip fe-speech/protected-original-source.zip \
+            --acquire --recover-recent-protected-main --zip fe-speech/protected-original-source.zip \
             --output fe-speech/source --transfer fe-speech/source-transfer.json \
             --cache-failure fe-speech/source-cache-failure.json \
             --execution-source "$GITHUB_SHA"
@@ -3128,6 +3130,7 @@ jobs:
             fe-speech/source/source-failure.json
             fe-speech/source-transfer.json
             fe-speech/source-cache-failure.json
+            fe-speech/source-recent-cache-failure.json
           if-no-files-found: error
           retention-days: 30
 

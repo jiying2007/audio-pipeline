@@ -1,4 +1,19 @@
 // Offline WebRTC AEC3/APM research adapter. No SDK/runtime linkage or promotion.
+// Fixed distribution 846fe90a's meson.build defines NDEBUG, and its
+// modules/audio_processing/meson.build sets WEBRTC_APM_DEBUG_DUMP=0. Match
+// those private-header declarations and reject a conflicting configuration.
+#if defined(DCHECK_ALWAYS_ON)
+#error "Fixed WebRTC 2.1 reference requires DCHECK_ALWAYS_ON to be undefined"
+#endif
+#ifndef NDEBUG
+#define NDEBUG 1
+#endif
+#if defined(WEBRTC_APM_DEBUG_DUMP) && WEBRTC_APM_DEBUG_DUMP != 0
+#error "Fixed WebRTC 2.1 reference requires WEBRTC_APM_DEBUG_DUMP=0"
+#elif !defined(WEBRTC_APM_DEBUG_DUMP)
+#define WEBRTC_APM_DEBUG_DUMP 0
+#endif
+
 #include "api/audio/audio_processing.h"
 #include "api/audio/echo_canceller3_config.h"
 #include "api/audio/echo_control.h"

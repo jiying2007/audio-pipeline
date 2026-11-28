@@ -151,7 +151,8 @@ BUILD_KEYS = {"version", "module_mask", "aec_backend", "ns_estimator", "simd_bac
               "resampler_mode", "fast_math", "source_revision", "compiler_id",
               "compiler_version", "target_triple", "build_type", "config_digest"}
 REGISTRIES = ("reviewed_integration", "reviewed_transport", "reviewed_transport_followup",
-              "reviewed_ref_retention", "reviewed_ci_source_transport")
+              "reviewed_ref_retention", "reviewed_ci_source_transport",
+              "reviewed_fe03_source_recovery")
 
 
 def json_value(data):

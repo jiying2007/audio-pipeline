@@ -38,6 +38,9 @@ CORE_PATHS = (MODULE, TEST, PLAN,
               REL + "test_webrtc_aec3_selection.py",
               REL + "webrtc_aec3_gain_control_audit.py",
               REL + "test_webrtc_aec3_gain_control_audit.py",
+              REL + "webrtc_aec3_gain_control_source.py",
+              REL + "webrtc_aec3_gain_control_trace.py",
+              REL + "test_webrtc_aec3_gain_control_adapter.py",
               ".github/research/frontend-evolution-v1/aec3-joint-gain-controlled-synthesis-v1.json")
 JOB_MARKER = "\n  webrtc-aec3-synthesis-selection:\n"
 SCOPE_BLOCK = """          # F07_SYNTHESIS_SELECTION_OUTER_SELECTOR_BEGIN

@@ -39,7 +39,14 @@
     "high_band_cng_mixing_depends_on_gain": true,
     "suppression_filter_ola_history_is_mutated": true,
     "interpretation": "JOINT_GAIN_CONTROLLED_SUPPRESSION_AND_CNG_SYNTHESIS",
-    "no_attenuation_only_or_res_only_claim": true
+    "no_attenuation_only_or_res_only_claim": true,
+    "observation_scope": "All 2000 engineering or 4000 science blocks retain raw binary32 CNG real/imaginary inputs, estimated/applied gains, source-selector witness, residual power, near/echo/noise spectra and selected input FFT. Exact observed controls, not every hidden state, are compared.",
+    "rate_boundary": "16 kHz mono; the high-band arrays are generated and traced, but actual upper-band synthesis is not exercised at this rate.",
+    "source_preimages": {
+      "config": "33c0534938744f9b2d7c007f3423ca791c3efa74e1682d4ae334fadbea940ae2",
+      "remover": "ee8aed41e88f96ae115536e74cf6dc9ff128ea6576293b93a22a8ad30bf60c2a",
+      "runner": "2526a28f4b92a73489eec0c9c13ecbd5c26b72b4c68482b26b36beac0b8b56e8"
+    }
   },
   "implementation_gates": [
     "exact pinned source-byte admission",
@@ -63,7 +70,19 @@
     "supported_single_window": "JOINT_GAIN_CONTROLLED_SYNTHESIS_EFFECT_SUPPORTED_IN_ONE_DISCLOSED_WINDOW",
     "all_outcomes_no_promotion": true
   },
-  "status": "SOURCE_AUDIT_IMPLEMENTED_NOT_YET_ENGINEERING_QUALIFIED",
+  "status": "SOURCE_TRANSFORMATION_IMPLEMENTED_ENGINEERING_PENDING",
   "speech_execution_authorized": false,
-  "promotion_allowed": false
+  "promotion_allowed": false,
+  "engineering": {
+    "frames_per_valid_call": 800,
+    "valid_calls": 3,
+    "invalid_calls": 5,
+    "valid_processed_samples": 384000,
+    "requested_capture_samples": 384800,
+    "wall_seconds_max": 120,
+    "speech_calls": 0,
+    "retries": 0,
+    "signal": "seed37-render-times8-delay16-half-echo-near-buzz-first48000"
+  },
+  "engineering_scope": "Three 8-second synthetic processes on one new binary: observer control, gain-observe, gain-unity. Five pre-DSP 10-ms negative requests; no historical acoustic execution or scientific input."
 }

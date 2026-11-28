@@ -72,5 +72,70 @@ class GainControlAuditTests(unittest.TestCase):
             inspect_structure(ECHO, FILTER.replace("e_output_old_", "old_state"))
 
 
+
+class GainControlTraceTests(unittest.TestCase):
+    def row(self, index, mode):
+        import webrtc_aec3_gain_control_trace as t
+        import webrtc_aec3_gain_control_source as s
+        support = s.SUPPORT[0] <= index < s.SUPPORT[1]
+        forced = mode == "gain-unity" and support
+        result = {key: [0] * 65 for key in t.CNG_FIELDS + t.UPSTREAM_FIELDS}
+        result.update({"kind": s.TRACE_KIND, "block_index": index, "support": support,
+                       "forced": forced, "estimated_low_bits": [0x3f000000] * 65,
+                       "estimated_high_bits": 0x3f000000,
+                       "applied_low_bits": [t.UNITY if forced else 0x3f000000] * 65,
+                       "applied_high_bits": t.UNITY if forced else 0x3f000000})
+        return result
+
+    def test_frozen_boundaries_and_neutral_mode(self):
+        import webrtc_aec3_gain_control_trace as t
+        for index, expected in ((1524, False), (1525, True), (1975, True), (1976, False)):
+            for mode in ("gain-observe", "gain-unity"):
+                row = self.row(index, mode)
+                self.assertEqual(t.validate_row(row, index, mode)["forced"],
+                                 expected and mode == "gain-unity")
+
+    def test_partial_unity_or_out_of_support_unity_rejected(self):
+        import webrtc_aec3_gain_control_trace as t
+        for index in (1524, 1525, 1975, 1976):
+            row = self.row(index, "gain-unity")
+            row["applied_low_bits"][0] ^= 1
+            with self.assertRaises(ValueError):
+                t.validate_row(row, index, "gain-unity")
+
+    def test_bad_words_and_malformed_block_rejected(self):
+        import webrtc_aec3_gain_control_trace as t
+        for field, value in (("block_index", True), ("support", 1),
+                             ("cng_high_im", [0x7f800000] * 65),
+                             ("estimated_high_bits", 0x40000000),
+                             ("cng_low_re", [0] * 64)):
+            row = self.row(1525, "gain-unity")
+            row[field] = value
+            with self.assertRaises(ValueError):
+                t.validate_row(row, 1525, "gain-unity")
+
+    def test_unregistered_source_preimage_rejected(self):
+        import webrtc_aec3_gain_control_source as s
+        for path in s.TARGETS + ("unregistered",):
+            with self.assertRaises(ValueError):
+                s.transform(path, b"not the pinned complete selector source")
+
+    def test_cng_and_estimator_fields_are_compared_as_raw_words(self):
+        import webrtc_aec3_gain_control_trace as t
+        neutral = {"selector": [], "gain": [self.row(i, "gain-observe") for i in range(2000)]}
+        unity = {"selector": [], "gain": [self.row(i, "gain-unity") for i in range(2000)]}
+        self.assertEqual(t.compare_arms(neutral, unity)["nonunity_support_blocks"], 451)
+        for field in ("cng_low_im", "cng_high_re", "residual_power", "selected_input_im"):
+            unity["gain"][1525][field][0] = 0x80000000
+            with self.assertRaises(ValueError):
+                t.compare_arms(neutral, unity)
+            unity["gain"][1525][field][0] = 0
+
+    def test_duplicate_json_field_rejected(self):
+        import webrtc_aec3_gain_control_trace as t
+        with self.assertRaises(ValueError):
+            t.distinct([("block_index", 1), ("block_index", 2)])
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -21,11 +21,15 @@ import time
 import webrtc_aec3_ci as previous
 import webrtc_aec3_reference as reference
 import webrtc_aec3_selection_source as selection
+import webrtc_aec3_gain_control_source as gain
 import webrtc_aec3_source as source
 from contracts import ROOT, hex_digest, load_json, require, sha256
 
 REL = "tests/validation/frontend_evolution/"
 KIND = "webrtc-aec3-synthesis-selection-engineering-v1"
+GAIN_KIND = "webrtc-aec3-joint-gain-control-engineering-v1"
+GAIN_STATUS = "PASS_GAIN_CONTROL_ENGINEERING_ONLY"
+GAIN_FIXTURE = REL + "test_webrtc_aec3_gain_control_adapter.py"
 PATHS = {"runner": "bin/webrtc-aec3-selection-runner", "pristine": "pristine",
          "source_transform": "source-change/source-transform.json",
          "build_receipt": "build/build-receipt.json", "adapter_build": "build/runner-build.json",
@@ -37,6 +41,7 @@ CONTROL_FILES = (
     REL + "test_webrtc_aec3_selection.py",
     REL + "webrtc_aec3_selection_scope.py", REL + "test_webrtc_aec3_selection_scope.py",
     REL + "webrtc_aec3_gain_control_audit.py", REL + "test_webrtc_aec3_gain_control_audit.py",
+    REL + "webrtc_aec3_gain_control_source.py", REL + "webrtc_aec3_gain_control_trace.py", GAIN_FIXTURE,
     ".github/research/frontend-evolution-v1/aec3-joint-gain-controlled-synthesis-v1.json",
     ".github/workflows/frontend-research.yml",
     ".github/research/frontend-evolution-v1/webrtc-aec3-synthesis-selection-v1.json",
@@ -63,10 +68,10 @@ def controls(expected: str) -> dict:
 
 
 def build_variant(prepared: Path, derived: Path, evidence: Path,
-                  build_root: Path, meson: str, ninja: str, expected: str) -> dict:
+                  build_root: Path, meson: str, ninja: str, expected: str, source_module=selection) -> dict:
     started = time.monotonic()
     plan = source.build_plan(prepared, build_root, meson)
-    transform = selection.verify(prepared, evidence, derived)
+    transform = source_module.verify(prepared, evidence, derived)
     plan["setup"][3] = str(derived)
     plan["source_root"] = str(derived)
     deadline = started + plan["wall_seconds"]
@@ -92,7 +97,7 @@ def build_variant(prepared: Path, derived: Path, evidence: Path,
             code = source.run_logged(plan[phase], build_root / (phase + ".log"), environment, deadline)
             report["steps"].append({"phase": phase, "exit_code": code})
             require(code == 0, "selection source " + phase + " failed; original log retained")
-        report["post_source_verification"] = selection.verify(prepared, evidence, derived)
+        report["post_source_verification"] = source_module.verify(prepared, evidence, derived)
         require(report["post_source_verification"] == transform, "source derivation changed during build")
         pc_dir = Path(plan["meson_build_dir"]) / "meson-uninstalled"
         pc_module = "webrtc-audio-processing-2-uninstalled"
@@ -121,8 +126,21 @@ def build_variant(prepared: Path, derived: Path, evidence: Path,
     return report
 
 
-def engineering_record(path: Path, binary_sha: str, build_sha: str, revision: str) -> dict:
+def engineering_record(path: Path, binary_sha: str, build_sha: str, revision: str, gain_control=False) -> dict:
     """Read every saved synthetic output/trace without invoking a native tool."""
+    if gain_control:
+        import test_webrtc_aec3_gain_control_adapter as fixture
+        report = reference.read_json(path)
+        require(report["status"] == GAIN_STATUS and report["experiment_id"] == gain.EXPERIMENT and
+                report["code_revision"] == revision and report["binary_sha256"] == binary_sha and
+                report["build_receipt_sha256"] == build_sha and
+                report["fixture_source_sha256"] == sha256((ROOT / GAIN_FIXTURE).read_bytes()) and
+                not report["failures"] and report["speech_calls"] == 0 and
+                report["acoustic_acceptance"] is False and report["promotion_allowed"] is False and
+                type(report["wall_seconds"]) in (int, float) and math.isfinite(report["wall_seconds"]) and
+                0 < report["wall_seconds"] <= fixture.MAX_WALL_SECONDS, "gain-control engineering identity")
+        require(fixture.verify_saved(path.parent, report) == report["comparison"], "gain-control readback differs")
+        return report
     import test_webrtc_aec3_selection_adapter as fixture
     report = reference.read_json(path)
     require(report["status"] == "PASS_SELECTION_ENGINEERING_ONLY" and
@@ -139,11 +157,12 @@ def engineering_record(path: Path, binary_sha: str, build_sha: str, revision: st
     return report
 
 
-def verify_bundle(root: Path) -> dict:
+def verify_bundle(root: Path, gain_control=False) -> dict:
     """Pure original-byte/source/engineering readback; never SDK, build or ldd."""
     root = source.safe_path(root)
     manifest = reference.read_json(root / "bundle.json")
-    require(manifest["kind"] == KIND and manifest["status"] == "PASS_SELECTION_ENGINEERING_ONLY" and
+    require(manifest["kind"] == (GAIN_KIND if gain_control else KIND) and
+            manifest["status"] == (GAIN_STATUS if gain_control else "PASS_SELECTION_ENGINEERING_ONLY") and
             manifest["paths"] == PATHS and set(manifest["controls_sha256"]) == set(CONTROL_FILES),
             "selection bundle contract")
     require(reference.file_set(root, ("bundle.json",)) == manifest["files"], "selection bundle members/hash drift")
@@ -152,7 +171,8 @@ def verify_bundle(root: Path) -> dict:
     for relative, digest in manifest["controls_sha256"].items():
         require(sha256(reference.git_bytes(revision, relative)) == digest and
                 sha256((ROOT / relative).read_bytes()) == digest, "exact selection reader/source required: " + relative)
-    transform = selection.verify(root / PATHS["pristine"], root / "source-change")
+    source_module = gain if gain_control else selection
+    transform = source_module.verify(root / PATHS["pristine"], root / "source-change")
     build = reference.read_json(root / PATHS["build_receipt"])
     adapter = reference.read_json(root / PATHS["adapter_build"])
     require(build["status"] == "BUILT_SELECTION_DERIVATION_NO_SPEECH" and build["code_revision"] == revision and
@@ -169,7 +189,7 @@ def verify_bundle(root: Path) -> dict:
             "selection adapter binding")
     for relative, digest in adapter["runtime_libraries"].items():
         require(sha256((root / relative).read_bytes()) == digest, "selection research library bytes")
-    engineering = engineering_record(root / PATHS["engineering"], binary_sha, build_sha, revision)
+    engineering = engineering_record(root / PATHS["engineering"], binary_sha, build_sha, revision, gain_control)
     require(engineering["runtime_identity"] == adapter["runtime_identity"], "selection native engineering runtime differs")
     return manifest
 
@@ -178,10 +198,10 @@ def execution_environment(root: Path) -> dict:
     return {"PATH": os.defpath, "LC_ALL": "C", "LD_LIBRARY_PATH": str((root / "bin/lib").resolve())}
 
 
-def require_host_engineering(root: Path, path: Path) -> dict:
-    manifest = verify_bundle(root)
+def require_host_engineering(root: Path, path: Path, gain_control=False) -> dict:
+    manifest = verify_bundle(root, gain_control)
     adapter = reference.read_json(root / PATHS["adapter_build"])
-    report = engineering_record(path, adapter["binary_sha256"], adapter["build_receipt_sha256"], manifest["code_revision"])
+    report = engineering_record(path, adapter["binary_sha256"], adapter["build_receipt_sha256"], manifest["code_revision"], gain_control)
     for relative, digest in adapter["runtime_libraries"].items():
         observed = report["runtime_identity"]
         resolved = str((root / relative).resolve())
@@ -190,12 +210,15 @@ def require_host_engineering(root: Path, path: Path) -> dict:
     return report
 
 
-def host_engineering(root: Path, output: Path) -> dict:
-    import test_webrtc_aec3_selection_adapter as fixture
-    manifest = verify_bundle(root)
+def host_engineering(root: Path, output: Path, gain_control=False) -> dict:
+    if gain_control:
+        import test_webrtc_aec3_gain_control_adapter as fixture
+    else:
+        import test_webrtc_aec3_selection_adapter as fixture
+    manifest = verify_bundle(root, gain_control)
     report = fixture.run(root / PATHS["runner"], output, root / PATHS["build_receipt"],
                          manifest["code_revision"], execution_environment(root))
-    require_host_engineering(root, output / "engineering.json")
+    require_host_engineering(root, output / "engineering.json", gain_control)
     return report
 
 
@@ -230,12 +253,12 @@ def run(expected: str, output: Path) -> dict:
         source.write_json(bundle / "source-mechanism-audit.json", mechanism_audit)
         report["source_mechanism_audit"] = mechanism_audit
         derived = work / "derived-source"
-        selection.prepare(bundle / PATHS["pristine"], derived, bundle / "source-change")
+        gain.prepare(bundle / PATHS["pristine"], derived, bundle / "source-change")
         report["stages"].append("pristine-admission-and-exact-source-derivation")
         require(previous.remaining(deadline, 600) == 600, "insufficient selection source build budget")
         build_root = work / "build"
         built = build_variant(bundle / PATHS["pristine"], derived, bundle / "source-change", build_root,
-                              str(venv / "bin/meson"), str(venv / "bin/ninja"), expected)
+                              str(venv / "bin/meson"), str(venv / "bin/ninja"), expected, source_module=gain)
         evidence = bundle / "build"
         evidence.mkdir()
         for name in ("build-receipt.json", "setup.log", "compile.log"):
@@ -269,21 +292,21 @@ def run(expected: str, output: Path) -> dict:
         source.write_json(bundle / PATHS["adapter_build"], adapter)
         shutil.copyfile(logs / "adapter-compile.log", evidence / "adapter-compile.log")
         report["stages"].append("derived-library-and-adapter-built-once-and-relocated")
-        import test_webrtc_aec3_selection_adapter as fixture
+        import test_webrtc_aec3_gain_control_adapter as fixture
         fixture.run(binary, bundle / "engineering", bundle / PATHS["build_receipt"], expected, portable)
         require(controls(expected) == report["controls_sha256"], "selection controls changed after engineering")
-        selection.verify(bundle / PATHS["pristine"], bundle / "source-change", derived)
-        manifest = {"schema_version": 1, "kind": KIND, "status": "PASS_SELECTION_ENGINEERING_ONLY",
+        gain.verify(bundle / PATHS["pristine"], bundle / "source-change", derived)
+        manifest = {"schema_version": 1, "kind": GAIN_KIND, "status": GAIN_STATUS,
                     "code_revision": expected, "controls_sha256": report["controls_sha256"], "paths": PATHS,
                     "files": previous.manifest_files(bundle)}
         source.write_json(bundle / "bundle.json", manifest)
-        verify_bundle(bundle)
+        verify_bundle(bundle, gain_control=True)
         archive = output / ARCHIVE_NAME
         report["bundle_archive"] = {"path": archive.name, "sha256": previous.pack_bundle(bundle, archive),
                                     "size": archive.stat().st_size}
         previous.remaining(deadline, 1)
-        report["stages"].append("selection-only-synthetic-engineering-and-pure-readback")
-        report["status"] = "PASS_SELECTION_ENGINEERING_ONLY"
+        report["stages"].append("joint-gain-control-synthetic-engineering-and-pure-readback")
+        report["status"] = GAIN_STATUS
     except Exception as error:
         report["error"] = str(error)
         if (output / ARCHIVE_NAME).exists():
@@ -314,16 +337,18 @@ def main():
     item.add_argument("--output", required=True, type=Path)
     item = sub.add_parser("verify")
     item.add_argument("--bundle", required=True, type=Path)
+    item.add_argument("--gain-control", action="store_true")
     item = sub.add_parser("host")
     item.add_argument("--bundle", required=True, type=Path)
+    item.add_argument("--gain-control", action="store_true")
     item.add_argument("--output", required=True, type=Path)
     args = parser.parse_args()
     if args.command == "run":
         result = run(args.expected_head, args.output)
     elif args.command == "host":
-        result = host_engineering(args.bundle, args.output)
+        result = host_engineering(args.bundle, args.output, args.gain_control)
     else:
-        result = verify_bundle(args.bundle)
+        result = verify_bundle(args.bundle, args.gain_control)
     print(json.dumps(result, sort_keys=True))
 
 

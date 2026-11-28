@@ -108,13 +108,51 @@ class SelectorTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "ROLLBACK"):
                 ap.select("pull_request", "", invalid, self.current)
 
+    def historical_ci_transport_after(self, path, row):
+        # Keep the old transition's exact payload; only project the two known
+        # successor paths after validating actual current bytes and old parent.
+        actual = (ap.ROOT / path).read_bytes()
+        successor = self.config["workflow"]["reviewed_fe03_source_recovery"]
+        registered = successor["files"].get(path)
+        if registered is None:
+            return actual
+        before = ap.git_bytes(successor["public_parent"], path)
+        self.assertEqual(ap.digest_or_none(before), registered["base_sha256"], path)
+        self.assertEqual(ap.sha256(actual), registered["sha256"], path)
+        self.assertEqual(len(actual), registered["size_bytes"], path)
+        self.assertEqual(ap.git_bytes(successor["public_revision"], path), actual)
+        self.assertEqual(ap.validate_transition(path, before, actual, self.config), "support")
+        self.assertEqual(ap.sha256(before), row["sha256"], path)
+        self.assertEqual(len(before), row["size_bytes"], path)
+        return before
+
+    def test_exact_fe03_successor_scope_has_no_engineering_authority_or_rollback(self):
+        registry = self.config["workflow"]["reviewed_fe03_source_recovery"]
+        self.assertEqual(registry["file_count"], len(registry["files"]))
+        changes = {}
+        for path, row in registry["files"].items():
+            before = ap.git_bytes(registry["public_parent"], path)
+            after = (ap.ROOT / path).read_bytes()
+            self.assertEqual(ap.digest_or_none(before), row["base_sha256"], path)
+            self.assertEqual(ap.sha256(after), row["sha256"], path)
+            self.assertEqual(len(after), row["size_bytes"], path)
+            self.assertEqual(after, ap.git_bytes(registry["public_revision"], path))
+            self.assertEqual(ap.validate_transition(path, before, after, self.config), "support")
+            for bad_before, bad_after in ((after, before), (b"unregistered base", after),
+                                          (before, after + b"\nextra\n"), (before, None)):
+                with self.subTest(path=path), self.assertRaises(ValueError):
+                    ap.validate_transition(path, bad_before, bad_after, self.config)
+            changes[path] = (before, after)
+        self.assert_flags(ap.select("pull_request", "", changes, self.current), False, False)
+        self.assert_flags(ap.select("push", "", changes, self.current), False, False)
+
     def test_closed_ci_transport_rows_bind_actual_bytes_from_both_public_bases(self):
         registry = self.config["workflow"]["reviewed_ci_source_transport"]
         for base in (registry["public_parent"], registry["base_main"]):
             changes = {}
             for path, row in registry["files"].items():
                 before = ap.git_bytes(base, path)
-                after = (ap.ROOT / path).read_bytes()
+                after = self.historical_ci_transport_after(path, row)
                 key = "base_sha256" if base == registry["public_parent"] else "main_base_sha256"
                 self.assertEqual(ap.digest_or_none(before), row[key], path)
                 self.assertEqual(ap.sha256(after), row["sha256"], path)
@@ -125,9 +163,9 @@ class SelectorTests(unittest.TestCase):
 
     def test_closed_ci_transport_cannot_admit_reverse_unknown_base_or_changed_payload(self):
         registry = self.config["workflow"]["reviewed_ci_source_transport"]
-        for path in registry["files"]:
+        for path, row in registry["files"].items():
             before = ap.git_bytes(registry["public_parent"], path)
-            after = (ap.ROOT / path).read_bytes()
+            after = self.historical_ci_transport_after(path, row)
             self.assertEqual(ap.validate_transition(path, before, after, self.config), "support")
             for bad_before, bad_after in ((after, before),
                     (b"unregistered predecessor\n", after),
@@ -142,8 +180,8 @@ class SelectorTests(unittest.TestCase):
             for path in registry["files"]:
                 changes[path] = (ap.git_bytes(ap.MAIN_REFERENCE, path),
                                  ap.git_bytes(registry["public_revision"], path))
-        for path in self.config["workflow"]["reviewed_ci_source_transport"]["files"]:
-            changes[path] = (ap.git_bytes(ap.MAIN_REFERENCE, path), (ap.ROOT / path).read_bytes())
+        for path, row in self.config["workflow"]["reviewed_ci_source_transport"]["files"].items():
+            changes[path] = (ap.git_bytes(ap.MAIN_REFERENCE, path), self.historical_ci_transport_after(path, row))
         self.assert_flags(ap.select("pull_request", "", changes, self.current), True, True)
 
     def test_after_transport_merge_actual_base_is_used(self):

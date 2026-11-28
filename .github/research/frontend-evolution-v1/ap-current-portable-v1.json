@@ -1045,6 +1045,45 @@
           "tests/validation/frontend_evolution/test_fe09_t2f0_archive_readiness.py"
         ]
       }
+    },
+    "reviewed_fe03_source_recovery": {
+      "public_parent": "5a05396a686cd38ec3da703070e959d92eaab68a",
+      "public_revision": "8f5dd6b625905fb5e066df66ca4b2b915d0a1ed5",
+      "public_tree": "d57c0376d3ab0ec020d19a5f981676cd4e02af1a",
+      "failed_verify_run_id": 46163266317,
+      "failed_job_id": 141035162882,
+      "file_count": 4,
+      "boundary": "Exactly the four publicly reviewed successor source-transport changes after #981. Only exact actual-base to successor bytes qualify; no historical registry edits, rollback, scientific or engineering admission, or generic workflow allowance. Old closed CI-transport fixture views are reconstructed from the exact public parent only after actual successor byte registration.",
+      "files": {
+        ".github/workflows/quality.yml": {
+          "base_sha256": "a3f3043331d60601bc8003f27f0998528d9654e02ce02cd7521ec0b23e040312",
+          "sha256": "468cedcc6341d00053fb3b416fe708cf72ae729533a18c74d73a7eef99fb6ec7",
+          "size_bytes": 203394,
+          "change": "M",
+          "role": "exact_reviewed_FE03_successor_source_transport_no_AEC3_or_AP_measurement_trigger_by_itself"
+        },
+        "tests/validation/frontend_evolution/speech_pinned_snapshot.py": {
+          "base_sha256": "f9e905c01cf0cd45956cd035d03a147e2f86bfa078ac31717ade96844786b8fc",
+          "sha256": "48266ec83f480408b080fb2b346949afcc97277481f3062b3daf822f99785b26",
+          "size_bytes": 47678,
+          "change": "M",
+          "role": "exact_reviewed_FE03_successor_source_transport_no_AEC3_or_AP_measurement_trigger_by_itself"
+        },
+        "tests/validation/frontend_evolution/speech_source_recent_cache.py": {
+          "base_sha256": null,
+          "sha256": "ad6eee06ef8d113da2e087ebe0e9dca9618e1694b9a85c7d049f6e30e973b7ed",
+          "size_bytes": 5472,
+          "change": "A",
+          "role": "exact_reviewed_FE03_successor_source_transport_no_AEC3_or_AP_measurement_trigger_by_itself"
+        },
+        "tests/validation/frontend_evolution/test_speech_source_recovery.py": {
+          "base_sha256": "c62f67e04ee3739bef79aef182aa3315e3922a5f33f7e8adb016a5d061d2aca6",
+          "sha256": "3540f7faeab35322e59b1962f144fe058568c788df1e1fe771a46d159f569c8e",
+          "size_bytes": 39379,
+          "change": "M",
+          "role": "exact_reviewed_FE03_successor_source_transport_no_AEC3_or_AP_measurement_trigger_by_itself"
+        }
+      }
     }
   },
   "failure_policy": "Preserve every actual failed prefix and log. No retry, compiler fallback, parameter/lag search or false success manifest. Late identity, budget or packaging failure changes the admissible status to FAIL and renames already-created tar/manifest/receipt to explicit before-failure names without discarding their bytes. Upload both original failed archives and reports. The 600s process alarm and 60s engineering alarm include source admission/readback; the outer 630s timeout is cleanup-only grace.",

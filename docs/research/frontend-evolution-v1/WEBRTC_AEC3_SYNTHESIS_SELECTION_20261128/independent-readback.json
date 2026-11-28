@@ -1,0 +1,58 @@
+{
+  "actual_budget": {
+    "acoustic_retries": 0,
+    "api_frames": 3200,
+    "capture_seconds": 32,
+    "internal_blocks": 8000,
+    "local_compiler_calls": 0,
+    "speech_calls": 2,
+    "training_runs": 0
+  },
+  "all_reported_metrics_exactly_equal": true,
+  "codec_calls": 0,
+  "compiler_calls": 0,
+  "execution_source_revision": "dd2a416a155cc34164ccf86ace5fe110bca03992",
+  "expanded_recalculation_sha256": "8759cf0e58bd868d721a08d5018069d64a7f60a3a6dfe9f22042e11dc939aeba",
+  "experiment_id": "FE04-WEBRTC-AEC3-SYNTHESIS-SELECTION-V1",
+  "frozen_readback_receipt_sha256": "71343bdbf35866d52d3238f35f2cb2bfb701d9c6ce117c679c53392b5cc81efc",
+  "full_f07_final_and_linear_equality": true,
+  "host_engineering_budget_independently_counted": {
+    "negative_requests": 8,
+    "processed_samples": 64000,
+    "processed_seconds": 4.0,
+    "processes": 14,
+    "requested_samples": 321280,
+    "requested_seconds": 20.08
+  },
+  "independent_confirmation": false,
+  "interpretation": {
+    "dominant_nearend_after_gain": "Current block flag after GetGain. The same block residual estimator consumed an earlier pre-GetGain flag; no equivalence is claimed.",
+    "gain_summary": "Unweighted controls, not speech quality, gain causality or independent confirmation.",
+    "selection_scope": "Only local final-synthesis E/Y branch in this disclosed primary support."
+  },
+  "ldd_calls": 0,
+  "manifest_sha256": "9ca7385bd0374f4feb80bc100b67f42b17be11527afbd298bcb0b9e0dc82fee5",
+  "members": 2485,
+  "native_metric_calls": 0,
+  "no_force_when_all_E": true,
+  "numeric_tolerance_used": 0,
+  "primary_decision": "NOT_SUPPORTED_IN_DISCLOSED_WINDOW",
+  "process_or_network_attempts": 0,
+  "project_module_imports": 0,
+  "promotion_allowed": false,
+  "reader_sha256": "f4869b6994511709a4e568b6c672801cbdb52fafa57e55ef9ce1e7cc29aee13e",
+  "result_sha256": "d099931f9c526db499912a62e14237602d598f74377b8c4dad8efb9751e0827d",
+  "reviewed_git_tree": "859eb10c94e71c44a1bb8130d6472b311c77332c",
+  "schema_version": 1,
+  "sdk_calls": 0,
+  "selector_support": [
+    1525,
+    1976
+  ],
+  "selector_support_blocks": 451,
+  "source_controls": 45,
+  "source_lock_sha256": "3b65e7d2c9b2f288e42eec97b85969c21e6efd01ba42ae28a00c385fc9be703f",
+  "status": "PASS_INDEPENDENT_RAW_RECALCULATION",
+  "trace_blocks_per_executed_arm": 4000,
+  "wall_seconds": 1.9669978540041484
+}

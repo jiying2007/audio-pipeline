@@ -50,6 +50,16 @@ SCOPE_BLOCK = """          # F07_SYNTHESIS_SELECTION_OUTER_SELECTOR_BEGIN
 """
 OUTPUT_LINE = "      f07_selection: ${{ steps.select.outputs.f07_selection }}\n"
 OPTION = ", webrtc-aec3-synthesis-selection]"
+TINY_STEP_PREVIOUS = """      - name: Validate the selected synthesis-selection method without compiling or executing DSP
+        if: steps.select.outputs.f07_selection == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          timeout 60s python3 -B tests/validation/frontend_evolution/test_webrtc_aec3_selection_scope.py
+          timeout 60s python3 -B tests/validation/frontend_evolution/test_webrtc_aec3_selection_source.py
+          timeout 60s python3 -B tests/validation/frontend_evolution/test_webrtc_aec3_selection.py
+
+"""
 TINY_STEP = """      - name: Validate the selected synthesis-selection method without compiling or executing DSP
         if: steps.select.outputs.f07_selection == 'true'
         shell: bash
@@ -154,14 +164,15 @@ def job_text() -> str:
 
 def strip_workflow(text: str) -> str:
     """Remove only this exact layer; all predecessor bytes remain mandatory."""
-    markers = (JOB_MARKER, SCOPE_BLOCK, OUTPUT_LINE, OPTION, TINY_STEP)
+    tiny_step = TINY_STEP if TINY_STEP in text else TINY_STEP_PREVIOUS
+    markers = (JOB_MARKER, SCOPE_BLOCK, OUTPUT_LINE, OPTION, tiny_step)
     if not any(marker in text for marker in markers):
         return text
     require(all(text.count(marker) == 1 for marker in markers),
             "SELECTION missing or duplicate workflow wiring")
     require(text.endswith(job_text()), "SELECTION job differs from exact declared body")
     restored = text[:-len(job_text())]
-    for old, new in ((SCOPE_BLOCK, ""), (OUTPUT_LINE, ""), (OPTION, "]"), (TINY_STEP, "")):
+    for old, new in ((SCOPE_BLOCK, ""), (OUTPUT_LINE, ""), (OPTION, "]"), (tiny_step, "")):
         restored = restored.replace(old, new, 1)
     frozen = git_bytes(BASE, WORKFLOW)
     require(sha256(frozen) == BASE_WORKFLOW_SHA256 and restored.encode() == frozen,

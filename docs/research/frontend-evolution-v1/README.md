@@ -428,3 +428,10 @@ real-robot qualification or the frozen NS research program.
 固定线性与最终输出的单位、64/128点时序、三路工程等价和六例披露开发输入。
 主条件只有一个独特窗口；全部次要观察和不可识别值均保留，不产生晋级。
 登记、实际结果与保护主线验收分别留存，状态以任务及对应结果回执为准。
+
+## F07 AEC3 合成入口受控选择
+
+[冻结合同](WEBRTC_AEC3_SYNTHESIS_SELECTION_V1.zh-CN.md)在[#977](https://github.com/jiying2007/audio-pipeline/issues/977)追踪。
+复用已披露 p1-none 输入，先记录一次16秒中性状态；主窗451个合成支持块全部选E时停止，
+仅在存在Y暴露时运行一次局部force-E。G位模式及GetGain后nearend状态只读保留，
+不改变主窗、门槛或分支；旧F07方法及结果保持原样，不产生晋级或实机资格。

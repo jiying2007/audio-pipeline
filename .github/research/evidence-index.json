@@ -262,6 +262,20 @@
       ],
       "gc_eligible": false,
       "auto_gc": false
+    },
+    {
+      "branch": "research/f07-controlled-path-20261128",
+      "head_sha": null,
+      "status": "ACTIVE",
+      "evidence": [
+        "issue:977",
+        "parent-issue:657:active",
+        "implementation-base:9d2cfef495ac8e34d03a55538777c16010ac3b14",
+        "contract:.github/research/frontend-evolution-v1/webrtc-aec3-synthesis-selection-v1.json",
+        "decision:retain-moving-synthesis-selection-source-and-execution-ancestors;null-head-is-moving-custody;no-gc-or-acoustic-promotion"
+      ],
+      "gc_eligible": false,
+      "auto_gc": false
     }
   ]
 }

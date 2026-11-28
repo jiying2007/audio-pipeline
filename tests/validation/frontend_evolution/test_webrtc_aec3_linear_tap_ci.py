@@ -18,6 +18,8 @@ class ScopeTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.current = (ci.ROOT / ci.WORKFLOW).read_text()
+        from webrtc_aec3_selection_scope import strip_workflow
+        cls.current = strip_workflow(cls.current)
         cls.frozen = ci.git_bytes(ci.BASE, ci.WORKFLOW)
 
     def selected(self, changes):
@@ -64,6 +66,8 @@ class ScopeTests(unittest.TestCase):
             result = subprocess.run(command + ["show", ci.BASE + ":" + path], stdout=subprocess.PIPE,
                                     stderr=subprocess.PIPE, timeout=15)
             changes[path] = (result.stdout if result.returncode == 0 else None, (ci.ROOT / path).read_bytes())
+        from webrtc_aec3_selection_scope import predecessor_test_changes
+        changes = predecessor_test_changes(changes)
         self.flags(self.selected(changes), True)
 
     def test_only_explicit_f07_dispatch_is_claimed_by_new_layer(self):
@@ -136,6 +140,8 @@ class ScopeTests(unittest.TestCase):
     def test_navigation_restores_entire_a70_body_and_is_support_only(self):
         before = ci.git_bytes(ci.BASE, ci.NAVIGATION)
         after = (ci.ROOT / ci.NAVIGATION).read_bytes()
+        from webrtc_aec3_selection_scope import predecessor_test_view
+        after = predecessor_test_view(ci.NAVIGATION, after)
         self.assertEqual(after, before + ci.NAVIGATION_APPEND.encode())
         self.assertEqual(ci.strip_navigation(after), before)
         self.flags(self.selected({ci.NAVIGATION: (before, after)}), False)
@@ -158,6 +164,8 @@ class ScopeTests(unittest.TestCase):
     def test_retained_source_only_appends_exact_non_gc_record(self):
         before = ci.git_bytes(ci.BASE, ci.REGISTRY)
         after = (ci.ROOT / ci.REGISTRY).read_bytes()
+        from webrtc_aec3_selection_scope import predecessor_test_view
+        after = predecessor_test_view(ci.REGISTRY, after)
         ci.registry_transition(before, after)
         self.flags(self.selected({ci.REGISTRY: (before, after)}), False)
         rows = json.loads(after)

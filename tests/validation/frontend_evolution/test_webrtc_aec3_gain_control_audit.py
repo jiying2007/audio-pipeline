@@ -152,5 +152,41 @@ class GainControlTraceTests(unittest.TestCase):
             t.distinct([("block_index", 1), ("block_index", 2)])
 
 
+
+class GainControlScienceContractTests(unittest.TestCase):
+    def test_scientific_admission_is_source_bound_and_not_engineering_authority(self):
+        import hashlib
+        import json
+        from contracts import ROOT
+        import webrtc_aec3_gain_control_science as s
+        p = ROOT / ".github/research/frontend-evolution-v1/aec3-joint-gain-controlled-synthesis-science-v1.json"
+        plan = json.loads(p.read_text())
+        self.assertEqual(plan["executor_sha256"], hashlib.sha256((ROOT / plan["executor_path"]).read_bytes()).hexdigest())
+        self.assertEqual(plan["engineering_revision"], s.HEAD)
+        self.assertEqual(plan["support_blocks"], list(s.SUPPORT))
+        self.assertEqual(plan["primary_samples"], [97600, 126400])
+        self.assertEqual((plan["max_calls"], plan["max_capture_seconds"], plan["retries"]), (2, 32, 0))
+        self.assertTrue(plan["speech_execution_authorized"])
+        self.assertFalse(plan["promotion_allowed"])
+        engineering = json.loads((ROOT / ".github/research/frontend-evolution-v1/aec3-joint-gain-controlled-synthesis-v1.json").read_text())
+        self.assertFalse(engineering["speech_execution_authorized"])
+
+    def test_frozen_decision_directions(self):
+        import webrtc_aec3_gain_control_science as s
+        def score(si_sdr, nmse, far=5, peak=0.1):
+            return {"final": {"near": {"double-before": {"projection_identifiable": True,
+                    "si_sdr_db": si_sdr, "normalized_mse": nmse}},
+                    "far": {"aggregate_ratio_db": far, "blocks": [{"echo_to_output_ratio_db": far} for _ in range(19)]},
+                    "raw_amplitude": {"peak": peak, "rms": 0.01, "negative_endpoint_count": 0, "positive_endpoint_count": 0}}}
+        before = score(1, 0.5)
+        def outcome(after):
+            return s.decide(dict(zip(s.MODES, (before, after))))["decision"]
+        self.assertEqual(outcome(score(1, 0.5)), "JOINT_GAIN_CONTROLLED_SYNTHESIS_HYPOTHESIS_NOT_SUPPORTED")
+        self.assertEqual(outcome(score(2, 0.4)), "JOINT_GAIN_CONTROLLED_SYNTHESIS_EFFECT_SUPPORTED_IN_ONE_DISCLOSED_WINDOW")
+        self.assertEqual(outcome(score(2, 0.4, 4)), "NEAR_END_GAIN_TRADEOFF_OBSERVED_NO_PROMOTION")
+        self.assertEqual(outcome(score(2, 0.4, peak=0.2)), "NEAR_END_GAIN_TRADEOFF_OBSERVED_NO_PROMOTION")
+        self.assertEqual(outcome(score(2, 0.6)), "INCONCLUSIVE_MIXED_INDICATORS")
+        self.assertEqual(outcome(score(None, 0.4)), "NOT_IDENTIFIABLE")
+
 if __name__ == "__main__":
     unittest.main()

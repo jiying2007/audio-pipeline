@@ -35,7 +35,10 @@ CORE_PATHS = (MODULE, TEST, PLAN,
               REL + "test_webrtc_aec3_selection_source.py",
               REL + "test_webrtc_aec3_selection_adapter.py",
               REL + "webrtc_aec3_selection.py",
-              REL + "test_webrtc_aec3_selection.py")
+              REL + "test_webrtc_aec3_selection.py",
+              REL + "webrtc_aec3_gain_control_audit.py",
+              REL + "test_webrtc_aec3_gain_control_audit.py",
+              ".github/research/frontend-evolution-v1/aec3-joint-gain-controlled-synthesis-v1.json")
 JOB_MARKER = "\n  webrtc-aec3-synthesis-selection:\n"
 SCOPE_BLOCK = """          # F07_SYNTHESIS_SELECTION_OUTER_SELECTOR_BEGIN
           import sys
@@ -55,6 +58,7 @@ TINY_STEP = """      - name: Validate the selected synthesis-selection method wi
           timeout 60s python3 -B tests/validation/frontend_evolution/test_webrtc_aec3_selection_scope.py
           timeout 60s python3 -B tests/validation/frontend_evolution/test_webrtc_aec3_selection_source.py
           timeout 60s python3 -B tests/validation/frontend_evolution/test_webrtc_aec3_selection.py
+          timeout 60s python3 -B tests/validation/frontend_evolution/test_webrtc_aec3_gain_control_audit.py
 
 """
 NAVIGATION_APPEND = """

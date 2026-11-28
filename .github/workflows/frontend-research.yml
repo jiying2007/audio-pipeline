@@ -105,7 +105,7 @@ on:
       experiment:
         description: D8 validates the closed NO_ADVANCE archive only; it never runs DSP
         type: choice
-        options: [dualmic-stages-d1, dualmic-zero-d3-input, dualmic-zero-d3, dualmic-window-d4, dualmic-target-gate-d5, dualmic-gain-ramp-d6, dualmic-upstream-d7, dualmic-broadside-output-d8, webrtc-aec3-engineering, ap-current-portable]
+        options: [dualmic-stages-d1, dualmic-zero-d3-input, dualmic-zero-d3, dualmic-window-d4, dualmic-target-gate-d5, dualmic-gain-ramp-d6, dualmic-upstream-d7, dualmic-broadside-output-d8, webrtc-aec3-engineering, ap-current-portable, webrtc-aec3-linear-tap]
         default: dualmic-stages-d1
         required: true
 
@@ -133,6 +133,7 @@ jobs:
       d8_archive: ${{ steps.select.outputs.d8_archive }}
       webrtc: ${{ steps.select.outputs.webrtc }}
       ap: ${{ steps.select.outputs.ap }}
+      f07_linear: ${{ steps.select.outputs.f07_linear }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
@@ -148,6 +149,13 @@ jobs:
         run: |
           set -euo pipefail
           python3 - <<'PY'
+          # F07_LINEAR_TAP_OUTER_SELECTOR_BEGIN
+          import sys
+          sys.path.insert(0, 'tests/validation/frontend_evolution')
+          from webrtc_aec3_linear_tap_ci import select_workflow as select_f07_workflow
+          if select_f07_workflow():
+              raise SystemExit(0)
+          # F07_LINEAR_TAP_OUTER_SELECTOR_END
           # AP_CURRENT_OUTER_SELECTOR_BEGIN
           import sys
           sys.path.insert(0, 'tests/validation/frontend_evolution')
@@ -296,6 +304,14 @@ jobs:
               out.write('d7=false\n')
               out.write('d1='+str(d1).lower()+'\nd3='+str(d3).lower()+'\nd3_execute='+str(d3_execute).lower()+'\nd4='+str(d4).lower()+'\nd5='+str(d5).lower()+'\nd6='+str(d6).lower()+'\n')
           PY
+      - name: Validate the selected F07 method without compiling or executing DSP
+        if: steps.select.outputs.f07_linear == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          timeout 60s python3 -B tests/validation/frontend_evolution/test_webrtc_aec3_linear_tap_ci.py
+          timeout 60s python3 -B tests/validation/frontend_evolution/test_webrtc_aec3_linear_tap.py
+
   matrix:
     needs: scope
     if: needs.scope.outputs.d1 == 'true'
@@ -909,6 +925,47 @@ jobs:
             ${{ runner.temp }}/ap-current-portable/ap-current-portable*.tar.gz
             ${{ runner.temp }}/ap-current-portable/ci-receipt*.json
             ${{ runner.temp }}/ap-current-portable/bundle/
+          include-hidden-files: true
+          retention-days: 90
+          if-no-files-found: error
+
+  webrtc-aec3-linear-tap:
+    name: F07 linear tap engineering (one build, two explicit synthetic stages)
+    needs: scope
+    if: needs.scope.outputs.f07_linear == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 22
+    env:
+      EXECUTION_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Build once and preserve both compatibility and linear observation engineering
+        shell: bash
+        run: |
+          set -euo pipefail
+          timeout --signal=KILL 1260s python3 -B \
+            tests/validation/frontend_evolution/webrtc_aec3_linear_tap_ci.py run \
+            --expected-head "$EXECUTION_SHA" --output "$RUNNER_TEMP/ap-webrtc-aec3-linear-tap"
+      - name: Preserve the F07 bundle or actual failed prefix
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: frontend-research-webrtc-aec3-linear-tap-${{ github.run_id }}-attempt-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/ap-webrtc-aec3-linear-tap/webrtc-aec3-linear-tap*.tar.gz
+            ${{ runner.temp }}/ap-webrtc-aec3-linear-tap/ci-receipt*.json
+            ${{ runner.temp }}/ap-webrtc-aec3-linear-tap/logs/
+            ${{ runner.temp }}/ap-webrtc-aec3-linear-tap/reference-build/webrtc-aec3-engineering-bundle.tar.gz
+            ${{ runner.temp }}/ap-webrtc-aec3-linear-tap/reference-build/ci-receipt.json
+            ${{ runner.temp }}/ap-webrtc-aec3-linear-tap/reference-build/logs/
+            ${{ runner.temp }}/ap-webrtc-aec3-linear-tap/reference-build/failed-build-evidence/
+            ${{ runner.temp }}/ap-webrtc-aec3-linear-tap/reference-build/bundle/
+            ${{ runner.temp }}/ap-webrtc-aec3-linear-tap/bundle/
           include-hidden-files: true
           retention-days: 90
           if-no-files-found: error

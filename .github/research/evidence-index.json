@@ -248,6 +248,20 @@
       ],
       "gc_eligible": false,
       "auto_gc": false
+    },
+    {
+      "branch": "research/f07-aec3-linear-tap-20261128",
+      "head_sha": null,
+      "status": "ACTIVE",
+      "evidence": [
+        "issue:975",
+        "parent-issue:657:active",
+        "implementation-base:a70f94489423c54edbcbc11acaab47ee4485b6b9",
+        "contract:.github/research/frontend-evolution-v1/webrtc-aec3-linear-tap-v1.json",
+        "decision:retain-moving-F07-source-and-frozen-execution-ancestors;null-head-is-moving-custody;no-gc-or-acoustic-promotion"
+      ],
+      "gc_eligible": false,
+      "auto_gc": false
     }
   ]
 }

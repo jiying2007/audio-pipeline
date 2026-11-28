@@ -421,3 +421,10 @@ real-robot qualification or the frozen NS research program.
 ## 固定 oracle 输入的 NS/RES 条件诊断归档
 
 [历史原件与负向边界](evidence/oracle-ns-dt-isolation-v2/RESULT.md)保留两profile输出及629帧四项公开字段逐字节复现后，仅替换DT序列的四次隔离模块执行。固定oracle residual/echo下，恢复原DT使增益敏感误差下降、投影SI-SDR变差；不是端到端音质改善或DT总效果的可加分解，不推广。原V1链接失败不重判，单次CPU观察不代表稳健性能变化。[公开范围与可复现边界](evidence/oracle-ns-dt-isolation-v2/ARCHIVE.md)明确原件恢复、缺失的独立V1失败包和不公开音频/运行库的限制。
+
+## F07 AEC3 线性输出观测
+
+[冻结合同](WEBRTC_AEC3_LINEAR_TAP_V1.zh-CN.md)在[#975](https://github.com/jiying2007/audio-pipeline/issues/975)追踪，
+固定线性与最终输出的单位、64/128点时序、三路工程等价和六例披露开发输入。
+主条件只有一个独特窗口；全部次要观察和不可识别值均保留，不产生晋级。
+登记、实际结果与保护主线验收分别留存，状态以任务及对应结果回执为准。

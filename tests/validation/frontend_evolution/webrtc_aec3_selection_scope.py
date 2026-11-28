@@ -27,15 +27,26 @@ F07_MODULE = REL + "webrtc_aec3_linear_tap_ci.py"
 F07_TEST = REL + "test_webrtc_aec3_linear_tap_ci.py"
 EXPERIMENT = "webrtc-aec3-synthesis-selection"
 RESULT_DIRECTORY = "docs/research/frontend-evolution-v1/WEBRTC_AEC3_SYNTHESIS_SELECTION_20261128"
-RESULT_PATHS = tuple(RESULT_DIRECTORY + "/" + name for name in
-                     ("README.zh-CN.md", "result.json", "independent-readback.json"))
+LT2_RESULT_DIRECTORY = "docs/research/frontend-evolution-v1/WEBRTC_AEC3_JOINT_GAIN_CONTROL_20261128"
+RESULT_PATHS = (tuple(RESULT_DIRECTORY + "/" + name for name in
+                      ("README.zh-CN.md", "result.json", "independent-readback.json")) +
+                tuple(LT2_RESULT_DIRECTORY + "/" + name for name in
+                      ("README.zh-CN.md", "result.json", "independent-readback.json", "archive-readback.json")))
 CORE_PATHS = (MODULE, TEST, PLAN,
               REL + "webrtc_aec3_selection_source.py",
               REL + "webrtc_aec3_selection_ci.py",
               REL + "test_webrtc_aec3_selection_source.py",
               REL + "test_webrtc_aec3_selection_adapter.py",
               REL + "webrtc_aec3_selection.py",
-              REL + "test_webrtc_aec3_selection.py")
+              REL + "test_webrtc_aec3_selection.py",
+              REL + "webrtc_aec3_gain_control_audit.py",
+              REL + "test_webrtc_aec3_gain_control_audit.py",
+              REL + "webrtc_aec3_gain_control_source.py",
+              REL + "webrtc_aec3_gain_control_trace.py",
+              REL + "test_webrtc_aec3_gain_control_adapter.py",
+              REL + "webrtc_aec3_gain_control_science.py",
+              ".github/research/frontend-evolution-v1/aec3-joint-gain-controlled-synthesis-science-v1.json",
+              ".github/research/frontend-evolution-v1/aec3-joint-gain-controlled-synthesis-v1.json")
 JOB_MARKER = "\n  webrtc-aec3-synthesis-selection:\n"
 SCOPE_BLOCK = """          # F07_SYNTHESIS_SELECTION_OUTER_SELECTOR_BEGIN
           import sys
@@ -47,6 +58,16 @@ SCOPE_BLOCK = """          # F07_SYNTHESIS_SELECTION_OUTER_SELECTOR_BEGIN
 """
 OUTPUT_LINE = "      f07_selection: ${{ steps.select.outputs.f07_selection }}\n"
 OPTION = ", webrtc-aec3-synthesis-selection]"
+TINY_STEP_PREVIOUS = """      - name: Validate the selected synthesis-selection method without compiling or executing DSP
+        if: steps.select.outputs.f07_selection == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          timeout 60s python3 -B tests/validation/frontend_evolution/test_webrtc_aec3_selection_scope.py
+          timeout 60s python3 -B tests/validation/frontend_evolution/test_webrtc_aec3_selection_source.py
+          timeout 60s python3 -B tests/validation/frontend_evolution/test_webrtc_aec3_selection.py
+
+"""
 TINY_STEP = """      - name: Validate the selected synthesis-selection method without compiling or executing DSP
         if: steps.select.outputs.f07_selection == 'true'
         shell: bash
@@ -55,6 +76,7 @@ TINY_STEP = """      - name: Validate the selected synthesis-selection method wi
           timeout 60s python3 -B tests/validation/frontend_evolution/test_webrtc_aec3_selection_scope.py
           timeout 60s python3 -B tests/validation/frontend_evolution/test_webrtc_aec3_selection_source.py
           timeout 60s python3 -B tests/validation/frontend_evolution/test_webrtc_aec3_selection.py
+          timeout 60s python3 -B tests/validation/frontend_evolution/test_webrtc_aec3_gain_control_audit.py
 
 """
 NAVIGATION_APPEND = """
@@ -71,6 +93,24 @@ RETAINED_SOURCE = {
                  "contract:" + PLAN,
                  "decision:retain-moving-synthesis-selection-source-and-execution-ancestors;null-head-is-moving-custody;no-gc-or-acoustic-promotion"],
     "gc_eligible": False, "auto_gc": False,
+}
+RETAINED_GAIN_SOURCE = {
+  "branch": "research/f07-lt2-frozen-science-20261128",
+  "head_sha": "dac4289a4d2298367b4a9d8246f30c095f352851",
+  "status": "ACCEPTED",
+  "evidence": [
+    "issue:980",
+    "parent-issue:657:active",
+    "science-execution:dac4289a4d2298367b4a9d8246f30c095f352851",
+    "engineering-source:dd7d5d8892ebe6ad767aaa1d6112638df5474207",
+    "engineering-artifact:15259871410",
+    "result:docs/research/frontend-evolution-v1/WEBRTC_AEC3_JOINT_GAIN_CONTROL_20261128/result.json",
+    "result-sha256:b972a342299cc28099e265e742e190a402c7ec8ac4ab03db9cd0b162d9c05ffa",
+    "archive-sha256:7069cabd592baefe6df7ff06b7499124afbb4390e7598a2eea917386d0fda0f9",
+    "decision:retain-frozen-LT2-source-and-ancestors;descriptive-tradeoff-only;no-promotion-or-gc"
+  ],
+  "gc_eligible": False,
+  "auto_gc": False
 }
 F07_WORKFLOW_ANCHOR = ('def strip_workflow(text: str) -> str:\n'
                        '    """Strip only exact F07 wiring; existing readers still validate old bytes."""\n')
@@ -150,14 +190,15 @@ def job_text() -> str:
 
 def strip_workflow(text: str) -> str:
     """Remove only this exact layer; all predecessor bytes remain mandatory."""
-    markers = (JOB_MARKER, SCOPE_BLOCK, OUTPUT_LINE, OPTION, TINY_STEP)
+    tiny_step = TINY_STEP if TINY_STEP in text else TINY_STEP_PREVIOUS
+    markers = (JOB_MARKER, SCOPE_BLOCK, OUTPUT_LINE, OPTION, tiny_step)
     if not any(marker in text for marker in markers):
         return text
     require(all(text.count(marker) == 1 for marker in markers),
             "SELECTION missing or duplicate workflow wiring")
     require(text.endswith(job_text()), "SELECTION job differs from exact declared body")
     restored = text[:-len(job_text())]
-    for old, new in ((SCOPE_BLOCK, ""), (OUTPUT_LINE, ""), (OPTION, "]"), (TINY_STEP, "")):
+    for old, new in ((SCOPE_BLOCK, ""), (OUTPUT_LINE, ""), (OPTION, "]"), (tiny_step, "")):
         restored = restored.replace(old, new, 1)
     frozen = git_bytes(BASE, WORKFLOW)
     require(sha256(frozen) == BASE_WORKFLOW_SHA256 and restored.encode() == frozen,
@@ -182,7 +223,7 @@ def strip_navigation(data: bytes) -> bytes:
     return restored
 
 
-def expected_registry() -> bytes:
+def expected_selection_registry() -> bytes:
     frozen = git_bytes(BASE, REGISTRY)
     data = json.loads(frozen)
     require(len(data["records"]) == 87
@@ -198,10 +239,26 @@ def expected_registry() -> bytes:
     return expected
 
 
+def expected_registry() -> bytes:
+    frozen = expected_selection_registry()
+    data = json.loads(frozen)
+    require(not any(row["branch"] == RETAINED_GAIN_SOURCE["branch"] for row in data["records"]),
+            "LT2 registry duplicate")
+    suffix = b"\n  ]\n}\n"
+    require(frozen.endswith(suffix), "LT2 registry layout changed")
+    record = "\n".join("    " + line for line in
+                       json.dumps(RETAINED_GAIN_SOURCE, indent=2, ensure_ascii=False).splitlines()).encode()
+    expected = frozen[:-len(suffix)] + b",\n" + record + suffix
+    data["records"].append(RETAINED_GAIN_SOURCE)
+    require(json.loads(expected) == data, "LT2 registry append must preserve all predecessor records")
+    return expected
+
+
 def strip_registry(data: bytes) -> bytes:
-    if RETAINED_SOURCE["branch"].encode() not in data:
+    if RETAINED_SOURCE["branch"].encode() not in data and RETAINED_GAIN_SOURCE["branch"].encode() not in data:
         return data
-    require(data == expected_registry(), "SELECTION registry record, policy or bytes changed")
+    require(data in (expected_selection_registry(), expected_registry()),
+            "SELECTION registry record, policy or bytes changed")
     return git_bytes(BASE, REGISTRY)
 
 
@@ -245,7 +302,7 @@ def predecessor_test_changes(changes: dict) -> dict:
             require(before is None and after is not None,
                     "SELECTION historical fixture cannot hide rewrites or deletes")
             continue
-        require(not path.startswith(RESULT_DIRECTORY + "/"),
+        require(not path.startswith((RESULT_DIRECTORY + "/", LT2_RESULT_DIRECTORY + "/")),
                 "SELECTION unknown result in historical fixture")
         if after is not None:
             after = predecessor_test_view(path, after)
@@ -262,7 +319,7 @@ def select(event: str, selected: str, changes: dict, current: str):
     require(event in ("pull_request", "push"), "SELECTION unsupported event")
     known = set(CORE_PATHS) | {DOCUMENT, NAVIGATION, REGISTRY, F07_MODULE, F07_TEST, WORKFLOW} | set(RESULT_PATHS)
     relevant = set(CORE_PATHS) | {DOCUMENT, NAVIGATION, REGISTRY} | set(RESULT_PATHS)
-    wanted = any(path in relevant or path.startswith(RESULT_DIRECTORY + "/") for path in changes)
+    wanted = any(path in relevant or path.startswith((RESULT_DIRECTORY + "/", LT2_RESULT_DIRECTORY + "/")) for path in changes)
     if WORKFLOW in changes:
         require(changes[WORKFLOW][1] == current.encode(),
                 "SELECTION actual workflow diff mismatch")
@@ -292,7 +349,7 @@ def select(event: str, selected: str, changes: dict, current: str):
                     and strip_navigation(after) == before,
                     "SELECTION only exact navigation append admitted")
         elif path == REGISTRY:
-            require(before == git_bytes(BASE, REGISTRY) and after == expected_registry(),
+            require(before in (git_bytes(BASE, REGISTRY), expected_selection_registry()) and after == expected_registry(),
                     "SELECTION only exact retained-source append admitted")
         elif path in RESULT_PATHS:
             require(before is None, "SELECTION published result rewrite or rollback forbidden")

@@ -1,0 +1,98 @@
+{
+  "schema_version": 1,
+  "experiment_id": "F07-LT2-AEC3-JOINT-GAIN-CONTROLLED-SYNTHESIS-V1",
+  "parent_issue": 657,
+  "execution_issue": 980,
+  "base_revision": "497a5d6cc0330dd00cfcdd4b0d2ccad0c44a1466",
+  "source_bundle": {
+    "artifact_id": 15220044392,
+    "sha256": "9e6dcc80317f689779d05da212143cf2d5287f0c30868b469a9ae8c9b1fd6d48",
+    "size_bytes": 11138223,
+    "source_sha256": {
+      "echo_remover.cc": "c17b624242ab5f2bfce16a0324fae81d22e175f2e7761b150b5ed665974bb4da",
+      "suppression_filter.cc": "e1a4d52f473f16e631229bffe05103efa135c2246f8ec51bb749ffde3b32ac00",
+      "suppression_filter.h": "18af87236b8c188546a911222e66be8e6951edd07d14b329b2aacf1243e67d32"
+    }
+  },
+  "scope": {
+    "case_id": "p1-ula4-70-fir33-none",
+    "primary_samples": [
+      97600,
+      126400
+    ],
+    "synthesis_support_blocks": [
+      1525,
+      1976
+    ],
+    "block_samples": 64,
+    "calls_max": 2,
+    "total_seconds_max": 32,
+    "retries": 0,
+    "training_runs": 0,
+    "new_cases": 0,
+    "blind_data": false,
+    "f05_reserved_data": false
+  },
+  "mechanism": {
+    "cng_compute_precedes_gain_estimation_and_application": true,
+    "low_band_cng_mixing_depends_on_gain": true,
+    "high_band_cng_mixing_depends_on_gain": true,
+    "suppression_filter_ola_history_is_mutated": true,
+    "interpretation": "JOINT_GAIN_CONTROLLED_SUPPRESSION_AND_CNG_SYNTHESIS",
+    "no_attenuation_only_or_res_only_claim": true,
+    "observation_scope": "All 2000 engineering or 4000 science blocks retain original estimator and applied gain words, selector and upstream spectra, all generator-written CNG real words (65) and interior imaginary words (63, bins 1..63) in each band. DC/Nyquist imaginary slots are not written by the pinned generator, are not real-IFFT degrees of freedom, are not read by the observer, and are not asserted equal. No claim of equivalence of hidden state or of upstream uninitialized reads in SuppressionFilter.",
+    "rate_boundary": "16 kHz mono; the high-band arrays are generated and traced, but actual upper-band synthesis is not exercised at this rate.",
+    "source_preimages": {
+      "config": "33c0534938744f9b2d7c007f3423ca791c3efa74e1682d4ae334fadbea940ae2",
+      "remover": "ee8aed41e88f96ae115536e74cf6dc9ff128ea6576293b93a22a8ad30bf60c2a",
+      "runner": "2526a28f4b92a73489eec0c9c13ecbd5c26b72b4c68482b26b36beac0b8b56e8"
+    },
+    "cng_endpoint_policy": "DC_NYQUIST_IMAGINARY_UNWRITTEN_NOT_OBSERVED"
+  },
+  "implementation_gates": [
+    "exact pinned source-byte admission",
+    "unique ApplyGain call-site parse and ordered-argument verification",
+    "original estimated gain words and applied gain words separately retained",
+    "CNG low/high input arrays byte-identical across neutral/intervention",
+    "upstream E/Y selection and estimator controls identical",
+    "unity low/high gain only on blocks [1525,1976)",
+    "all other blocks retain original binary32 gain words",
+    "OLA history is expected to diverge downstream and is not claimed identical",
+    "exact transformed-source diff allowlist",
+    "engineering-only native build and deterministic synthetic tests",
+    "neutral full-output byte reproduction before intervention",
+    "independent raw-byte and metric readback"
+  ],
+  "decision": {
+    "neutral_mismatch": "BASELINE_REPRODUCTION_FAILED",
+    "source_or_trace_failure": "GAIN_CONTROLLED_SYNTHESIS_INTERVENTION_NOT_ISOLATABLE",
+    "no_improvement": "JOINT_GAIN_CONTROLLED_SYNTHESIS_HYPOTHESIS_NOT_SUPPORTED",
+    "tradeoff": "NEAR_END_GAIN_TRADEOFF_OBSERVED_NO_PROMOTION",
+    "supported_single_window": "JOINT_GAIN_CONTROLLED_SYNTHESIS_EFFECT_SUPPORTED_IN_ONE_DISCLOSED_WINDOW",
+    "all_outcomes_no_promotion": true
+  },
+  "status": "SOURCE_TRANSFORMATION_IMPLEMENTED_ENGINEERING_PENDING",
+  "speech_execution_authorized": false,
+  "promotion_allowed": false,
+  "engineering": {
+    "frames_per_valid_call": 800,
+    "valid_calls": 3,
+    "invalid_calls": 5,
+    "valid_processed_samples": 384000,
+    "requested_capture_samples": 384800,
+    "wall_seconds_max": 120,
+    "speech_calls": 0,
+    "retries": 0,
+    "signal": "seed37-render-times8-delay16-half-echo-near-buzz-first48000"
+  },
+  "engineering_scope": "Three 8-second synthetic processes on one new binary: observer control, gain-observe, gain-unity. Five pre-DSP 10-ms negative requests; no historical acoustic execution or scientific input.",
+  "engineering_method_correction": {
+    "failed_head": "545953fe3c53ec9ac79d27d1d6981651bc4ba212",
+    "run_id": 46135361436,
+    "job_id": 140949402809,
+    "artifact_id": 15259363166,
+    "artifact_bytes": 19620423,
+    "artifact_sha256": "47ebdc8e28d586472578d5c2c03d13ed6911029abfcec6a5a30acf2769601410",
+    "observed": "3 native synthetic successes plus 5 pre-DSP rejections; paired strict trace failed at block 0. Both 2000-block low/high CNG imaginary vectors differ only at bins 0 and 64; every other observed upstream field and all defined CNG words equal. Existing GenerateComfortNoise writes real endpoints and interior real/imaginary bins only; CopyToPackedArray omits endpoint imaginary words. First failure remains immutable. Correct observer to read only defined generated words; no generated CNG bytes, DSP, support, input signal, comparison of defined words, metric or science budget changed. Prior low-band suppression arithmetic reads unwritten endpoint slots; this research observation does not fix or certify that upstream behavior. No scientific call made."
+  }
+}

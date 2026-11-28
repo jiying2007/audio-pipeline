@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "experiment_id": "F07-LT2-AEC3-JOINT-GAIN-CONTROLLED-SYNTHESIS-V1",
+  "issue": 980,
+  "parent": 657,
+  "engineering_revision": "dd7d5d8892ebe6ad767aaa1d6112638df5474207",
+  "engineering_run": 46135692791,
+  "engineering_artifact": 15259871410,
+  "executor_path": "tests/validation/frontend_evolution/webrtc_aec3_gain_control_science.py",
+  "executor_sha256": "79a97d531169e825b40a57dcbb9b67e61013926f0b99aff1f5cd119f265e0c5b",
+  "executor_git_blob": "c3509b2beaa7d6207ce576f80046f6241aa6bce1",
+  "execution_root": "/mnt/data/lt2-science-f07",
+  "speech_execution_authorized": true,
+  "authority": "User-authorized finite #980 diagnostic, after exact dd7d native and same-host engineering qualification. This separately frozen scientific admission does not change or grant general authority to the engineering-only plan; never auto-run in CI.",
+  "data_role": "DISCLOSED_DEVELOPMENT_DIAGNOSTIC_NOT_HOLDOUT",
+  "case_id": "p1-ula4-70-fir33-none",
+  "primary_samples": [
+    97600,
+    126400
+  ],
+  "support_blocks": [
+    1525,
+    1976
+  ],
+  "rate_hz": 16000,
+  "samples_per_call": 256000,
+  "max_calls": 2,
+  "max_capture_seconds": 32,
+  "retries": 0,
+  "training_runs": 0,
+  "local_compiler_calls": 0,
+  "wall_seconds_max": 300,
+  "per_call_timeout_seconds_max": 30,
+  "promotion_allowed": false,
+  "independent_confirmation": false,
+  "archive_sha256": {
+    "predecessor": "311c4c452b90ea51734ac4e17ede0f56d95422baf63836d0564373a74076ad4d",
+    "engineering": "1a3ea980cbba85ac4a926b4286bba51c959b901feb011001ee5b217d8ac9edbb",
+    "host": "9c5d86020d7903917e6e3fe3c12885ed10d835482f41b821066ed1aeabd67408"
+  },
+  "binary_sha256": "da0b8d18cbb52fe569e077b2c096918fd10c68a2d67d71e626309ccf0ea7b8b2",
+  "library_sha256": "34ec6f84a33e7e6f315a262246c11163dd659946868a14428f9440d14b3d040f",
+  "host_receipt_sha256": "f3d5369c3a83e5af8313f03a6d9e9b35fb324886e914072e6eabf139c43a832a",
+  "order": [
+    "preflight archives, canonical scoring source, exact runtime, public admission",
+    "exclusive attempt marker",
+    "gain-observe once; complete final, linear and original selector trace byte parity required",
+    "gain-unity at most once only after neutral gate",
+    "exact paired selector, upstream and generator-written CNG words, support-local unity, linear and causal prefix",
+    "same historical canonical scoring; independent stdlib scoring exact equality; retain all outcomes"
+  ],
+  "decision_rule": "Both SI-SDR strictly increases and NMSE strictly decreases in fixed double-before window: directional support only. Neither improves: not supported. Mixed/nonidentifiable: inconclusive. With primary improvement, any decrease in identifiable far-only aggregate or individual fixed-block energy ratio, or any increase in peak, RMS or endpoint count, conservatively records a tradeoff (amplitude increase is not proof of quality loss); unavailable far comparisons without observed adverse directions remain inconclusive. No post-hoc numeric threshold.",
+  "limitations": "Observed defined words only; generator-unwritten CNG endpoint imaginary slots excluded, upstream potential indeterminate endpoint reads not repaired/certified; OLA may diverge; no separate suppression/CNG attribution, high-band synthesis not exercised at 16 kHz; one disclosed condition, no promotion or physical target claim."
+}

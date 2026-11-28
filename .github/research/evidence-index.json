@@ -276,6 +276,24 @@
       ],
       "gc_eligible": false,
       "auto_gc": false
+    },
+    {
+      "branch": "research/f07-lt2-frozen-science-20261128",
+      "head_sha": "dac4289a4d2298367b4a9d8246f30c095f352851",
+      "status": "ACCEPTED",
+      "evidence": [
+        "issue:980",
+        "parent-issue:657:active",
+        "science-execution:dac4289a4d2298367b4a9d8246f30c095f352851",
+        "engineering-source:dd7d5d8892ebe6ad767aaa1d6112638df5474207",
+        "engineering-artifact:15259871410",
+        "result:docs/research/frontend-evolution-v1/WEBRTC_AEC3_JOINT_GAIN_CONTROL_20261128/result.json",
+        "result-sha256:b972a342299cc28099e265e742e190a402c7ec8ac4ab03db9cd0b162d9c05ffa",
+        "archive-sha256:7069cabd592baefe6df7ff06b7499124afbb4390e7598a2eea917386d0fda0f9",
+        "decision:retain-frozen-LT2-source-and-ancestors;descriptive-tradeoff-only;no-promotion-or-gc"
+      ],
+      "gc_eligible": false,
+      "auto_gc": false
     }
   ]
 }

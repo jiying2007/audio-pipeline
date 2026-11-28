@@ -38,7 +38,7 @@ class GainControlAuditTests(unittest.TestCase):
     def test_reordered_cng_and_gain_is_rejected(self):
         changed = ECHO.replace("cng_.Compute(a, b, comfort_noise, high_band_comfort_noise);",
                                "/* moved */")
-        changed = "cng_.Compute(a, b, comfort_noise, high_band_comfort_noise);\n" + changed
+        changed += "\ncng_.Compute(a, b, comfort_noise, high_band_comfort_noise);\n"
         with self.assertRaises(ValueError):
             inspect_structure(changed, FILTER)
 

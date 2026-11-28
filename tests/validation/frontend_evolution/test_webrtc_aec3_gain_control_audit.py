@@ -42,6 +42,13 @@ class GainControlAuditTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             inspect_structure(changed, FILTER)
 
+    def test_cng_inputs_cannot_be_touched_before_apply(self):
+        changed = ECHO.replace(
+            "suppression_gain_.GetGain",
+            "comfort_noise[0].re[0] = 0.f;\nsuppression_gain_.GetGain")
+        with self.assertRaises(ValueError):
+            inspect_structure(changed, FILTER)
+
     def test_changed_apply_arguments_are_rejected(self):
         changed = ECHO.replace("high_band_comfort_noise, G,",
                                "different_noise, G,")

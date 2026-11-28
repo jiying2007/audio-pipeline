@@ -1,0 +1,69 @@
+{
+  "schema_version": 1,
+  "experiment_id": "F07-LT2-AEC3-JOINT-GAIN-CONTROLLED-SYNTHESIS-V1",
+  "parent_issue": 657,
+  "execution_issue": 980,
+  "base_revision": "497a5d6cc0330dd00cfcdd4b0d2ccad0c44a1466",
+  "source_bundle": {
+    "artifact_id": 15220044392,
+    "sha256": "9e6dcc80317f689779d05da212143cf2d5287f0c30868b469a9ae8c9b1fd6d48",
+    "size_bytes": 11138223,
+    "source_sha256": {
+      "echo_remover.cc": "c17b624242ab5f2bfce16a0324fae81d22e175f2e7761b150b5ed665974bb4da",
+      "suppression_filter.cc": "e1a4d52f473f16e631229bffe05103efa135c2246f8ec51bb749ffde3b32ac00",
+      "suppression_filter.h": "18af87236b8c188546a911222e66be8e6951edd07d14b329b2aacf1243e67d32"
+    }
+  },
+  "scope": {
+    "case_id": "p1-ula4-70-fir33-none",
+    "primary_samples": [
+      97600,
+      126400
+    ],
+    "synthesis_support_blocks": [
+      1525,
+      1976
+    ],
+    "block_samples": 64,
+    "calls_max": 2,
+    "total_seconds_max": 32,
+    "retries": 0,
+    "training_runs": 0,
+    "new_cases": 0,
+    "blind_data": false,
+    "f05_reserved_data": false
+  },
+  "mechanism": {
+    "cng_compute_precedes_gain_estimation_and_application": true,
+    "low_band_cng_mixing_depends_on_gain": true,
+    "high_band_cng_mixing_depends_on_gain": true,
+    "suppression_filter_ola_history_is_mutated": true,
+    "interpretation": "JOINT_GAIN_CONTROLLED_SUPPRESSION_AND_CNG_SYNTHESIS",
+    "no_attenuation_only_or_res_only_claim": true
+  },
+  "implementation_gates": [
+    "exact pinned source-byte admission",
+    "unique ApplyGain call-site parse and ordered-argument verification",
+    "original estimated gain words and applied gain words separately retained",
+    "CNG low/high input arrays byte-identical across neutral/intervention",
+    "upstream E/Y selection and estimator controls identical",
+    "unity low/high gain only on blocks [1525,1976)",
+    "all other blocks retain original binary32 gain words",
+    "OLA history is expected to diverge downstream and is not claimed identical",
+    "exact transformed-source diff allowlist",
+    "engineering-only native build and deterministic synthetic tests",
+    "neutral full-output byte reproduction before intervention",
+    "independent raw-byte and metric readback"
+  ],
+  "decision": {
+    "neutral_mismatch": "BASELINE_REPRODUCTION_FAILED",
+    "source_or_trace_failure": "GAIN_CONTROLLED_SYNTHESIS_INTERVENTION_NOT_ISOLATABLE",
+    "no_improvement": "JOINT_GAIN_CONTROLLED_SYNTHESIS_HYPOTHESIS_NOT_SUPPORTED",
+    "tradeoff": "NEAR_END_GAIN_TRADEOFF_OBSERVED_NO_PROMOTION",
+    "supported_single_window": "JOINT_GAIN_CONTROLLED_SYNTHESIS_EFFECT_SUPPORTED_IN_ONE_DISCLOSED_WINDOW",
+    "all_outcomes_no_promotion": true
+  },
+  "status": "SOURCE_AUDIT_IMPLEMENTED_NOT_YET_ENGINEERING_QUALIFIED",
+  "speech_execution_authorized": false,
+  "promotion_allowed": false
+}

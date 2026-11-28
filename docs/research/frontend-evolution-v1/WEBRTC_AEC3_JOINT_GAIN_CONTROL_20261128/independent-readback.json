@@ -1,0 +1,25 @@
+{
+  "decision": {
+    "adverse_directions": [
+      "rms_increase"
+    ],
+    "amplitude_deltas": {
+      "negative_endpoint_count": 0,
+      "peak": 0.0,
+      "positive_endpoint_count": 0,
+      "rms": 0.00014377450732429905
+    },
+    "amplitude_increase_is_conservative_tradeoff_not_proven_quality_loss": true,
+    "decision": "NEAR_END_GAIN_TRADEOFF_OBSERVED_NO_PROMOTION",
+    "nmse_delta": -0.7283410004884516,
+    "promotion_allowed": false,
+    "si_sdr_delta_db": 17.539922689837077,
+    "unavailable_far_directions": []
+  },
+  "new_native_calls": 0,
+  "numeric_tolerance": 0,
+  "promotion_allowed": false,
+  "result_sha256": "b972a342299cc28099e265e742e190a402c7ec8ac4ab03db9cd0b162d9c05ffa",
+  "speech_calls": 2,
+  "status": "PASS_RAW_GAIN_CONTROL_SCIENCE_READBACK"
+}

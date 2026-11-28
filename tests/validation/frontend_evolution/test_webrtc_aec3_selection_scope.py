@@ -101,7 +101,7 @@ class ScopeTests(unittest.TestCase):
             with self.subTest(path=path), self.assertRaises(ValueError):
                 self.selected({path: (b"existing", None)})
 
-    def test_result_publication_is_only_three_first_additions_without_engineering(self):
+    def test_result_publication_is_only_registered_first_additions_without_engineering(self):
         changes = {path: (None, b"result-path-only fixture; not a measurement") for path in scope.RESULT_PATHS}
         self.flags(self.selected(changes), False)
         self.flags(self.selected(changes, "push"), False)
@@ -110,6 +110,8 @@ class ScopeTests(unittest.TestCase):
                 self.selected({path: (b"published", b"changed")})
         with self.assertRaises(ValueError):
             self.selected({scope.RESULT_DIRECTORY + "/extra.json": (None, b"unknown")})
+        with self.assertRaises(ValueError):
+            self.selected({scope.LT2_RESULT_DIRECTORY + "/extra.json": (None, b"unknown")})
 
     def test_registry_exact_new_record_without_policy_or_historical_drift(self):
         before = scope.git_bytes(scope.BASE, scope.REGISTRY)
@@ -118,9 +120,12 @@ class ScopeTests(unittest.TestCase):
         self.assertEqual(scope.strip_registry(after), before)
         self.flags(self.selected({scope.REGISTRY: (before, after)}), False)
         old, new = json.loads(before), json.loads(after)
-        self.assertEqual(new["records"][-1], scope.RETAINED_SOURCE)
+        self.assertEqual(new["records"][-1], scope.RETAINED_GAIN_SOURCE)
+        self.assertEqual(new["records"][-2], scope.RETAINED_SOURCE)
+        self.flags(self.selected({scope.REGISTRY: (scope.expected_selection_registry(), after)}), False)
         self.assertFalse(new["records"][-1]["gc_eligible"])
         self.assertFalse(new["records"][-1]["auto_gc"])
+        new["records"].pop()
         new["records"].pop()
         self.assertEqual(new, old)
         for mutation in ("gc", "head", "history", "policy", "extra", "format"):
@@ -177,6 +182,8 @@ class ScopeTests(unittest.TestCase):
                 scope.predecessor_test_changes({path: (b"already exists", b"rewrite")})
         with self.assertRaises(ValueError):
             scope.predecessor_test_changes({scope.RESULT_DIRECTORY + "/unknown.json": (None, b"unknown")})
+        with self.assertRaises(ValueError):
+            scope.predecessor_test_changes({scope.LT2_RESULT_DIRECTORY + "/unknown.json": (None, b"unknown")})
 
     def test_real_scope_dispatch_routes_new_and_existing_jobs_separately(self):
         body = self.current.split("          python3 - <<'PY'\n", 1)[1].split("          PY\n", 1)[0]

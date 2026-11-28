@@ -1,0 +1,30 @@
+{
+  "archive": "audio-pipeline-f07-lt2-science-20261128.tar.gz",
+  "archive_bytes": 95738949,
+  "independent_readback_sha256": "17c49807bcefa89ed5d88ded453c5d1fbcf30f3e99b17331a81f1b9de0960739",
+  "locality": {
+    "changed_final_samples": 28259,
+    "engineering_source": "dd7d5d8892ebe6ad767aaa1d6112638df5474207",
+    "far_only_full_metric_equal": true,
+    "first_changed_sample": 97667,
+    "last_changed_sample": 126587,
+    "new_native_calls": 0,
+    "promotion_allowed": false,
+    "raw_audio_publication": false,
+    "secondary_near_windows_equal": true,
+    "source": "dac4289a4d2298367b4a9d8246f30c095f352851",
+    "status": "PASS_ZERO_NATIVE_CALL_FINAL_BYTE_LOCALITY_READBACK",
+    "unchanged_outside_synthesis_and_ola_support": true,
+    "unchanged_prefix_samples": 97664,
+    "unchanged_suffix_from_sample": 126592
+  },
+  "manifest_sha256": "08acaede8c901d9e36e9caeb2d3f7f0cd94390416c37240d6f9d540f330b303c",
+  "members": 99,
+  "new_native_calls": 0,
+  "promotion_allowed": false,
+  "raw_bytes": 170956392,
+  "result_sha256": "b972a342299cc28099e265e742e190a402c7ec8ac4ab03db9cd0b162d9c05ffa",
+  "science_calls": 2,
+  "sha256": "7069cabd592baefe6df7ff06b7499124afbb4390e7598a2eea917386d0fda0f9",
+  "status": "PASS_COMPLETE_ARCHIVE_RAW_READBACK"
+}
